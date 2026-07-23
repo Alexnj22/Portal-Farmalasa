@@ -5,9 +5,44 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.30.0';
+export const APP_VERSION = '2.30.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.30.1 — fix(mobile): header/bottom-tabs vuelven a position:fixed
+// (regresión de v2.30.0). El usuario reportó en vivo, en el sitio en
+// producción y ESPECÍFICAMENTE en el modo "agregar a inicio" (PWA
+// standalone, no Safari normal): el ícono ☰ desaparecía arriba y quedaba
+// un espacio en blanco enorme abajo sin usar toda la pantalla. Reproducido
+// con capturas reales del usuario (Safari normal: perfecto; webapp
+// standalone: roto) — no reproducible con Playwright/WebKit (no puede
+// emular `display-mode: standalone`), así que no lo detecté en la
+// verificación original de v2.30.0.
+//
+// Causa: v2.30.0 convirtió el header y los bottom-tabs de `position:fixed`
+// (independientes del alto del shell, ya que se posicionan contra el
+// viewport sin importar la cadena de contenedores) a flex-items normales
+// DENTRO de un shell cuyo alto depende enteramente de que `100dvh` se
+// calcule bien en el div raíz de AppLayout. iOS calcula `100dvh` distinto
+// en modo standalone (PWA instalada) que en una pestaña normal de Safari
+// — ahí es donde este fix no alcanzaba: si ese cálculo sale mal, TODO lo
+// que dependía de él (header, contenido, tabs) se corría/recortaba en
+// bloque, dejando el patrón exacto reportado (header cortado arriba,
+// hueco abajo).
+//
+// Fix: header y bottom-tabs vuelven a `position:fixed` (como estaban antes
+// de v2.30.0) — inmunes a esa ambigüedad de `100dvh`, ya que se posicionan
+// contra el viewport real sin depender del alto calculado del shell. Se
+// restaura el spacer de altura fija tras el header y el padding-bottom
+// compensatorio en `#main-scroll` para hasSelfOnly, exactamente como antes
+// de v2.30.0. Lo que SÍ se mantiene (y sigue arreglando el bug real de
+// scroll de la auditoría 2026-07-18): `#main-scroll` con
+// `overflow-y-auto` real en todos los breakpoints y el alto sin
+// condicionar a `lg:` en el div raíz de AppLayout — verificado de nuevo
+// en vivo tras este cambio, sigue scrolleando igual. Modelo híbrido: el
+// contenido interno confía en el alto del shell (funciona en todos los
+// contextos probados), pero el chrome de navegación (header/tabs) no
+// depende de él en absoluto.
+//
 // v2.30.0 — fix(mobile): Fase 1 de PLAN-MOBILE-2026-07.md — restaura el
 // scroll en móvil vertical, roto desde hacía semanas (auditoría 2026-07-18).
 // Causa raíz verificada con Playwright/WebKit iPhone 13 contra dev server:

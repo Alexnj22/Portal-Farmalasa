@@ -985,9 +985,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     "/productos pierde columnas" — ninguno de los dos era sobre hideBelow). */}
                 <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden min-w-0 ${blurClasses}`}>
                     <div
-                        className="lg:hidden shrink-0 w-full z-40 border-b border-white/25"
+                        className="lg:hidden fixed left-0 right-0 z-40 border-b border-white/25"
                         style={{
-                            paddingTop: 'env(safe-area-inset-top, 0px)',
+                            top: 'env(safe-area-inset-top, 0px)',
                             background: 'rgba(221,216,255,0.88)',
                             backdropFilter: 'blur(40px) saturate(180%)',
                             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
@@ -1028,8 +1028,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </div>
                     </div>
 
+                    <div
+                        className="lg:hidden shrink-0 w-full"
+                        style={{ height: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
+                    />
+
                     {/* Content */}
-                    <div id="main-scroll" className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div id="main-scroll" className={`flex-1 min-h-0 overflow-y-auto overscroll-y-contain lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={{ WebkitOverflowScrolling: 'touch' }}>
                         {!isMobile && (
                             <div className="absolute top-4 right-5 z-[200] hidden lg:block">
                                 <NotificationBell variant="desktop" />
@@ -1042,7 +1047,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                     {/* ── Bottom tabs ── */}
                     {hasSelfOnly && (
-                        <nav className={`lg:hidden shrink-0 px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
+                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-[1.75rem] px-2 py-2 border
                                 bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {

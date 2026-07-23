@@ -108,7 +108,7 @@ lo que hacen las apps que el PRODUCT.md pone de referencia (apps nativas de Appl
 
 ## 4. Fases
 
-### Fase 1 — Restaurar el scroll móvil (el fix estructural) ✅ APLICADA (v2.30.0, 2026-07-22)
+### Fase 1 — Restaurar el scroll móvil (el fix estructural) ✅ APLICADA (v2.30.0, corregida en v2.30.1, 2026-07-23)
 
 **Hallazgo real vs. hipótesis original**: el punto 1 de abajo asumía que el problema
 "terminaba en `#main-scroll`", pero el causante real estaba un nivel más arriba: el
@@ -118,6 +118,22 @@ del punto 2) podía calcular `flex-1/min-h-0` contra algo real. Se corrigió qui
 prefijo `lg:` de esa clase (aplica siempre). Verificado con Playwright/WebKit iPhone 13
 contra dev server: `#main-scroll` pasó de `scrollHeight === clientHeight` (0% de scroll
 posible) a `clientHeight` acotado al viewport con `scrollTop` sostenible tras swipe.
+
+**Regresión encontrada en v2.30.0, corregida en v2.30.1**: el usuario reportó en el
+sitio real, en modo "agregado a inicio" (PWA standalone — NO Safari normal, ahí sí
+andaba bien) que el ☰ desaparecía arriba y quedaba un hueco enorme sin usar abajo.
+No reproducible con Playwright (no emula `display-mode: standalone`), solo con
+capturas reales del usuario. Causa: v2.30.0 había convertido header y bottom-tabs de
+`position:fixed` (inmunes al cálculo de altura del shell) a flex-items normales
+dentro de un shell cuyo alto depende de `100dvh` — y `100dvh` se calcula distinto en
+standalone iOS que en una pestaña de Safari. Fix v2.30.1: header y bottom-tabs
+vuelven a `position:fixed` (como antes de v2.30.0, con su spacer/padding
+compensatorio); `#main-scroll` sigue con `overflow-y-auto` real (el fix de scroll se
+mantiene, reverificado tras el revert). Modelo final: contenido interno confía en el
+alto del shell, chrome de navegación (header/tabs) no depende de él en absoluto —
+más robusto porque no hay forma de testear standalone-mode automatizado en este
+proyecto, así que cualquier pieza de UI crítica ahí debe ser independiente de esa
+ambigüedad, no solo "probablemente funcione".
 Puntos 3-6 aplicados tal cual estaban planeados. Ver commit `c2440f7`.
 
 ### Fase 1 (original) — Restaurar el scroll móvil (el fix estructural) 🎯

@@ -35,6 +35,32 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#ddd8ff" />
 
+    <script>
+      // PWA standalone iOS: al reabrir la app "agregada a inicio", iOS
+      // RESUME la sesión suspendida en vez de recargar — puede vivir días
+      // con bundle y datos viejos, sin botón de refresh (comprobado
+      // 2026-07-23: la PWA del usuario mostraba datos del día anterior y
+      // código de 4 deploys atrás — ningún fix "llegaba" al standalone).
+      // Si la página estuvo oculta >30 min, recargar al volver a primer
+      // plano. Solo en standalone/nativo: en navegador normal existe
+      // refresh manual y recargar pestañas de fondo perdería trabajo.
+      (function () {
+        var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+        var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        if (!isStandalone && !isNative) return;
+        var MAX_HIDDEN_MS = 30 * 60 * 1000;
+        var hiddenAt = null;
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+          if (hiddenAt && Date.now() - hiddenAt > MAX_HIDDEN_MS && navigator.onLine !== false) {
+            location.reload();
+            return;
+          }
+          hiddenAt = null;
+        });
+      })();
+    </script>
+
     <title>Portal - FarmaSalud</title>
 
     <style>

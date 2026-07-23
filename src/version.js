@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.31.0';
+export const APP_VERSION = '2.31.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.31.1 — fix(pwa): recarga automática al reanudar la app standalone.
+// Descubrimiento clave (capturas del usuario, 2026-07-23 7:34am): la PWA
+// mostraba los datos del día ANTERIOR (775 docs / $7,953) mientras Safari,
+// en el mismo minuto, mostraba los de hoy (18 docs / $205) — iOS estaba
+// RESUMIENDO la sesión suspendida de ayer en vez de recargar. Las apps
+// "agregadas a inicio" nunca recargan solas al reabrirse (y no tienen
+// botón de refresh): la instancia del usuario llevaba días corriendo
+// código viejo, por eso NINGÚN fix de v2.30.x/v2.31.0 "funcionaba" — no
+// habían llegado a ejecutarse ahí. Fix: script inline en index.html que,
+// SOLO en modo standalone/nativo, recarga la página al volver a primer
+// plano si estuvo oculta >30 min (con chequeo de navigator.onLine para no
+// recargar hacia la pantalla offline). La verificación real de v2.31.0
+// (shell reestructurado) sigue pendiente: requiere que el usuario mate la
+// instancia zombie una vez (borrar ícono + re-agregar, o force-quit).
 
 // v2.31.0 — fix(mobile): reestructura el shell móvil al patrón app-shell
 // estándar — el fix estructural del header invisible en PWA standalone.

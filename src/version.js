@@ -5,9 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.29.0';
+export const APP_VERSION = '2.29.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.29.1 — fix(menu): trigger del buscador menos invasivo, a pedido
+// directo del usuario tras ver v2.29.0 en vivo ("puede ser un ícono, o
+// algo menos invasivo"). Antes era su propia sección con border-b,
+// fondo, padding extra y el badge ⌘K en una caja aparte — ahora es un
+// botón más dentro de <nav>, con las mismas clases exactas que un ítem
+// de menú normal (renderNavItem): mismo tamaño de ícono (20px/1.5),
+// mismo hover, mismo padding. En colapsado se ve idéntico a cualquier
+// otro ícono del riel — ya no hay un bloque separado. Verificado con
+// Playwright: expandido se ve como un ítem más arriba de "Inicio",
+// colapsado es solo un ícono en el riel, y el click sigue abriendo el
+// modal en ambos casos.
+//
 // v2.29.0 — feat(menu): buscador global del menú (Cmd/Ctrl+K), a pedido del
 // usuario tras la reestructuración del sidebar (v2.28.x) — con más grupos
 // separados, la queja real era "no sé en cuál grupo metimos X". Nuevo

@@ -809,27 +809,29 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             )}
                         </div>
 
-                        {/* ── Buscador del menú (Cmd/Ctrl+K) ── */}
-                        <div className={`relative z-10 border-b border-white/[0.06] ${isExpanded ? 'px-3 py-2.5' : 'px-2 py-2.5 flex justify-center'}`}>
+                        {/* ── Nav ── */}
+                        <nav ref={navRef} aria-label="Navegación principal" className="relative z-10 flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            {/* Buscador (⌘K) — mismo look que un ítem de nav normal, no un bloque aparte */}
                             <button
                                 type="button"
                                 onClick={() => setSearchOpen(true)}
                                 aria-label="Buscar en el menú"
-                                className={`flex items-center gap-2.5 rounded-xl transition-all duration-200 text-white/50 hover:text-white/85 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-white/[0.15] active:scale-[0.98] ${focusRing}
-                                    ${isExpanded ? 'w-full px-3 py-2' : 'w-10 h-10 justify-center'}`}
+                                title="Buscar en el menú (⌘K)"
+                                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden mb-1
+                                    px-3 py-3 xl:px-4 xl:py-3.5
+                                    text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
+                                    ${focusRing}
+                                    active:scale-[0.99] active:translate-y-0`}
                             >
-                                <Search size={16} strokeWidth={2.25} className="shrink-0" />
+                                <Search size={20} strokeWidth={1.5} className="flex-shrink-0 text-white/42 group-hover:text-white/80 transition-colors" />
                                 {isExpanded && (
                                     <>
-                                        <span className="text-[12px] font-medium flex-1 text-left">Buscar</span>
+                                        <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap">Buscar</span>
                                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-white/40">⌘K</span>
                                     </>
                                 )}
                             </button>
-                        </div>
 
-                        {/* ── Nav ── */}
-                        <nav ref={navRef} aria-label="Navegación principal" className="relative z-10 flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
                             <div
                                 className={`absolute left-2 right-2 rounded-[0.875rem] transform-gpu transition-opacity duration-200 pointer-events-none
                                     bg-gradient-to-r from-violet-500/[0.22] via-indigo-400/[0.14] to-blue-500/[0.08]

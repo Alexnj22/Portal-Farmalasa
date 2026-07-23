@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
-import { Loader2, Settings, Monitor } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 // Contextos
 import { useAuth } from "./context/AuthContext";
@@ -684,38 +684,6 @@ export default function App() {
         </BrowserRouter>
     );
 }
-
-const MobileConstructionScreen = () => (
-    <div className="sm:hidden fixed inset-0 z-[99999] bg-[#E6F0FF] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-        <GlobalBackground />
-
-        <div className="relative z-10 flex flex-col items-center max-w-sm bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in duration-700">
-
-            <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-tr from-[#0052CC]/10 to-[#6929C4]/10 rounded-full mb-6 border border-white">
-                <Settings className="text-[#0052CC] animate-spin" size={40} strokeWidth={1.5} style={{ animationDuration: '4s' }} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <Monitor className="text-[#6929C4] bg-[#E6F0FF] rounded-md p-1 scale-75" size={28} strokeWidth={2} />
-                </div>
-            </div>
-
-            <h2 className="text-[22px] font-black text-slate-800 tracking-tight mb-3 leading-none">
-                Versión Móvil<br /><span className="text-[#0052CC]">en Desarrollo</span>
-            </h2>
-
-            <p className="text-[13px] font-medium text-slate-500 leading-relaxed">
-                Estamos construyendo una experiencia increíble para tu teléfono.
-                <br /><br />
-                Por favor, accede desde una <b>computadora</b> para utilizar todas las funciones del portal.
-            </p>
-
-            <div className="mt-8 flex gap-1.5 justify-center">
-                <span className="w-1.5 h-1.5 bg-[#0052CC] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                <span className="w-1.5 h-1.5 bg-[#0052CC] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-1.5 h-1.5 bg-[#0052CC] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
-            </div>
-        </div>
-    </div>
-);
 
 const ROUTE_TITLES = {
     '/overview':          'Inicio',

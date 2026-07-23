@@ -220,29 +220,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     }, []);
 
     useEffect(() => {
-        if (!isMobile) return;
-        const html = document.documentElement;
-        const body = document.body;
-        const root = document.getElementById('root');
-        html.style.setProperty('overflow', 'auto', 'important');
-        html.style.setProperty('height', 'auto', 'important');
-        html.style.setProperty('overscroll-behavior', 'auto', 'important');
-        body.style.setProperty('overflow', 'auto', 'important');
-        body.style.setProperty('height', 'auto', 'important');
-        body.style.setProperty('overscroll-behavior', 'auto', 'important');
-        if (root) {
-            root.style.setProperty('overflow', 'visible', 'important');
-            root.style.setProperty('height', 'auto', 'important');
-            root.style.setProperty('overscroll-behavior', 'auto', 'important');
-        }
-        return () => {
-            ['overflow', 'height', 'overscroll-behavior'].forEach(p => html.style.removeProperty(p));
-            ['overflow', 'height', 'overscroll-behavior'].forEach(p => body.style.removeProperty(p));
-            if (root) ['overflow', 'height', 'overscroll-behavior'].forEach(p => root.style.removeProperty(p));
-        };
-    }, [isMobile]);
-
-    useEffect(() => {
         if (isMobile) setIsSidebarOpen(false); // eslint-disable-line react-hooks/set-state-in-effect -- abre/cierra el sidebar según breakpoint
         else setIsSidebarOpen(true);
     }, [isMobile, isWide]);
@@ -716,7 +693,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-            <div className="flex w-full font-sans relative lg:h-[100dvh] lg:overflow-hidden">
+            <div className="flex w-full font-sans relative h-[100dvh] overflow-hidden">
 
                 {/* ── Global ambient orbs ── */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -1008,9 +985,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     "/productos pierde columnas" — ninguno de los dos era sobre hideBelow). */}
                 <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden min-w-0 ${blurClasses}`}>
                     <div
-                        className="lg:hidden fixed left-0 right-0 z-40 border-b border-white/25"
+                        className="lg:hidden shrink-0 w-full z-40 border-b border-white/25"
                         style={{
-                            top: 'env(safe-area-inset-top, 0px)',
+                            paddingTop: 'env(safe-area-inset-top, 0px)',
                             background: 'rgba(221,216,255,0.88)',
                             backdropFilter: 'blur(40px) saturate(180%)',
                             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
@@ -1051,13 +1028,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </div>
                     </div>
 
-                    <div
-                        className="lg:hidden shrink-0 w-full"
-                        style={{ height: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
-                    />
-
                     {/* Content */}
-                    <div id="main-scroll" className={`lg:flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
+                    <div id="main-scroll" className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {!isMobile && (
                             <div className="absolute top-4 right-5 z-[200] hidden lg:block">
                                 <NotificationBell variant="desktop" />
@@ -1067,35 +1039,35 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             {children}
                         </div>
                     </div>
-                </main>
 
-                {/* ── Bottom tabs ── */}
-                {hasSelfOnly && (
-                    <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
-                        <div className="flex items-center justify-around rounded-[1.75rem] px-2 py-2 border
-                            bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
-                            {selfItems.map(({ key, path, label, icon: Icon }) => { 
-                                const pathSeg = path.replace(/^\//, '').split('/')[0];
-                                const isActive = activeId === pathSeg;
-                                const badge = getBadge(key);
-                                return (
-                                    <button key={key} onClick={() => navigate(path)} type="button" aria-current={isActive ? 'page' : undefined}
-                                        className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50 ${isActive ? 'bg-[#0052CC]/10' : 'hover:bg-slate-100/60'}`}>
-                                        <div className="relative">
-                                            <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#0052CC]' : 'text-slate-500'} />
-                                            {badge > 0 && (
-                                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
-                                                    {badge > 9 ? '9+' : badge}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#0052CC]' : 'text-slate-600'}`}>{label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </nav>
-                )}
+                    {/* ── Bottom tabs ── */}
+                    {hasSelfOnly && (
+                        <nav className={`lg:hidden shrink-0 px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
+                            <div className="flex items-center justify-around rounded-[1.75rem] px-2 py-2 border
+                                bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
+                                {selfItems.map(({ key, path, label, icon: Icon }) => {
+                                    const pathSeg = path.replace(/^\//, '').split('/')[0];
+                                    const isActive = activeId === pathSeg;
+                                    const badge = getBadge(key);
+                                    return (
+                                        <button key={key} onClick={() => navigate(path)} type="button" aria-current={isActive ? 'page' : undefined}
+                                            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50 ${isActive ? 'bg-[#0052CC]/10' : 'hover:bg-slate-100/60'}`}>
+                                            <div className="relative">
+                                                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#0052CC]' : 'text-slate-500'} />
+                                                {badge > 0 && (
+                                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                                        {badge > 9 ? '9+' : badge}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#0052CC]' : 'text-slate-600'}`}>{label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </nav>
+                    )}
+                </main>
 
                 {/* ── Flyout tooltip ── */}
                 {!isMobile && flyout && (

@@ -5,9 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.29.3';
+export const APP_VERSION = '2.30.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.30.0 — fix(mobile): Fase 1 de PLAN-MOBILE-2026-07.md — restaura el
+// scroll en móvil vertical, roto desde hacía semanas (auditoría 2026-07-18).
+// Causa raíz verificada con Playwright/WebKit iPhone 13 contra dev server:
+// el div raíz de AppLayout solo fijaba altura (`h-[100dvh]`) y overflow
+// bajo `lg:`, así que en móvil no tenía altura acotada — sin eso, ningún
+// hijo (incluido #main-scroll) podía calcular un `flex-1/min-h-0` real, y
+// el contenido simplemente desbordaba, clippeado en silencio por el
+// wrapper `fixed overflow-hidden` de App.jsx sin ningún scroll container
+// que lo alcanzara. Medido antes/después: `#main-scroll` pasó de
+// `scrollHeight === clientHeight` (sin scroll posible) a `clientHeight`
+// acotado al viewport con `scrollHeight` mayor y `scrollTop` sostenible.
+// Modelo nuevo: altura de AppLayout sin condicionar a `lg:`, `#main-scroll`
+// como scroll container real en todos los breakpoints
+// (`flex-1 min-h-0 overflow-y-auto lg:overflow-hidden`), header móvil y
+// bottom-tabs pasan de `position:fixed` a flex-items normales dentro de
+// `<main>` (spacer manual y padding compensatorio eliminados — la altura
+// la da el flex layout). Se elimina el useEffect-hack que forzaba
+// `overflow:auto` inline sobre html/body/#root (parche que quedaba
+// anulado por el wrapper fixed y ya no hace falta con scroll interno) y
+// el componente muerto `MobileConstructionScreen` (desmontado desde
+// b01bf8f, la definición seguía en App.jsx). Verificado: swipe/scrollTop
+// funcional en /ventas /overview /home, hamburger + drawer abren
+// correctamente, cero scroll horizontal de página, desktop pixel-igual
+// (screenshots 1440px antes/después). Fase 2 (crash intermitente del
+// Dashboard) diagnosticada pero NO resuelta en este commit — ver nota
+// aparte; no era consecuencia de este fix (reproducido igual con la
+// Fase 1 aplicada).
+//
 // v2.29.3 — fix(facturas-compra): zoom duplicado en el visor de PDF +
 // pinch-zoom roto en móvil, reportado por el usuario en vivo en
 // /facturas-compra. Causa real del "duplicado": el iframe del PDF (dentro

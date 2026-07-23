@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.37.0';
+export const APP_VERSION = '2.37.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.37.1 — refactor(theme): TablePagination.jsx (T3, apalancamiento #5 —
+// va siempre pegado a DataTable como footer). 100% hardcoded (slate-*,
+// #0052CC, glass blanco/70 con backdrop-blur manual) sin data-surface, sin
+// reaccionar a tema. Los 3 chips (page-size pills, total badge, cada botón
+// de navegación) pasan a data-surface="input" (mismo token que el trigger
+// de LiquidSelect) — gana por cascade layers, igual que DataTable/
+// GlassViewLayout, así que las clases rounded-2xl/border/shadow/backdrop-
+// blur redundantes se eliminan en vez de dejarse muertas. Texto/hover a
+// text-content-3/text-content/hover:bg-surface-card-hover; página activa
+// bg-[#0052CC]→bg-brand (sombra rgba(0,82,204,…) se deja literal, mismo
+// criterio que Button.jsx/ViewTabBar: no hay token rgb-triplet de brand).
+// Verificado con Playwright: bg/radius de data-surface="input" calculado
+// coincide exacto con --surface-input/--input-radius en liquid (12px) y
+// solid (8px, el ajuste de radio que T2 ya pedía). Build + tests verdes.
 
 // v2.37.0 — refactor(theme): DataTable.jsx (T3, apalancamiento #4 — usado en
 // 25 archivos, el blindspot de dark mode más grande según DESIGN.md §22: su

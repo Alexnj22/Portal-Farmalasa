@@ -5,8 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.40.0';
+export const APP_VERSION = '2.41.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.41.0 — refactor(theme): banners + NotificationBell (T3, lista
+// extendida §9 del usuario). OfflineBanner/PushPromptBanner migran de
+// bg-amber-50/90, bg-slate-900/95 fijos a data-surface="dropdown" +
+// text-warning/text-success/text-content — PushPromptBanner además pierde
+// su acento violeta suelto en el botón "Activar" (bg-brand, como cualquier
+// otro CTA primario del proyecto — inconsistencia real, corregida in situ
+// por la regla de "corregir en vez de seguir cometiendo el mismo error").
+// SyncHealthBanner migra por completo (vive dentro de un WidgetCard
+// reactivo). SidebarSyncStatus es un caso distinto: vive en el rail
+// lateral, que es SIEMPRE oscuro por diseño (bg-[#07031a] fijo en
+// AppLayout.jsx desde el 2026-07-23, confirmado en cada captura de esta
+// sesión) — sus clases white/opacity quedan intactas a propósito; solo se
+// tokenizan los colores semánticos (red/amber/emerald→danger/warning/
+// success), seguro porque esos tokens son CONSTANTES entre los 4 temas
+// (declarados una sola vez en :root, no por [data-theme]).
+//
+// NotificationBell.jsx (543 líneas) ya leía useTheme().isDark — no era un
+// blindspot de light/dark (cubre bien liquid+dark+solid+solid-dark en
+// texto/badges porque isDark ya es true en dark Y solid-dark). El bug real:
+// su panel flotante fijaba backdrop-blur-[40px]/[20px] sin condición,
+// violando "cero backdrop-filter" de Solid Modern en solid/solid-dark.
+// Fix quirúrgico: el panel pasa a data-surface="dropdown" (gana por cascade
+// layers) en vez de reescribir las ~40 ramas isDark ya correctas del resto
+// del archivo. Verificado con Playwright: backdropFilter computado = "none"
+// en solid, "blur(44px) saturate(2)" en liquid/dark — exactamente lo que
+// pedía T2. Build + tests verdes.
 
 // v2.40.0 — refactor(theme): LiquidToast/LiquidTooltip/BranchChips/
 // SearchInput a tokens (T3, cierra el lote de "componentes flotantes

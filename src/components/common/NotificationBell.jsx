@@ -255,8 +255,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const isDesktop = variant === 'desktop';
 
     // ── Paleta según tema ────────────────────────────────────────────────────
+    // `panel` ya no fija bg/blur/border/shadow a mano (violaba "cero
+    // backdrop-filter" de Solid Modern en solid/solid-dark) — se resuelve con
+    // data-surface="dropdown" en el contenedor real (gana por cascade layers).
+    // El resto de `cx` sigue binario por isDark: cubre correctamente los 4
+    // temas porque isDark ya es true en dark Y solid-dark (ThemeContext).
     const cx = isDark ? {
-        panel: 'bg-[#0A0F1C]/90 backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]',
         headerBorder: 'border-white/[0.07]',
         title: 'text-white/90',
         rowHover: 'hover:bg-white/[0.06]',
@@ -272,7 +276,6 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         undoText: 'text-white/60',
         undoBtn: 'text-blue-300 hover:bg-blue-400/10 border-blue-300/25',
     } : {
-        panel: 'bg-white/60 backdrop-blur-[20px] backdrop-saturate-[150%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]',
         headerBorder: 'border-slate-200/60',
         title: 'text-slate-800',
         rowHover: 'hover:bg-white/70',
@@ -351,7 +354,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         className={`absolute z-[400] origin-top-right
                             ${isDesktop ? 'right-0 top-[3.25rem] w-[380px]' : 'right-0 top-[3.25rem] w-[calc(100vw-2rem)] max-w-[380px]'}`}
                     >
-                        <div className={`rounded-[1.75rem] overflow-hidden transform-gpu ${cx.panel}`}>
+                        <div data-surface="dropdown" className="overflow-hidden transform-gpu">
                             {/* Shimmer superior */}
                             <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
                                 <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-[#0052CC]/40 to-transparent animate-shimmer" style={{ animationDuration: '4s' }} />

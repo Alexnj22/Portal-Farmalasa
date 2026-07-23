@@ -10,10 +10,10 @@ const STALE_MINS = 15;
 
 function dotClass(minsAgo, hasError) {
   if (hasError || minsAgo === null || minsAgo > STALE_MINS)
-    return 'bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)]';
+    return 'bg-danger shadow-[0_0_4px_rgba(240,68,56,0.8)]';
   if (minsAgo > WARN_MINS)
-    return 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]';
-  return 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.8)]';
+    return 'bg-warning shadow-[0_0_4px_rgba(247,144,9,0.8)]';
+  return 'bg-success shadow-[0_0_4px_rgba(18,183,106,0.8)]';
 }
 
 export default function SidebarSyncStatus() {
@@ -61,8 +61,8 @@ export default function SidebarSyncStatus() {
         {/* Label row */}
         <div className="flex items-center gap-1 mb-0.5">
           {hasErrors || anyStale
-            ? <AlertTriangle size={10} className="text-red-400" />
-            : <CheckCircle2  size={10} className={allGood ? 'text-emerald-400' : 'text-white/30'} />
+            ? <AlertTriangle size={10} className="text-danger" />
+            : <CheckCircle2  size={10} className={allGood ? 'text-success' : 'text-white/30'} />
           }
           <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">Sync</span>
         </div>
@@ -79,7 +79,7 @@ export default function SidebarSyncStatus() {
                     <div className={`w-[5px] h-[5px] rounded-full ${dotClass(m, !b.success)}`} />
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 bg-slate-900 border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/sdot:opacity-100 transition-opacity pointer-events-none z-[300] shadow-xl">
                       Suc. {b.erp_sucursal_id} · {Math.round(m)}min
-                      {!b.success && <><br /><span className="text-red-400 font-medium">{b.error_msg}</span></>}
+                      {!b.success && <><br /><span className="text-danger font-medium">{b.error_msg}</span></>}
                     </div>
                   </div>
                 );
@@ -107,7 +107,7 @@ export default function SidebarSyncStatus() {
           title={bellDenied ? 'Actívalas en la configuración del navegador' : undefined}
           className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border
             ${bellGranted
-              ? 'bg-emerald-500/[0.10] border-emerald-400/[0.18] cursor-default'
+              ? 'bg-success/[0.10] border-success/[0.18] cursor-default'
               : bellDenied
               ? 'bg-white/[0.03] border-white/[0.05] cursor-not-allowed opacity-40'
               : 'bg-white/[0.06] border-white/[0.09] hover:bg-violet-500/[0.12] hover:border-violet-400/[0.18] hover:scale-[1.02] active:scale-[0.98]'
@@ -115,17 +115,17 @@ export default function SidebarSyncStatus() {
         >
           <div className="flex items-center gap-1 mb-0.5">
             {bellGranted
-              ? <CheckCircle2 size={10} className="text-emerald-400" />
+              ? <CheckCircle2 size={10} className="text-success" />
               : <Bell size={10} className={bellDenied ? 'text-white/30' : 'text-white/40'} />
             }
             <span className={`text-[9px] font-semibold uppercase tracking-wider ${
-              bellGranted ? 'text-emerald-400/70' : 'text-white/45'
+              bellGranted ? 'text-success/70' : 'text-white/45'
             }`}>
               Alertas
             </span>
           </div>
           <span className={`text-[9px] font-black text-center leading-tight ${
-            bellGranted ? 'text-emerald-400' : bellDenied ? 'text-white/25' : 'text-white/55'
+            bellGranted ? 'text-success' : bellDenied ? 'text-white/25' : 'text-white/55'
           }`}>
             {bellGranted ? 'Activas' : bellDenied ? 'Bloqueadas' : 'Activar'}
           </span>

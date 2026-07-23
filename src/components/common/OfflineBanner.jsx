@@ -36,15 +36,11 @@ export default function OfflineBanner() {
         <div
             role="status"
             aria-live="polite"
+            data-surface="dropdown"
             className={`fixed top-4 left-1/2 -translate-x-1/2 z-[500]
                 flex items-center gap-2.5 px-5 py-2.5
-                rounded-[1.5rem] border
-                backdrop-blur-2xl backdrop-saturate-[180%]
-                shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.80)]
                 transition-all duration-300 animate-in fade-in slide-in-from-top-2
-                ${isWarning
-                    ? 'bg-amber-50/90 border-amber-200/80 text-amber-700'
-                    : 'bg-emerald-50/90 border-emerald-200/80 text-emerald-700'}`}
+                ${isWarning ? 'text-warning' : 'text-success'}`}
         >
             {isWarning
                 ? <WifiOff size={14} strokeWidth={2.5} className="shrink-0" />

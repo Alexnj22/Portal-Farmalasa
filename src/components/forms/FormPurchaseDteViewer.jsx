@@ -63,15 +63,29 @@ const PdfZoomViewer = ({ src }) => {
             setZoom((z) => clampZoom(e.deltaY < 0 ? z * 1.08 : z / 1.08));
         };
 
+        // Safari/iOS dispara gesturestart/gesturechange/gestureend — un
+        // mecanismo propio de WebKit para pinch, separado de los touch
+        // events estándar, que puede ganarle a touch-action:none y disparar
+        // el zoom NATIVO de toda la página en vez de solo este visor (el
+        // pinch de arriba, vía touchmove, sigue siendo el que calcula el
+        // zoom real — acá solo se bloquea la gesture nativa). No-op en
+        // Chrome/Firefox, que no implementan estos eventos.
+        const onGestureStart = (e) => e.preventDefault();
+        const onGestureChange = (e) => e.preventDefault();
+
         el.addEventListener('touchstart', onTouchStart, { passive: true });
         el.addEventListener('touchmove', onTouchMove, { passive: false });
         el.addEventListener('touchend', onTouchEnd, { passive: true });
         el.addEventListener('wheel', onWheel, { passive: false });
+        el.addEventListener('gesturestart', onGestureStart, { passive: false });
+        el.addEventListener('gesturechange', onGestureChange, { passive: false });
         return () => {
             el.removeEventListener('touchstart', onTouchStart);
             el.removeEventListener('touchmove', onTouchMove);
             el.removeEventListener('touchend', onTouchEnd);
             el.removeEventListener('wheel', onWheel);
+            el.removeEventListener('gesturestart', onGestureStart);
+            el.removeEventListener('gesturechange', onGestureChange);
         };
     }, []);
 
@@ -124,7 +138,14 @@ const PdfZoomViewer = ({ src }) => {
                 style={{ touchAction: zoom > 1 ? 'pan-x pan-y' : 'none' }}
             >
                 <div style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%`, minWidth: '100%', minHeight: '100%' }}>
-                    <iframe src={src} className="w-full h-full border-none pointer-events-none" title="Visor PDF" />
+                    {/* #toolbar=0&navpanes=0&scrollbar=0: el visor nativo de PDF del
+                        navegador (Chrome/Edge) dibuja su propia barra de zoom encima
+                        del PDF aunque el iframe tenga pointer-events:none (decorativa,
+                        no clickeable, pero SE VE — "zoom duplicado" reportado por el
+                        usuario). Este hash es el open-param estándar que ambos
+                        respetan para ocultarla; no aplica al link "Abrir en pestaña
+                        nueva" de abajo, donde sí conviene tener la barra nativa. */}
+                    <iframe src={`${src}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-full border-none pointer-events-none" title="Visor PDF" />
                 </div>
             </div>
         </div>

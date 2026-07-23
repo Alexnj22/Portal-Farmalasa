@@ -5,8 +5,33 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.29.2';
+export const APP_VERSION = '2.29.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.29.3 — fix(facturas-compra): zoom duplicado en el visor de PDF +
+// pinch-zoom roto en móvil, reportado por el usuario en vivo en
+// /facturas-compra. Causa real del "duplicado": el iframe del PDF (dentro
+// de PdfZoomViewer, FormPurchaseDteViewer.jsx) tiene pointer-events:none a
+// propósito (para que el contenedor reciba los gestos en vez del visor
+// nativo), pero el visor nativo de PDF del navegador (Chrome/Edge) sigue
+// DIBUJANDO su propia barra de zoom flotante encima del PDF aunque no sea
+// clickeable — de ahí la barra doble. Confirmado con Playwright contra la
+// URL firmada real de un documento (con y sin el fix, en iframe real y en
+// navegación top-level) y también contra prod en vivo. Fix: agregar
+// `#toolbar=0&navpanes=0&scrollbar=0` al src del iframe — open-param
+// estándar que Chrome/Edge respetan para no dibujar su UI nativa; no se
+// aplica al link "Abrir en pestaña nueva", donde si conviene tenerla.
+//
+// Pinch en móvil: el manejo de touch (touchstart/touchmove/touchend +
+// cálculo de distancia entre 2 dedos) ya estaba implementado y probado
+// correcto vía simulación de touch multi-punto (Chromium mobile emulation
+// + CDP Input.dispatchTouchEvent, 100%→400% tras el gesto). El gap real es
+// que Safari/iOS dispara gesturestart/gesturechange/gestureend — un
+// mecanismo propio de WebKit para pinch, separado de los touch events
+// estándar — que puede ganarle a touch-action:none y hacer zoom nativo de
+// TODA la página en vez de solo el visor. Agregado: preventDefault en
+// esos 3 eventos (no-op en Chrome/Firefox, que no los disparan); el
+// cálculo de zoom real sigue siendo el mismo de siempre vía touchmove.
 
 // v2.29.2 — fix(menu): badge del buscador mostraba ⌘K fijo, símbolo de
 // teclado Mac que no existe en Windows/Linux — el usuario lo notó

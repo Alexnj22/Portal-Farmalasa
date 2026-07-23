@@ -707,7 +707,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* Mobile backdrop */}
                 {isMobile && isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-[#030B1C]/50 z-40 lg:hidden animate-in fade-in duration-300"
+                        className="fixed inset-0 bg-scrim z-40 lg:hidden animate-in fade-in duration-300"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}

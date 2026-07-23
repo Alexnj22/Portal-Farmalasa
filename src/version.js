@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.32.1';
+export const APP_VERSION = '2.33.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.33.0 — feat(theme): Fase T1 del rediseño de tema — puente Tailwind v4.
+// Bloque de @theme inline en index.css que alía los ~40 tokens de color/
+// radio/sombra ya existentes (4 temas: liquid/dark/solid/solid-dark) a
+// utilidades Tailwind reales (bg-surface-card, text-content-2, rounded-card,
+// shadow-modal, bg-brand...). Renombrados los primitivos crudos de radio/
+// sombra para evitar autorreferencia circular con el namespace de Tailwind.
+// Tokens net-new: focus-ring, scrim, divisor, paleta dataviz (6 categórica +
+// semáforo de riesgo de stock de 7 estados + semáforo de volumen de
+// transacciones/hora de DashboardView). Z-index canónico (16 clases) vía
+// @utility. De paso: tailwind.config.js estaba muerto (Tailwind v4 vía
+// @tailwindcss/postcss sin @config no lo leía) — sus 3 animaciones en uso
+// real (wiggle/kpi-enter/widget-settle) no generaban CSS en absoluto, bug
+// silencioso ya presente en NotificationBell/DashboardView; migradas a
+// @keyframes nativos en index.css y el config eliminado. Corregidos de
+// inmediato (no diferidos a una fase futura): bg-[#E6F0FF] hardcodeado en
+// App.jsx (rompía dark/solid) → bg-surface-page; scrim hardcodeado en
+// AppLayout.jsx → bg-scrim. Cero componentes migrados a las utilidades
+// nuevas todavía — fase 100% infraestructura, cero cambio visual esperado.
+// DESIGN.md → v1.2.
 
 // v2.32.1 — fix(pwa): status bar reservado — la hamburguesa tapada en
 // standalone. Tras v2.32.0 el usuario confirmó Safari OK, pero en la PWA

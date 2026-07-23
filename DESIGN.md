@@ -7,12 +7,12 @@
 1. **Empieza por §3 (Tokens)** — todo valor visual nace ahí. Si quieres cambiar un color o blur, cámbialo en `:root` de `src/index.css`, no en el componente.
 2. **Antes de crear un componente nuevo**, revisa §13–§14 (Componentes). Si uno existente puede extenderse, extiéndelo. Prohibido duplicar modales fuera de ModalShell/UnifiedModal ni selects fuera de LiquidSelect.
 3. **Toda UI nueva debe pasar §24 Anti-Patterns** antes de mergearse.
-4. **Los tokens viven en `src/index.css`**; los keyframes en `src/index.css` y `tailwind.config.js`; la lógica de tema en `src/context/ThemeContext.jsx`.
+4. **Los tokens viven en `src/index.css`**; los keyframes también en `src/index.css` (no existe `tailwind.config.js` desde la Fase T1, 2026-07-23 — ver §11); la lógica de tema en `src/context/ThemeContext.jsx`.
 
 ---
 
 > Source of truth for all visual and interaction patterns.
-> Stack: React 18 + Vite + Tailwind CSS v3 + custom Liquid Glass CSS.
+> Stack: React 18 + Vite + Tailwind CSS v4 (`@tailwindcss/postcss`, CSS-first config) + custom Liquid Glass CSS.
 > Platform: Web (desktop/mobile) + native iOS/Android via Capacitor v8.2.0.
 
 ---
@@ -60,7 +60,7 @@ All tokens live in `:root` in `src/index.css` and are overridden by `[data-theme
 
 ### Page background
 ```
---bg-page: radial-gradient(ellipse 80% 60% at 20% 10%, #7c3cf8 0%, #4a1fdb 35%, #1e0a72 65%, #060416 100%)
+--bg-page: radial-gradient(ellipse at 38% 28%, #ddd8ff 0%, #e4e0ff 22%, #eae8ff 50%, #e2deff 100%)
 ```
 
 ### Text (light theme)
@@ -72,72 +72,125 @@ All tokens live in `:root` in `src/index.css` and are overridden by `[data-theme
 
 ### Surface backdrops
 ```
---backdrop-card    : blur(44px) saturate(200%)
---backdrop-header  : blur(32px) saturate(280%)
---backdrop-modal   : blur(48px) saturate(160%)
---backdrop-input   : blur(16px) saturate(180%)
---backdrop-dropdown: blur(32px) saturate(200%)
+--backdrop-card  : blur(44px) saturate(200%)
+--backdrop-header: blur(32px) saturate(280%)
+--backdrop-modal : blur(48px) saturate(160%)
 ```
 
 ### Surface backgrounds
 ```
---surface-card     : rgba(255,255,255,0.12)
---surface-header   : rgba(255,255,255,0.14)
---surface-modal    : rgba(255,255,255,0.18)
---surface-input    : rgba(255,255,255,0.22)
---surface-dropdown : rgba(255,255,255,0.90)
+--surface-page      : transparent
+--surface-card      : rgba(230,245,255,0.16)
+--surface-card-hover: rgba(230,245,255,0.26)
+--surface-header    : rgba(210,235,255,0.12)
+--surface-modal     : rgba(240,248,255,0.85)
+--surface-input     : rgba(230,245,255,0.40)
+--surface-dropdown  : rgba(240,248,255,0.72)
+--surface-tab-track : rgba(210,235,255,0.35)
 ```
 
 ### Borders
 ```
---border-card    : rgba(255,255,255,0.60)
---border-header  : rgba(255,255,255,0.80)
---border-modal   : rgba(255,255,255,0.70)
---border-input   : rgba(255,255,255,0.65)
---border-dropdown: rgba(255,255,255,0.90)
+--border-card  : rgba(255,255,255,0.72)
+--border-header: rgba(255,255,255,0.75)
+--border-modal : rgba(255,255,255,0.90)
+--border-input : rgba(255,255,255,0.78)
+--border-tab   : rgba(255,255,255,0.70)
+--border-muted : rgba(0,82,204,0.06)
 ```
 
-### Radii tokens
+### Radii tokens (nombres primitivos — ver §3.1 sobre por qué no se llaman `--radius-*`)
 ```
---radius-card    : 1.75rem
---radius-header  : 2.5rem
---radius-modal   : 2.5rem
---radius-input   : 0.875rem
---radius-dropdown: 1.25rem
+--card-radius  : 1.75rem
+--modal-radius : 2rem
+--header-radius: 2.5rem
+--btn-radius   : 9999px
+--input-radius : 0.75rem
+--badge-radius : 9999px
 ```
 
-### Shadow tokens
+### Shadow tokens (nombres primitivos — mismo motivo, ver §3.1)
 ```
---shadow-card  : inset 0 1px 0 rgba(255,255,255,0.80), 0 14px 40px rgba(0,0,0,0.05)
---shadow-header: 0 24px 50px -12px rgba(0,0,0,0.18)
---shadow-modal : 0 40px 100px rgba(0,0,0,0.30), inset 0 2px 15px rgba(255,255,255,0.80)
+--card-shadow            : inset 0 1px 0 rgba(255,255,255,0.85), 0 8px 32px rgba(0,0,0,0.07)
+--card-shadow-hover       : inset 0 1px 0 rgba(255,255,255,0.90), 0 16px 40px rgba(0,0,0,0.10)
+--header-shadow           : 0 24px 50px -12px rgba(0,0,0,0.18)
+--modal-shadow            : 0 32px 80px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.95)
+--btn-brand-shadow        : 0 4px 14px rgba(0,82,204,0.28)
+--btn-brand-shadow-hover  : 0 8px 20px rgba(0,82,204,0.40)
 ```
 
 ### Semantic color tokens (index.css `:root`)
 ```
+--brand:        #0052CC
+--brand-dark:   #003D99
+--brand-purple: #6929C4
 --success: #12B76A   ← used as KpiCard color prop in DashboardView; NOT a Tailwind emerald shade
 --warning: #F79009
 --danger:  #F04438
---info:    #0052CC   (same as brand)
 ```
-These are defined but consumed mostly as inline hex strings (e.g. `color="#12B76A"` on KpiCard). For badges and text, prefer the Tailwind semantic classes (`text-emerald-600`, `text-amber-600`, `text-red-600`) which visually match these values.
+These are defined but consumed mostly as inline hex strings (e.g. `color="#12B76A"` on KpiCard). For badges and text, prefer the Tailwind semantic classes (`text-emerald-600`, `text-amber-600`, `text-red-600`) which visually match these values — until the T4 codemod migrates them to `text-success`/`text-warning`/`text-danger` (ya disponibles desde T1, ver §3.1).
+
+### Focus ring, scrim, divisor (net-new, Fase T1)
+Antes hardcodeados en cada punto de consumo — ahora son tokens únicos:
+```
+--focus-ring-color: rgba(0,82,204,0.55)   ← usado en la regla global :focus-visible (index.css)
+--scrim:            rgba(3,11,28,0.50)    ← overlay de sidebar móvil (hoy AppLayout.jsx usa bg-[#030B1C]/50 hardcodeado — mismo valor, consumo pendiente T3)
+--divider:          rgba(203,213,225,0.5) ← ~13 archivos repiten variantes de esto para el patrón `w-px h-N` (consumo pendiente T3/T4)
+```
+
+### Paleta dataviz (net-new, Fase T1)
+
+**Categórica (6)** — hoy cada vista define su propio set de colores ad hoc (`MetasView.jsx` por sucursal, `AbcXyzMatrix.jsx` para ABC/XYZ). Tokenizados a partir de los colores ya más usados en ese rol; consumo real (wrapper de charts compartido) es T4:
+```
+--chart-1: #3b82f6   --chart-2: #10b981   --chart-3: #8b5cf6
+--chart-4: #f97316   --chart-5: #06b6d4   --chart-6: #ec4899
+```
+
+**Semáforo de riesgo de stock (7 estados)** — el real de `src/views/productos/tabminmax/constants.js` (`STAT_CFGS`), no el que se mencionaba antes en este documento:
+```
+--stock-out: #ef4444          --stock-below-min: #f97316
+--stock-approaching: #fbbf24  --stock-ok: #10b981
+--stock-overstocked: #60a5fa  --stock-dead: #cbd5e1
+--stock-no-data: #fde047
+```
+
+**Semáforo de volumen de transacciones/hora (4 estados)** — el gráfico "Ventas por día" de `DashboardView.jsx:880-882,1305` (clasifica cada hora del día según tx/hr):
+```
+--txvol-muerta: #64748b (≤4 tx/hr)   --txvol-normal: #0052CC (5-12 tx/hr, = brand)
+--txvol-pico: #F79009 (>12 tx/hr, = warning)   --txvol-critica: #FF2D55 (>18 tx/hr)
+```
 
 ### Dark theme overrides — `[data-theme="dark"]`
-- `--bg-page`: deep navy `#030B1C`
-- `--surface-card`: `rgba(255,255,255,0.05)`, `--surface-modal`: `rgba(10,15,28,0.90)`
+- `--bg-page`: deep navy/purple gradient
+- `--surface-card`: `rgba(20,30,70,0.50)`, `--surface-modal`: `rgba(18,26,62,0.90)`
 - `--text-primary`: `rgba(255,255,255,0.92)`, secondary/tertiary: white at lower opacity
+- Radii NO se redefinen (heredan de `:root`); solo sombras/superficies/bordes/texto/fondo cambian.
 
 ### Solid Light — `[data-theme="solid"]`
 - `--backdrop-*`: all `none` — disables all blur for performance
-- `--surface-card`: `rgba(255,255,255,0.95)` (opaque), `--surface-header`: `rgba(255,255,255,0.98)`
+- `--surface-card`: `rgba(255,255,255,1.00)` (opaque), `--surface-header`: `rgba(255,255,255,0.96)`
 - `--bg-page`: `#f1f5f9` (slate-100)
-- Tighter radii: card `1.25rem`, header `1.5rem`, modal `2rem`
+- Tighter radii: card `0.875rem`, header `0.875rem`, modal `1.25rem`
 
 ### Solid Dark — `[data-theme="solid-dark"]`
 - `--backdrop-*`: `none`
-- `--surface-card`: `rgba(30,41,59,0.95)` (slate-800), `--surface-modal`: `rgba(15,23,42,0.98)`
+- `--surface-card`: `rgba(30,41,59,1.00)` (slate-800), `--surface-modal`: `rgba(30,41,59,1.00)`
 - `--bg-page`: `#0f172a` (slate-900)
 - `--text-primary/secondary/tertiary`: white variants
+
+### 3.1 Puente Tailwind v4 — `@theme inline` (Fase T1, 2026-07-23)
+
+Todos los tokens de arriba se alían a namespaces de Tailwind v4 en un bloque `@theme inline` (`index.css`, justo después de los 4 bloques de tema), lo que los convierte en utilidades reales: `bg-surface-card`, `text-content`/`text-content-2`/`text-content-3`, `border-border-card`, `rounded-card`/`rounded-modal`/`rounded-badge`, `shadow-card`/`shadow-modal`, `bg-brand`/`text-danger`, `bg-scrim`, `bg-divider`, `bg-chart-1`…`bg-chart-6`, `text-stock-ok`…, `text-txvol-critica`… — todas con soporte nativo de opacidad (`/50`), `hover:`, breakpoints, etc.
+
+`inline` es obligatorio: el valor debe re-evaluarse en cada `[data-theme]` en vez de resolverse una sola vez en build (necesario para que el tema reaccione en runtime vía el atributo `data-theme`, no solo en el primer paint).
+
+**Por qué el texto se llama `--color-content*` y no `--color-text-primary`**: en Tailwind v4 el namespace `--text-*` genera utilidades de **tamaño de fuente** (`text-sm`, `text-lg`), no de color — reusar ese prefijo para color habría chocado con font-size.
+
+**Por qué radios y sombras tienen nombres primitivos distintos** (`--card-radius` en vez de `--radius-card` en el token crudo): `--radius-*` y `--shadow-*` SÍ son justo los namespaces de Tailwind para `rounded-*`/`shadow-*`. Si el token crudo y la clave del `@theme` se llamaran igual, `--radius-card: var(--radius-card)` sería una autorreferencia circular que CSS no resuelve. Por eso el token crudo vive como `--card-radius`/`--card-shadow` etc., y solo el alias dentro de `@theme inline` usa el nombre "limpio" (`--radius-card`, `--shadow-card`) que Tailwind necesita.
+
+**Z-index no tiene namespace `@theme`** en Tailwind v4 — se resuelve con `@utility` (ver §9).
+
+Ningún componente consume estas utilidades todavía (Fase T1 es solo infraestructura); la migración vista-por-vista es T3/T4 del plan de `AUDITORIA-TEMA-2026-07.md`.
 
 ---
 
@@ -165,11 +218,12 @@ The `[data-surface]` attribute is the canonical way to apply Liquid Glass stylin
 
 | Value | Used on | Tokens applied |
 |---|---|---|
-| `card` | Content containers, DataTable wrapper, widget cards | `--surface-card`, `--backdrop-card`, `--border-card`, `--shadow-card`, `--radius-card` |
-| `page-header` | GlassViewLayout sticky desktop header | `--surface-header`, `--backdrop-header`, `--border-header`, `--shadow-header`, `--radius-header` |
-| `modal` | ModalShell inner div | `--surface-modal`, `--backdrop-modal`, `--border-modal`, `--shadow-modal`, `--radius-modal` |
-| `input` | LiquidSelect trigger | `--surface-input`, `--backdrop-input`, `--border-input`, `--radius-input` |
-| `dropdown` | LiquidSelect portal dropdown | `--surface-dropdown`, `--backdrop-dropdown`, `--border-dropdown`, `--radius-dropdown` |
+| `card` | Content containers, DataTable wrapper, widget cards | `--surface-card`, `--backdrop-card`, `--border-card`, `--card-shadow`, `--card-radius` |
+| `page-header` | GlassViewLayout sticky desktop header | `--surface-header`, `--backdrop-header`, `--border-header`, `--header-shadow`, `--header-radius` |
+| `modal` | ModalShell inner div | `--surface-modal`, `--backdrop-modal`, `--border-modal`, `--modal-shadow`, `--modal-radius` |
+| `input` | LiquidSelect trigger | `--surface-input`, `--border-input`, `--input-radius`. Backdrop/shadow reusan `--backdrop-card` (no existe un `--backdrop-input` propio; box-shadow es un inset hardcodeado). |
+| `dropdown` | LiquidSelect portal dropdown | `--surface-dropdown`. Border/shadow/radio/backdrop reusan los de `card` (`--border-card`, `--modal-shadow`, `--card-radius`, `--backdrop-card`) — no tiene tokens propios pese a lo que sugeriría el nombre; pendiente de decisión en T2/T3 si se le dan tokens dedicados. |
+| `tab-track` | ViewTabBar / filter pill track | `--surface-tab-track`, `--border-tab`. Radio hardcodeado `1.25rem` (no token), backdrop reusa `--backdrop-card`. |
 | `sidebar` | AppLayout `<aside>` glass div | Always dark — `bg-[#07031a]/80 backdrop-blur-2xl`. Intentionally ignores theme CSS vars. |
 
 Card hover (desktop only, `@media (hover: hover)`):
@@ -229,11 +283,13 @@ Font stack: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-seri
 | Badge / pill | 9–11px | `font-black uppercase tracking-widest` | `text-[10px] font-black uppercase tracking-widest` |
 | PIN / code | 12px | `font-black tracking-widest font-mono` | `text-[12px] font-black tracking-widest font-mono` |
 | Button label | 11–13px | `font-black uppercase tracking-widest` | `text-[11px] font-black uppercase tracking-widest` |
+| Dato numérico | Ídem su contexto (tabla/KPI/badge) | — | Siempre + `tabular-nums`. Ya es el estándar de facto (229 usos en 47 archivos, verificado 2026-07-23) — no un gap, documentar para que se mantenga al migrar a tokens en T4. |
 
 **Conventions:**
 - All-caps labels always use `uppercase tracking-widest font-black`.
 - Never `font-normal` in interactive UI — minimum `font-medium`.
 - Minimum contrast on glass: `text-slate-600` for labels, `text-slate-500` for secondary text.
+- **`tabular-nums` obligatorio en toda columna/celda numérica** (montos, conteos, porcentajes) — evita el "jitter" de anchos variables por dígito. Ya es la práctica real dominante, no una regla nueva.
 
 ---
 
@@ -254,21 +310,41 @@ Values in use across the codebase (pixel-equivalent approximate):
 | ~40px | `rounded-[2.5rem]` | Sidebar, page header, UnifiedModal |
 | pill | `rounded-full` | Badges, dot indicators, ambient orbs |
 
-Tailwind config shortcuts: `rounded-glass` = `2rem`, `rounded-glassMd` = `1.25rem`.
+`rounded-glass`/`rounded-glassMd`/`shadow-glass`/`shadow-glassSm`/`backdrop-blur-glass` (antes en `tailwind.config.js`) se eliminaron en la Fase T1 (2026-07-23): confirmado con grep que ninguna vista los consume — código muerto, no una utilidad viva que migrar.
 
 ---
 
 ## 9. Z-Index Scale
 
+Tailwind v4 no tiene namespace `@theme` para z-index (a diferencia de color/radius/
+shadow) — la escala canónica se declara con `@utility` en `index.css` (Fase T1,
+2026-07-23), generando clases reales:
+
 ```
-z-[1]     — Ambient background orbs (fixed, behind all content)
-z-[40]    — GlassViewLayout sticky desktop header
-z-[50]    — Sidebar (mobile: fixed overlay)
-z-[60]    — Sidebar (desktop: lg:z-[60])
-z-[100]   — ModalShell default (most overlays, modals)
-z-[9999]  — LiquidTooltip, LiquidToast
-z-[99999] — ConfirmModal (highest — never covered by toasts)
+z-ambient          — 1      — Ambient background orbs (fixed, behind all content)
+z-base             — 10     — Baseline stacking (280 usos hoy vía z-10)
+z-content          — 20     — Main content layer (72 usos hoy vía z-20)
+z-tabs             — 30     — Tab bars / floating pills (22 usos hoy vía z-30)
+z-header           — 40     — GlassViewLayout sticky desktop header / mobile header
+z-sidebar          — 50     — Sidebar (mobile: fixed overlay)
+z-sidebar-desktop  — 60     — Sidebar (desktop: lg:z-[60])
+z-dropdown         — 70     — Dropdowns sobre header/sidebar
+z-modal            — 100    — ModalShell default (most overlays, modals)
+z-bell-desktop     — 200    — Campana de notificaciones (desktop)
+z-flyout           — 300    — Flyout panels
+z-bell-dropdown    — 400    — Dropdown de la campana
+z-banner           — 500    — Banners globales
+z-tooltip          — 9998   — LiquidTooltip
+z-toast            — 9999   — LiquidToast
+z-confirm          — 99999  — ConfirmModal (highest — never covered by toasts)
 ```
+
+**Estado de adopción**: estas 16 clases existen y generan CSS real, pero
+ningún componente las consume todavía — el código sigue usando los ~501
+usos de `z-10`/`z-20`/`z-[…]` dispersos en ~95 archivos. La migración vista-
+por-vista/componente-por-componente a estas clases nombradas es T3/T4
+(`AUDITORIA-TEMA-2026-07.md`), no un cambio mecánico de una sola vez —
+requeriría revisar cada punto de apilamiento contra sus vecinos.
 
 ---
 
@@ -331,28 +407,30 @@ Content area: `max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto`.
 4. Press state: `active:scale-[0.97]` or `active:scale-[0.99]`. Never `scale-90/95`.
 5. Hover lift: only inside `@media (hover: hover)` — never on touch devices.
 
-### CSS keyframes (tailwind.config.js)
+### CSS keyframes (index.css — todo vive aquí desde la Fase T1, 2026-07-23)
+
+`tailwind.config.js` se eliminó en T1: el proyecto usa `@tailwindcss/postcss`
+sin `@config`, así que ese archivo llevaba tiempo sin leerse — `animate-wiggle`,
+`animate-kpi-enter` y `animate-widget-settle` no generaban NINGÚN CSS (bug
+silencioso pre-existente en `NotificationBell.jsx`/`DashboardView.jsx`, no
+introducido por T1; verificado con build antes/después). Migrados a
+`@keyframes` nativos en `index.css`. `animate-widget-enter` y
+`animate-table-row-enter` (base) existían en el config pero ninguna vista
+los usaba — se descartaron en vez de migrarse (código muerto).
 
 | Class | Duration | Easing | Usage |
 |---|---|---|---|
-| `animate-table-row-enter` | 0.12s | ease | Row appear in tables/TabCatalogo |
 | `animate-kpi-enter` | 280ms | `cubic-bezier(0.23,1,0.32,1)` | KPI / stat card entrance |
-| `animate-widget-enter` | 250ms | `cubic-bezier(0.23,1,0.32,1)` | Widget cards |
 | `animate-widget-settle` | 550ms | `cubic-bezier(0.34,1.56,0.64,1)` | Spring settle |
 | `animate-wiggle` | 400ms infinite | ease-in-out | Icon wiggle |
-
-### CSS keyframes (index.css)
-
-| Class | Usage |
-|---|---|
-| `glow-danger` | Red glow pulse on loss/danger indicators (TabCatalogo) |
-| `glow-warning` | Amber glow pulse on warning indicators |
-| `badge-pulse` | Badge scale pulse |
-| `animate-ambient-drift` | Slow ambient orb float (primary) |
-| `animate-ambient-drift-reverse` | Slow ambient orb float (reverse) |
-| `animate-shimmer` | Linear sweep on sidebar borders / top edge |
-| `animate-ping` *(Tailwind)* | Live indicator dot, alert dot |
-| `animate-spin` *(Tailwind)* | Loader2 spinner |
+| `glow-danger` | 2.8s infinite | ease-in-out | Red glow pulse on loss/danger indicators (TabCatalogo) |
+| `glow-warning` | 3.2s infinite | ease-in-out | Amber glow pulse on warning indicators |
+| `badge-pulse` | 1.8s infinite | ease-in-out | Badge scale pulse |
+| `animate-ambient-drift` | 16s infinite | ease-in-out | Slow ambient orb float (primary) |
+| `animate-ambient-drift-reverse` | 20s infinite | ease-in-out | Slow ambient orb float (reverse) |
+| `animate-shimmer` | 1.4s infinite | `--ease-out` | Linear sweep on sidebar borders / top edge |
+| `animate-ping` *(Tailwind)* | | | Live indicator dot, alert dot |
+| `animate-spin` *(Tailwind)* | | | Loader2 spinner |
 
 ### Shimmer sweep (hover on buttons)
 
@@ -1246,6 +1324,7 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 |---|---|---|
 | v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |
 | v1.1 | 2026-07-10 | Fase 4 design/UX audit (`AUDITORIA-2026-07.md`). Added §32 Mobile & Responsive Standard (did not exist before). Fixed project-wide: `active:scale-90/95` → `active:scale-[0.97]` (§31 compliance, ~300 sites), input font-size floor 16px (~170 inputs, iOS zoom fix), touch targets in `ViewTabBar`/`AppLayout` header to 44px, 9 native `<select>` → `LiquidSelect` swaps. Found but NOT fixed (documented only, too large/risky for a mechanical pass): ~1,288 `text-slate-300/400`-on-light-surface contrast violations across 127 files. |
+| v1.2 | 2026-07-23 | Fase T1 de `AUDITORIA-TEMA-2026-07.md` — puente Tailwind v4 (`@theme inline` en `index.css`): tokens de color/radio/sombra existentes ahora son utilidades reales (`bg-surface-card`, `text-content-2`, `rounded-card`, `shadow-modal`, `bg-brand`…). Renombrados los primitivos crudos de radio/sombra (`--radius-card`→`--card-radius` etc.) para evitar autorreferencia circular con el namespace de Tailwind. Tokens net-new: focus-ring, scrim, divisor, paleta dataviz categórica (6), semáforo de riesgo de stock (7 estados reales de `tabminmax/constants.js`, corrige la mención errónea de "MUERTA/NORMAL/PICO/CRÍTICA" — ese es en realidad un semáforo *distinto*, de volumen de transacciones/hora en `DashboardView.jsx`, también tokenizado ahora). Z-index canónico (16 clases) vía `@utility` (Tailwind v4 no tiene namespace `@theme` para z-index). Corregidos de paso: `tailwind.config.js` estaba muerto (el proyecto usa `@tailwindcss/postcss` sin `@config` — confirmado porque Tailwind escaneaba el repo completo, no solo `src/`, incluyendo strings de archivos `.md`); sus 3 animaciones realmente usadas (`wiggle`, `kpi-enter`, `widget-settle`) no generaban NINGÚN CSS en producción (bug silencioso pre-existente en `NotificationBell`/`DashboardView`) — migradas a `@keyframes` nativos en `index.css`, archivo eliminado. `App.jsx:529/545` (`bg-[#E6F0FF]` hardcodeado, rompía dark/solid) → `bg-surface-page`; `AppLayout.jsx:710` scrim hardcodeado → `bg-scrim` (ambos same-value, cero cambio visual, corregidos de inmediato en vez de diferirse a T3 — ver `feedback_fix_violations_immediately` en memoria). §5, §9, §11 corregidos para reflejar el CSS real (tokens de `dropdown`/`input`/`tab-track` que no existían, keyframes fantasma). Cero componentes/vistas migrados a las nuevas utilidades — eso es T3/T4. |
 
 ---
 

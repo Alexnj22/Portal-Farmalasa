@@ -526,7 +526,7 @@ function MainApp() {
             } />
             <Route path="/login" element={
                 !isAuthenticated ? (
-                    <div className="relative min-h-[100dvh] w-full bg-[#E6F0FF]">
+                    <div className="relative min-h-[100dvh] w-full bg-surface-page">
                         <GlobalBackground />
                         <div className="relative z-10 w-full min-h-[100dvh] flex flex-col">
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
@@ -542,7 +542,7 @@ function MainApp() {
 
             <Route path="/*" element={
                 isAuthenticated ? (
-                    <div className="relative min-h-[100dvh] lg:min-h-0 lg:fixed lg:inset-0 w-full bg-[#E6F0FF] lg:overflow-hidden flex flex-col">
+                    <div className="relative min-h-[100dvh] lg:min-h-0 lg:fixed lg:inset-0 w-full bg-surface-page lg:overflow-hidden flex flex-col">
                         <GlobalBackground />
                         <AuthSyncHelper />
 

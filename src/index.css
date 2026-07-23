@@ -52,23 +52,58 @@
   --border-tab:    rgba(255,255,255,0.70);
   --border-muted:  rgba(0,82,204,0.06);
 
-  --shadow-card:        inset 0 1px 0 rgba(255,255,255,0.85), 0 8px 32px rgba(0,0,0,0.07);
-  --shadow-card-hover:  inset 0 1px 0 rgba(255,255,255,0.90), 0 16px 40px rgba(0,0,0,0.10);
-  --shadow-header:      0 24px 50px -12px rgba(0,0,0,0.18);
-  --shadow-modal:       0 32px 80px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.95);
-  --shadow-btn-brand:   0 4px 14px rgba(0,82,204,0.28);
-  --shadow-btn-brand-h: 0 8px 20px rgba(0,82,204,0.40);
+  --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.85), 0 8px 32px rgba(0,0,0,0.07);
+  --card-shadow-hover:  inset 0 1px 0 rgba(255,255,255,0.90), 0 16px 40px rgba(0,0,0,0.10);
+  --header-shadow:      0 24px 50px -12px rgba(0,0,0,0.18);
+  --modal-shadow:       0 32px 80px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.95);
+  --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.28);
+  --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.40);
 
-  --radius-card:   1.75rem;
-  --radius-modal:  2rem;
-  --radius-header: 2.5rem;
-  --radius-btn:    9999px;
-  --radius-input:  0.75rem;
-  --radius-badge:  9999px;
+  --card-radius:   1.75rem;
+  --modal-radius:  2rem;
+  --header-radius: 2.5rem;
+  --btn-radius:    9999px;
+  --input-radius:  0.75rem;
+  --badge-radius:  9999px;
 
   --backdrop-card:   blur(44px) saturate(200%);
   --backdrop-header: blur(32px) saturate(280%);
   --backdrop-modal:  blur(48px) saturate(160%);
+
+  /* Focus ring (invariante por tema hoy) */
+  --focus-ring-color: rgba(0,82,204,0.55);
+
+  /* Scrim (overlay de sidebar móvil / drawers) */
+  --scrim: rgba(3,11,28,0.50);
+
+  /* Divisor (el valor slate-200/50 ya es el más repetido en los ~13 usos hardcodeados) */
+  --divider: rgba(203,213,225,0.5);
+
+  /* Paleta dataviz categórica (6) — ya son los colores más usados hoy en ese rol (MetasView.jsx) */
+  --chart-1: #3b82f6;
+  --chart-2: #10b981;
+  --chart-3: #8b5cf6;
+  --chart-4: #f97316;
+  --chart-5: #06b6d4;
+  --chart-6: #ec4899;
+
+  /* Semáforo real de riesgo de stock (7 estados, src/views/productos/tabminmax/constants.js STAT_CFGS) */
+  --stock-out:         #ef4444; /* red-500 */
+  --stock-below-min:   #f97316; /* orange-500 */
+  --stock-approaching: #fbbf24; /* amber-400 */
+  --stock-ok:          #10b981; /* emerald-500 */
+  --stock-overstocked: #60a5fa; /* blue-400 */
+  --stock-dead:        #cbd5e1; /* slate-300 */
+  --stock-no-data:     #fde047; /* yellow-300 */
+
+  /* Semáforo de volumen de transacciones/hora (DashboardView.jsx:880-882,1305,
+     gráfico "Ventas por día") — este es el que la auditoría original tenía en
+     mente al mencionar MUERTA/NORMAL/PICO/CRÍTICA (existe, solo que en otro
+     archivo del que se documentó). Distinto del semáforo de riesgo de stock. */
+  --txvol-muerta:  #64748b; /* ≤4 tx/hr */
+  --txvol-normal:  #0052CC; /* 5-12 tx/hr, = --brand */
+  --txvol-pico:    #F79009; /* >12 tx/hr, = --warning */
+  --txvol-critica: #FF2D55; /* >18 tx/hr */
 }
 
 /* ─── Dark LiquidGlass ─── */
@@ -96,12 +131,12 @@
   --border-tab:    rgba(255,255,255,0.08);
   --border-muted:  rgba(120,160,255,0.10);
 
-  --shadow-card:        inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.50);
-  --shadow-card-hover:  inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.65);
-  --shadow-header:      0 24px 50px -12px rgba(0,0,0,0.60);
-  --shadow-modal:       0 32px 80px rgba(0,0,0,0.70), inset 0 2px 0 rgba(255,255,255,0.08);
-  --shadow-btn-brand:   0 4px 14px rgba(0,82,204,0.45);
-  --shadow-btn-brand-h: 0 8px 20px rgba(0,82,204,0.60);
+  --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.50);
+  --card-shadow-hover:  inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.65);
+  --header-shadow:      0 24px 50px -12px rgba(0,0,0,0.60);
+  --modal-shadow:       0 32px 80px rgba(0,0,0,0.70), inset 0 2px 0 rgba(255,255,255,0.08);
+  --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.45);
+  --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.60);
   /* backdrop-* sin cambios: mismo blur, el fondo oscuro se cuela a través del glass */
 }
 
@@ -130,18 +165,18 @@
   --border-tab:    rgba(148,163,184,0.20);
   --border-muted:  rgba(0,82,204,0.08);
 
-  --shadow-card:        0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-card-hover:  0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
-  --shadow-header:      0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
-  --shadow-modal:       0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
-  --shadow-btn-brand:   0 4px 14px rgba(0,82,204,0.28);
-  --shadow-btn-brand-h: 0 8px 20px rgba(0,82,204,0.40);
+  --card-shadow:        0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  --card-shadow-hover:  0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --header-shadow:      0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
+  --modal-shadow:       0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+  --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.28);
+  --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.40);
 
-  --radius-card:   0.875rem;
-  --radius-modal:  1.25rem;
-  --radius-header: 0.875rem;
-  --radius-btn:    0.5rem;
-  --radius-input:  0.5rem;
+  --card-radius:   0.875rem;
+  --modal-radius:  1.25rem;
+  --header-radius: 0.875rem;
+  --btn-radius:    0.5rem;
+  --input-radius:  0.5rem;
 
   --backdrop-card:   none;
   --backdrop-header: none;
@@ -173,23 +208,145 @@
   --border-tab:    rgba(148,163,184,0.10);
   --border-muted:  rgba(120,160,255,0.10);
 
-  --shadow-card:        0 1px 3px rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.20);
-  --shadow-card-hover:  0 4px 12px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.25);
-  --shadow-header:      0 1px 4px rgba(0,0,0,0.30);
-  --shadow-modal:       0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);
-  --shadow-btn-brand:   0 4px 14px rgba(0,82,204,0.45);
-  --shadow-btn-brand-h: 0 8px 20px rgba(0,82,204,0.60);
+  --card-shadow:        0 1px 3px rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.20);
+  --card-shadow-hover:  0 4px 12px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.25);
+  --header-shadow:      0 1px 4px rgba(0,0,0,0.30);
+  --modal-shadow:       0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);
+  --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.45);
+  --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.60);
 
-  --radius-card:   0.875rem;
-  --radius-modal:  1.25rem;
-  --radius-header: 0.875rem;
-  --radius-btn:    0.5rem;
-  --radius-input:  0.5rem;
+  --card-radius:   0.875rem;
+  --modal-radius:  1.25rem;
+  --header-radius: 0.875rem;
+  --btn-radius:    0.5rem;
+  --input-radius:  0.5rem;
 
   --backdrop-card:   none;
   --backdrop-header: none;
   --backdrop-modal:  none;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TAILWIND v4 BRIDGE — @theme inline
+   Fase T1 (AUDITORIA-TEMA-2026-07.md). Alias de los tokens de arriba a los
+   namespaces de Tailwind v4, para que existan como utilidades reales
+   (bg-surface-card, text-content-2, rounded-card, shadow-modal, bg-brand,
+   text-chart-3, z-modal…) que reaccionan al tema activo. `inline` es
+   obligatorio aquí: el valor debe re-evaluar el var() en cada `[data-theme]`
+   en vez de resolverse una sola vez en build.
+   NOTA: --radius-* y --shadow-* ya eran los nombres de los tokens crudos
+   (mismo namespace que espera Tailwind) — se renombraron arriba a
+   --*-radius/--*-shadow para evitar la autorreferencia circular
+   `--radius-card: var(--radius-card)`. Mismo motivo por el que el texto usa
+   `--color-content*` en vez de `--text-*` (ese namespace es font-size en v4).
+   Ease/duration quedan fuera: son invariantes por tema, no necesitan `inline`.
+   Nada de esto se consume todavía — ver alcance en el plan de T1.
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  /* Brand & semantic */
+  --color-brand:        var(--brand);
+  --color-brand-dark:   var(--brand-dark);
+  --color-brand-purple: var(--brand-purple);
+  --color-success:      var(--success);
+  --color-warning:      var(--warning);
+  --color-danger:       var(--danger);
+
+  /* Texto */
+  --color-content:   var(--text-primary);
+  --color-content-2: var(--text-secondary);
+  --color-content-3: var(--text-tertiary);
+
+  /* Superficies */
+  --color-surface-page:       var(--surface-page);
+  --color-surface-card:       var(--surface-card);
+  --color-surface-card-hover: var(--surface-card-hover);
+  --color-surface-header:     var(--surface-header);
+  --color-surface-modal:      var(--surface-modal);
+  --color-surface-input:      var(--surface-input);
+  --color-surface-dropdown:   var(--surface-dropdown);
+  --color-surface-tab-track:  var(--surface-tab-track);
+
+  /* Bordes */
+  --color-border-card:   var(--border-card);
+  --color-border-header: var(--border-header);
+  --color-border-modal:  var(--border-modal);
+  --color-border-input:  var(--border-input);
+  --color-border-tab:    var(--border-tab);
+  --color-border-muted:  var(--border-muted);
+
+  /* Radios */
+  --radius-card:   var(--card-radius);
+  --radius-header: var(--header-radius);
+  --radius-modal:  var(--modal-radius);
+  --radius-btn:    var(--btn-radius);
+  --radius-input:  var(--input-radius);
+  --radius-badge:  var(--badge-radius);
+
+  /* Sombras */
+  --shadow-card:        var(--card-shadow);
+  --shadow-card-hover:  var(--card-shadow-hover);
+  --shadow-header:      var(--header-shadow);
+  --shadow-modal:       var(--modal-shadow);
+  --shadow-btn-brand:   var(--btn-brand-shadow);
+  --shadow-btn-brand-h: var(--btn-brand-shadow-hover);
+
+  /* Focus / scrim / divisor */
+  --color-focus-ring: var(--focus-ring-color);
+  --color-scrim:      var(--scrim);
+  --color-divider:    var(--divider);
+
+  /* Paleta dataviz */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+
+  /* Semáforo de riesgo de stock (7 estados reales, ver tabminmax/constants.js) */
+  --color-stock-out:         var(--stock-out);
+  --color-stock-below-min:   var(--stock-below-min);
+  --color-stock-approaching: var(--stock-approaching);
+  --color-stock-ok:          var(--stock-ok);
+  --color-stock-overstocked: var(--stock-overstocked);
+  --color-stock-dead:        var(--stock-dead);
+  --color-stock-no-data:     var(--stock-no-data);
+
+  /* Semáforo de volumen de transacciones/hora */
+  --color-txvol-muerta:  var(--txvol-muerta);
+  --color-txvol-normal:  var(--txvol-normal);
+  --color-txvol-pico:    var(--txvol-pico);
+  --color-txvol-critica: var(--txvol-critica);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Z-INDEX CANÓNICO — @utility
+   Tailwind v4 no tiene namespace @theme para z-index; @utility genera
+   clases reales. Valores calzados 1:1 con los usos ya existentes en el
+   código (AppLayout header/sidebar, ModalShell, LiquidToast/Tooltip,
+   ConfirmModal) — nada se renombra todavía, quedan listas para que T3/T4
+   las adopten vista por vista.
+   ═══════════════════════════════════════════════════════════════ */
+
+@utility z-ambient         { z-index: 1;     }
+@utility z-base            { z-index: 10;    }
+@utility z-content         { z-index: 20;    }
+@utility z-tabs            { z-index: 30;    }
+@utility z-header          { z-index: 40;    }
+@utility z-sidebar         { z-index: 50;    }
+@utility z-sidebar-desktop { z-index: 60;    }
+@utility z-dropdown        { z-index: 70;    }
+@utility z-modal           { z-index: 100;   }
+@utility z-bell-desktop    { z-index: 200;   }
+@utility z-flyout          { z-index: 300;   }
+@utility z-bell-dropdown   { z-index: 400;   }
+@utility z-banner          { z-index: 500;   }
+@utility z-tooltip         { z-index: 9998;  }
+@utility z-toast           { z-index: 9999;  }
+@utility z-confirm         { z-index: 99999; }
 
 
 /* ═══════════════════════════════════════════════════════════════
@@ -200,8 +357,8 @@
 [data-surface="card"] {
   background: var(--surface-card);
   border: 1px solid var(--border-card);
-  box-shadow: var(--shadow-card);
-  border-radius: var(--radius-card);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--card-radius);
   backdrop-filter: var(--backdrop-card);
   -webkit-backdrop-filter: var(--backdrop-card);
   transition: transform var(--dur-base) var(--ease-spring),
@@ -209,7 +366,7 @@
 }
 @media (hover: hover) {
   [data-surface="card"]:hover {
-    box-shadow: var(--shadow-card-hover);
+    box-shadow: var(--card-shadow-hover);
     transform: translateY(-2px);
   }
 }
@@ -217,8 +374,8 @@
 [data-surface="page-header"] {
   background: var(--surface-header);
   border: 1px solid var(--border-header);
-  box-shadow: var(--shadow-header);
-  border-radius: var(--radius-header);
+  box-shadow: var(--header-shadow);
+  border-radius: var(--header-radius);
   backdrop-filter: var(--backdrop-header);
   -webkit-backdrop-filter: var(--backdrop-header);
   transition: transform 300ms cubic-bezier(0.23,1,0.32,1),
@@ -234,8 +391,8 @@
 [data-surface="modal"] {
   background: var(--surface-modal);
   border: 1px solid var(--border-modal);
-  box-shadow: var(--shadow-modal);
-  border-radius: var(--radius-modal);
+  box-shadow: var(--modal-shadow);
+  border-radius: var(--modal-radius);
   backdrop-filter: var(--backdrop-modal);
   -webkit-backdrop-filter: var(--backdrop-modal);
 }
@@ -243,8 +400,8 @@
 [data-surface="dropdown"] {
   background: var(--surface-dropdown);
   border: 1px solid var(--border-card);
-  box-shadow: var(--shadow-modal);
-  border-radius: var(--radius-card);
+  box-shadow: var(--modal-shadow);
+  border-radius: var(--card-radius);
   backdrop-filter: var(--backdrop-card);
   -webkit-backdrop-filter: var(--backdrop-card);
 }
@@ -253,7 +410,7 @@
   background: var(--surface-input);
   border: 1px solid var(--border-input);
   box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
-  border-radius: var(--radius-input);
+  border-radius: var(--input-radius);
   backdrop-filter: var(--backdrop-card);
   -webkit-backdrop-filter: var(--backdrop-card);
 }
@@ -348,6 +505,31 @@ body::-webkit-scrollbar { display: none; }
   animation: staggerEnter 220ms var(--ease-spring) both;
   animation-delay: var(--stagger-delay, 0ms);
 }
+
+/* Migradas desde tailwind.config.js (Fase T1, 2026-07-23): el proyecto usa
+   @tailwindcss/postcss sin @config, así que el JS legacy no se estaba
+   leyendo — wiggle/kpi-enter/widget-settle no generaban NINGÚN CSS
+   (bug silencioso pre-existente en NotificationBell/DashboardView, no
+   introducido por este cambio). tailwind.config.js se elimina tras esto. */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-12deg); }
+  50%      { transform: rotate(12deg); }
+}
+.animate-wiggle { animation: wiggle 0.4s ease-in-out infinite; }
+
+@keyframes kpiEnter {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-kpi-enter { animation: kpiEnter 280ms cubic-bezier(0.23,1,0.32,1) both; }
+
+@keyframes widgetSettle {
+  0%   { transform: scale(1.04) translateY(-7px); }
+  40%  { transform: scale(0.97) translateY(4px); }
+  70%  { transform: scale(1.02) translateY(-2px); }
+  100% { transform: none; }
+}
+.animate-widget-settle { animation: widgetSettle 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
 @keyframes shimmer {
   from { transform: translateX(-100%); }
@@ -450,7 +632,7 @@ textarea:not(.outline-none):focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid rgba(0,82,204,0.55);
+  outline: 2px solid var(--focus-ring-color);
   outline-offset: 2px;
 }
 

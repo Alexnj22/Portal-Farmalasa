@@ -223,8 +223,11 @@ Además:
   clases (cards de contenido, headers, modales) — menos clases, cero divergencia.
 - Los componentes consumen los tokens de densidad (§7.4), no paddings/alturas fijos:
   la compactación en resoluciones bajas sale gratis en toda vista que los use.
-- **Adiciones de la auditoría §8**: (a) T3 CREA el componente `Button`
-  compartido (§8.2 — hoy los botones son patrones inline); (b) los 9
+- **Adiciones de la auditoría §8 y §9**: (a) T3 CREA los componentes
+  compartidos que NO existen: `Button` (§8.2), `Badge`, `Spinner`, `Skeleton`
+  y `EmptyState` (§9.1 — hoy son patrones inline duplicados en decenas de
+  vistas), y DECIDE la jerarquía de modales (§9.1: hoy conviven 4 sistemas +
+  24 overlays hand-rolled); (b) los 9
   blindspots de dark mode de DESIGN.md §22 quedan cerrados aquí (la migración
   a tokens los elimina como clase de bug); (c) consolidación de los
   search-pills hand-rolled en ViewTabBar/SearchInput (el fork que ya recayó 2
@@ -544,7 +547,7 @@ inferior). Decisión adoptada para **todo el proyecto de aquí en adelante**:
 - [ ] `theme-color`/meta por tema para status bar móvil — lección v2.32.1:
   cambiar metas del web clip exige borrar y re-agregar el ícono en iOS.
 
-### 8.5 Gobernanza
+### 8.5 Gobernanza (ver también §9 — mapa de duplicaciones)
 
 - [ ] Reglas post-migración: prohibido `text-slate-*`/`bg-white/*` nuevos en
   vistas, prohibido hex crudo (`#0052CC` → token), checklist visual de PR.
@@ -552,3 +555,60 @@ inferior). Decisión adoptada para **todo el proyecto de aquí en adelante**:
   para que DESIGN.md se mantenga al día.
 - [ ] DESIGN.md v2.0 al cierre de T7; §22/§23 (blindspots/inconsistencias) se
   marcan resueltos o se eliminan; changelog §30 por fase.
+
+## 9. Mapa de duplicaciones y patrones divergentes (auditoría 2026-07-23)
+
+> Pedido del usuario: verificar que el plan detecte los casos donde **un mismo
+> trabajo se resuelve de formas distintas según la vista** (ej. feedback a veces
+> con toast, a veces con alert nativo, a veces con label inline). Todo lo de
+> abajo está **medido con grep sobre `src/`** (no estimado). Cada fila dice
+> dónde se consolida. Regla general: T3 crea/decide el canónico, T4 migra los
+> divergentes vista por vista, T7 lo verifica con gate mecánico (§9.3).
+
+### 9.1 El mapa (medido)
+
+| Trabajo | Canónico | Divergencias encontradas | Consolida en |
+|---|---|---|---|
+| **Feedback de resultado** | `toastStore`→`LiquidToast` (arquitectura SANA: un solo store, montado una vez en App.jsx; 42 archivos lo usan) | **7 `alert()` nativos** (FormPharmacovigilance ×2, FormNovedad ×2, FormAiSchedulerPreview:164, TabExpediente:222, _StatCardPreview); **~18 archivos** con banners inline `setError/setMessage` ad-hoc; `AlertModal` en 6 archivos sin regla escrita de cuándo va él y cuándo un toast | Regla en §9.2 (T2/DESIGN.md); migración en T4 |
+| **Confirmación destructiva** | `ConfirmModal` (18 archivos) | **5 `window.confirm` reales**: ShiftExceptionModal:106, StaffManagementView:754, ConteoDetailView:482, TabPromos:276, TabStaff:197 (TabMinMaxRequests ya migró en M7 — ese es el precedente) | T4 (al pasar por cada vista) |
+| **Modales** | — **no hay canónico único**: conviven 4 sistemas (`ModalShell` 5, `LiquidModal` 10, `UnifiedModal` 6, `ConfirmModal`/`AlertModal`) | **24 archivos** además con overlay hand-rolled `fixed inset-0` propio | **T3 DEBE decidir la jerarquía** (propuesta: ModalShell = base única de la que derivan los demás; overlays a mano → migrar o anotar excepción) |
+| **Select** | `LiquidSelect` (61 archivos) + `CatalogSelect` (3, variante legítima) | **0 `<select>` nativos** — ✅ la regla global SÍ se cumplió; el único match es un comentario | Nada que hacer (caso de éxito: así se ve una consolidación terminada) |
+| **Fecha/hora** | `LiquidDatePicker` 26, `RangeDatePicker` 6, `PeriodPicker` 5, `TimePicker12` 7, `LiquidWeekPicker` 1 | **6 `type="date"` + 9 `type="time"` nativos crudos** sueltos en forms | T4; la spec de estados de cada picker la exige §8.2 |
+| **Tablas** | `DataTable` (25 archivos) | **15 archivos** con `<table>` hand-rolled | T4: migrar a DataTable o anotar excepción legítima (ej. print/pdfmake) |
+| **Loading** | — **no existe** `Spinner` ni `Skeleton` compartidos | 85 archivos con `animate-spin` propio, 79 con `Loader2`, 54 con `animate-pulse` a mano; textos "Cargando" con 3 puntuaciones distintas (`...`, `…`, nada) | **T3 crea `Spinner` + `Skeleton`** (como el Button de §8.2); texto canónico: "Cargando…" |
+| **Empty state** | — **no existe componente**, solo el estándar visual documentado (memoria + DESIGN.md) | Textos divergentes por vista ("Sin datos", "Sin resultados", "Sin historial", "Sin ítems"…) cada uno con su markup | **T3 crea `EmptyState`** (props: icono, título, subtítulo, acción) |
+| **Badges/pills de estado** | — **no existe `Badge`** | **214 ocurrencias** de badges inline `rounded-full bg-{emerald,red,amber,…}-50/100` con paleta hardcodeada por vista | **T3 crea `Badge`** (ya estaba implícito en "botones/badges/pills"; ahora con medición y explícito). Ramps semánticas de §8.1 son su fuente de color |
+| **Búsqueda** | `SearchInput` común | importado por **1 solo archivo**, vs 36 inputs `placeholder="Buscar…"` hand-rolled | Ya identificado en §8.2 (el fork que recayó 2 veces); esta es la medición |
+| **Inputs de texto** | `PortalInput` | **3 archivos** lo usan, vs 85 con `<input>` crudo | §8.2 ya lo exige; T4 migra form por form |
+| **Tooltip** | `LiquidTooltip` (3 archivos) | **294 `title=` nativos** | Regla en §9.2; no se fuerza migración masiva |
+| **KPI/stat cards** | `StatCard` (8 archivos) | vistas grandes con cards KPI inline propias | T4: auditar por vista si StatCard aplica o se anota excepción |
+
+### 9.2 Reglas de uso que DEBEN quedar escritas en DESIGN.md v2.0 (hoy no existen — son la CAUSA de la divergencia)
+
+1. **Toast vs AlertModal vs inline**: toast = resultado efímero de una acción
+   (éxito, error recuperable, "guardado"); `AlertModal` = error/aviso bloqueante
+   que el usuario debe leer para continuar; **inline junto al campo** = error de
+   validación de formulario (nunca un toast para "campo requerido"). `alert()`
+   y `window.confirm` nativos: **prohibidos** (rompen el tema, no theme-ables,
+   bloquean el thread).
+2. **Jerarquía de modales** (la decide T3): qué componente para formulario,
+   para confirmación, para visor de documento; cuándo drawer vs modal.
+3. **Tooltip**: `title=` nativo aceptable en iconos/acciones secundarias;
+   `LiquidTooltip` donde el contenido tenga formato o deba verse en móvil.
+4. **Texto de loading/empty**: "Cargando…" (con elipsis U+2026) y catálogo
+   corto de textos de vacío (con el componente `EmptyState` la divergencia
+   muere sola).
+
+### 9.3 Gates mecánicos que se suman al de T7
+
+Al gate de colores existente (§T7) se agregan, con el mismo criterio pass/fail:
+
+```
+grep -rn "[^a-zA-Z.]alert(\|window.confirm" src --include="*.jsx"   → 0 (hoy: 12)
+grep -rln "<select" src --include="*.jsx"                            → 0 reales (hoy: 0 ✅)
+grep -rln "<table" src/views src/components --include="*.jsx"        → solo lista de excepciones anotadas (hoy: 15 sin anotar)
+```
+
+Y checklists enumerables (mismo modelo que las 110 vistas de T4): los 24
+overlays `fixed inset-0`, los 15 `<table>`, los 6+9 date/time nativos —
+cada uno migrado o anotado con razón, nunca omitido en silencio.

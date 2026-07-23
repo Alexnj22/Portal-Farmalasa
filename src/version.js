@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.36.2';
+export const APP_VERSION = '2.37.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.37.0 — refactor(theme): DataTable.jsx (T3, apalancamiento #4 — usado en
+// 25 archivos, el blindspot de dark mode más grande según DESIGN.md §22: su
+// useTokens() nunca llamaba useTheme(), 100% valores estáticos). Contenedor
+// migrado a data-surface="card" (ya reactivo por cascade layers, igual que
+// GlassViewLayout en T2 — se confirma pixel-igual en liquid, opaco/12px en
+// solid). Tokens de texto/hover/fila migrados a utilidades Tailwind
+// (text-content, bg-brand/[…], divide-divider) — toolbarBorder/footerBorder/
+// expandBg quedan hardcodeados a propósito (hairlines de vidrio y gradiente
+// decorativo específico, sin token exacto, mismo criterio que T2). Backfill
+// del botón de acción en el empty-state: reemplaza el <button> hardcodeado
+// (bg-[#0052CC], uppercase-tracking) por el componente real <Button
+// variant="primary" size="sm">, primer uso en código de producción. Build +
+// tests verdes; verificado con Playwright en VentasView (liquid: card glass
+// rgba+28px, texto #1e293b — solid: card blanco opaco+12px, texto #0f172a —
+// ambos exactos a --text-primary del tema).
 
 // v2.36.2 — fix(theme): ViewTabBar.jsx y su duplicado en VentasView.jsx
 // (T3) — el ícono y el botón de búsqueda usaban #0052CC/#003D99 crudos,

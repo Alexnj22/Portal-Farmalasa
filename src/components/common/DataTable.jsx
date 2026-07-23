@@ -25,29 +25,33 @@
 
 import React, { createContext, useContext } from 'react';
 import { ArrowUp, ArrowDown, ChevronsUpDown, Inbox } from 'lucide-react';
+import Button from './Button';
 
-// ── Tokens ────────────────────────────────────────────────────────────────────
+// ── Tokens (Fase T3, AUDITORIA-TEMA-2026-07.md — cierra el blindspot de dark
+// mode de DESIGN.md §22: este hook nunca leía el tema, siempre devolvía los
+// mismos valores hardcodeados sin importar liquid/dark/solid/solid-dark).
+// El contenedor usa data-surface="card" (fondo/borde/sombra/radio ya
+// reactivos, igual que GlassViewLayout — T1/T2 confirmaron que gana la
+// cascada sobre clases Tailwind equivalentes). Lo que queda aquí son solo
+// acentos que SÍ necesitan variar (texto, hover, fila) vía tokens. ──────────
 function useTokens() {
   return {
-    cardBg:            'bg-white/55 backdrop-blur-xl',
-    cardBorder:        'border-white/55',
-    cardShadow:        'shadow-[0_4px_24px_rgba(0,82,204,0.08)]',
-    theadBg:           'bg-[#0052CC]/[0.04]',
-    theadBorderRow:    'border-b border-[#0052CC]/[0.09]',
-    thText:            'text-slate-500',
-    thHover:           'hover:bg-white/25 hover:text-slate-700',
+    theadBg:           'bg-brand/[0.04]',
+    theadBorderRow:    'border-b border-brand/[0.09]',
+    thText:            'text-content-3',
+    thHover:           'hover:bg-surface-card-hover hover:text-content',
     toolbarBorder:     'border-b border-white/40',
     footerBorder:      'border-t border-white/40',
-    divide:            'divide-y divide-slate-200/50',
-    rowHover:          'hover:bg-[#0052CC]/[0.032]',
-    cellText:          'text-slate-700',
-    skeletonPulse:     'bg-[#0052CC]/[0.07]',
-    emptyText:         'text-slate-500',
-    emptyIcon:         'text-slate-500',
+    divide:            'divide-y divide-divider',
+    rowHover:          'hover:bg-brand/[0.032]',
+    cellText:          'text-content',
+    skeletonPulse:     'bg-brand/[0.07]',
+    emptyText:         'text-content-3',
+    emptyIcon:         'text-content-3',
     expandBg:          'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30',
     expandBorderColor: 'border-blue-100/60',
-    expandText:        'text-slate-500',
-    expandTextStrong:  'text-slate-700',
+    expandText:        'text-content-3',
+    expandTextStrong:  'text-content',
   };
 }
 
@@ -91,7 +95,7 @@ export function DataTable({
 
   return (
     <TableCtx.Provider value={tk}>
-      <div className={`rounded-2xl overflow-hidden border ${tk.cardBg} ${tk.cardBorder} ${tk.cardShadow}`}>
+      <div data-surface="card" className="overflow-hidden">
 
         {/* ── Toolbar ─────────────────────────────────────────────────────── */}
         {toolbar && (
@@ -186,12 +190,9 @@ export function DataTable({
                         </p>
                       )}
                       {empty.action && (
-                        <button
-                          onClick={empty.action.onClick}
-                          className="mt-2 px-4 py-2 bg-[#0052CC] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transition-all"
-                        >
+                        <Button variant="primary" size="sm" className="mt-2" onClick={empty.action.onClick}>
                           {empty.action.label}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </td>

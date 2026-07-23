@@ -693,7 +693,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-            <div className="flex w-full font-sans relative h-[100dvh] overflow-hidden">
+            <div className="flex w-full font-sans relative overflow-hidden" style={{ height: 'var(--app-100dvh, 100dvh)' }}>
 
                 {/* ── Global ambient orbs ── */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -715,7 +715,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* ── Sidebar ── */}
                 <aside
                     ref={asideRef}
-                    className={`fixed lg:relative z-50 lg:z-[60] h-[calc(100dvh-16px)] lg:h-auto flex flex-col shrink-0
+                    style={{ height: isMobile ? 'calc(var(--app-100dvh, 100dvh) - 16px)' : undefined }}
+                    className={`fixed lg:relative z-50 lg:z-[60] lg:h-auto flex flex-col shrink-0
                         my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
                         ${isMobile
                             ? `w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`

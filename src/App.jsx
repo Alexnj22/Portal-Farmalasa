@@ -545,7 +545,7 @@ function MainApp() {
 
             <Route path="/*" element={
                 isAuthenticated ? (
-                    <div className="fixed inset-0 w-full h-[100dvh] bg-[#E6F0FF] overflow-hidden flex flex-col">
+                    <div className="fixed inset-0 w-full bg-[#E6F0FF] overflow-hidden flex flex-col" style={{ height: 'var(--app-100dvh, 100dvh)' }}>
                         <GlobalBackground />
                         <AuthSyncHelper />
 

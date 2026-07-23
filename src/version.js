@@ -5,9 +5,40 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.30.1';
+export const APP_VERSION = '2.30.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.30.2 — fix(mobile): 100dvh medido por JS en vez de confiar en el CSS
+// nativo. El usuario confirmó que v2.30.1 (revert de header/tabs a fixed)
+// NO resolvió nada — mismos síntomas exactos: ☰ ausente en modo standalone
+// y una franja blanca real (no solo el toolbar de Safari) al fondo, en
+// ambos contextos. Eso descarta la teoría de v2.30.1 (posición fixed vs
+// flex-item) como causa suficiente: si `position:fixed` se posiciona
+// contra el viewport real sin importar el alto de sus ancestros, el ☰
+// debería verse SIEMPRE — que siguiera desapareciendo apunta a que el
+// propio `100dvh` nativo se está midiendo mal en el dispositivo real del
+// usuario en modo standalone, afectando todo lo que depende de él
+// (incluida la franja blanca: el shell termina antes del borde real de
+// pantalla y se ve el blanco default de la WebView detrás).
+//
+// No reproducible con Playwright (simula un viewport exacto y estático,
+// nunca la ambigüedad real de dvh en iOS standalone) ni con Xcode
+// Simulator (no instalado en esta máquina — solo Command Line Tools, sin
+// Xcode.app; tampoco hay Android SDK/emulator). Sin poder verificar en
+// vivo, se aplica el fix estándar de la industria para exactamente esta
+// clase de bug: medir el alto real vía JS
+// (`visualViewport.height` con fallback a `innerHeight`, más preciso que
+// `dvh` con teclado/barra dinámica) y exponerlo como variable CSS
+// `--app-100dvh` (script inline en index.html, corre antes de que React
+// monte + listeners de resize/orientationchange/visualViewport). El shell
+// (`App.jsx` wrapper autenticado, div raíz de `AppLayout`, aside en
+// móvil) usa `var(--app-100dvh, 100dvh)` — el fallback a `100dvh` nativo
+// solo cubre el instante antes de que el script corra, nunca se depende
+// de él solo. Verificado en dev/WebKit que la variable se fija
+// correctamente (664px = innerHeight) y que scroll + desktop siguen
+// intactos — pero la confirmación real solo la puede dar el usuario en su
+// dispositivo, ya que el bug nunca fue reproducible en este entorno.
+//
 // v2.30.1 — fix(mobile): header/bottom-tabs vuelven a position:fixed
 // (regresión de v2.30.0). El usuario reportó en vivo, en el sitio en
 // producción y ESPECÍFICAMENTE en el modo "agregar a inicio" (PWA

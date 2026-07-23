@@ -35,6 +35,30 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#ddd8ff" />
 
+    <script>
+      // CSS `100dvh` mide distinto en iOS según el contexto (Safari tab vs
+      // PWA "agregada a inicio" vs build nativo Capacitor) — reportado en
+      // vivo por el usuario: header/contenido desalineados y hueco en
+      // blanco al fondo SOLO en modo standalone, imposible de reproducir
+      // con Playwright (no emula display-mode: standalone). Fix estándar:
+      // medir el alto real vía JS (visualViewport cuando existe, más
+      // preciso que innerHeight con teclado/barra dinámica) y exponerlo
+      // como --app-100dvh; el CSS lo usa con fallback a 100dvh nativo para
+      // que no haya parpadeo antes de que corra este script.
+      (function () {
+        function setAppVh() {
+          var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+          document.documentElement.style.setProperty('--app-100dvh', h + 'px');
+        }
+        setAppVh();
+        window.addEventListener('resize', setAppVh);
+        window.addEventListener('orientationchange', setAppVh);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', setAppVh);
+        }
+      })();
+    </script>
+
     <title>Portal - FarmaSalud</title>
 
     <style>

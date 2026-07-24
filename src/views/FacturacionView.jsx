@@ -50,11 +50,11 @@ const TIPO_PAGO_LABELS = {
 };
 
 const TIPO_PAGO_THEME = {
-    tarjeta:       { card: 'border-chart-1/30',   header: 'from-blue-600 to-blue-500',     rowHover: 'hover:bg-chart-1/10/40',   expand: 'bg-chart-1/10/60 border-chart-1/30',   input: 'border-chart-1/30 focus:ring-blue-300',   btn: 'bg-blue-600 hover:bg-blue-700'   },
-    credito:       { card: 'border-chart-3/30',  header: 'from-indigo-600 to-indigo-500', rowHover: 'hover:bg-chart-3/10/40', expand: 'bg-chart-3/10/60 border-chart-3/30', input: 'border-chart-3/30 focus:ring-indigo-300', btn: 'bg-chart-3 hover:bg-indigo-700' },
-    transferencia: { card: 'border-chart-5/30',    header: 'from-cyan-600 to-cyan-500',     rowHover: 'hover:bg-chart-5/10/40',    expand: 'bg-chart-5/10/60 border-cyan-100',    input: 'border-chart-5/30 focus:ring-cyan-300',    btn: 'bg-cyan-600 hover:bg-cyan-700'    },
-    cheque:        { card: 'border-chart-9/30',    header: 'from-teal-600 to-teal-500',     rowHover: 'hover:bg-chart-9/10/40',    expand: 'bg-chart-9/10/60 border-teal-100',    input: 'border-chart-9/30 focus:ring-teal-300',    btn: 'bg-teal-600 hover:bg-teal-700'    },
-    bitcoin:       { card: 'border-chart-4/30',  header: 'from-orange-500 to-orange-400', rowHover: 'hover:bg-chart-4/10/40', expand: 'bg-chart-4/10/60 border-chart-4/30', input: 'border-chart-4/30 focus:ring-orange-300', btn: 'bg-chart-4 hover:bg-orange-600' },
+    tarjeta:       { card: 'border-chart-1/30',   header: 'from-blue-600 to-blue-500',     rowHover: 'hover:bg-chart-1/10',   expand: 'bg-chart-1/10 border-chart-1/30',   input: 'border-chart-1/30 focus:ring-blue-300',   btn: 'bg-blue-600 hover:bg-blue-700'   },
+    credito:       { card: 'border-chart-3/30',  header: 'from-indigo-600 to-indigo-500', rowHover: 'hover:bg-chart-3/10', expand: 'bg-chart-3/10 border-chart-3/30', input: 'border-chart-3/30 focus:ring-indigo-300', btn: 'bg-chart-3 hover:bg-indigo-700' },
+    transferencia: { card: 'border-chart-5/30',    header: 'from-cyan-600 to-cyan-500',     rowHover: 'hover:bg-chart-5/10',    expand: 'bg-chart-5/10 border-cyan-100',    input: 'border-chart-5/30 focus:ring-cyan-300',    btn: 'bg-cyan-600 hover:bg-cyan-700'    },
+    cheque:        { card: 'border-chart-9/30',    header: 'from-teal-600 to-teal-500',     rowHover: 'hover:bg-chart-9/10',    expand: 'bg-chart-9/10 border-teal-100',    input: 'border-chart-9/30 focus:ring-teal-300',    btn: 'bg-teal-600 hover:bg-teal-700'    },
+    bitcoin:       { card: 'border-chart-4/30',  header: 'from-orange-500 to-orange-400', rowHover: 'hover:bg-chart-4/10', expand: 'bg-chart-4/10 border-chart-4/30', input: 'border-chart-4/30 focus:ring-orange-300', btn: 'bg-chart-4 hover:bg-orange-600' },
 };
 
 // SV time

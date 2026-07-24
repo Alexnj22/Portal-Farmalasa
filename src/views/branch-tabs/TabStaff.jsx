@@ -17,9 +17,9 @@ import { fetchBranchHourlySalesAll } from '../../data/schedules';
 const getStaffTheme = (colorTheme) => {
     const themes = {
         amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-amber-400 to-orange-500' },
-        blue: { bg: 'bg-surface-card hover:bg-chart-1/10/50', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-indigo-500' },
+        blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-indigo-500' },
         emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-emerald-400 to-teal-500' },
-        purple: { bg: 'bg-surface-card hover:bg-chart-3/10/50', text: 'text-chart-3-text', ring: 'border-purple-400', badge: 'bg-chart-3', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-purple-400 to-fuchsia-500' },
+        purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-purple-400', badge: 'bg-chart-3', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-purple-400 to-fuchsia-500' },
         slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
     };
     return themes[colorTheme] || themes.slate;
@@ -549,7 +549,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             <>
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
                                 <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
-                                <div className="absolute inset-0 border border-chart-3/30/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
+                                <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
                                 <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-20 relative" />
                             </>
                         )}
@@ -565,7 +565,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
-                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
 
                             {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -591,7 +591,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-10">
                                         <div className="flex flex-col items-center justify-center mb-8">
                                             <div className="relative w-12 h-12 flex items-center justify-center mb-3">
-                                                <div className="absolute inset-0 border-2 border-chart-3/30/50 rounded-full animate-ping [animation-duration:2s]"></div>
+                                                <div className="absolute inset-0 border-2 border-chart-3/30 rounded-full animate-ping [animation-duration:2s]"></div>
                                                 <div className="absolute inset-1 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
                                                 <div className="absolute inset-3 border-l-2 border-r-2 border-cyan-400 rounded-full animate-spin [animation-duration:2.5s] direction-reverse"></div>
                                             </div>
@@ -633,7 +633,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */
                         <div className="space-y-8 mb-8 pt-2">
                             {/* Dashboard Skeleton */}
-                            <div className="bg-surface-card border border-chart-1/30/50 rounded-[1.5rem] p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
+                            <div className="bg-surface-card border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full skeleton"></div>
                                     <div className="flex flex-col gap-2 w-1/3">
@@ -665,7 +665,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <div className="pt-2">
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-brand/5 to-indigo-500/5 border border-chart-1/30/50 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-gradient-to-br from-brand/5 to-indigo-500/5 border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />
@@ -683,7 +683,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 <p className="text-[18px] font-black text-content mt-1">{historicalSales.length}</p>
                                                 <p className="text-[9px] font-bold text-content-3">Horas de venta analizadas</p>
                                             </div>
-                                            <div className="bg-chart-1/10/80 backdrop-blur-md rounded-xl p-3 border border-chart-1/30 shadow-[0_2px_10px_rgba(0,82,204,0.05)]">
+                                            <div className="bg-chart-1/10 backdrop-blur-md rounded-xl p-3 border border-chart-1/30 shadow-[0_2px_10px_rgba(0,82,204,0.05)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-chart-1-text">Pico Máximo Detectado</p>
                                                 <p className="text-[15px] font-black text-chart-1-text mt-1 flex items-center gap-1.5">
                                                     {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-chart-1-text" />
@@ -697,7 +697,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-chart-3/10/60 backdrop-blur-md rounded-xl p-4 border border-chart-3/30 text-left flex items-start gap-4">
+                                        <div className="bg-chart-3/10 backdrop-blur-md rounded-xl p-4 border border-chart-3/30 text-left flex items-start gap-4">
                                             <Hourglass size={28} className="text-chart-3-text shrink-0 mt-1" strokeWidth={2} />
                                             <div>
                                                 <p className="text-[12px] font-black uppercase tracking-widest text-chart-3-text mb-1">Fase de Incubación (Recolección de Datos)</p>

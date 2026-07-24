@@ -166,7 +166,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 <div key={erpId}
                                     className={`rounded-xl px-2 py-2 border transition-colors ${
                                         isCurrent
-                                            ? 'border-brand/40 bg-chart-1/10/60 ring-1 ring-brand/20'
+                                            ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/20'
                                             : 'border-border-card bg-surface-card'
                                     } ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
@@ -585,7 +585,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                         <Building2 size={11} /> Marcar para traslado
                                     </button>
                                     <button onClick={() => logDeadStockAction('liquidate')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-chart-1-text bg-chart-1/10/80 border border-chart-1/30/80 rounded-xl hover:bg-chart-1/10/80 transition-colors">
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl hover:bg-chart-1/10 transition-colors">
                                         <TrendingDown size={11} /> Marcar para liquidación
                                     </button>
                                 </div>

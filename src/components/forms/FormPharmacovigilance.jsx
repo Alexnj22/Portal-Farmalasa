@@ -94,7 +94,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     </div>
                     
                     {/* NOTA INFORMATIVA */}
-                    <div className="mt-3 flex items-start gap-2.5 bg-chart-3/10/60 p-3.5 rounded-2xl border border-purple-100/60 shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)]">
+                    <div className="mt-3 flex items-start gap-2.5 bg-chart-3/10 p-3.5 rounded-2xl border border-purple-100/60 shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)]">
                          <FileText size={14} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5}/>
                          <p className="text-[10px] text-purple-800 font-bold leading-relaxed">
                             El referente elabora y envía los reportes semestrales a la Dirección General de Medicamentos.
@@ -107,7 +107,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
                         Autorización de la SRS (PDF/IMG)
                     </label>
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10/50 border-purple-300 hover:bg-chart-3/10/80' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10/30 hover:border-purple-300/60'}`}>
+                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10 border-purple-300 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10 hover:border-purple-300/60'}`}>
                         <input 
                             type="file"
                             accept="application/pdf,image/jpeg,image/png,image/webp"

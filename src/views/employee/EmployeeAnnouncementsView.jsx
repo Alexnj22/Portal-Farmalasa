@@ -35,8 +35,8 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         : ann.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
         : ann.targetType === 'ROLE'
-        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-3/30/50"><User size={11} strokeWidth={2} /> Cargo</span>
-        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-4/30/50"><User size={11} strokeWidth={2} /> Personal</span>;
+        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-3/30"><User size={11} strokeWidth={2} /> Cargo</span>
+        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-4/30"><User size={11} strokeWidth={2} /> Personal</span>;
 
     return (
         <div
@@ -322,8 +322,8 @@ const UnreadStack = memo(({ list, onRead }) => {
         : current.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-success-text bg-success/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
         : current.targetType === 'ROLE'
-        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-chart-3/30/60"><User size={10} strokeWidth={2.5}/> Cargo</span>
-        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-chart-4/30/60"><User size={10} strokeWidth={2.5}/> Personal</span>;
+        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-chart-3/30"><User size={10} strokeWidth={2.5}/> Cargo</span>
+        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-chart-4/30"><User size={10} strokeWidth={2.5}/> Personal</span>;
 
     return (
         <div className="flex flex-col items-center w-full">
@@ -485,7 +485,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                                     <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>
-                                                <div className="bg-chart-5/10/80 border border-cyan-100 rounded-xl p-2.5">
+                                                <div className="bg-chart-5/10 border border-cyan-100 rounded-xl p-2.5">
                                                     <p className="text-[8px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                                 </div>

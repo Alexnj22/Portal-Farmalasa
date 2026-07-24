@@ -173,7 +173,7 @@ const BranchTabGeneral = ({
             {/* ISLA 3: CONTACTO */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Phone size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Canales de Contacto</h4>

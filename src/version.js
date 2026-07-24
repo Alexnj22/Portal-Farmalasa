@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.0';
+export const APP_VERSION = '2.52.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.1 — fix(theme): T7.1 — corrige clases de opacidad doble generadas
+// por el pase global de v2.52.0 (v2.52.1).
+//
+// Bug real encontrado al revisar los archivos "restantes" (los que el
+// pase global no tocó por completo): cuando el original ya tenía un
+// sufijo de opacidad propio (ej. `bg-blue-50/50`, `border-purple-400`
+// usado junto a otro modificador), el regex de sustitución igual hacía
+// match en `bg-blue-50` (el `\b` de word-boundary corta ahí) y insertaba
+// el token con SU PROPIA opacidad por defecto sin quitar la que ya
+// estaba — resultado: clases inválidas de doble opacidad como
+// `bg-chart-1/10/50` o `border-chart-3/30/50`, que Tailwind no reconoce
+// (no generan ninguna clase real, la propiedad simplemente no se aplica,
+// sin error visible).
+//
+// 49 archivos, 185 clases rotas — todas con la misma forma
+// `(chart-N(-text)?|success|warning|danger)/NN/MM`, corregidas
+// conservando el primer valor de opacidad (el que el pase global ya
+// había calibrado como "tinte suave") y descartando el segundo, residual
+// del valor original. Build verificado después del fix; grep de
+// confirmación sobre todo src/views + src/components no encuentra más
+// coincidencias del patrón roto.
 
 // v2.52.0 — refactor(theme): T7.1 — pase global sobre 118 archivos
 // (v2.52.0).

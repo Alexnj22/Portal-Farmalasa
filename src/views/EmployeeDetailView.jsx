@@ -429,7 +429,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </div>
                         </div>
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className="p-2.5 bg-chart-1/10 text-brand rounded-xl shadow-sm border border-chart-1/30/50"><Briefcase size={18} strokeWidth={2.5}/></div>
+                            <div className="p-2.5 bg-chart-1/10 text-brand rounded-xl shadow-sm border border-chart-1/30"><Briefcase size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Antigüedad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-content truncate">{tenure}</p>
@@ -845,7 +845,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     } else if (hasDisab) {
                                                         cellBg = 'bg-danger/10 border border-danger/30';
                                                     } else {
-                                                        cellBg = 'hover:bg-chart-1/10/60';
+                                                        cellBg = 'hover:bg-chart-1/10';
                                                     }
 
                                                     return (
@@ -919,7 +919,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         ? { bg: 'bg-danger/10',    border: 'border-danger/30',    text: 'text-danger-text',    badge: 'bg-danger/10 text-danger-text border-danger/30',       leftBorder: 'border-danger/40',    Icon: Stethoscope, label: 'Incapacidad',
                                                             hover: 'hover:bg-danger/10 hover:border-danger/40 hover:shadow-[0_8px_24px_rgba(239,68,68,0.12)]' }
                                                         : hasHours
-                                                        ? { bg: 'bg-chart-4/10/60', border: 'border-chart-4/30/60', text: 'text-chart-4-text', badge: 'bg-chart-4/10 text-chart-4-text border-chart-4/30', leftBorder: 'border-chart-4/40', Icon: Clock,       label: 'Permiso por Horas',
+                                                        ? { bg: 'bg-chart-4/10', border: 'border-chart-4/30', text: 'text-chart-4-text', badge: 'bg-chart-4/10 text-chart-4-text border-chart-4/30', leftBorder: 'border-chart-4/40', Icon: Clock,       label: 'Permiso por Horas',
                                                             hover: 'hover:bg-chart-4/10 hover:border-chart-4/40 hover:shadow-[0_8px_24px_rgba(249,115,22,0.12)]' }
                                                         : { bg: 'bg-warning/10',  border: 'border-warning/30',  text: 'text-warning-text',  badge: 'bg-warning/10 text-warning-text border-warning/30',  leftBorder: 'border-warning/40',  Icon: FileText,    label: 'Permiso',
                                                             hover: 'hover:bg-warning/10 hover:border-warning/40 hover:shadow-[0_8px_24px_rgba(245,158,11,0.12)]' };
@@ -1026,7 +1026,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         const isToday = dia.day === todayName; 
 
                                                         return (
-                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-surface-card' : 'opacity-50 grayscale bg-surface-card-hover/50'} ${isToday ? 'bg-chart-1/10/50 ring-1 ring-brand/20 shadow-[inset_0_0_20px_rgba(0,82,204,0.05)]' : ''}`}>
+                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-surface-card' : 'opacity-50 grayscale bg-surface-card-hover/50'} ${isToday ? 'bg-chart-1/10 ring-1 ring-brand/20 shadow-[inset_0_0_20px_rgba(0,82,204,0.05)]' : ''}`}>
                                                                 
                                                                 {isToday && (
                                                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand shadow-[0_0_10px_rgba(0,82,204,0.4)]"></div>

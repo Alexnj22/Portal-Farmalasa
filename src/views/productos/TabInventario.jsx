@@ -275,7 +275,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterSixMonths
                                 ? 'bg-chart-4/10 border-chart-4/40 shadow-md shadow-orange-100/80 -translate-y-px'
-                                : 'bg-white border-slate-100 hover:border-chart-4/30 hover:bg-chart-4/10/40'
+                                : 'bg-white border-slate-100 hover:border-chart-4/30 hover:bg-chart-4/10'
                         }`}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-white' : 'bg-chart-4/10'}`}>
                             <CalendarClock size={15} className="text-chart-4-text" />
@@ -296,7 +296,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                                 filterAreaVenc
                                     ? 'bg-danger/10 border-rose-300 shadow-md shadow-rose-100/80 -translate-y-px'
-                                    : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10/40'
+                                    : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10'
                             }`}>
                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-white' : 'bg-danger/10'}`}>
                                 <PackageX size={15} className="text-danger-text" />
@@ -459,10 +459,10 @@ export default function TabInventario({ searchTerm = '' }) {
                                     index={i}
                                     onClick={() => handleExpand(group.erp_sucursal_id, group.erp_product_id)}
                                     className={
-                                        isExpanded ? 'bg-chart-1/10/50' :
+                                        isExpanded ? 'bg-chart-1/10' :
                                         hasExpired ? 'bg-danger/10' :
                                         isSoon     ? 'bg-warning/10' :
-                                        isSixMo    ? 'bg-chart-4/10/20' : ''
+                                        isSixMo    ? 'bg-chart-4/10' : ''
                                     }
                                 >
                                     {selectedErp === null && (
@@ -540,7 +540,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
                                 {isExpanded && (
                                     <tr>
-                                        <td colSpan={colCount} className="p-0 border-b border-chart-1/30/60">
+                                        <td colSpan={colCount} className="p-0 border-b border-chart-1/30">
                                             <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
                                                 {expandLoading.has(key) ? (
                                                     <div className="flex items-center gap-2 text-content-3 py-2">

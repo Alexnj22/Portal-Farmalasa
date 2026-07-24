@@ -357,7 +357,7 @@ const RolesView = ({ openModal }) => {
                 )}
 
                 {hasDualReporting && !isExporting && (
-                    <div className="absolute -bottom-4 bg-chart-3/10/90 text-chart-3-text text-[7.5px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border border-chart-3/30/50 shadow-sm z-10 flex items-start justify-center gap-1 w-[90%] leading-tight text-center">
+                    <div className="absolute -bottom-4 bg-chart-3/10 text-chart-3-text text-[7.5px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border border-chart-3/30 shadow-sm z-10 flex items-start justify-center gap-1 w-[90%] leading-tight text-center">
                         <GitMerge size={9} className="shrink-0 mt-[1px]" />
                         <span className="whitespace-normal break-words">{secondaryParentName}</span>
                     </div>
@@ -565,7 +565,7 @@ const RolesView = ({ openModal }) => {
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
                         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-[100] lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
                             <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
-                                ? 'bg-surface-card border border-warning/40/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] group-hover/panel:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 }`}>
 
@@ -716,7 +716,7 @@ const RolesView = ({ openModal }) => {
                                         <div
                                             key={role.id}
                                             className={`p-5 rounded-[2rem] flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
-                                                ? 'bg-surface-card backdrop-blur-2xl border border-warning/40/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] animate-subtle-shake z-10' : isExternal
+                                                ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08)] animate-subtle-shake z-10' : isExternal
                                                     ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-slate-300 shadow-sm hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1'
                                                     : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-surface-card hover:-translate-y-1'
                                                 }`}
@@ -760,7 +760,7 @@ const RolesView = ({ openModal }) => {
                                                             )}
 
                                                             {hasDualReporting && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10/80 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
+                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
                                                                     <GitMerge size={10} className="shrink-0 mt-[1px]" /> Mat: {getSuperiorName(role.secondary_parent_role_id)}
                                                                 </div>
                                                             )}

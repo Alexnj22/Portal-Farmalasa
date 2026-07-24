@@ -265,7 +265,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {/* Cajas especiales — E1, E2… */}
                 {cajasEspeciales.length > 0 && (
-                    <div className="p-3 rounded-2xl border border-chart-3/30 bg-chart-3/10/60 flex flex-col gap-2">
+                    <div className="p-3 rounded-2xl border border-chart-3/30 bg-chart-3/10 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                             <Package size={13} className="text-chart-3-text shrink-0" />
                             <span className="text-[11px] font-semibold text-chart-3-text flex-1">Cajas especiales</span>

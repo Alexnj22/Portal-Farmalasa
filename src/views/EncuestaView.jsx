@@ -923,7 +923,7 @@ export default function EncuestaView() {
                                             {bloque.id === 2 && jefesScoreboard && (
                                                 <div className="mx-4 mt-3 mb-2 space-y-2">
                                                     {/* Colabs evaluando jefes de sala */}
-                                                    <div className="rounded-xl border border-chart-1/30 bg-chart-1/10/40 p-3">
+                                                    <div className="rounded-xl border border-chart-1/30 bg-chart-1/10 p-3">
                                                         <p className="text-[10px] font-black text-chart-1-text uppercase tracking-wider mb-2.5">
                                                             Empleados evaluando a su Jefe/a de Sala
                                                         </p>
@@ -974,7 +974,7 @@ export default function EncuestaView() {
                                                     </div>
 
                                                     {/* Jefes evaluando a su jefe inmediato (agrupado) */}
-                                                    <div className="rounded-xl border border-chart-3/30 bg-chart-3/10/40 p-3">
+                                                    <div className="rounded-xl border border-chart-3/30 bg-chart-3/10 p-3">
                                                         <p className="text-[10px] font-black text-chart-3-text uppercase tracking-wider mb-1">
                                                             Jefes evaluando a su Jefe Inmediato
                                                         </p>
@@ -992,7 +992,7 @@ export default function EncuestaView() {
                                                                 const groupScore = blockScore(jefes, bloque.indices, invertedIndices);
                                                                 const gsl = groupScore ? scoreLabel(groupScore) : null;
                                                                 return (
-                                                                    <div key={supervisor} className={gi < arr.length - 1 ? 'mb-3 pb-3 border-b border-chart-3/30/60' : ''}>
+                                                                    <div key={supervisor} className={gi < arr.length - 1 ? 'mb-3 pb-3 border-b border-chart-3/30' : ''}>
                                                                         <div className="flex items-center justify-between mb-2">
                                                                             <span className="text-[9px] font-black text-chart-3-text uppercase tracking-wide">
                                                                                 → {supervisor}
@@ -1245,7 +1245,7 @@ export default function EncuestaView() {
                                                 return (
                                                     <React.Fragment key={i}>
                                                     <tr
-                                                        className={`border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40 cursor-pointer ${isExpanded ? 'bg-chart-1/10/30' : ''}`}
+                                                        className={`border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40 cursor-pointer ${isExpanded ? 'bg-chart-1/10' : ''}`}
                                                         onClick={() => setExpandedPersonIdx(isExpanded ? null : i)}>
                                                         <td className="px-4 py-2.5">
                                                             <div className="flex items-center gap-2.5">
@@ -1290,7 +1290,7 @@ export default function EncuestaView() {
                                                         </td>
                                                     </tr>
                                                     {isExpanded && (
-                                                        <tr className="bg-chart-1/10/20">
+                                                        <tr className="bg-chart-1/10">
                                                             <td colSpan={BLOQUES.length + 4} className="px-4 pb-4 pt-0">
                                                                 <div className="bg-surface-card rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-1">
                                                                     {BLOQUES.map(bloque => {
@@ -1414,7 +1414,7 @@ export default function EncuestaView() {
                                                     generateAiSummary(seg.comments, seg.key);
                                                 }}
                                                 title="Regenerar"
-                                                className="p-1.5 rounded-lg text-content-3 hover:text-chart-3-text hover:bg-chart-3/10/70 transition-all">
+                                                className="p-1.5 rounded-lg text-content-3 hover:text-chart-3-text hover:bg-chart-3/10 transition-all">
                                                 <RotateCcw size={11} strokeWidth={2.5} />
                                             </button>
                                         )}
@@ -1422,7 +1422,7 @@ export default function EncuestaView() {
                                             <button
                                                 onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}
                                                 title={isCollapsed ? 'Expandir' : 'Minimizar'}
-                                                className="p-1.5 rounded-lg text-content-3 hover:text-chart-3-text hover:bg-chart-3/10/70 transition-all">
+                                                className="p-1.5 rounded-lg text-content-3 hover:text-chart-3-text hover:bg-chart-3/10 transition-all">
                                                 {isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}
                                             </button>
                                         )}
@@ -1438,7 +1438,7 @@ export default function EncuestaView() {
                                         </div>
                                         <div className="space-y-2.5">
                                             {[1, 0.8, 0.6, 0.75, 0.5].map((w, i) => (
-                                                <div key={i} className="h-1.5 rounded-full bg-chart-3/10/80 animate-pulse" style={{ width: `${w * 100}%`, animationDelay: `${i * 0.1}s` }} />
+                                                <div key={i} className="h-1.5 rounded-full bg-chart-3/10 animate-pulse" style={{ width: `${w * 100}%`, animationDelay: `${i * 0.1}s` }} />
                                             ))}
                                         </div>
                                     </div>

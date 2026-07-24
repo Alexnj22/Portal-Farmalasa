@@ -98,7 +98,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
     return (
         <div className={`p-5 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
             isEditingThis
-                ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-warning/40/80 shadow-[0_8px_30px_rgba(245,158,11,0.15),inset_0_2px_10px_rgba(255,255,255,0.9)] animate-subtle-shake z-30'
+                ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.15),inset_0_2px_10px_rgba(255,255,255,0.9)] animate-subtle-shake z-30'
                 : isArchived
                     ? 'border-border-card opacity-80 hover:opacity-100 shadow-[0_4px_16px_rgba(0,0,0,0.03)] bg-surface-card backdrop-blur-xl hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] z-10'
                     : 'border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_6px_20px_rgba(0,0,0,0.04)] hover:shadow-[inset_0_1px_6px_rgba(255,255,255,0.8),0_15px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] z-10 hover:z-20'
@@ -418,7 +418,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
             {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
             <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-[50] transform-gpu">
-                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-warning/40/80 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.03)]'}`}>
+                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.03)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-10">
                         <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">

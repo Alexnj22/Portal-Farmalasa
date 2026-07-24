@@ -96,7 +96,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                         <FlaskConical size={14} className="text-brand" />
                         <span className="text-[12px] font-black text-content">Visibilidad de laboratorios</span>
                         {hiddenCount > 0 && (
-                            <span className="text-[9px] font-black text-brand bg-chart-1/10/80 border border-chart-1/30/70 px-1.5 py-0.5 rounded-full leading-none">
+                            <span className="text-[9px] font-black text-brand bg-chart-1/10 border border-chart-1/30 px-1.5 py-0.5 rounded-full leading-none">
                                 {hiddenCount} oculto{hiddenCount !== 1 ? 's' : ''}
                             </span>
                         )}

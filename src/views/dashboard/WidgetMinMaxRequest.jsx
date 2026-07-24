@@ -177,7 +177,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         )}
 
         {/* Aviso: valores en unidades + factor de presentación */}
-        <div className="flex items-start gap-2 rounded-xl bg-chart-1/10/70 border border-chart-1/30 px-3 py-2">
+        <div className="flex items-start gap-2 rounded-xl bg-chart-1/10 border border-chart-1/30 px-3 py-2">
           <Package size={13} className="text-chart-1-text mt-0.5 shrink-0" />
           <div className="text-[10px] text-chart-1-text font-medium leading-snug">
             MIN y MAX se ingresan en <b>unidades</b>.

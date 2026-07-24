@@ -311,8 +311,8 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         const configs = {
             VACATION: { label: 'Vacaciones', icon: Palmtree, bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning', textDark: 'text-warning-text', iconBg: 'bg-warning/10' },
             DISABILITY: { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-danger/10', border: 'border-danger/30', text: 'text-danger', textDark: 'text-danger-text', iconBg: 'bg-danger/10' },
-            PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-chart-3/10/70', border: 'border-chart-3/30/60', text: 'text-chart-3-text', textDark: 'text-purple-800', iconBg: 'bg-chart-3/10' },
-            HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-chart-3/10/70', border: 'border-chart-3/30/60', text: 'text-chart-3-text', textDark: 'text-indigo-800', iconBg: 'bg-chart-3/10' }
+            PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-chart-3/10', border: 'border-chart-3/30', text: 'text-chart-3-text', textDark: 'text-purple-800', iconBg: 'bg-chart-3/10' },
+            HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-chart-3/10', border: 'border-chart-3/30', text: 'text-chart-3-text', textDark: 'text-indigo-800', iconBg: 'bg-chart-3/10' }
         };
         return { ...configs[event.type], note: event.note };
     }, [history, getDateOfDay]);

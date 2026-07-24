@@ -562,7 +562,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                 const hasData      = hasSala || hasBodega;
 
                 const rowBg =
-                    hasData ? 'bg-chart-1/10/60 border-chart-1/30' : 'bg-surface-card-hover border-slate-100';
+                    hasData ? 'bg-chart-1/10 border-chart-1/30' : 'bg-surface-card-hover border-slate-100';
 
                 return (
                     <div key={loc.branch_id} className={`rounded-xl border px-3.5 py-2.5 transition-colors ${rowBg}`}>
@@ -934,12 +934,12 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     // ── Expanded-row theme tokens ────────────────────────────────────────────
     const xk = {
         container: 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-brand/[0.12]',
-        loadingRow: 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-chart-1/30/60',
+        loadingRow: 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-chart-1/30',
         loadingText: 'text-content-3',
         alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
         alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',
         sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-content-2',
-        photoBtn: 'border-slate-200 hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10/30',
+        photoBtn: 'border-slate-200 hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10',
         photoSubText: 'text-content-3',
         photoUploadIcon: 'text-content-3 group-hover:text-brand',
         photoUploadLabel: 'text-content-3 group-hover:text-brand',

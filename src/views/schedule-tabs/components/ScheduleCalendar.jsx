@@ -456,7 +456,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                         <div className="flex flex-col gap-[2px] mt-auto">
                                             {timeBlocks.map((block, idx) => {
                                                 const isBreak = block.type !== 'work';
-                                                const bgClass = block.type === 'lunch' ? 'bg-chart-4/10/80 text-chart-4-text border border-chart-4/30/50' : 
+                                                const bgClass = block.type === 'lunch' ? 'bg-chart-4/10 text-chart-4-text border border-chart-4/30' : 
                                                                 block.type === 'lactation' ? 'bg-pink-50/80 text-pink-600 border border-pink-100/50' : 
                                                                 'text-content-2';
                                                 
@@ -513,8 +513,8 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
     return (
         <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
             <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
-                <div className="min-h-[72px] h-full bg-chart-3/10/80 backdrop-blur-xl border border-chart-3/30/60 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
-                    <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30/60 overflow-hidden flex items-center justify-center shrink-0">
+                <div className="min-h-[72px] h-full bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                    <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30 overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-indigo-200" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden gap-0.5">
@@ -523,7 +523,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                             <Building2 size={9} className="text-chart-3-text shrink-0" strokeWidth={2} />
                             <span className="text-[9px] font-bold text-chart-3-text truncate">{homeBranch?.name || 'Otra sucursal'}</span>
                         </div>
-                        <div className="mt-0.5 px-1.5 py-[2px] bg-chart-3/10 border border-chart-3/30/80 rounded-full w-fit">
+                        <div className="mt-0.5 px-1.5 py-[2px] bg-chart-3/10 border border-chart-3/30 rounded-full w-fit">
                             <span className="text-[7px] font-black uppercase tracking-widest text-chart-3-text">APOYO</span>
                         </div>
                     </div>
@@ -836,7 +836,7 @@ const ScheduleCalendar = memo(({
                                     {!showCoverageSearch ? (
                                         <button
                                             onClick={() => setShowCoverageSearch(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-content-2 hover:border-indigo-400 hover:text-chart-3-text hover:bg-chart-3/10/30 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-content-2 hover:border-indigo-400 hover:text-chart-3-text hover:bg-chart-3/10 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
                                         >
                                             <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
                                         </button>

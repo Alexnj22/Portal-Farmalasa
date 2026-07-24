@@ -109,7 +109,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             </div>
 
             {/* Nota informativa */}
-            <div className="bg-chart-1/10/60 border border-chart-1/30 rounded-xl p-3 flex gap-2">
+            <div className="bg-chart-1/10 border border-chart-1/30 rounded-xl p-3 flex gap-2">
                 <FileText size={13} className="text-chart-1-text shrink-0 mt-0.5" strokeWidth={2.5} />
                 <p className="text-[10px] text-chart-1-text leading-snug">
                     Las horas trabajadas se calcularán automáticamente según el turno seleccionado y se acumularán en el saldo de horas debidas del empleado.

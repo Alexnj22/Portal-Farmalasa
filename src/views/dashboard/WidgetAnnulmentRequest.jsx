@@ -266,7 +266,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
     {
       key: 'annul',     icon: Ban,       label: 'Anulación de Factura',
       desc: isCCF ? 'CCF — requiere nota de crédito' : `Período de gracia: ${GRACE_DAYS} días`,
-      color: 'text-danger-text',   bg: 'bg-danger/10 border-danger/30/70',   iconBg: 'bg-danger/10',
+      color: 'text-danger-text',   bg: 'bg-danger/10 border-danger/30',   iconBg: 'bg-danger/10',
     },
     {
       key: 'pay_change', icon: CreditCard, label: 'Cambio de Forma de Pago',
@@ -276,12 +276,12 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
     {
       key: 'vendor_change', icon: UserCog, label: 'Cambio de Vendedor',
       desc: vendor ? vendor.name.split(' ')[0] : `Vendedor: #${inv.cod_vendedor || 'N/A'}`,
-      color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30/70', iconBg: 'bg-chart-3/10',
+      color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30', iconBg: 'bg-chart-3/10',
     },
     {
       key: 'client_change', icon: Contact, label: 'Cambio de Cliente',
       desc: `Actual: ${inv.cliente || 'Sin nombre'}`,
-      color: 'text-chart-9-text', bg: 'bg-chart-9/10 border-chart-9/30/70', iconBg: 'bg-chart-9/10',
+      color: 'text-chart-9-text', bg: 'bg-chart-9/10 border-chart-9/30', iconBg: 'bg-chart-9/10',
     },
   ];
 

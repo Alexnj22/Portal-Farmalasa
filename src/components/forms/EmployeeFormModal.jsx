@@ -1302,7 +1302,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <GraduationCap size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Nivel Académico</h4>
@@ -1406,7 +1406,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 })()}
 
                                 {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && !(formData.education_level === 'UNIVERSITARIO' && formData.has_maestria) && (
-                                    <div className="md:col-span-2 bg-chart-3/10/40 rounded-[1.25rem] p-3.5 border border-chart-3/30/60 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="md:col-span-2 bg-chart-3/10 rounded-[1.25rem] p-3.5 border border-chart-3/30 animate-in fade-in zoom-in-95 duration-200">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input type="checkbox" checked={!!formData.is_studying} onChange={(e) => handleSelectChange('is_studying', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
                                             <span className="text-[11px] font-black text-chart-3-text uppercase tracking-wide">¿Actualmente estudiando?</span>
@@ -1442,7 +1442,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && (() => {
                                     const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
                                     return (
-                                        <div className="md:col-span-2 bg-chart-3/10/40 rounded-[1.25rem] p-3.5 border border-purple-100/60 animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="md:col-span-2 bg-chart-3/10 rounded-[1.25rem] p-3.5 border border-purple-100/60 animate-in fade-in zoom-in-95 duration-200">
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input type="checkbox" checked={!!formData.has_maestria} onChange={(e) => handleSelectChange('has_maestria', e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
                                                 <span className="text-[11px] font-black text-chart-3-text uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>
@@ -1924,7 +1924,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         {isExterna && (
                                             <div className="relative z-20 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-chart-9-text ml-1 mb-1.5 block">Farmacias Asignadas</label>
-                                                <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10/50 border border-chart-9/30/60 rounded-[1rem] min-h-[44px]">
+                                                <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10 border border-chart-9/30 rounded-[1rem] min-h-[44px]">
                                                     {farmaciasOpts.map(opt => {
                                                         const assigned = (formData.assigned_branch_ids || []).map(String);
                                                         const isActive = assigned.includes(opt.value);
@@ -1972,7 +1972,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         )}
 
                         {formData.contract_type === 'PRACTICAS' && (
-                            <div className="bg-chart-1/10/70 border border-chart-1/30/70 rounded-2xl p-3.5 flex items-start gap-3">
+                            <div className="bg-chart-1/10 border border-chart-1/30 rounded-2xl p-3.5 flex items-start gap-3">
                                 <GraduationCap size={18} className="text-chart-1-text shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <p className="text-[11px] text-chart-1-text font-medium leading-tight">
                                     <span className="font-black">Contrato de Aprendizaje (Art. 61-70 CT).</span> Requiere forma escrita y aprobación/inscripción ante el Ministerio de Trabajo (Art. 61) para ser válido como tal — si no se tramita, se presume relación laboral ordinaria. Salario mínimo reducido: no menor al 50% del mínimo legal durante el primer año, 75% durante el segundo, 100% desde el tercero (Art. 69). Ninguna de las partes incurre en responsabilidad por la terminación del contrato al llegar a su fin (Art. 68).

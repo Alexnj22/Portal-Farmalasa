@@ -265,7 +265,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
             
             {isTransfer && !isPromotion && !isSupport && (
-                <div className="bg-chart-1/10/80 border border-chart-1/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
+                <div className="bg-chart-1/10 border border-chart-1/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <MapPin className="text-brand shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-chart-1-text">Cambio de Sucursal</p>
@@ -275,7 +275,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {isSupport && (
-                <div className="bg-chart-4/10/80 border border-chart-4/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
+                <div className="bg-chart-4/10 border border-chart-4/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <Info className="text-chart-4-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-chart-4-text">Apoyo Temporal</p>
@@ -303,7 +303,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             {/* 🗓️ ACCIÓN PROGRAMADA — tipos que aplican cambios al expediente con fecha futura */}
             {['PROMOTION', 'TRANSFER', 'SALARY', 'CODE_CHANGE', 'TERMINATION'].includes(type) &&
              formData?.date && formData.date > new Date().toLocaleDateString('en-CA') && (
-                <div className="bg-chart-3/10/80 border border-chart-3/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
+                <div className="bg-chart-3/10 border border-chart-3/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <CalendarClock className="text-chart-3-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-chart-3-text">Acción Programada</p>
@@ -324,7 +324,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {(isVacation || (isDisability && formData?.disabilityType === 'Maternidad')) && (
-                <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-danger/10 border-danger/40 shadow-[0_4px_15px_rgba(239,68,68,0.15)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-chart-4/10/90 border-chart-4/40 shadow-[0_4px_15px_rgba(249,115,22,0.15)]' : 'bg-success/10 border-success/30'}`}>
+                <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-danger/10 border-danger/40 shadow-[0_4px_15px_rgba(239,68,68,0.15)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_4px_15px_rgba(249,115,22,0.15)]' : 'bg-success/10 border-success/30'}`}>
                     {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-chart-4-text shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-success shrink-0 mt-0.5" size={18}/>}
                     <div>
                         <p className={`text-[11px] font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success'}`}>Auditoría Legal</p>
@@ -490,7 +490,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {type && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isPromotion && (
-                    <div className="col-span-1 md:col-span-2 relative z-[30] animate-in fade-in bg-chart-1/10/50 p-4 border border-chart-1/30 rounded-[1.5rem]">
+                    <div className="col-span-1 md:col-span-2 relative z-[30] animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-[1.5rem]">
                         <div className="flex items-center justify-between mb-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-chart-1-text">Nuevo Cargo Asignado</label>
                             <label className="flex items-center gap-2 cursor-pointer">

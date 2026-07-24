@@ -63,7 +63,7 @@ const FormAuditDetail = ({ data }) => {
                     </div>
 
                     <div className={itemContainerClass}>
-                        <div className={`${iconBoxClass} bg-chart-1/10/50`}>
+                        <div className={`${iconBoxClass} bg-chart-1/10`}>
                             <Activity size={16} className="text-brand" />
                         </div>
                         <div className="min-w-0 pt-0.5">

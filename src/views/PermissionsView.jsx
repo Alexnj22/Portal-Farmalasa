@@ -346,7 +346,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                 title={PERM_DESC[pt.key]}
                                 className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-300 ${
                                     needsView ? 'opacity-20 pointer-events-none' : ''
-                                } ${isFlashing ? (val ? 'bg-chart-1/10/70 scale-[1.02]' : 'bg-danger/10 scale-[0.99]') : ''}`}
+                                } ${isFlashing ? (val ? 'bg-chart-1/10 scale-[1.02]' : 'bg-danger/10 scale-[0.99]') : ''}`}
                             >
                                 <div className="flex items-center gap-2">
                                     <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
@@ -411,7 +411,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                 return (
                                     <div key={tab.key} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${
                                         tabPerm.can_view
-                                            ? 'bg-chart-1/10/50 border-chart-1/30/40'
+                                            ? 'bg-chart-1/10 border-chart-1/30'
                                             : 'bg-surface-card border-border-card'
                                     }`}>
                                         <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
@@ -896,7 +896,7 @@ const PermissionsView = () => {
                                 return (
                                 <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
                                     isRoleSU
-                                        ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-300/5 backdrop-blur-xl border-warning/40/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
+                                        ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-300/5 backdrop-blur-xl border-warning/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
                                         : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_2px_12px_rgba(0,0,0,0.04)]'
                                 }`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-amber-300/30 blur-xl pointer-events-none" />}
@@ -938,7 +938,7 @@ const PermissionsView = () => {
                                         </div>
                                         {/* Warning badge */}
                                         {isRoleSU && (
-                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning/12 border border-warning/40/30 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning/12 border border-warning/40 animate-in fade-in slide-in-from-bottom-1 duration-300">
                                                 <Zap size={8} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                                 <p className="text-[8px] font-black text-warning-text uppercase tracking-wide">Permisos ignorados</p>
                                             </div>

@@ -103,7 +103,7 @@ function ItemsExpand({ receiptId }) {
                         {items.map((it) => {
                             const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
                             return (
-                                <tr key={it.linea_num} className="hover:bg-chart-1/10/30 transition-colors">
+                                <tr key={it.linea_num} className="hover:bg-chart-1/10 transition-colors">
                                     <td className="px-3 py-2 text-content-3 tabular-nums">{it.linea_num}</td>
                                     <td className="px-3 py-2 text-content-3 tabular-nums font-mono">{it.erp_product_id ?? '—'}</td>
                                     <td className="px-3 py-2 text-content-2 font-medium">{it.descripcion || '—'}</td>

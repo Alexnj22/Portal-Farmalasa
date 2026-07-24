@@ -703,7 +703,7 @@ export default function RecepcionModal({
                                                 isConfirmed ? 'bg-success/10 border-success/30 cursor-default' :
                                                 isFaltante  ? 'bg-surface-card-hover border-slate-100 cursor-default opacity-50' :
                                                 isDamaged   ? 'bg-warning/10 border-warning/40 hover:border-warning active:scale-[0.97] cursor-pointer' :
-                                                              'bg-chart-3/10/60 border-chart-3/30 hover:border-chart-3 active:scale-[0.97] cursor-pointer'
+                                                              'bg-chart-3/10 border-chart-3/30 hover:border-chart-3 active:scale-[0.97] cursor-pointer'
                                             }`}>
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
                                                 isConfirmed ? 'bg-success' :

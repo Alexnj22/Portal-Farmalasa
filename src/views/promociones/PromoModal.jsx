@@ -235,7 +235,7 @@ function AddProductInline({ onAdd }) {
             <button
                 type="button"
                 onClick={() => setShow(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-chart-1/30/60 rounded-2xl text-[11px] font-semibold text-chart-1-text hover:border-chart-1 hover:text-chart-1-text hover:bg-chart-1/10/50 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-chart-1/30 rounded-2xl text-[11px] font-semibold text-chart-1-text hover:border-chart-1 hover:text-chart-1-text hover:bg-chart-1/10 transition-all"
             >
                 <Plus size={12} /> Agregar producto a la promoción
             </button>

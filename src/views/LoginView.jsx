@@ -484,7 +484,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <div className="rounded-[2.5rem] p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[0_32px_80px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6">
                         <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-[2.5rem]" />
                         <div className="relative flex flex-col items-center gap-3">
-                            <div className="w-14 h-14 rounded-[1.25rem] bg-warning/10 border border-warning/40/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                            <div className="w-14 h-14 rounded-[1.25rem] bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
                             <h3 className="text-[22px] font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>

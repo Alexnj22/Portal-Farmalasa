@@ -198,7 +198,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 <div className="relative w-24 h-24 flex items-center justify-center mb-8">
                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 rounded-full animate-spin [animation-duration:3s] blur-xl opacity-30"></div>
                     <div className="absolute inset-2 bg-gradient-to-bl from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:1.5s] blur-md opacity-50"></div>
-                    <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center border border-chart-3/30/60 shadow-inner z-10">
+                    <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center border border-chart-3/30 shadow-inner z-10">
                         <Sparkles size={28} strokeWidth={2.5} className="text-chart-3-text animate-pulse scale-110" />
                     </div>
                 </div>
@@ -270,7 +270,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
     return (
         <div className="w-full flex flex-col gap-4 animate-in fade-in duration-500">
             {/* RAZONAMIENTO */}
-            <div className="bg-chart-3/10/50 border border-purple-100 rounded-xl p-4 relative overflow-hidden shadow-sm">
+            <div className="bg-chart-3/10 border border-purple-100 rounded-xl p-4 relative overflow-hidden shadow-sm">
                 <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-purple-200 opacity-50 -rotate-12 pointer-events-none" strokeWidth={1} />
                 <h4 className="text-[10px] font-black text-chart-3-text uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><Sparkles size={12}/> Resumen de Gemini</h4>
                 <p className="text-[12px] font-bold text-content-2 leading-relaxed relative z-10 italic">"{aiResult?.ai_reasoning || 'Horario generado óptimamente.'}"</p>
@@ -328,7 +328,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                     <div className="flex flex-col h-full bg-white border border-chart-3/30 rounded-lg shadow-sm overflow-hidden hover:border-indigo-300 transition-colors group/cell">
                                                         
                                                         {/* Header de la celda (Selector) */}
-                                                        <div className="w-full bg-chart-3/10/30 hover:bg-chart-3/10 text-chart-3-text border-b border-indigo-50 transition-colors">
+                                                        <div className="w-full bg-chart-3/10 hover:bg-chart-3/10 text-chart-3-text border-b border-indigo-50 transition-colors">
                                                             <LiquidSelect
                                                                 nano
                                                                 bare
@@ -351,7 +351,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                                             <span className="opacity-40">-</span>
                                                                             <span>{formatAMPM(lunchStart)}</span>
                                                                         </div>
-                                                                        <div className="flex justify-center items-center bg-chart-4/10 text-chart-4-text rounded px-1.5 py-0.5 border border-chart-4/30/50">
+                                                                        <div className="flex justify-center items-center bg-chart-4/10 text-chart-4-text rounded px-1.5 py-0.5 border border-chart-4/30">
                                                                             <span>{formatAMPM(lunchStart)} - {formatAMPM(lunchEnd)}</span>
                                                                         </div>
                                                                         <div className="flex justify-between items-center px-1">

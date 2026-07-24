@@ -155,7 +155,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {screen === 1 && (
                 <div className="px-5 py-5 space-y-5">
                     {/* Page count card */}
-                    <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-chart-3/10/70 border border-violet-100/80">
+                    <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-chart-3/10 border border-violet-100/80">
                         <div className="w-12 h-12 rounded-2xl bg-chart-3 shadow-[0_4px_14px_rgba(139,92,246,0.4)] flex items-center justify-center shrink-0">
                             {loadingPages
                                 ? <Loader2 size={19} className="animate-spin text-white" />

@@ -330,7 +330,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 </div>
 
                 {coverageMeta && (
-                    <div className="mx-4 mt-3 px-3 py-2 bg-chart-3/10/80 border border-chart-3/30/80 rounded-2xl flex gap-2 items-start shrink-0">
+                    <div className="mx-4 mt-3 px-3 py-2 bg-chart-3/10 border border-chart-3/30 rounded-2xl flex gap-2 items-start shrink-0">
                         <Building2 size={13} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5} />
                         <p className="text-[10px] font-bold text-chart-3-text leading-snug">
                             Este turno sobreescribirá el horario de <strong>{coverageMeta.homeBranchName}</strong> para este día.
@@ -408,7 +408,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             
                             <div 
                                 onClick={() => setHasLunch(!hasLunch)}
-                                className="flex items-center justify-between bg-white/[0.4] border border-chart-4/30/50 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.4] border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 

@@ -23,7 +23,7 @@ const ERP_BRANCH_MAP = {
 const BRANCH_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 const NEUTRAL_THEME = { dot: '#64748B', pill: 'bg-surface-card-hover border-slate-200/70', label: 'text-content-2' };
-const VENCIDOS_THEME = { dot: '#E11D48', pill: 'bg-danger/10 border-danger/30/70', label: 'text-danger-text' };
+const VENCIDOS_THEME = { dot: '#E11D48', pill: 'bg-danger/10 border-danger/30', label: 'text-danger-text' };
 const DEFAULT_THEME = NEUTRAL_THEME;
 
 /* ─── SRS helpers ──────────────────────────────────────────────────────────── */
@@ -254,7 +254,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
         ) : (
           <button
             onClick={() => setFormOpen(true)}
-            className="shrink-0 flex items-center gap-0.5 text-[8px] font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30/80 px-1.5 py-0.5 rounded-full transition-colors"
+            className="shrink-0 flex items-center gap-0.5 text-[8px] font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full transition-colors"
           >
             <PackageMinus size={8} strokeWidth={2.5} />
             Reportar
@@ -674,7 +674,7 @@ export default function WidgetInventorySearch() {
           <div className="mt-1">
             <div className="flex items-center gap-2 mb-2 mt-1">
               <div className="h-px flex-1 bg-rose-200/60" />
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30/70 backdrop-blur-sm shadow-sm">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30 backdrop-blur-sm shadow-sm">
                 <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                 <span className="text-[10px] font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
                 <span className="w-px h-3 bg-rose-200 mx-1" />

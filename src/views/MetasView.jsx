@@ -616,7 +616,7 @@ export default function MetasView() {
               <tr className={`border-b ${divider} bg-surface-card-hover/80`}>
                 <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 bg-surface-card-hover ${muted}`}>Sucursal</th>
                 {MONTHS.slice(0,16).map(m => (
-                  <th key={m.label} className={`text-right px-2 py-2.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${muted} ${m.yr===2026 ? 'bg-chart-3/10/40' : ''}`}>
+                  <th key={m.label} className={`text-right px-2 py-2.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${muted} ${m.yr===2026 ? 'bg-chart-3/10' : ''}`}>
                     {m.label}
                   </th>
                 ))}
@@ -643,7 +643,7 @@ export default function MetasView() {
                       return (
                         <td key={mi}
                           className={`px-2 py-2 text-right text-[11px] whitespace-nowrap font-mono
-                            ${yr2026 ? 'bg-chart-3/10/30' : ''}
+                            ${yr2026 ? 'bg-chart-3/10' : ''}
                             ${st ? (status==='green'?'bg-success/10 text-success-text':status==='orange'?'bg-warning/10 text-warning-text':'bg-danger/10 text-danger-text') : 'text-content-3'}`}
                         >
                           {val == null ? <span className={muted}>—</span> : fmt(val)}
@@ -672,7 +672,7 @@ export default function MetasView() {
                 {Array.from({length:16},(_,mi) => {
                   const total = BRANCHES.reduce((a,b)=>a+(RAW[b][mi]||0),0);
                   return (
-                    <td key={mi} className={`px-2 py-2.5 text-right text-[11px] font-black whitespace-nowrap font-mono ${txt} ${MONTHS[mi].yr===2026?'bg-chart-3/10/30':''}`}>
+                    <td key={mi} className={`px-2 py-2.5 text-right text-[11px] font-black whitespace-nowrap font-mono ${txt} ${MONTHS[mi].yr===2026?'bg-chart-3/10':''}`}>
                       {fmtK(total)}
                     </td>
                   );

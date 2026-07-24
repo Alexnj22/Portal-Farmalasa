@@ -148,7 +148,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                         <p className="text-[9px] text-content-3 mt-0.5">Lo que darías</p>
                     )}
                 </div>
-                <div className="bg-chart-5/10/80 border border-cyan-100 rounded-2xl p-3">
+                <div className="bg-chart-5/10 border border-cyan-100 rounded-2xl p-3">
                     <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno que tomarías</p>
                     <p className="text-[12px] font-black text-chart-5-text">
                         {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
@@ -250,7 +250,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                 {req.type === 'SHIFT_CHANGE' && (
                     <div className="space-y-2">
                         {(meta.targetEmployeeName || meta.date) && (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-5/10/60 border border-chart-5/30/60">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-5/10 border border-chart-5/30">
                                 <RefreshCw size={13} className="text-chart-5-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                                     {meta.targetEmployeeName && (
@@ -271,7 +271,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                                 </p>
                             </div>
-                            <div className="bg-chart-5/10/80 border border-cyan-100 rounded-2xl p-3">
+                            <div className="bg-chart-5/10 border border-cyan-100 rounded-2xl p-3">
                                 <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                 <p className="text-[12px] font-black text-content-2">
                                     {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
@@ -890,7 +890,7 @@ const EmployeeRequestsView = () => {
                                 </p>
                                 {!myShiftOnDate && <p className="text-[9px] text-content-3 mt-0.5">Sin turno asignado</p>}
                             </div>
-                            <div className="bg-chart-5/10/80 border border-cyan-100 rounded-2xl p-3">
+                            <div className="bg-chart-5/10 border border-cyan-100 rounded-2xl p-3">
                                 <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">
                                     Turno de {targetEmp?.name?.split(' ')[0] || 'compañero'}
                                 </p>

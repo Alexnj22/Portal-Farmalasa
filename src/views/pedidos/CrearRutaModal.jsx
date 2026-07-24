@@ -511,7 +511,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     return (
                       <button key={item.key} onClick={() => toggleItem(item.key)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-white border-slate-200 hover:border-chart-3/30 hover:bg-chart-3/10/40'
+                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-white border-slate-200 hover:border-chart-3/30 hover:bg-chart-3/10'
                         }`}>
                         <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors ${
                           isSel ? 'bg-chart-3 border-chart-3' : 'border-slate-300'
@@ -608,7 +608,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   const dotCls = enc ? 'bg-warning' : 'bg-chart-3';
                   const cardCls = enc
                     ? 'bg-warning/10 border border-warning/30'
-                    : 'bg-chart-3/10/70 border border-chart-3/30';
+                    : 'bg-chart-3/10 border border-chart-3/30';
                   const timeCls = enc ? 'text-warning-text' : 'text-chart-3-text';
                   return (
                     <div key={stop._uid ?? `${stop.erp_sucursal_id}-${idx}`}>

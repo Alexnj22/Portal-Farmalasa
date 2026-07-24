@@ -122,7 +122,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block">
                             Credencial JVQF (PDF/IMG)
                         </label>
-                        <div className={`relative group border border-dashed rounded-2xl h-[50px] px-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer overflow-hidden ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-chart-1/10/50 border-chart-1/40 hover:bg-chart-1/10/80' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-white hover:border-brand/50'}`}>
+                        <div className={`relative group border border-dashed rounded-2xl h-[50px] px-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer overflow-hidden ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-white hover:border-brand/50'}`}>
                             <input 
                                 type="file" 
                                 accept="application/pdf,image/*" 
@@ -148,7 +148,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     <label className="text-[10px] font-black text-chart-3-text/80 uppercase tracking-widest ml-1 mb-2 block">
                         Inscripción de Regencia (PDF)
                     </label>
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10/50 border-purple-300 hover:bg-chart-3/10/80' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10/30 hover:border-purple-300/60'}`}>
+                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10 border-purple-300 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10 hover:border-purple-300/60'}`}>
                         <input 
                             type="file" 
                             accept=".pdf,image/*" 

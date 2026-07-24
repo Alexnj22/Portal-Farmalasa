@@ -20,13 +20,13 @@ const iconForType = (type = '') => {
 
 const tintForType = (type = '', metadata = {}, isDark = false) => {
     if (isDark) {
-        if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-amber-300 border-warning/40/20';
+        if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-amber-300 border-warning/40';
         if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
             return metadata?.status === 'REJECTED'
-                ? 'bg-danger/10 text-red-300 border-danger/40/20'
+                ? 'bg-danger/10 text-red-300 border-danger/40'
                 : 'bg-success/10 text-emerald-300 border-emerald-300/20';
         }
-        if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-blue-300 border-chart-1/40/20';
+        if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-blue-300 border-chart-1/40';
         return 'bg-surface-card text-white/60 border-border-card';
     }
     if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning border-warning/30';
@@ -274,12 +274,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         chipMuted: 'text-white/40',
         undoStrip: 'bg-white/[0.05]',
         undoText: 'text-white/60',
-        undoBtn: 'text-blue-300 hover:bg-chart-1/10 border-chart-1/40/25',
+        undoBtn: 'text-blue-300 hover:bg-chart-1/10 border-chart-1/40',
     } : {
         headerBorder: 'border-slate-200/60',
         title: 'text-content',
         rowHover: 'hover:bg-surface-card',
-        rowUnread: 'bg-chart-1/10/50',
+        rowUnread: 'bg-chart-1/10',
         rowTitle: 'text-content', rowTitleRead: 'text-content-2',
         rowBody: 'text-content-3',
         rowTime: 'text-content-3',
@@ -289,7 +289,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         chipMuted: 'text-content-3',
         undoStrip: 'bg-surface-card-hover/80',
         undoText: 'text-content-2',
-        undoBtn: 'text-brand hover:bg-chart-1/10 border-chart-1/30/70',
+        undoBtn: 'text-brand hover:bg-chart-1/10 border-chart-1/30',
     };
 
     const undoButton = (key, label = 'Deshacer') => (
@@ -317,11 +317,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                     hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-200
                     ${isDark
                         ? `shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)]
-                           ${hasUrgentAnn ? 'bg-danger/15 border-danger/40/30' : 'bg-white/[0.08] border-white/[0.14] hover:bg-white/[0.14]'}`
+                           ${hasUrgentAnn ? 'bg-danger/15 border-danger/40' : 'bg-white/[0.08] border-white/[0.14] hover:bg-white/[0.14]'}`
                         : `shadow-[0_8px_32px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.06)]
                            ${hasUrgentAnn
-                               ? 'bg-danger/10 border-danger/40/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
-                               : 'bg-surface-card border-chart-1/30/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
+                               ? 'bg-danger/10 border-danger/40 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
+                               : 'bg-surface-card border-chart-1/30 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
             >
                 {!isDark && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-[1.25rem] pointer-events-none" />}
                 {totalBadge > 0 ? (
@@ -420,13 +420,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     onClick={() => { setIsOpen(false); navigate('/my-announcements'); }}
                                     className={`w-full flex items-center gap-3 px-5 py-3 text-left border-b transition-colors group/ann
                                         ${hasUrgentAnn
-                                            ? (isDark ? 'bg-danger/[0.08] border-danger/40/15 hover:bg-danger/[0.14]' : 'bg-danger/10 border-danger/30 hover:bg-danger/10')
-                                            : (isDark ? 'bg-chart-1/[0.06] border-chart-1/40/10 hover:bg-chart-1/[0.12]' : 'bg-chart-1/10/50 border-chart-1/30/60 hover:bg-chart-1/10')}`}
+                                            ? (isDark ? 'bg-danger/[0.08] border-danger/40 hover:bg-danger/[0.14]' : 'bg-danger/10 border-danger/30 hover:bg-danger/10')
+                                            : (isDark ? 'bg-chart-1/[0.06] border-chart-1/40 hover:bg-chart-1/[0.12]' : 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10')}`}
                                 >
                                     <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0
                                         ${hasUrgentAnn
-                                            ? (isDark ? 'bg-danger/10 text-red-300 border-danger/40/20' : 'bg-danger/10 text-danger border-danger/30')
-                                            : (isDark ? 'bg-chart-1/10 text-blue-300 border-chart-1/40/20' : 'bg-chart-1/10/70 text-brand border-chart-1/30/70')}`}>
+                                            ? (isDark ? 'bg-danger/10 text-red-300 border-danger/40' : 'bg-danger/10 text-danger border-danger/30')
+                                            : (isDark ? 'bg-chart-1/10 text-blue-300 border-chart-1/40' : 'bg-chart-1/10 text-brand border-chart-1/30')}`}>
                                         <Megaphone size={16} strokeWidth={2} />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -489,7 +489,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
                                                         className={`relative group transition-colors duration-500
                                                             ${inPendingAll ? 'pointer-events-none' : ''}
-                                                            ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10/70') : unread ? cx.rowUnread : ''}`}
+                                                            ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10') : unread ? cx.rowUnread : ''}`}
                                                     >
                                                         <button
                                                             onClick={() => handleNotifClick(n)}

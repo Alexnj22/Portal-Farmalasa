@@ -556,7 +556,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             className={`w-full text-left rounded-xl border p-3 transition-all ${
                                                                 isSelected
                                                                     ? 'border-violet-300 bg-chart-3/10'
-                                                                    : 'border-slate-100 bg-white hover:border-chart-3/30 hover:bg-chart-3/10/40'
+                                                                    : 'border-slate-100 bg-white hover:border-chart-3/30 hover:bg-chart-3/10'
                                                             }`}>
                                                             <div className="flex items-start justify-between gap-2">
                                                                 <p className="text-[11px] font-bold text-content-2 leading-snug flex-1">

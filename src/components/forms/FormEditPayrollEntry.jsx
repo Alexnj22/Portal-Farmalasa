@@ -149,7 +149,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
                     {/* Nocturnal section */}
                     {otBank.nocturnal > 0 && (
-                        <div className="bg-chart-3/10/60 border border-chart-3/30 rounded-xl p-2.5 space-y-2">
+                        <div className="bg-chart-3/10 border border-chart-3/30 rounded-xl p-2.5 space-y-2">
                             <div className="flex items-center justify-between">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-chart-3-text">HE Nocturnas <span className="text-chart-3-text font-bold normal-case">(×2.25 si se pagan)</span></p>
                                 <span className="text-[13px] font-black text-indigo-800">{otBank.nocturnal.toFixed(1)}h</span>
@@ -262,7 +262,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     value={formData._reason || ''}
                     onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
                     placeholder="Ej: Corrección de días por permiso autorizado"
-                    className="w-full h-10 px-3 bg-warning/10 border border-warning/40/60 hover:border-warning focus:border-warning focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300"
+                    className="w-full h-10 px-3 bg-warning/10 border border-warning/40 hover:border-warning focus:border-warning focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300"
                 />
             </div>
         </div>

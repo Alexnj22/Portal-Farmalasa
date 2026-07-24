@@ -3,7 +3,7 @@ import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
-    Megaphone, AlertTriangle, Activity, Copy, CheckCircle2,
+    Megaphone, AlertTriangle, Activity,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
@@ -19,8 +19,7 @@ import { useToastStore } from '../../store/toastStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
 import NotificationBell from '../common/NotificationBell';
-import SidebarSyncStatus from '../common/SidebarSyncStatus';
-import ThemeToggle from '../common/ThemeToggle';
+import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
 import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
@@ -768,8 +767,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </div>
 
                         {/* ── Logo header ── */}
-                        <div className={`relative z-10 flex items-center border-b border-white/[0.06]
-                            ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
+                        {/* El toggle expandir/contraer vive SIEMPRE aquí (antes: contraer arriba
+                            junto al logo, expandir abajo en el footer — dos ubicaciones distintas
+                            para la misma acción, reportado como "raro" por el usuario). Colapsado:
+                            se apila debajo del logo en vez de a un lado (el rail es muy angosto
+                            para una fila horizontal). */}
+                        <div className={`relative z-10 flex border-b border-white/[0.06]
+                            ${isExpanded ? 'items-center px-4 py-3.5 justify-between' : 'flex-col items-center gap-2 px-2 py-3'}`}>
                             <div className="absolute inset-0 bg-gradient-to-b from-logo-magenta/[0.06] to-transparent pointer-events-none" />
                             <div className="absolute bottom-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
                                 <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-logo-green/45 to-transparent animate-shimmer" style={{ animationDuration: '5s', animationDelay: '1.5s', animationTimingFunction: 'ease-in-out' }} />
@@ -798,15 +802,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 )}
                             </div>
 
-                            {isExpanded && (
-                                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} type="button"
-                                    aria-label={isMobile ? 'Cerrar menú' : 'Contraer menú'}
-                                    className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
-                                        bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/50 hover:text-white/80
-                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] ${focusRing}`}>
-                                    {isMobile ? <X size={16} strokeWidth={2} /> : <ChevronLeft size={16} strokeWidth={2} />}
-                                </button>
-                            )}
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} type="button"
+                                aria-label={isMobile ? 'Cerrar menú' : isExpanded ? 'Contraer menú' : 'Expandir menú'}
+                                className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
+                                    bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/50 hover:text-white/80
+                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] ${focusRing}`}>
+                                {isMobile ? <X size={16} strokeWidth={2} /> : isExpanded ? <ChevronLeft size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}
+                            </button>
                         </div>
 
                         {/* ── Nav ── */}
@@ -852,47 +854,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             {isExpanded ? (
                                 <>
-                                    {hasPermission('kiosk_pin', 'can_view') && (
-                                        <div className={`grid gap-1.5 ${hasPermission('su_pin', 'can_view') ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                                            <button onClick={handleCopyPin} type="button"
-                                                className={`group/pin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-white/[0.11] hover:border-white/[0.14] hover:scale-[1.02] active:scale-[0.98] ${focusRing}`}
-                                                title="Copiar PIN">
-                                                <div className="flex items-center gap-1 mb-0.5">
-                                                    <CheckCircle2 size={10} className="text-white/42 group-hover/pin:text-success transition-colors" strokeWidth={2} />
-                                                    <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">PIN</span>
-                                                </div>
-                                                <div className="relative h-4 flex items-center justify-center w-full">
-                                                    <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white ${isCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
-                                                    <Copy size={12} className={`absolute transition-all duration-300 text-white/50 ${isCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
-                                                    <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
-                                                </div>
-                                            </button>
-                                            
-                                            {hasPermission('su_pin', 'can_view') && (
-                                                <button onClick={handleCopySuPin} type="button"
-                                                    className={`group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18] hover:scale-[1.02] active:scale-[0.98] ${focusRing}`}
-                                                    title="Copiar código SU">
-                                                    <div className="flex items-center gap-1 mb-0.5">
-                                                        <CheckCircle2 size={10} className="text-white/40 group-hover/supin:text-chart-3-text transition-colors" strokeWidth={2} />
-                                                        <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">SU</span>
-                                                    </div>
-                                                    <div className="relative h-4 flex items-center justify-center w-full">
-                                                        <span className={`absolute text-[12px] font-black text-chart-3 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
-                                                        <Copy size={12} className={`absolute text-chart-3/55 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
-                                                        <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
-                                                    </div>
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                    
-                                    <SidebarSyncStatus />
-
-                                    {/* Punto de montaje final del selector (Fase T6). Los 4 temas
-                                        siguen expuestos aunque el default ya sea Solid Modern — si
-                                        Liquid Glass sobrevive como opción o se elimina sigue siendo
-                                        una decisión pendiente, ver AUDITORIA-TEMA-2026-07.md §11. */}
-                                    <ThemeToggle />
+                                    {/* Consolida PIN/SU + Sync/Alertas + Tema detrás de un solo ícono
+                                        de Ajustes (antes 3 bloques sueltos, sentía "amontonado" — a
+                                        pedido del usuario). Los 4 temas siguen expuestos ahí adentro
+                                        (ThemeAxisPicker) aunque el default ya sea Solid Modern — si
+                                        Liquid Glass sobrevive como opción sigue siendo una decisión
+                                        aparte, ver AUDITORIA-TEMA-2026-07.md §11. */}
+                                    <SidebarSettingsMenu
+                                        showPin={hasPermission('kiosk_pin', 'can_view')}
+                                        showSu={hasPermission('su_pin', 'can_view')}
+                                        authPin={authPin}
+                                        suSuffix={suSuffix}
+                                        isCopied={isCopied}
+                                        isSuCopied={isSuCopied}
+                                        onCopyPin={handleCopyPin}
+                                        onCopySuPin={handleCopySuPin}
+                                    />
 
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
@@ -926,44 +903,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </>
                             ) : (
                                 <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-500">
-                                    {!isMobile && (
-                                        <button onClick={() => setIsSidebarOpen(true)} type="button" aria-label="Expandir menú"
-                                            className={`w-10 h-10 rounded-[1rem] flex items-center justify-center mb-1 transition-all hover:scale-105 active:scale-[0.97]
-                                                bg-white/[0.07] border border-white/[0.09] text-white/35 hover:text-white/70 hover:bg-white/[0.12] hover:border-white/[0.15]
-                                                shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] ${focusRing}`}>
-                                            <ChevronRight size={17} strokeWidth={2} />
-                                        </button>
-                                    )}
-                                    {hasPermission('kiosk_pin', 'can_view') && (
-                                        <button onClick={handleCopyPin} type="button" aria-label="Copiar PIN"
-                                            className={`relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group transition-all hover:scale-105 active:scale-[0.97]
-                                                bg-white/[0.07] border border-white/[0.09] text-white/45 hover:bg-white/[0.13] hover:border-white/[0.15]
-                                                shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] ${focusRing}`}
-                                            title="PIN">
-                                            {isCopied ? <CheckCircle2 size={17} className="text-success" /> : (
-                                                <>
-                                                    <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
-                                                    <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black text-white/90">{authPin}</span>
-                                                </>
-                                            )}
-                                        </button>
-                                    )}
-                                    {hasPermission('su_pin', 'can_view') && (
-                                        <button onClick={handleCopySuPin} type="button" aria-label="Copiar código SU"
-                                            className={`relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group
-                                                bg-white/[0.07] border border-white/[0.09]
-                                                text-chart-3/70 hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18]
-                                                shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(139,92,246,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]
-                                                hover:scale-105 active:scale-[0.97] transition-all ${focusRing}`}
-                                            title="PIN SU">
-                                            {isSuCopied ? <CheckCircle2 size={17} className="text-success" /> : (
-                                                <>
-                                                    <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
-                                                    <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[10px] font-black text-chart-3">{authPin}{suSuffix}</span>
-                                                </>
-                                            )}
-                                        </button>
-                                    )}
+                                    <SidebarSettingsMenu
+                                        variant="compact"
+                                        showPin={hasPermission('kiosk_pin', 'can_view')}
+                                        showSu={hasPermission('su_pin', 'can_view')}
+                                        authPin={authPin}
+                                        suSuffix={suSuffix}
+                                        isCopied={isCopied}
+                                        isSuCopied={isSuCopied}
+                                        onCopyPin={handleCopyPin}
+                                        onCopySuPin={handleCopySuPin}
+                                    />
                                     <div className="relative w-11 h-11">
                                         <button onClick={() => navigate('/profile')} type="button"
                                             onMouseEnter={(e) => {
@@ -991,9 +941,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
-                                    {/* Punto de montaje final (Fase T6) — ver nota en el estado
-                                        expandido de arriba. */}
-                                    <ThemeToggle variant="compact" />
                                     <span className="text-[8px] font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
                                 </div>
                             )}

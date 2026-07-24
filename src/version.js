@@ -5,11 +5,41 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.55.1';
+export const APP_VERSION = '2.56.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
-// v2.55.1 — docs(design): actualiza ViewTabBar §14 tras la consolidación
-// de VentasView (v2.55.0) — h-9/h-10 duplicado → h-11 único, dividerCls
+// v2.56.0 — feat(layout): consolida el footer del sidebar en un panel de
+// Ajustes + unifica el toggle expandir/contraer.
+//
+// A pedido del usuario ("siento que hay muchos elementos abajo"), el footer
+// pasa de 4 bloques sueltos (PIN/SU, Sync/Alertas, ThemeToggle, Usuario+
+// Salir) a 2: un ícono ⚙ Ajustes y Usuario+Salir. Mockup con 3 opciones
+// mostrado y aprobado (Opción B: Ajustes agrupa también el tema, no solo
+// PIN/SU/Sync/Alertas) antes de tocar el componente real.
+//
+// Nuevo `SidebarSettingsMenu.jsx`: mismo mecanismo de popover portaled que
+// `ThemeToggle` (rAF tracking + flip + click-outside/Escape) — reusado, no
+// reinventado. Dentro: Códigos (PIN/SU), Sistema (Sync/Alertas, reusa
+// `SidebarSyncStatus` con un `variant` nuevo — 'sidebar' mantiene las
+// clases bg-white/N bespoke del fondo siempre-oscuro, 'popover' usa tokens
+// reales para reaccionar al tema del panel), y Estilo/Modo. El picker de
+// tema se extrajo de `ThemeToggle.jsx` a un export nombrado
+// `ThemeAxisPicker` (solo las 2 filas segmentadas, sin trigger/popover
+// propio) para embeberlo aquí sin anidar un popover dentro de otro —
+// `ThemeToggle` default export sigue existiendo igual para donde se
+// necesite un selector standalone.
+//
+// De paso, un fix real de UX que el usuario notó al tocar el menú: el
+// toggle expandir/contraer vivía en dos lugares distintos — contraer
+// arriba junto al logo, expandir abajo en el footer del rail. Ahora es
+// el MISMO botón en la MISMA posición (debajo del logo cuando el rail
+// está colapsado), solo cambia el ícono (ChevronLeft ⇄ ChevronRight)
+// según el estado.
+//
+// Verificado con Playwright: popover abre/cierra en ambas variantes
+// (sidebar/rail), tema cambia en vivo (el popover mismo se re-tematiza
+// sin cerrarse), PIN/SU copian igual que antes, collapse→expand con el
+// mismo botón, sin errores de consola.
 // bg-white/40 stale → bg-divider real, documenta el prop trailingActions
 // nuevo, "duplicado conocido" pasa a "RESUELTO".
 

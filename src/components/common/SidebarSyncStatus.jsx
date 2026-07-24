@@ -16,7 +16,7 @@ function dotClass(minsAgo, hasError) {
   return 'bg-success shadow-[0_0_4px_rgba(18,183,106,0.8)]';
 }
 
-export default function SidebarSyncStatus() {
+export default function SidebarSyncStatus({ variant = 'sidebar' }) {
   const [branches, setBranches] = useState([]);
   const { permission, subscribed, subscribe, isSupported } = usePushSubscription();
 
@@ -53,24 +53,36 @@ export default function SidebarSyncStatus() {
   const bellGranted = subscribed && permission === 'granted';
   const bellDenied  = permission === 'denied';
 
+  // 'sidebar' (default): vive sobre el fondo siempre-oscuro del sidebar,
+  // clases bespoke bg-white/N (mismo criterio que AppLayout.jsx/ThemeToggle
+  // variant sidebar — no reaccionan al tema a propósito). 'popover': vive
+  // dentro de un panel data-surface="dropdown" theme-reactive (ej.
+  // SidebarSettingsMenu) — usa tokens reales.
+  const isPopover  = variant === 'popover';
+  const cardCls    = isPopover ? 'bg-surface-card-hover border-border-card' : 'bg-white/[0.06] border-white/[0.09]';
+  const labelCls   = isPopover ? 'text-content-3' : 'text-white/45';
+  const dimIconCls = isPopover ? 'text-content-3' : 'text-white/30';
+  const dotIdleCls = isPopover ? 'bg-content-3/25' : 'bg-white/15';
+  const timeAgoCls = isPopover ? 'text-content-3' : 'text-white/25';
+
   return (
     <div className="grid grid-cols-2 gap-1.5">
 
       {/* ── Left: sync status ─────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border bg-white/[0.06] border-white/[0.09]">
+      <div className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border ${cardCls}`}>
         {/* Label row */}
         <div className="flex items-center gap-1 mb-0.5">
           {hasErrors || anyStale
             ? <AlertTriangle size={10} className="text-danger" />
-            : <CheckCircle2  size={10} className={allGood ? 'text-success' : 'text-white/30'} />
+            : <CheckCircle2  size={10} className={allGood ? 'text-success' : dimIconCls} />
           }
-          <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">Sync</span>
+          <span className={`text-[9px] font-semibold uppercase tracking-wider ${labelCls}`}>Sync</span>
         </div>
         {/* Dots row */}
         <div className="flex items-center justify-center gap-[3px] flex-wrap">
           {branches.length === 0
             ? [1,2,3,4,5,6,7].map(i => (
-                <div key={i} className="w-[5px] h-[5px] rounded-full bg-white/15 animate-pulse" />
+                <div key={i} className={`w-[5px] h-[5px] rounded-full animate-pulse ${dotIdleCls}`} />
               ))
             : branches.map(b => {
                 const m = (now - new Date(b.synced_at).getTime()) / 60000;
@@ -88,7 +100,7 @@ export default function SidebarSyncStatus() {
         </div>
         {/* Time ago */}
         {minsAgoLatest !== null && (
-          <span className="text-[9px] text-white/25 tabular-nums mt-0.5">
+          <span className={`text-[9px] tabular-nums mt-0.5 ${timeAgoCls}`}>
             {minsAgoLatest === 0 ? '<1' : minsAgoLatest}m
           </span>
         )}
@@ -96,9 +108,9 @@ export default function SidebarSyncStatus() {
 
       {/* ── Right: notification bell ──────────────────────────────────────── */}
       {!isSupported ? (
-        <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border bg-white/[0.06] border-white/[0.09] opacity-30">
-          <BellOff size={14} className="text-white/40" />
-          <span className="text-[9px] text-white/35 uppercase tracking-wider font-semibold">N/D</span>
+        <div className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border opacity-30 ${cardCls}`}>
+          <BellOff size={14} className={dimIconCls} />
+          <span className={`text-[9px] uppercase tracking-wider font-semibold ${labelCls}`}>N/D</span>
         </div>
       ) : (
         <button
@@ -109,23 +121,23 @@ export default function SidebarSyncStatus() {
             ${bellGranted
               ? 'bg-success/[0.10] border-success/[0.18] cursor-default'
               : bellDenied
-              ? 'bg-white/[0.03] border-white/[0.05] cursor-not-allowed opacity-40'
-              : 'bg-white/[0.06] border-white/[0.09] hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18] hover:scale-[1.02] active:scale-[0.98]'
+              ? `${isPopover ? 'bg-surface-card-hover/50' : 'bg-white/[0.03]'} border-white/[0.05] cursor-not-allowed opacity-40`
+              : `${cardCls} hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18] hover:scale-[1.02] active:scale-[0.98]`
             }`}
         >
           <div className="flex items-center gap-1 mb-0.5">
             {bellGranted
               ? <CheckCircle2 size={10} className="text-success" />
-              : <Bell size={10} className={bellDenied ? 'text-white/30' : 'text-white/40'} />
+              : <Bell size={10} className={bellDenied ? dimIconCls : labelCls} />
             }
             <span className={`text-[9px] font-semibold uppercase tracking-wider ${
-              bellGranted ? 'text-success/70' : 'text-white/45'
+              bellGranted ? 'text-success/70' : labelCls
             }`}>
               Alertas
             </span>
           </div>
           <span className={`text-[9px] font-black text-center leading-tight ${
-            bellGranted ? 'text-success' : bellDenied ? 'text-white/25' : 'text-white/55'
+            bellGranted ? 'text-success' : bellDenied ? timeAgoCls : (isPopover ? 'text-content-2' : 'text-white/55')
           }`}>
             {bellGranted ? 'Activas' : bellDenied ? 'Bloqueadas' : 'Activar'}
           </span>

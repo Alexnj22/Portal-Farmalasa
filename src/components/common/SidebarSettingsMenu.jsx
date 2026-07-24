@@ -1,92 +1,58 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Moon, Sun, Layers, Monitor, ChevronDown } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
+import { Settings, Copy, CheckCircle2, ChevronDown } from 'lucide-react';
+import SidebarSyncStatus from './SidebarSyncStatus';
+import { ThemeAxisPicker } from './ThemeToggle';
 
-const STYLE_META = {
-  liquid: { label: 'Liquid Glass', Icon: Layers },
-  solid:  { label: 'Solid',        Icon: Monitor },
-};
-const MODE_META = {
-  light: { label: 'Claro',  Icon: Sun },
-  dark:  { label: 'Oscuro', Icon: Moon },
-};
-
-// liquid+light -> 'liquid', liquid+dark -> 'dark', solid+light -> 'solid', solid+dark -> 'solid-dark'
-const combine = (style, mode) => {
-  if (style === 'solid') return mode === 'dark' ? 'solid-dark' : 'solid';
-  return mode === 'dark' ? 'dark' : 'liquid';
-};
-
-const activeTabCls = 'bg-surface-tab-active text-content shadow-md scale-[1.02]';
-const inactiveTabCls = 'bg-transparent text-content-3 hover:bg-surface-tab-active hover:text-content';
-
-function SegmentedRow({ label, options, activeKey, onPick }) {
+// Agrupa lo que antes eran 3 bloques sueltos del footer del sidebar (PIN/SU,
+// Sync/Alertas, ThemeToggle) detrás de un solo ícono de Ajustes — a pedido
+// del usuario ("siento que hay muchos elementos abajo"). Mismo mecanismo de
+// popover portaled que ThemeToggle (rAF tracking + flip + click-outside/
+// Escape) — reusado, no reinventado.
+function CodeCard({ label, value, copied, onCopy }) {
   return (
-    <div>
-      <p className="text-[9.5px] font-black uppercase tracking-widest text-content-3 px-0.5 mb-1.5">{label}</p>
-      <div data-surface="tab-track" className="flex items-center gap-1 p-1 rounded-full">
-        {Object.entries(options).map(([key, { label: optLabel, Icon }]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onPick(key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2 rounded-full
-              text-[10px] font-black uppercase tracking-wider transition-all duration-200 border border-transparent
-              ${activeKey === key ? activeTabCls : inactiveTabCls}`}
-          >
-            <Icon size={12} strokeWidth={2.5} />
-            {optLabel}
-          </button>
-        ))}
+    <button type="button" onClick={onCopy}
+      className="group/code relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2
+        border border-border-card bg-surface-card-hover hover:bg-surface-card transition-all active:scale-[0.97]">
+      <div className="flex items-center gap-1 mb-0.5">
+        <span className="text-[8px] font-bold uppercase tracking-wider text-content-3">{label}</span>
       </div>
-    </div>
+      <div className="relative h-4 flex items-center justify-center w-full">
+        <span className={`absolute text-[12px] font-black tracking-widest font-mono text-content transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
+        <Copy size={12} className={`absolute text-content-3 transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 group-hover/code:scale-100'}`} />
+        <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
+      </div>
+    </button>
   );
 }
 
-// Las 2 filas segmentadas (Estilo/Modo), sin trigger ni popover propio —
-// para embeber el picker de tema dentro de otro panel (ej. SidebarSettingsMenu)
-// sin anidar un popover dentro de otro. ThemeToggle (default export) sigue
-// siendo el standalone completo, para donde se necesite un selector aparte.
-export function ThemeAxisPicker() {
-  const { isSolid, isDark, setTheme } = useTheme();
-  const style = isSolid ? 'solid' : 'liquid';
-  const mode = isDark ? 'dark' : 'light';
-  return (
-    <>
-      <SegmentedRow label="Estilo" options={STYLE_META} activeKey={style}
-        onPick={(key) => setTheme(combine(key, mode))} />
-      <SegmentedRow label="Modo" options={MODE_META} activeKey={mode}
-        onPick={(key) => setTheme(combine(style, key))} />
-    </>
-  );
-}
-
-export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
-  const { isSolid, isDark } = useTheme();
-  const style = isSolid ? 'solid' : 'liquid';
-  const mode = isDark ? 'dark' : 'light';
-  const { label: styleLabel, Icon: StyleIcon } = STYLE_META[style];
-  const { label: modeLabel } = MODE_META[mode];
-
+export default function SidebarSettingsMenu({
+  variant = 'sidebar',
+  className = '',
+  showPin, showSu,
+  authPin, suSuffix,
+  isCopied, isSuCopied,
+  onCopyPin, onCopySuPin,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
   const lastCoordsRef = useRef(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 220, openUp: false });
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 236, openUp: false });
 
-  // Mismo patrón de posicionamiento que LiquidSelect (fix histórico:
-  // recalcular en cada frame mientras está abierto, no solo al abrir, para
-  // que el popover no quede desconectado del trigger ante scroll/animación).
+  // Mismo patrón de posicionamiento que LiquidSelect/ThemeToggle: recalcular
+  // en cada frame mientras está abierto para no quedar desconectado del
+  // trigger ante scroll/animación (fix histórico documentado en ambos).
   const updateCoords = () => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const POPOVER_HEIGHT = 176;
+    const codesRows = (showPin || showSu) ? 1 : 0;
+    const POPOVER_HEIGHT = 200 + codesRows * 60;
     const MARGIN = 12;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUp = spaceBelow < POPOVER_HEIGHT + MARGIN && rect.top > spaceBelow;
-    const width = variant === 'compact' ? 216 : rect.width;
+    const width = variant === 'compact' ? 236 : rect.width;
     const next = {
       top: openUp ? rect.top - POPOVER_HEIGHT - 8 : rect.bottom + 8,
       left: variant === 'compact'
@@ -142,7 +108,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
 
   const popoverContent = (
     <motion.div
-      key="theme-popover"
+      key="settings-popover"
       ref={popoverRef}
       data-surface="dropdown"
       style={{ top: coords.top, left: coords.left, width: coords.width + 'px' }}
@@ -152,6 +118,23 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
       transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
       className="fixed z-[99999] p-3 flex flex-col gap-3 transform-gpu"
     >
+      {(showPin || showSu) && (
+        <div>
+          <p className="text-[9.5px] font-black uppercase tracking-widest text-content-3 px-0.5 mb-1.5">Códigos</p>
+          <div className={`grid gap-1.5 ${showPin && showSu ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {showPin && <CodeCard label="PIN" value={authPin} copied={isCopied} onCopy={onCopyPin} />}
+            {showSu && <CodeCard label="SU" value={`${authPin}${suSuffix}`} copied={isSuCopied} onCopy={onCopySuPin} />}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <p className="text-[9.5px] font-black uppercase tracking-widest text-content-3 px-0.5 mb-1.5">Sistema</p>
+        <SidebarSyncStatus variant="popover" />
+      </div>
+
+      <div className="h-px bg-divider" />
+
       <ThemeAxisPicker />
     </motion.div>
   );
@@ -162,7 +145,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
         <button
           ref={triggerRef}
           onClick={handleTrigger}
-          title={`Tema: ${styleLabel} · ${modeLabel}`}
+          title="Ajustes"
           aria-expanded={isOpen}
           className={`relative w-11 h-11 flex items-center justify-center rounded-[1.1rem]
             border transition-colors duration-150 ${className}
@@ -170,7 +153,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
               ? 'bg-white/12 border-white/20 text-white/90'
               : 'bg-white/6 border-white/12 text-white/60 hover:text-white/90 hover:bg-white/10'}`}
         >
-          <StyleIcon size={16} strokeWidth={2} />
+          <Settings size={16} strokeWidth={2} />
         </button>
         {createPortal(<AnimatePresence>{isOpen ? popoverContent : null}</AnimatePresence>, document.body)}
       </>
@@ -190,12 +173,9 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
             : 'bg-white/5 border-white/8 hover:bg-white/10 hover:border-white/15'}`}
       >
         <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 bg-white/10">
-          <StyleIcon size={14} strokeWidth={2} className="text-white/70" />
+          <Settings size={14} strokeWidth={2} className="text-white/70" />
         </div>
-        <div className="flex-1 overflow-hidden">
-          <p className="text-[11px] font-bold text-white/80 leading-none">{styleLabel}</p>
-          <p className="text-[9px] text-white/40 mt-0.5 leading-none">{modeLabel}</p>
-        </div>
+        <span className="flex-1 text-[11px] font-bold text-white/80">Ajustes</span>
         <ChevronDown size={13} strokeWidth={2.5}
           className={`text-white/35 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>

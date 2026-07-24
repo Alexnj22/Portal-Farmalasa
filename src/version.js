@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.46.0';
+export const APP_VERSION = '2.46.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.46.1 — fix(theme) + docs: cierra el gate de T7 sobre el codemod de
+// v2.46.0. Bug real encontrado: el regex de #003D99 era case-sensitive y
+// no capturaba la variante minúscula #003d99 — WidgetAnnulmentRequest.jsx
+// y WidgetMinMaxRequest.jsx quedaron con hover:bg-[#003d99] literal.
+// Corregido a hover:bg-brand-hover. AUDITORIA-TEMA-2026-07.md §10 —
+// documenta el estado de T4: el gate mecánico bajó de 102 a 51 archivos,
+// y de los 51 restantes el 100% de los matches de clase Tailwind son
+// bg-slate-500-950 ya confirmados intencionales (botones/chips siempre-
+// oscuros). El resto es hex crudo categorizado en 6 buckets de excepción
+// (pantallas siempre-oscuras, templates de PDF, colores de librería de
+// gráficos, paletas decorativas de un solo uso, herramientas de
+// diagnóstico, bg-slate-700+) — ninguno bloquea T4, todos con razón
+// explícita en vez de omitidos en silencio (regla del propio plan).
+// Pendiente de T4: la mitad de responsive/densidad (1024×768, filter
+// pills, touch targets) — no empezada, es la siguiente tarea.
 
 // v2.46.0 — refactor(theme): T4 arranca — codemod mecánico sobre los 110
 // archivos de vista (AUDITORIA-TEMA-2026-07.md §T4: "un script de codemod

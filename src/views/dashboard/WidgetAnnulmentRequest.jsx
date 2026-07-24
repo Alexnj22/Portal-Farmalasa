@@ -131,7 +131,7 @@ function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
   return (
     <div className="shrink-0 pt-2">
       <button onClick={onClick} disabled={disabled || isLoading}
-        className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+        className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
         {isLoading && <Loader2 size={14} className="animate-spin" />}
         {isLoading ? 'Enviando...' : label}
       </button>

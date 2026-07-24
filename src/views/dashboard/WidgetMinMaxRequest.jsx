@@ -211,7 +211,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         {err && <p className="text-[11px] text-danger font-semibold px-1">{err}</p>}
 
         <button onClick={submit} disabled={submitting}
-          className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
+          className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-brand-hover disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
           {submitting && <Loader2 size={14} className="animate-spin" />}
           {submitting ? 'Enviando…' : 'Enviar a aprobación'}
         </button>

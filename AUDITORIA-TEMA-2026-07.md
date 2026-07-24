@@ -667,3 +667,81 @@ cada uno migrado o anotado con razón, nunca omitido en silencio. **Estos
 checklists SON el backfill que exige §9.0.3**: cuando un canónico nuevo nace
 (en T2.3 o después), su lista de usos divergentes existentes se agrega aquí y
 se vacía antes de cerrar T7.
+
+## 10. Estado de T4 (actualizado 2026-07-23, sesión de continuación)
+
+### 10.1 Codemod mecánico — hecho
+
+Script en dos pasadas sobre `src/views/**/*.jsx` (~4,500 reemplazos):
+`text-slate-300..900→text-content/-2/-3`, `bg-white/N→bg-surface-card`,
+`border-white/N→border-border-card`, `#0052CC/#003D99→brand/brand-hover`
+(fix aplicado también a la variante minúscula `#003d99`, encontrada en
+`WidgetAnnulmentRequest.jsx`/`WidgetMinMaxRequest.jsx` — el regex original
+era case-sensitive), semánticos `red/emerald/amber→danger/success/warning`
+preservando la opacidad original del caller cuando existía (`bg-red-50/40`
+→`bg-danger/40`, no un `/10` fijo que perdería la intención). Segunda
+pasada cubrió `bg-slate-50/100/200/300/400` y `text-slate-200`, que la
+primera pasada no tocaba (gap real, encontrado al medir el gate).
+
+Gate de T7 (`grep -rl 'text-slate-[0-9]\|bg-white/\|bg-slate-[0-9]\|
+border-white/\|#[0-9a-fA-F]\{6\}' src/views`): **102 → 51 archivos** con al
+menos un match. De esos 51, el 100% de los matches de clase Tailwind
+restantes son `bg-slate-500..950` (confirmado por grep de contexto: son
+botones/chips neutros SIEMPRE oscuros a propósito — "Ver más", tooltips,
+badges de acción — mismo criterio que `ThemeToggle.jsx`/
+`SidebarSyncStatus.jsx` de T3, no superficies de card). Todo lo demás
+restante es hex crudo — ver §10.2.
+
+Verificado con Playwright (liquid/solid/dark) en las vistas de mayor
+tráfico: `VentasView` (137→2 matches originales), `AttendanceMonitorView`,
+`DashboardView` — el salto es de cajas planas grises/blancas sin
+distinción en dark theme a superficies y acentos correctos por tema.
+
+### 10.2 Excepciones documentadas (hex crudo restante, por categoría)
+
+Ninguna de estas necesita migrarse a tokens — quedan anotadas para que el
+gate de T7 las excluya explícitamente en vez de perseguirlas a ciegas:
+
+- **Pantallas siempre-oscuras por diseño** (mismo criterio que el sidebar/
+  login ya documentado): `LoginView.jsx` (gradiente propio), `TimeClockView.jsx`
+  (`#060B18`, kiosco de asistencia).
+- **Templates de impresión/PDF** (un documento impreso no tiene modo
+  oscuro): `CotizacionesView.jsx` — bloque de estilos inline HTML para el
+  PDF de cotización.
+- **Colores de librería de gráficos** (Recharts/canvas — `stroke`/`fill`/
+  `contentStyle` reciben strings de color, no clases Tailwind; migrar
+  requeriría `var(--token)` inyectado vía JS, evaluado caso por caso):
+  `DashboardView.jsx`, `MetasView.jsx`, `EncuestaView.jsx`,
+  `SchedulesView.jsx` + `schedule-tabs/components/ScheduleCalendar.jsx` +
+  `ScheduleChart.jsx`, `productos/tabminmax/CoverageBar.jsx`,
+  `pedidos/RutaMapModal.jsx`, `pedidos/CrearRutaModal.jsx`. Varios de estos
+  valores YA coinciden exacto con un token (`#12B76A`=success, `#F79009`=
+  warning, `#F04438`=danger) — candidatos baratos para una pasada futura
+  con `var(--success)` etc., pero no bloquean T4.
+- **Paletas decorativas de un solo uso** (badges/acentos con su propio
+  color, no reutilizados, mismo criterio que el ícono morado de
+  `aiSchedulerPreview` en T3): `#6929C4` (morado, repetido en varias vistas
+  como acento de un módulo específico), `PermissionsView.jsx`,
+  `PayrollView.jsx`, `AttendanceMonitorView.jsx`, `VacationPlanView.jsx`,
+  `EmployeeAnnouncementsView.jsx`, `branch-tabs/TabExpenses.jsx`,
+  `dashboard/WidgetInventorySearch.jsx`, `productos/TabCatalogo.jsx`,
+  `RolesView.jsx`, `EmployeeDetailView.jsx`, `NoAccessView.jsx`,
+  `AccessDeniedView.jsx` (verde WhatsApp `#25D366`, no un token del
+  proyecto).
+- **Herramientas de diagnóstico, no UI de negocio** (rutas reales pero
+  gateadas/no orientadas al usuario final): `IOSTestView.jsx`,
+  `RawTestView.jsx`.
+- **`bg-slate-700/800/900/950`** en ~15 archivos (`pedidos/*`,
+  `branch-tabs/TabStaff.jsx`, `BranchesView.jsx`, etc.): botones/chips
+  neutros siempre-oscuros a propósito, no card surfaces — ver arriba.
+
+### 10.3 Pendiente de T4
+
+- **Responsive/densidad** (la otra mitad de T4, aún no auditada): tablas
+  con overflow propio, filter pills en wrap, touch targets, tipografía
+  ≥16px en inputs móviles, verificación real a 1024×768 sin scroll
+  horizontal. Orden: vistas de tienda primero (/monitor, /my-requests,
+  /pedidos, /minmax, /ventas), luego el resto — mismo orden que el
+  codemod de tokens no siguió (el codemod corrió parejo en los 110 archivos
+  porque es mecánico y de bajo riesgo por lote; el audit responsive si
+  necesita ir vista por vista con verificación visual real).

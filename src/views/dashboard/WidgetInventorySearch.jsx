@@ -238,12 +238,12 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
               type="number" min="1"
               value={qty}
               onChange={e => setQty(e.target.value)}
-              className="w-10 px-1.5 py-0.5 rounded-lg border border-slate-200 text-[16px] font-black text-content-2 text-center outline-none focus:border-rose-400"
+              className="w-10 px-1.5 py-0.5 rounded-lg border border-slate-200 text-[16px] font-black text-content-2 text-center outline-none focus:border-danger"
             />
             <button
               onClick={submit}
               disabled={rState === 'saving'}
-              className="px-1.5 py-0.5 rounded-full bg-danger hover:bg-rose-600 text-white text-[8px] font-black transition-colors disabled:opacity-50"
+              className="px-1.5 py-0.5 rounded-full bg-danger hover:bg-danger/80 text-white text-[8px] font-black transition-colors disabled:opacity-50"
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>
@@ -560,7 +560,7 @@ export default function WidgetInventorySearch() {
                   style={{ animation: `inv-fade-up 0.22s ease both`, animationDelay: `${bi * 45}ms` }}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`h-px flex-1 bg-gradient-to-r from-transparent ${branch.isVencidos ? 'to-rose-200/80' : 'to-slate-200/80'}`} />
+                    <div className={`h-px flex-1 bg-gradient-to-r from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-slate-200/80'}`} />
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
                       {branch.isVencidos
                         ? <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
@@ -570,7 +570,7 @@ export default function WidgetInventorySearch() {
                       <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{total}</span>
                       <span className="text-[9px] font-semibold text-content-3 ml-0.5">uds</span>
                     </div>
-                    <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-rose-200/80' : 'to-slate-200/80'}`} />
+                    <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-slate-200/80'}`} />
                   </div>
                   <div
                     className="rounded-xl overflow-hidden backdrop-blur-sm shadow-sm"
@@ -673,17 +673,17 @@ export default function WidgetInventorySearch() {
         {!loading && results !== null && vencidosProds.length > 0 && (
           <div className="mt-1">
             <div className="flex items-center gap-2 mb-2 mt-1">
-              <div className="h-px flex-1 bg-rose-200/60" />
+              <div className="h-px flex-1 bg-danger/20" />
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30 backdrop-blur-sm shadow-sm">
                 <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                 <span className="text-[10px] font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
-                <span className="w-px h-3 bg-rose-200 mx-1" />
+                <span className="w-px h-3 bg-danger/20 mx-1" />
                 <span className="text-[12px] font-black tabular-nums text-danger-text">
                   {vencidosProds.reduce((s, p) => s + p.lots.reduce((ss, r) => ss + r.cantidad, 0), 0)}
                 </span>
                 <span className="text-[9px] font-semibold text-danger-text ml-0.5">uds</span>
               </div>
-              <div className="h-px flex-1 bg-rose-200/60" />
+              <div className="h-px flex-1 bg-danger/20" />
             </div>
             <div className="space-y-2">
               {vencidosProds.map((prod, pi) => {

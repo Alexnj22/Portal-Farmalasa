@@ -97,12 +97,12 @@ const HolidaysPanel = ({
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
                             <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
@@ -121,7 +121,7 @@ const HolidaysPanel = ({
                                 className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[16px] font-bold text-content outline-none focus:border-chart-1 transition-all" />
                         )}
                         <button onClick={() => setHRecurring(v => !v)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-emerald-300 text-success-text' : 'bg-white border-slate-200 text-content-3 hover:border-emerald-300 hover:text-success'}`}>
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-success/40 text-success-text' : 'bg-white border-slate-200 text-content-3 hover:border-success/40 hover:text-success'}`}>
                             <RefreshCw size={11} strokeWidth={2} /> Recurrente
                         </button>
                     </div>
@@ -137,7 +137,7 @@ const HolidaysPanel = ({
             {byMonth.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
                     <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
-                        <Star size={32} className="text-amber-200" strokeWidth={1.5} />
+                        <Star size={32} className="text-warning/40" strokeWidth={1.5} />
                     </div>
                     <p className="text-[13px] font-bold text-content-3">
                         {searchTerm ? `Sin resultados para "${searchTerm}"` : `No hay feriados registrados para ${holidayYear}`}
@@ -149,10 +149,10 @@ const HolidaysPanel = ({
                         <div key={month}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-2 h-7 bg-gradient-to-b from-amber-400 to-orange-400 rounded-full shrink-0" />
+                                    <div className="w-2 h-7 bg-gradient-to-b from-warning to-chart-4 rounded-full shrink-0" />
                                     <span className="text-[16px] font-black text-content-2 tracking-tight">{month}</span>
                                 </div>
-                                <div className="h-px flex-1 bg-gradient-to-r from-amber-100 to-transparent" />
+                                <div className="h-px flex-1 bg-gradient-to-r from-warning/20 to-transparent" />
                                 <span className="text-[9px] font-black text-warning bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-full shrink-0">
                                     {items.length} {items.length === 1 ? 'feriado' : 'feriados'}
                                 </span>
@@ -171,7 +171,7 @@ const HolidaysPanel = ({
                                                 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5
                                                 transition-all duration-300">
                                             {/* Color stripe */}
-                                            <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-amber-400 to-orange-400' : 'bg-gradient-to-b from-blue-400 to-indigo-400'}`} />
+                                            <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-warning to-chart-4' : 'bg-gradient-to-b from-chart-1 to-brand'}`} />
                                             <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
                                                 {/* Date badge */}
                                                 <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-chart-1/10 border border-chart-1/30'}`}>

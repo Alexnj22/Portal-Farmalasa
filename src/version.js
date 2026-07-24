@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.15';
+export const APP_VERSION = '2.52.16';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.16 — fix(theme): T7.1c — estandariza colores en
+// WidgetInventorySearch.jsx (área de vencidos en Bodega, rose→danger
+// consistente en toda la sección) y SchedulesView.jsx (feriados: Nacional
+// amber/orange→warning/chart-4, Municipal blue/indigo→chart-1/brand,
+// focus rings de formulario crudos junto a bordes ya tokenizados).
+
 
 // v2.52.15 — fix(theme): T7.1c — estandariza colores en
 // FormBranchEmployees.jsx (paleta COLOR_MAP de 8 roles: gradientes crudos

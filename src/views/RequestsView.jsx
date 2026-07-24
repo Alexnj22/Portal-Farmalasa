@@ -104,7 +104,7 @@ const CompactSummary = ({ req }) => {
 const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employeesById }) => {
     const [expanded, setExpanded] = useState(false);
 
-    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-slate-200', dot: 'bg-content-3' };
+    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
     const tc        = TYPE_COLORS[req.type] || { circle: 'bg-content-3', ring: 'ring-slate-200', border: 'border-border-card', hover: '', sectionIcon: '' };
     const meta      = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
@@ -716,7 +716,7 @@ const RequestsView = () => {
                     {groupedByType.map(([type, cards]) => {
                         const TypeIcon  = TYPE_ICONS[type] || FileText;
                         const typeConf  = REQUEST_TYPES[type] || { label: type };
-                        const tc        = TYPE_COLORS[type] || { sectionIcon: 'text-content-2 bg-surface-card-hover border-slate-200', section: 'text-content-2' };
+                        const tc        = TYPE_COLORS[type] || { sectionIcon: 'text-content-2 bg-surface-card-hover border-divider', section: 'text-content-2' };
                         const isCollapsed = collapsedSections.has(type);
 
                         return (
@@ -833,7 +833,7 @@ const RequestsView = () => {
                                             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
                                                 createType === key
                                                     ? `${conf.color} ${conf.border} shadow-sm`
-                                                    : 'border-slate-200 text-content-3 hover:border-slate-300 bg-white'
+                                                    : 'border-divider text-content-3 hover:border-divider bg-white'
                                             }`}
                                         >
                                             <Icon size={13} strokeWidth={2} />

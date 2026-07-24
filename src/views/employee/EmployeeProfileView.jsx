@@ -213,7 +213,7 @@ const EmployeeProfileView = ({ openModal }) => {
     const VAC_STATUS = {
         PLANNED:   { label: 'Planificado', bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30'    },
         CONFIRMED: { label: 'Confirmado',  bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' },
-        TAKEN:     { label: 'Completado',  bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-slate-200'   },
+        TAKEN:     { label: 'Completado',  bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider'   },
     };
 
     const headerLeft = (
@@ -408,7 +408,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                             isToday   ? 'bg-slate-800 shadow-md'
                                             : evCfg   ? `${evCfg.light} border`
                                             : d.shift ? 'bg-surface-card border border-border-card'
-                                                      : 'bg-surface-card-hover/80 border border-slate-100'
+                                                      : 'bg-surface-card-hover/80 border border-divider'
                                         }`}>
                                             <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.short}</p>
                                             <p className={`text-[15px] font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.date?.getDate()}</p>
@@ -443,7 +443,7 @@ const EmployeeProfileView = ({ openModal }) => {
                         <div className="flex items-center justify-between mb-3">
                             <SectionLabel icon={Clock} label="Historial de Eventos" />
                             <div className="flex items-center gap-2 -mt-3">
-                                <span className="text-[10px] font-black text-content-3 bg-surface-card-hover/80 border border-slate-200/60 px-2.5 py-1 rounded-full">
+                                <span className="text-[10px] font-black text-content-3 bg-surface-card-hover/80 border border-divider px-2.5 py-1 rounded-full">
                                     {visibleTimeline.length}/{timeline.length}
                                 </span>
                                 {/* Buscador — Tipo 2 (widget inline), ver DESIGN.md §24 */}
@@ -456,7 +456,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 />
                                 <button
                                     onClick={() => setShowTimelineFilter(v => !v)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-slate-800 text-white border-slate-800' : 'bg-surface-card text-content-3 border-slate-200/60 hover:border-slate-300'}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-slate-800 text-white border-slate-800' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                 >
                                     <SlidersHorizontal size={10} strokeWidth={2.5} />
                                     Filtrar
@@ -467,20 +467,20 @@ const EmployeeProfileView = ({ openModal }) => {
 
                         {/* Filter panel */}
                         {showTimelineFilter && (
-                            <div className="mb-4 p-3 bg-surface-card-hover/80 rounded-2xl border border-slate-100 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <div className="mb-4 p-3 bg-surface-card-hover/80 rounded-2xl border border-divider space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {/* Date range */}
                                 <div className="flex items-center gap-2">
-                                    <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                                    <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                     </div>
                                     <span className="text-content-3 text-[12px] font-bold shrink-0">→</span>
-                                    <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                                    <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                     </div>
                                     {(filterFrom || filterTo || filterType) && (
                                         <button
                                             onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }}
-                                            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-content-3 hover:text-danger hover:border-danger/30 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
+                                            className="w-8 h-8 rounded-full bg-white border border-divider text-content-3 hover:text-danger hover:border-danger/30 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
                                             title="Limpiar filtros"
                                         >
                                             <X size={13} strokeWidth={2.5} />
@@ -492,7 +492,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex flex-wrap gap-1.5">
                                         <button
                                             onClick={() => setFilterType('')}
-                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-content-3 border-slate-200 hover:border-slate-300'}`}
+                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-content-3 border-divider hover:border-divider'}`}
                                         >
                                             Todos
                                         </button>
@@ -503,7 +503,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 <button
                                                     key={type}
                                                     onClick={() => setFilterType(filterType === type ? '' : type)}
-                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-surface-card-hover'} ${theme?.text || 'text-content-2'} ${theme?.border || 'border-slate-300'}` : 'bg-white text-content-3 border-slate-200 hover:border-slate-300'}`}
+                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-surface-card-hover'} ${theme?.text || 'text-content-2'} ${theme?.border || 'border-divider'}` : 'bg-white text-content-3 border-divider hover:border-divider'}`}
                                                 >
                                                     {label}
                                                 </button>
@@ -530,7 +530,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             </div>
                         ) : (
                             <>
-                            <div className="relative border-l-[2px] border-slate-200/70 ml-3 space-y-3 pb-2">
+                            <div className="relative border-l-[2px] border-divider ml-3 space-y-3 pb-2">
                                 {visibleTimeline.map((ev, idx) => {
                                     const theme = EVENT_THEMES[ev.type] || DEFAULT_THEME;
                                     const label = ev.type === 'HIRING' ? 'Contratación Inicial' : (EVENT_TYPES[ev.type]?.label || ev.type);
@@ -559,7 +559,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                     </div>
                                                 )}
                                                 {meta.old_value && meta.new_value && (
-                                                    <p className="text-[11px] font-medium text-content-3 mt-2 bg-surface-card p-2 rounded-lg border border-slate-100/80 flex gap-2 items-center">
+                                                    <p className="text-[11px] font-medium text-content-3 mt-2 bg-surface-card p-2 rounded-lg border border-divider flex gap-2 items-center">
                                                         <span className="font-bold line-through opacity-70">{meta.old_value}</span>
                                                         <ArrowRightLeft size={10} />
                                                         <span className="font-bold text-brand">{meta.new_value}</span>
@@ -578,19 +578,19 @@ const EmployeeProfileView = ({ openModal }) => {
                             {/* Ver todo / Mostrar menos — solo cuando no hay filtros activos */}
                             {!filterFrom && !filterTo && !filterType && (
                                 timelineLimit !== null && timeline.length > timelineLimit ? (
-                                    <div className="mt-3 pt-3 border-t border-slate-100">
+                                    <div className="mt-3 pt-3 border-t border-divider">
                                         <button
                                             onClick={() => setTimelineLimit(null)}
-                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-slate-200/80 text-[10px] font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
+                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
                                         >
                                             Ver todo ({timeline.length})
                                         </button>
                                     </div>
                                 ) : timelineLimit === null ? (
-                                    <div className="mt-3 pt-3 border-t border-slate-100">
+                                    <div className="mt-3 pt-3 border-t border-divider">
                                         <button
                                             onClick={() => { setTimelineLimit(8); setShowTimelineFilter(false); }}
-                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-slate-200/80 text-[10px] font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
+                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
                                         >
                                             Mostrar menos
                                         </button>

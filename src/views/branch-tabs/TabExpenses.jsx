@@ -8,7 +8,7 @@ import { fetchBranchExpensesHistory } from '../../data/branches';
 // MOTOR DE ESTADOS FINANCIEROS
 // ============================================================================
 const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
-    if (!dueDay || !paidThrough) return { state: 'unknown', label: 'Sin Configurar', colorClass: 'border-slate-200/60 bg-surface-card-hover/50 text-content-3' };
+    if (!dueDay || !paidThrough) return { state: 'unknown', label: 'Sin Configurar', colorClass: 'border-divider bg-surface-card-hover/50 text-content-3' };
 
     if (isReceiptPending) {
         return {
@@ -286,7 +286,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
                         </div>
-                        <div className="flex-1 flex items-end justify-between gap-4 px-2 border-b border-slate-200/50 pb-2">
+                        <div className="flex-1 flex items-end justify-between gap-4 px-2 border-b border-divider pb-2">
                             <div className="w-full skeleton rounded-t-lg h-[40%]"></div>
                             <div className="w-full skeleton rounded-t-lg h-[60%]"></div>
                             <div className="w-full skeleton rounded-t-lg h-[30%]"></div>

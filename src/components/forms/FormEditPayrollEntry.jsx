@@ -10,7 +10,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full h-10 px-3 bg-surface-card border border-slate-200/80 hover:border-brand/40 focus:border-brand/50 focus:ring-4 focus:ring-brand/10 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full h-10 px-3 bg-surface-card border border-divider hover:border-brand/40 focus:border-brand/50 focus:ring-4 focus:ring-brand/10 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 const NocturnalLegalInfo = () => (
     <div className="relative group inline-flex items-center ml-1.5">
@@ -236,7 +236,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             {numField('salary_advance',  'Adelanto Salarial ($)')}
 
             {/* Live preview */}
-            <div className="col-span-2 bg-surface-card rounded-2xl p-4 border border-slate-200/60 mt-2">
+            <div className="col-span-2 bg-surface-card rounded-2xl p-4 border border-divider mt-2">
                 <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Vista previa</p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div>

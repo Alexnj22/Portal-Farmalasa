@@ -54,7 +54,7 @@ export const Switch = ({ on, onToggle }) => (
         type="button"
         onClick={onToggle}
         className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand/50 active:scale-[0.97] transform-gpu ${
-            on ? "bg-brand border border-brand-hover" : "bg-surface-card-hover/80 border border-slate-300"
+            on ? "bg-brand border border-brand-hover" : "bg-surface-card-hover/80 border border-divider"
         }`}
         aria-pressed={on}
     >

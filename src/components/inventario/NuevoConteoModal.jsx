@@ -135,7 +135,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                         key={opt.value}
                                         type="button"
                                         onClick={() => setScopeType(opt.value)}
-                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all ${active ? 'bg-chart-9 border-chart-9 text-white shadow-sm' : 'bg-white border-slate-200 text-content-2 hover:border-chart-9/50'}`}
+                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all ${active ? 'bg-chart-9 border-chart-9 text-white shadow-sm' : 'bg-white border-divider text-content-2 hover:border-chart-9/50'}`}
                                     >
                                         <Icon size={14} className="shrink-0" /> {opt.label}
                                     </button>

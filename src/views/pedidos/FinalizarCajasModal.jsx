@@ -191,7 +191,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 onChange={e => setTotalCajasInput(e.target.value)}
                                 placeholder="Ej. 4"
                                 autoFocus
-                                className="w-full text-[22px] font-black text-content rounded-2xl border-2 border-slate-200 bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-chart-3 focus:ring-4 focus:ring-chart-3/20 transition-all"
+                                className="w-full text-[22px] font-black text-content rounded-2xl border-2 border-divider bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-chart-3 focus:ring-4 focus:ring-chart-3/20 transition-all"
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-3 pointer-events-none">
                                 cajas
@@ -232,7 +232,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 <div key={idx}
                                     className={`rounded-2xl border transition-all ${
                                         hasAssignment
-                                            ? 'bg-surface-card border-slate-200/70'
+                                            ? 'bg-surface-card border-divider'
                                             : 'bg-warning/10 border-warning/30'
                                     }`}>
                                     {/* Page info row */}
@@ -260,7 +260,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
                                                         sel
                                                             ? 'bg-chart-3 border-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
-                                                            : 'bg-surface-card border-slate-200 text-content-3 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10'
+                                                            : 'bg-surface-card border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10'
                                                     }`}>
                                                     Caja {box}
                                                 </button>

@@ -982,7 +982,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         <div className="flex items-center gap-2 min-w-0">
                                             {/* Product photo — click to zoom; alert dot badge */}
                                             <div
-                                                className={`shrink-0 relative w-7 h-7 rounded-md overflow-visible bg-surface-card-hover/80 border border-slate-100 flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
+                                                className={`shrink-0 relative w-7 h-7 rounded-md overflow-visible bg-surface-card-hover/80 border border-divider flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
                                                 onClick={row.foto_url ? e => { e.stopPropagation(); setZoomPhoto(row.foto_url); } : undefined}
                                                 title={alert.label}
                                             >
@@ -1000,7 +1000,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-[13px] font-medium text-content truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-full">MANUAL</span>}
-                                                    {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-content-3 bg-surface-card-hover border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                     {hasDraft && isBodega && <span className="shrink-0 text-[8px] font-black text-warning bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
                                                     {dispatchRisk && <span className="shrink-0 text-[8px] font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así">RIESGO REGLA</span>}
                                                     {isBodega && (
@@ -1265,9 +1265,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                                             if ((minN === 0 && maxN === 0) || (row.effective_min === null && row.effective_max === null)) return (
                                                 <div className="flex items-center gap-1">
-                                                    {box('—', 'text-content-3 bg-surface-card', 'border-slate-100', openMinEdit)}
+                                                    {box('—', 'text-content-3 bg-surface-card', 'border-divider', openMinEdit)}
                                                     {sep}
-                                                    {box('—', 'text-content-3 bg-surface-card', 'border-slate-100', openMaxEdit)}
+                                                    {box('—', 'text-content-3 bg-surface-card', 'border-divider', openMaxEdit)}
                                                 </div>
                                             );
 
@@ -1355,7 +1355,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                                             return (
                                                 <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-surface-card-hover text-content-2 border-slate-200 gap-1 whitespace-nowrap">
+                                                    <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-surface-card-hover text-content-2 border-divider gap-1 whitespace-nowrap">
                                                         {baseLabel}
                                                         {ruleNote && <>
                                                             <span className="w-px h-2.5 bg-content-3 inline-block" />
@@ -1512,9 +1512,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         onClick={e => e.stopPropagation()}>
 
                         {/* Header */}
-                        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100/80 shrink-0">
+                        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                             {/* Product photo */}
-                            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-divider shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
                                 {historyRow.foto_url
                                     ? <img src={historyRow.foto_url} alt="" className="w-full h-full object-contain" />
                                     : <Package size={22} className="text-content-3" />}
@@ -1554,7 +1554,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 return (
                                     <div key={log.id} className="flex items-start gap-3 bg-surface-card border border-border-card rounded-2xl px-3.5 py-3 shadow-[var(--shadow-elevation-sm)]">
                                         {/* Employee avatar */}
-                                        <div className="w-8 h-8 rounded-full bg-surface-card-hover border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
+                                        <div className="w-8 h-8 rounded-full bg-surface-card-hover border border-divider overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                             {empPhoto
                                                 ? <img src={empPhoto} alt="" className="w-full h-full object-cover" />
                                                 : <span className="text-[10px] font-black text-content-3">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}

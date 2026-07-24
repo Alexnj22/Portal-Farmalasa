@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
 
 const ESTADO_CFG = {
-    BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-slate-200',  icon: Clock,       label: 'Borrador' },
+    BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-divider',  icon: Clock,       label: 'Borrador' },
     EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-warning-text',  border: 'border-warning/30',  icon: Clock,       label: 'En Progreso' },
     FINALIZADO:  { bg: 'bg-chart-1/10',    text: 'text-chart-1-text',   border: 'border-chart-1/30',   icon: FileCheck2,  label: 'Finalizado' },
     APROBADO:    { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Aprobado' },

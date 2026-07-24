@@ -12,7 +12,7 @@ const Field = ({ form, set, label, k, unit, min = 0, max, step = 1 }) => (
         <div className="flex items-center gap-1.5">
             <input type="number" min={min} max={max} step={step} value={form[k] ?? 0}
                 onChange={e => set(k, e.target.value)}
-                className="w-16 text-right text-[16px] font-bold text-content bg-surface-card border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+                className="w-16 text-right text-[16px] font-bold text-content bg-surface-card border border-divider rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
             {unit && <span className="text-[10px] text-content-3 shrink-0 w-8">{unit}</span>}
         </div>
     </div>
@@ -67,7 +67,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
             <div className="pointer-events-auto w-80 rounded-2xl border border-border-card shadow-[var(--shadow-elevation-lg)] overflow-hidden"
                 style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(24px)' }}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
                     <div className="flex items-center gap-2">
                         <Settings2 size={14} className="text-brand" />
                         <span className="text-[12px] font-black text-content">Configuración Min/Max</span>
@@ -152,7 +152,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-3 border-t border-slate-100 flex items-center gap-2">
+                <div className="px-4 py-3 border-t border-divider flex items-center gap-2">
                     <button onClick={handleSave} disabled={saving}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-bold text-white bg-brand hover:bg-chart-1 transition-colors disabled:opacity-60">
                         {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}

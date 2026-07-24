@@ -20,7 +20,7 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ 
 const STATUS_BADGE = {
     candidate: { icon: HelpCircle, cls: 'bg-warning/10 text-warning border-warning/30' },
     confirmed_orphan: { icon: XCircle, cls: 'bg-danger/10 text-danger border-danger/30' },
-    false_positive: { icon: XCircle, cls: 'bg-surface-card-hover text-content-3 border-slate-200' },
+    false_positive: { icon: XCircle, cls: 'bg-surface-card-hover text-content-3 border-divider' },
     resolved: { icon: CheckCircle2, cls: 'bg-success/10 text-success border-success/30' },
 };
 
@@ -77,7 +77,7 @@ const OrphanObjectsView = () => {
     return (
         <GlassViewLayout icon={Ghost} title="Objetos Huérfanos" filtersContent={filtersContent}>
             <div className="p-4 md:p-6">
-                <div className="mb-4 px-3 py-2 rounded-xl bg-slate-800/6 border border-slate-200/60">
+                <div className="mb-4 px-3 py-2 rounded-xl bg-slate-800/6 border border-divider">
                     <p className="text-[11px] text-content-2 font-medium leading-snug">
                         Tablero de seguimiento de candidatos a código muerto (componentes/funciones/edge
                         functions sin caller real). No es detección automática — cada fila se agrega vía

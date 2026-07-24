@@ -124,7 +124,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             sub: 'precio < costo',
             count: perdidaCount,
             activeBg: 'bg-danger/10 border-danger/40 shadow-red-100/80',
-            inactiveBg: 'bg-white border-slate-200 hover:border-danger/30 hover:bg-danger/10',
+            inactiveBg: 'bg-white border-divider hover:border-danger/30 hover:bg-danger/10',
             iconBg: filterMargin === 'perdida'
                 ? 'bg-white'
                 : 'bg-danger/10',
@@ -140,7 +140,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             sub: '< 15% en algún precio',
             count: bajoCount,
             activeBg: 'bg-warning/10 border-warning/40 shadow-amber-100/80',
-            inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10',
+            inactiveBg: 'bg-white border-divider hover:border-warning/30 hover:bg-warning/10',
             iconBg: filterMargin === 'bajo'
                 ? 'bg-white'
                 : 'bg-warning/10',
@@ -205,7 +205,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
                     filterModificados
                         ? 'bg-warning/10 border-warning/40 shadow-md shadow-amber-100/80 -translate-y-px'
-                        : 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/10'
+                        : 'bg-white border-divider hover:border-warning/30 hover:bg-warning/10'
                 }`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     filterModificados
@@ -352,14 +352,14 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     useImperativeHandle(ref, () => ({ save }));
 
-    const inp = 'bg-surface-card-hover border-slate-200 text-content-2 placeholder:text-content-3 focus:ring-brand/20';
+    const inp = 'bg-surface-card-hover border-divider text-content-2 placeholder:text-content-3 focus:ring-brand/20';
     const numCls = 'text-content-3';
     const rmBtn  = 'text-content-3 hover:text-danger hover:bg-danger/10';
     const addCls = 'text-content-3 hover:text-brand';
 
     const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
     const presetChipOn  = 'bg-warning/10 text-warning border-warning/40';
-    const presetChipOff = 'bg-white text-content-3 border-slate-200 hover:border-slate-400 hover:text-content-2';
+    const presetChipOff = 'bg-white text-content-3 border-divider hover:border-slate-400 hover:text-content-2';
 
     return (
         <div className="space-y-2">
@@ -550,7 +550,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     const bodegaActiveBtn = 'bg-white text-warning shadow-sm';
 
     const inp = (sala) =>
-        `bg-surface-card-hover text-content-2 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-slate-200 focus:ring-brand/30' : 'border-warning/30 focus:ring-warning/30'}`;
+        `bg-surface-card-hover text-content-2 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-divider focus:ring-brand/30' : 'border-warning/30 focus:ring-warning/30'}`;
 
     return (
         <div className="space-y-2">
@@ -562,7 +562,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                 const hasData      = hasSala || hasBodega;
 
                 const rowBg =
-                    hasData ? 'bg-chart-1/10 border-chart-1/30' : 'bg-surface-card-hover border-slate-100';
+                    hasData ? 'bg-chart-1/10 border-chart-1/30' : 'bg-surface-card-hover border-divider';
 
                 return (
                     <div key={loc.branch_id} className={`rounded-xl border px-3.5 py-2.5 transition-colors ${rowBg}`}>
@@ -649,7 +649,7 @@ function PhotoContextMenu({ pos, onPaste, onClose }) {
 
     return createPortal(
         <div
-            className="fixed z-[99999] bg-white rounded-xl shadow-xl border border-slate-100 py-1 min-w-[170px] overflow-hidden"
+            className="fixed z-[99999] bg-white rounded-xl shadow-xl border border-divider py-1 min-w-[170px] overflow-hidden"
             style={{ top: pos.y, left: pos.x }}
             onMouseDown={e => e.stopPropagation()}>
             <button
@@ -821,10 +821,10 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
             </div>
 
             {/* Cost history table */}
-            <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+            <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
                 <table className="min-w-full text-sm">
                     <thead>
-                        <tr className="bg-surface-card-hover/80 border-b border-slate-100">
+                        <tr className="bg-surface-card-hover/80 border-b border-divider">
                             <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
                             <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Proveedor</th>
                             <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-center text-content-2">Cant.</th>
@@ -890,10 +890,10 @@ function PriceHistorySection({ history, allowedPriceFields }) {
 
     return (
         <div className="space-y-3">
-            <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+            <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
                 <table className="min-w-full text-sm">
                     <thead>
-                        <tr className="bg-surface-card-hover/80 border-b border-slate-100">
+                        <tr className="bg-surface-card-hover/80 border-b border-divider">
                             <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
                             <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Presentación</th>
                             {allowedPriceFields.map(f => (
@@ -939,13 +939,13 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
         alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',
         sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-content-2',
-        photoBtn: 'border-slate-200 hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10',
+        photoBtn: 'border-divider hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10',
         photoSubText: 'text-content-3',
         photoUploadIcon: 'text-content-3 group-hover:text-brand',
         photoUploadLabel: 'text-content-3 group-hover:text-brand',
         changesBadge: 'bg-warning/10 text-warning-text border-warning/30',
-        emptyPresentaciones: 'bg-surface-card-hover border-slate-100 text-content-3',
-        pricingWrapper: 'bg-white border-slate-100 shadow-sm',
+        emptyPresentaciones: 'bg-surface-card-hover border-divider text-content-3',
+        pricingWrapper: 'bg-white border-divider shadow-sm',
         pricingThead: 'bg-brand/[0.05] border-b border-brand/[0.08]',
         pricingThText: 'text-content-3',
         pricingDivide: 'divide-y divide-slate-50',
@@ -961,18 +961,18 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         statusActive: 'bg-success/10 text-success border border-success/30',
         statusInactive: 'bg-surface-card-hover text-content-3',
         changelog: 'bg-warning/10 border border-warning/30',
-        changelogDate: 'bg-white border-slate-100 text-content-3',
+        changelogDate: 'bg-white border-divider text-content-3',
         changelogField: 'text-content-2',
         changelogOld: 'text-content-3',
         changelogArrow: 'text-content-3',
         changelogNew: 'text-content',
         sinCambios: 'text-content-3 italic',
-        divider: 'border-slate-100/80',
+        divider: 'border-divider',
         vertDivider: 'bg-surface-card-hover',
-        btnCancel: 'bg-white border-slate-200 text-content-3 hover:border-slate-300 hover:text-content-2',
-        srsBtnInactive: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-chart-3/10 hover:text-chart-3-text hover:border-chart-3/30',
+        btnCancel: 'bg-white border-divider text-content-3 hover:border-divider hover:text-content-2',
+        srsBtnInactive: 'bg-surface-card-hover text-content-3 border-divider hover:bg-chart-3/10 hover:text-chart-3-text hover:border-chart-3/30',
         srsBtnActive: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
-        srsDivider: 'border-slate-100',
+        srsDivider: 'border-divider',
     };
 
     const allowedPriceFields = useMemo(() => {
@@ -1137,7 +1137,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors disabled:opacity-50 ${
                             !devolutivo
                                 ? 'bg-warning/10 text-warning-text border-warning/30 hover:bg-warning/10'
-                                : 'bg-surface-card-hover text-content-3 border-slate-200 hover:border-slate-300'
+                                : 'bg-surface-card-hover text-content-3 border-divider hover:border-divider'
                         }`}
                         title={devolutivo
                             ? 'Este producto SÍ puede devolverse al proveedor antes de vencer. Clic para marcarlo como No Devolutivo (ND).'
@@ -1435,7 +1435,7 @@ export default function TabCatalogo({
         textInactive: 'text-content-3 line-through decoration-slate-300',
         avatarBg: 'bg-brand/[0.07]',
         avatarIcon: 'text-brand/50',
-        filterPill: 'bg-surface-card border-slate-200/70 shadow-[var(--shadow-glow-brand)]',
+        filterPill: 'bg-surface-card border-divider shadow-[var(--shadow-glow-brand)]',
         filterDivider: 'bg-surface-card-hover',
         filterBtn: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',
         totalText: 'text-content-3',
@@ -1907,7 +1907,7 @@ export default function TabCatalogo({
                                         </div>
                                     </DataCell>
                                     <DataCell hideBelow="sm">
-                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card-hover text-content-2 border-slate-200'}`}>
+                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card-hover text-content-2 border-divider'}`}>
                                             {p.activo ? 'Activo' : 'Inactivo'}
                                         </span>
                                     </DataCell>

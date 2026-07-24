@@ -395,7 +395,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
                         </div>
                         
-                        <div className="bg-surface-card-hover/50 rounded-2xl p-4 border border-slate-100 min-h-[80px]">
+                        <div className="bg-surface-card-hover/50 rounded-2xl p-4 border border-divider min-h-[80px]">
                             <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
                             <div className="flex flex-wrap gap-2">
                                 {formData?.permissionDates?.map((date, idx) => (
@@ -541,7 +541,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className={labelClasses}>Código Actual</label>
-                                <div className="h-[40px] bg-surface-card-hover/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-content-3 line-through decoration-slate-300 opacity-60">
+                                <div className="h-[40px] bg-surface-card-hover/50 border border-divider rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-content-3 line-through decoration-slate-300 opacity-60">
                                     {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
                                 </div>
                             </div>
@@ -637,15 +637,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[var(--shadow-elevation-xs)] space-y-4">
                             {/* Contexto actual */}
                             <div className="grid grid-cols-3 gap-3">
-                                <div className="bg-surface-card-hover/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                <div className="bg-surface-card-hover/80 border border-divider rounded-2xl p-3 text-center">
                                     <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Salario Actual</p>
                                     <p className="text-[15px] font-black text-content-2">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
                                 </div>
-                                <div className="bg-surface-card-hover/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                <div className="bg-surface-card-hover/80 border border-divider rounded-2xl p-3 text-center">
                                     <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Cargo</p>
                                     <p className="text-[11px] font-black text-content-2 leading-tight">{currentRole}</p>
                                 </div>
-                                <div className="bg-surface-card-hover/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                <div className="bg-surface-card-hover/80 border border-divider rounded-2xl p-3 text-center">
                                     <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Antigüedad</p>
                                     <p className="text-[11px] font-black text-content-2 leading-tight">{tenure}</p>
                                 </div>
@@ -682,7 +682,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
                     <div>
                         <label className={labelClasses}>Soporte Digital {isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}</label>
-                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-success bg-success/10' : 'border-slate-300/60 bg-surface-card hover:bg-surface-card hover:border-brand/50'}`}>
+                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-success bg-success/10' : 'border-divider bg-surface-card hover:bg-surface-card hover:border-brand/50'}`}>
                             {formData?.file ? (
                                 <div className="flex flex-col items-center gap-1 text-success animate-in zoom-in-95">
                                     <div className="p-2 bg-success/10 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>

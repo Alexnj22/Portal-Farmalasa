@@ -151,7 +151,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
             exit={{ height: 0, opacity: 0, transition: { duration: 0.18, ease: 'easeIn' } }}
             className="overflow-hidden"
           >
-            <div className="border-t border-slate-100 px-4 py-3 space-y-2">
+            <div className="border-t border-divider px-4 py-3 space-y-2">
 
               {/* Paradas */}
               {paradas.map((stop, idx) => {
@@ -159,7 +159,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                 const busy  = busyStop === stop.id;
                 return (
                   <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                    done ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
+                    done ? 'bg-success/10 border-success/30' : 'bg-white border-divider'
                   }`}>
                     <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
                       done ? 'bg-success text-white' : 'bg-chart-3/10 text-chart-3-text'

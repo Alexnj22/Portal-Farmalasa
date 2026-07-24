@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { ERP_NAMES } from '../../constants/erp';
 
-const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
+const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 
 const PEDIDO_STATUS_PILL = {
     confirmado: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
@@ -234,7 +234,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                             <span className="text-[13px] font-bold text-content-2 tabular-nums">
                                 #{pedido.numero}
                             </span>
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PEDIDO_STATUS_PILL[pedido.status] ?? 'bg-surface-card-hover text-content-3 border-slate-200'}`}>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PEDIDO_STATUS_PILL[pedido.status] ?? 'bg-surface-card-hover text-content-3 border-divider'}`}>
                                 {PEDIDO_STATUS_LABEL[pedido.status] ?? pedido.status}
                             </span>
                             {anyPaused && (
@@ -260,7 +260,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                         )}
 
                         {/* Sucursales */}
-                        <div className="border-t border-slate-100 px-4 py-3 space-y-2">
+                        <div className="border-t border-divider px-4 py-3 space-y-2">
                             {pedido.sucursales
                                 .sort((a, b) => a.erp_sucursal_id - b.erp_sucursal_id)
                                 .map(suc => {
@@ -270,7 +270,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                     const isPaused   = stage === 'pausado';
                                     return (
                                         <div key={suc.erp_sucursal_id} className={`flex items-center gap-2 py-1.5 px-2.5 rounded-xl transition-colors ${
-                                            isPaused ? 'bg-warning/10 border border-warning/30' : 'bg-surface-card-hover/60 border border-slate-100/80'
+                                            isPaused ? 'bg-warning/10 border border-warning/30' : 'bg-surface-card-hover/60 border border-divider'
                                         }`}>
                                             <Building2 size={11} className="text-content-3 shrink-0" />
                                             <span className="text-[11px] font-semibold text-content-2 w-20 shrink-0">
@@ -299,7 +299,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
 
                             if (pedido.status !== 'enviado') return null;
                             return (
-                                <div className="border-t border-slate-100 px-4 py-2.5">
+                                <div className="border-t border-divider px-4 py-2.5">
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[9px] text-content-3 font-medium">
                                             Progreso de recepción

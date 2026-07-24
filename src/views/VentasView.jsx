@@ -4,7 +4,7 @@ import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
-    ChevronUp, Search, X, Trophy, Star, ChevronRight, ChevronLeft,
+    ChevronUp, Search, X, Trophy, Star, ChevronLeft,
     ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -12,6 +12,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
+import ViewTabBar from '../components/common/ViewTabBar';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
@@ -155,7 +156,7 @@ function FilterControls({
     const dateDirty = monthRange !== defaultRange;
 
     return (
-        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
+        <div className="group flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-divider shrink-0 overflow-visible">
 
             {/* Branch select + individual clear */}
             {!branchLocked && <div className="flex items-center">
@@ -212,7 +213,7 @@ function FilterControls({
                     className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                         filterAnuladas
                             ? 'bg-danger/10 border-danger/30 text-danger-text shadow-sm'
-                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
+                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'
                     }`}>
                     Anuladas
                     {filterAnuladas && <X size={9} strokeWidth={3} />}
@@ -223,7 +224,7 @@ function FilterControls({
                         className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                             filterAntibiotico
                                 ? 'bg-danger/10 border-danger/30 text-danger-text shadow-sm'
-                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
+                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'
                         }`}>
                         Receta Médica
                         {filterAntibiotico && <X size={9} strokeWidth={3} />}
@@ -258,7 +259,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                     ? 'border-warning ring-2 ring-warning/30 shadow-md bg-warning/10'
                     : isFilter
                         ? 'border-warning/30 bg-warning/10 hover:bg-warning/10'
-                        : 'border-slate-100 bg-white'
+                        : 'border-divider bg-white'
                 }`}
         >
             <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
@@ -620,7 +621,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 <div className="flex items-center gap-2 flex-wrap">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
-                        <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
+                        <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-white">
                             <div className="w-6 h-6 rounded-lg skeleton shrink-0" />
                             <div className="h-3 skeleton" style={{ width: w * 0.45 }} />
                             <div className="h-4 skeleton" style={{ width: w * 0.55 }} />
@@ -751,7 +752,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 <div className="space-y-0.5">
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-warning mb-2">Cambios registrados</p>
                                                     {relevantChanges.map((c, ci) => (
-                                                        <div key={ci} className="flex items-baseline gap-2 py-1 border-b border-slate-100 last:border-0">
+                                                        <div key={ci} className="flex items-baseline gap-2 py-1 border-b border-divider last:border-0">
                                                             <span className="text-[11px] font-bold text-content-2 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
                                                             <span className="text-[11px] text-content-3 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
                                                             <span className="text-[11px] font-semibold text-content-2">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
@@ -802,7 +803,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const hdrTxt = 'text-content-3';
                                                 const nameTxt = 'text-content-2';
                                                 const numTxt = 'text-content-3';
-                                                const dividerCls = 'border-slate-100/80';
+                                                const dividerCls = 'border-divider';
                                                 const rowHoverCls = 'hover:bg-surface-card';
                                                 return (
                                                     <table className="w-full border-collapse">
@@ -881,7 +882,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                             })()
                                         )}
                                         {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
-                                            <div className="mt-3 pt-3 border-t flex justify-end border-slate-100">
+                                            <div className="mt-3 pt-3 border-t flex justify-end border-divider">
                                                 <div className="flex flex-col gap-0.5 min-w-[180px]">
                                                     <div className="flex justify-between gap-6 text-[11px] text-content-3">
                                                         <span>Subtotal (sin IVA)</span>
@@ -891,7 +892,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                         <span>IVA (13%)</span>
                                                         <span className="font-semibold text-content-2">{fmt(r.iva)}</span>
                                                     </div>
-                                                    <div className="flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 text-content border-slate-200">
+                                                    <div className="flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 text-content border-divider">
                                                         <span>Total</span>
                                                         <span>{fmt(r.total)}</span>
                                                     </div>
@@ -1916,7 +1917,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 );
                                                             })}
                                                             {pres.length > 1 && (
-                                                                <div className="flex items-center justify-between gap-4 text-[11px] font-black text-content border-t border-slate-100 pt-1 mt-1.5">
+                                                                <div className="flex items-center justify-between gap-4 text-[11px] font-black text-content border-t border-divider pt-1 mt-1.5">
                                                                     <span>Total</span>
                                                                     <span className="tabular-nums">{fmtNum(r.cantidad_base)} u</span>
                                                                 </div>
@@ -2003,7 +2004,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {r.presentaciones.map(p => (
-                                                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm">
+                                                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-divider shadow-sm">
                                                                             <span className="text-[11px] font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
                                                                             <span className="text-[11px] font-black text-content">{fmtQty(p.cantidad)} u</span>
                                                                             {p.factor > 1 && (
@@ -2044,7 +2045,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                                                     {/* Branch rotation */}
                                                                     {showBranch && (
-                                                                        <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
+                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
                                                                             <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
                                                                             <div className="space-y-2.5">
                                                                                 {branchAgg.entries.map(([bid, neto], ci) => {
@@ -2074,7 +2075,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                                     {/* Trend */}
                                                                     {showTrend && (
-                                                                        <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
+                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
                                                                             <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
                                                                             <div className="flex items-end gap-1.5" style={{ height: 80 }}>
                                                                                 {drillMonthly.map((m, i) => {
@@ -2180,9 +2181,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     </div>
 
                                                                     {/* Table */}
-                                                                    <div className="rounded-xl border border-slate-200/80 overflow-hidden bg-white shadow-sm overflow-x-auto">
+                                                                    <div className="rounded-xl border border-divider overflow-hidden bg-white shadow-sm overflow-x-auto">
                                                                         <table className="min-w-full text-[11px]">
-                                                                            <thead className="bg-surface-card-hover border-b border-slate-200">
+                                                                            <thead className="bg-surface-card-hover border-b border-divider">
                                                                                 <tr>
                                                                                     <DH col="fecha"          label="Fecha" />
                                                                                     <DH col="correlativo"    label="Correlativo" />
@@ -2277,7 +2278,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     );
                                                                                 })}
                                                                             </tbody>
-                                                                            <tfoot className="bg-surface-card-hover border-t-2 border-slate-200">
+                                                                            <tfoot className="bg-surface-card-hover border-t-2 border-divider">
                                                                                 <tr>
                                                                                     <td colSpan={!filterBranch ? 11 : 10} className="px-3 py-2 text-[10px] font-black text-content-3 uppercase tracking-wide">
                                                                                         Total {filteredDrill.length < drillData.length ? `(filtrado)` : ''}
@@ -2358,7 +2359,6 @@ export default function VentasView() {
         const r = currentMonthRange();
         return `${r.fini}|${r.ffin}`;
     });
-    const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch]     = useState('');
     const [privacyMode, setPrivacyMode] = useState(false);
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -2377,76 +2377,25 @@ export default function VentasView() {
         [salesBranches]
     );
 
-    const openSearch  = () => setIsSearchMode(true);
-    const closeSearch = () => { setIsSearchMode(false); setRawSearch(''); };
-
     const searchPlaceholder =
         activeTab === 'ventas'     ? 'Buscar correlativo o cliente...' :
         activeTab === 'vendedores' ? 'Buscar vendedor...' :
                                      'Buscar producto...';
 
+    // Antes: copia hand-rolled del pill de ViewTabBar (DESIGN.md §32/§23,
+    // "duplicado conocido") — consolidado al componente compartido real.
+    // El único agregado real de VentasView (toggle de privacidad) ahora vive
+    // en trailingActions, el slot que ViewTabBar expone para este caso.
     const filtersContent = (
-        // Duplicado histórico del pill de ViewTabBar (DESIGN.md §32/§23 ya lo
-        // documentaba) — migrado a data-surface="tab-track" en la misma pasada
-        // que ViewTabBar.jsx (Fase T2), mismos valores, pixel-igual en liquid.
-        <div data-surface="tab-track" className="relative flex items-center shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
-
-            {/* Search mode */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
-                ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
-                <input ref={(el) => { if (el && isSearchMode) setTimeout(() => el.focus(), 100) }} type="text" placeholder={searchPlaceholder}
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
-                    value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
-                {rawSearch && (
-                    <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-colors shrink-0">
-                        <X size={16} strokeWidth={2.5} />
-                    </button>
-                )}
-                <button onClick={closeSearch}
-                    className="w-11 h-11 rounded-full hover:bg-surface-tab-active text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2">
-                    <ChevronRight size={18} strokeWidth={2.5} />
-                </button>
-            </div>
-
-            {/* Normal mode */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
-                ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
-
-                {/* Desktop (lg+): fila de botones. Móvil: dropdown (ver ViewTabBar.jsx,
-                    mismo fix aplicado aquí por ser un duplicado hand-rolled). */}
-                <div className="hidden lg:flex items-center gap-1 md:gap-1.5">
-                    {allowedTabs.map(tab => {
-                        const Icon = tab.icon;
-                        return (
-                            <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}
-                                className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
-                                    activeTab === tab.key
-                                        ? 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]'
-                                        : 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active'
-                                }`}>
-                                <Icon size={12} strokeWidth={2.5} />
-                                <span>{tab.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-                {allowedTabs.length > 0 && (
-                    <div className="flex lg:hidden w-[150px] sm:w-[190px]">
-                        <LiquidSelect
-                            value={activeTab}
-                            onChange={(key) => { setActiveTab(key); closeSearch(); }}
-                            options={allowedTabs.map(t => ({ value: t.key, label: t.label }))}
-                            icon={allowedTabs.find(t => t.key === activeTab)?.icon}
-                            clearable={false}
-                            compact
-                            bare
-                        />
-                    </div>
-                )}
-
-                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-                <button onClick={() => setPrivacyMode(v => !v)}
+        <ViewTabBar
+            tabs={allowedTabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            searchValue={rawSearch}
+            onSearchChange={setRawSearch}
+            placeholder={searchPlaceholder}
+            trailingActions={
+                <button type="button" onClick={() => setPrivacyMode(v => !v)}
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode
                             ? 'bg-slate-700 text-white border-slate-700 shadow-[var(--shadow-elevation-xl)]'
@@ -2454,13 +2403,8 @@ export default function VentasView() {
                     }`}>
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}
                 </button>
-                <button onClick={openSearch}
-                    className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
-                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
-                </button>
-            </div>
-        </div>
+            }
+        />
     );
 
     return (

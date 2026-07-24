@@ -39,7 +39,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                                 onChange={e => setMotivo(e.target.value)}
                                 placeholder="Describe el motivo de la anulación…"
                                 rows={3}
-                                className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-danger bg-white resize-none transition-colors text-content-2"
+                                className="w-full text-[16px] border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-danger bg-white resize-none transition-colors text-content-2"
                             />
                             {motivo.trim().length > 0 && motivo.trim().length < 5 && (
                                 <p className="text-[10px] text-danger mt-1">Mínimo 5 caracteres.</p>
@@ -59,7 +59,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
 
             <PedidoModal.Footer>
                 <div className="flex justify-end gap-2">
-                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
+                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
                         Cancelar
                     </button>
                     <button

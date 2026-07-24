@@ -20,7 +20,7 @@ const getStaffTheme = (colorTheme) => {
         blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[var(--shadow-glow-brand)]', icon: Award, gradient: 'from-brand to-chart-3' },
         emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[var(--shadow-glow-success)]', icon: ShieldCheck, gradient: 'from-success to-chart-9' },
         purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-chart-3', badge: 'bg-chart-3', shadow: 'hover:shadow-[var(--shadow-glow-chart-3)]', icon: HeartPulse, gradient: 'from-chart-3 to-chart-6' },
-        slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[var(--shadow-elevation-md)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
+        slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-divider', badge: 'bg-content-3', shadow: 'hover:shadow-[var(--shadow-elevation-md)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
     };
     return themes[colorTheme] || themes.slate;
 };

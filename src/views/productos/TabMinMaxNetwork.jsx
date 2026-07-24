@@ -188,7 +188,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
             <div className="flex items-center gap-2.5 flex-wrap">
 
                 {/* Filter pill: ABC | Alert | Clear */}
-                <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0">
+                <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0">
                     {/* ABC */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (
@@ -239,7 +239,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
                 <button onClick={() => { setShowAll(s => !s); setPage(1); }}
                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all ${
-                        showAll ? 'bg-slate-800 text-white border-slate-800' : 'bg-surface-card border-slate-200 text-content-3 hover:border-slate-300'
+                        showAll ? 'bg-slate-800 text-white border-slate-800' : 'bg-surface-card border-divider text-content-3 hover:border-divider'
                     }`}>
                     {showAll ? 'Solo alertas' : 'Ver todos'}
                 </button>
@@ -278,7 +278,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                                             row.abc_class === 'A' ? 'bg-success/10 text-success-text border-success/30' :
                                             row.abc_class === 'B' ? 'bg-chart-1/10 text-chart-1-text border-chart-1/30' :
                                             row.abc_class === 'C' ? 'bg-warning/10 text-warning-text border-warning/30' :
-                                                                    'bg-surface-card-hover text-content-3 border-slate-200'
+                                                                    'bg-surface-card-hover text-content-3 border-divider'
                                         }`}>{row.abc_class}</span>
                                     )}
                                     <span className="text-[12px] font-medium text-content truncate">{row.product_name}</span>

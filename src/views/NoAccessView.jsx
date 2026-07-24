@@ -76,7 +76,7 @@ const NoAccessView = () => {
                     <button
                         onClick={handleLogout}
                         disabled={loggingOut}
-                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-white border border-slate-200 text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
+                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-white border border-divider text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
                     >
                         {loggingOut
                             ? <Loader2 size={14} className="animate-spin" />

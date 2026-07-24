@@ -27,7 +27,7 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
     const llegadaEmp = row.llegada_fisica_por ? empMap.get(row.llegada_fisica_por) : null;
 
     return (
-        <div className="border-t border-slate-100 px-4 py-3 space-y-1.5">
+        <div className="border-t border-divider px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
                 <p className="text-[10px] font-bold text-content-2 uppercase tracking-wide">Resumen de recepción</p>
                 {llegadaEmp && (

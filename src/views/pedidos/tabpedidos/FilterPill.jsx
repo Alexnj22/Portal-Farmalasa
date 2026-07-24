@@ -16,7 +16,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
             className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
                 filterStatus === key
                     ? activeClass
-                    : 'bg-white text-content-3 border-slate-200 hover:border-slate-300 hover:text-content-2'
+                    : 'bg-white text-content-3 border-divider hover:border-divider hover:text-content-2'
             }`}
         >
             {label}{filterStatus === key && <X size={9} strokeWidth={3} className="ml-0.5" />}
@@ -24,7 +24,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     );
 
     return (
-        <div className="group flex items-center gap-0 h-14 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
+        <div className="group flex items-center gap-0 h-14 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-divider overflow-visible shrink-0">
 
             {/* Sucursal (solo bodega) */}
             {!isBranch && (

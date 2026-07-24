@@ -357,7 +357,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                     >
-                        <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-slate-100 p-3 space-y-2">
+                        <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-divider p-3 space-y-2">
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
                                     <span className="text-[10px] font-bold uppercase tracking-wide text-content-2">Proveedores</span>
@@ -365,7 +365,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                                         onClick={onMarkND}
                                         disabled={markingND}
                                         title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-divider bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
                                     >
                                         {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
                                         Marcar todo como ND
@@ -421,7 +421,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
     }
 
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-card border border-slate-200/70 shadow-sm">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-card border border-divider shadow-sm">
             <Truck className="w-3.5 h-3.5 text-content-3 flex-shrink-0" />
             <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-content-2 truncate flex items-center gap-1.5">
@@ -442,7 +442,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
                     Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}
                 </span>
             ) : (
-                <span className="text-[9px] font-black uppercase text-content-3 bg-surface-card-hover border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[9px] font-black uppercase text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full shrink-0">
                     No devolutivo
                 </span>
             )}
@@ -554,7 +554,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors shrink-0 ${
                         !draft.devolutivo
                             ? 'bg-warning/10 text-warning-text border-warning/30'
-                            : 'bg-surface-card-hover text-content-3 border-slate-200 hover:border-slate-300'
+                            : 'bg-surface-card-hover text-content-3 border-divider hover:border-divider'
                     }`}
                 >
                     {!draft.devolutivo ? <Ban className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
@@ -577,7 +577,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
 
                 <button
                     onClick={onCancel}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-surface-card hover:bg-danger/10 hover:border-danger/30 text-content-3 hover:text-danger transition-all shrink-0"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-divider bg-surface-card hover:bg-danger/10 hover:border-danger/30 text-content-3 hover:text-danger transition-all shrink-0"
                     title="Cerrar"
                 >
                     <X className="w-3.5 h-3.5" />

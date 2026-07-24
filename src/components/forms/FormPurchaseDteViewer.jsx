@@ -134,7 +134,7 @@ const PdfZoomViewer = ({ src }) => {
             </div>
             <div
                 ref={containerRef}
-                className="flex-1 min-h-0 rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-auto"
+                className="flex-1 min-h-0 rounded-[1.5rem] border border-divider bg-white shadow-sm overflow-auto"
                 style={{ touchAction: zoom > 1 ? 'pan-x pan-y' : 'none' }}
             >
                 <div style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%`, minWidth: '100%', minHeight: '100%' }}>
@@ -234,7 +234,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-surface-card-hover/50">
-            <div className="p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
+            <div className="p-6 border-b border-divider bg-white shrink-0 shadow-sm z-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 min-w-0">
                         <div className="w-12 h-12 rounded-[1.25rem] bg-chart-1/10 text-brand flex items-center justify-center shadow-inner shrink-0">
@@ -274,7 +274,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 onClick={downloadAll}
                                 disabled={downloadingAll}
                                 title="Descargar PDF + JSON en un ZIP"
-                                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
                             >
                                 <Archive size={14} strokeWidth={2} className={downloadingAll ? 'animate-pulse' : ''} />
                                 {downloadingAll ? 'Armando ZIP…' : 'Todo'}
@@ -284,7 +284,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             <button
                                 type="button"
                                 onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
                             >
                                 <Download size={14} strokeWidth={2} /> PDF
                             </button>
@@ -337,18 +337,18 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 {tab === 'pdf' && pdfUrl ? (
                     <PdfZoomViewer src={pdfUrl} />
                 ) : loading ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-white rounded-[1.5rem] border border-divider shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-brand" />
                         <p className="font-bold text-[11px] uppercase tracking-widest">Cargando detalle…</p>
                     </div>
                 ) : error ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm border-dashed">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-white rounded-[1.5rem] border border-divider shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5} />
                         <p className="font-bold text-sm">No se pudo cargar el detalle ({error}).</p>
                     </div>
                 ) : (
-                    <div className="flex-1 min-h-0 w-full overflow-y-auto rounded-[1.5rem] border border-slate-200 bg-white shadow-sm p-6">
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-4 mb-4 border-b border-slate-100 text-[12px]">
+                    <div className="flex-1 min-h-0 w-full overflow-y-auto rounded-[1.5rem] border border-divider bg-white shadow-sm p-6">
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-4 mb-4 border-b border-divider text-[12px]">
                             <div><span className="text-content-3">Emisor: </span><span className="font-semibold text-content">{dte?.emisor?.nombre || document?.emisor_nombre || '—'}</span></div>
                             <div><span className="text-content-3">NIT / NRC: </span><span className="font-semibold text-content">{dte?.emisor?.nit || document?.emisor_nit || '—'} / {dte?.emisor?.nrc || document?.emisor_nrc || '—'}</span></div>
                             <div><span className="text-content-3">Receptor: </span><span className="font-semibold text-content">{dte?.receptor?.nombre || '—'}</span></div>
@@ -359,7 +359,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             <div className="overflow-x-auto mb-4">
                                 <table className="w-full text-[11px]">
                                     <thead>
-                                        <tr className="border-b border-slate-200 text-content-3 font-semibold">
+                                        <tr className="border-b border-divider text-content-3 font-semibold">
                                             <th className="text-left py-2">#</th>
                                             <th className="text-left py-2">Descripción</th>
                                             <th className="text-center py-2">Cant.</th>
@@ -387,7 +387,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             <p className="text-[11px] text-content-3 mb-4">Sin ítems detallados en el documento.</p>
                         )}
 
-                        <div className="flex flex-col items-end gap-1 text-[12px] pt-3 border-t border-slate-100">
+                        <div className="flex flex-col items-end gap-1 text-[12px] pt-3 border-t border-divider">
                             <div className="flex justify-between w-56"><span className="text-content-3">Subtotal</span><span className="tabular-nums">{fmt$(resumen.subTotal ?? resumen.totalGravada)}</span></div>
                             <div className="flex justify-between w-56"><span className="text-content-3">IVA</span><span className="tabular-nums">{fmt$(resumen.totalIva ?? document?.total_iva)}</span></div>
                             <div className="flex justify-between w-56 font-black text-content text-[13px]"><span>Total</span><span className="tabular-nums">{fmt$(resumen.totalPagar ?? resumen.montoTotalOperacion ?? document?.monto_total)}</span></div>

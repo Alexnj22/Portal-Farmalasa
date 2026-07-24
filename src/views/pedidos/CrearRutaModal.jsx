@@ -511,10 +511,10 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     return (
                       <button key={item.key} onClick={() => toggleItem(item.key)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-white border-slate-200 hover:border-chart-3/30 hover:bg-chart-3/10'
+                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-white border-divider hover:border-chart-3/30 hover:bg-chart-3/10'
                         }`}>
                         <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          isSel ? 'bg-chart-3 border-chart-3' : 'border-slate-300'
+                          isSel ? 'bg-chart-3 border-chart-3' : 'border-divider'
                         }`}>
                           {isSel && <CheckCircle2 size={10} className="text-white" strokeWidth={3} />}
                         </div>
@@ -572,9 +572,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             </div>
 
             {/* ── Conductor ─────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
+            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-divider">
               {conductorPhoto
-                ? <img src={conductorPhoto} className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0" />
+                ? <img src={conductorPhoto} className="w-6 h-6 rounded-full object-cover border border-divider shrink-0" />
                 : <div className="w-6 h-6 rounded-full bg-chart-3 flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
               }
               <span className="text-[12px] text-content-2 font-medium">Conductor:</span>
@@ -630,11 +630,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           </div>
                           <div className="flex flex-col gap-0.5 mt-0.5">
                             <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-divider text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronUp size={13} strokeWidth={2.5} />
                             </button>
                             <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-divider text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronDown size={13} strokeWidth={2.5} />
                             </button>
                           </div>
@@ -750,7 +750,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                       <div className="w-7 h-7 rounded-full bg-slate-800 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-10">
                         <Warehouse size={11} className="text-white" />
                       </div>
-                      <div className="flex-1 bg-surface-card-hover border border-slate-200 rounded-xl px-3 py-2">
+                      <div className="flex-1 bg-surface-card-hover border border-divider rounded-xl px-3 py-2">
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-bold text-content-2">Bodega — Vuelta en base</p>
                           <div className="text-right">
@@ -778,7 +778,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     <p className="text-[15px] font-black text-warning-text">{fmtMin(totalTime)}</p>
                     <p className="text-[8px] text-warning-text/60">conducir + descargas</p>
                   </div>
-                  <div className="flex-1 bg-surface-card-hover rounded-xl px-3 py-2 border border-slate-200 text-center">
+                  <div className="flex-1 bg-surface-card-hover rounded-xl px-3 py-2 border border-divider text-center">
                     <p className="text-[9px] text-content-2 font-semibold uppercase tracking-wider">Solo conducir</p>
                     <p className="text-[15px] font-black text-content-2">{fmtMin(totalDriveMin)}</p>
                     <p className="text-[8px] text-content-3">sin descargas</p>
@@ -794,7 +794,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         {step === 1 ? (
           <>
             <button onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors">
+              className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors">
               Cancelar
             </button>
             <button onClick={handleOptimize} disabled={selectedItems.length === 0 || optimizing}
@@ -809,7 +809,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
           <>
             <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
               <button onClick={() => { setStep(1); setReturnLeg(null); setSubmitError(null); }}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors">
+                className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors">
                 ← Atrás
               </button>
               {submitError && (

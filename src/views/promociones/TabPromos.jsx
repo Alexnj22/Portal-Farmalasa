@@ -17,10 +17,10 @@ const fmtDate = (d) => {
 };
 
 const ESTADO_CFG = {
-    draft:  { bg: 'bg-surface-card-hover',    text: 'text-content-2',    border: 'border-slate-200',    dot: 'bg-content-3',    label: 'Borrador' },
+    draft:  { bg: 'bg-surface-card-hover',    text: 'text-content-2',    border: 'border-divider',    dot: 'bg-content-3',    label: 'Borrador' },
     active: { bg: 'bg-success/10',   text: 'text-success-text',  border: 'border-success/30',  dot: 'bg-success',  label: 'Activa'   },
     paused: { bg: 'bg-warning/10',     text: 'text-warning-text',    border: 'border-warning/30',    dot: 'bg-warning',    label: 'Pausada'  },
-    closed: { bg: 'bg-surface-card-hover',     text: 'text-content-3',    border: 'border-slate-150',    dot: 'bg-content-3',    label: 'Cerrada'  },
+    closed: { bg: 'bg-surface-card-hover',     text: 'text-content-3',    border: 'border-divider',    dot: 'bg-content-3',    label: 'Cerrada'  },
 };
 
 const ALL_STATES = ['draft', 'active', 'paused'];
@@ -177,7 +177,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                     <button
                         type="button"
                         onClick={() => setExpanded(e => !e)}
-                        className="flex items-center gap-1 text-[10px] text-content-3 hover:text-content-2 transition-colors w-full justify-center pt-1 border-t border-slate-100"
+                        className="flex items-center gap-1 text-[10px] text-content-3 hover:text-content-2 transition-colors w-full justify-center pt-1 border-t border-divider"
                     >
                         {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                         {expanded ? 'Ocultar productos' : 'Ver productos'}
@@ -187,7 +187,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
 
             {/* Expanded products */}
             {expanded && pps.length > 0 && (
-                <div className="border-t border-slate-100 bg-surface-card-hover/50 px-4 pb-3 pt-2.5 space-y-2">
+                <div className="border-t border-divider bg-surface-card-hover/50 px-4 pb-3 pt-2.5 space-y-2">
                     {pps.map(pp => {
                         const sold = (pp.promotion_sales_cache || []).reduce((a, r) => a + (r.units_sold || 0), 0);
                         const ppPct = pp.stock_inicial && pp.stock_inicial > 0
@@ -195,7 +195,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                             : null;
                         return (
                             <div key={pp.id} className="flex gap-2.5 items-start">
-                                <div className="w-7 h-7 rounded-lg bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden mt-0.5">
+                                <div className="w-7 h-7 rounded-lg bg-white border border-divider flex items-center justify-center flex-shrink-0 overflow-hidden mt-0.5">
                                     {pp.products?.foto_url
                                         ? <img src={pp.products.foto_url} className="w-full h-full object-cover" alt="" />
                                         : <Package size={11} className="text-content-3" />}
@@ -311,7 +311,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
         <div>
             {/* Filter pill — glassmorphic, right-aligned */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                <div className="group flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 overflow-visible">
                     <div className="flex items-center px-2 py-2">
                         <Tag size={13} className="text-content-3 flex-shrink-0" />
                     </div>

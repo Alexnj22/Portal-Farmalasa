@@ -23,7 +23,7 @@ export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
     const avatarCls = size === 'sm' ? 'w-6 h-6 rounded-full text-[10px]' : 'w-8 h-8 rounded-full text-[12px]';
     return (
-        <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-white border border-slate-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-white border border-divider shadow-sm">
             <LiquidAvatar src={emp.photo_url} alt={emp.name} fallbackText={emp.name} className={avatarCls} />
             <span className="text-[11px] font-semibold text-content-2 whitespace-nowrap">{emp.name}</span>
             {sub && <span className="text-[9px] text-content-3 whitespace-nowrap">{sub}</span>}
@@ -590,7 +590,7 @@ export default function RecepcionModal({
                             <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
                                 allAccessibleDone
                                     ? 'bg-success/10 text-success-text border-success/30'
-                                    : 'bg-surface-card-hover text-content-2 border-slate-200'
+                                    : 'bg-surface-card-hover text-content-2 border-divider'
                             }`}>
                                 {receivedAccessible}/{accessibleBoxNums.length} recibidas
                             </span>
@@ -619,9 +619,9 @@ export default function RecepcionModal({
                                     onClick={() => { setSelectedCaja(boxNum); setScreen('items'); }}
                                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
                                         isRecibida ? 'bg-success/10 border-success/30 cursor-default' :
-                                        isFalta    ? 'bg-surface-card-hover border-slate-100 cursor-default opacity-50' :
+                                        isFalta    ? 'bg-surface-card-hover border-divider cursor-default opacity-50' :
                                         isDanada   ? 'bg-warning/10 border-warning/40 hover:border-warning active:scale-[0.97] cursor-pointer' :
-                                                     'bg-white border-slate-200 hover:border-chart-3/40 hover:bg-chart-3/10 active:scale-[0.97] cursor-pointer'
+                                                     'bg-white border-divider hover:border-chart-3/40 hover:bg-chart-3/10 active:scale-[0.97] cursor-pointer'
                                     }`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
                                         isRecibida ? 'bg-success' :
@@ -678,7 +678,7 @@ export default function RecepcionModal({
                     )}
 
                     {faltaCajas.length > 0 && !allAccessibleDone && (
-                        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-slate-200">
+                        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                             <Truck size={12} className="text-content-3 shrink-0" />
                             <p className="text-[11px] text-content-3">
                                 Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} en reenvío — se recibirá por separado.
@@ -701,7 +701,7 @@ export default function RecepcionModal({
                                             onClick={() => { setSelectedEspecial({ label, item }); setScreen('items'); }}
                                             className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
                                                 isConfirmed ? 'bg-success/10 border-success/30 cursor-default' :
-                                                isFaltante  ? 'bg-surface-card-hover border-slate-100 cursor-default opacity-50' :
+                                                isFaltante  ? 'bg-surface-card-hover border-divider cursor-default opacity-50' :
                                                 isDamaged   ? 'bg-warning/10 border-warning/40 hover:border-warning active:scale-[0.97] cursor-pointer' :
                                                               'bg-chart-3/10 border-chart-3/30 hover:border-chart-3 active:scale-[0.97] cursor-pointer'
                                             }`}>
@@ -738,7 +738,7 @@ export default function RecepcionModal({
                 </PedidoModal.Body>
 
                 {/* Extras section on cajas screen */}
-                <div className="flex-none border-t border-slate-100 px-4 py-3">
+                <div className="flex-none border-t border-divider px-4 py-3">
                     <button onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
                         className="flex items-center gap-1.5 text-[11px] font-semibold text-brand hover:text-brand-hover transition-colors py-0.5">
                         <PackagePlus size={13} />
@@ -799,7 +799,7 @@ export default function RecepcionModal({
                 {/* Item grid — mismo formato que pantalla de items */}
                 <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
                     <div className="max-h-[48vh] overflow-y-auto scrollbar-hide">
-                        <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
+                        <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />
                                 <span className="col-span-2 text-center text-[10px] font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
@@ -902,7 +902,7 @@ export default function RecepcionModal({
                 </PedidoModal.Body>
 
                 {/* Buscador para agregar productos */}
-                <div className="flex-none border-t border-slate-100 px-5 py-3">
+                <div className="flex-none border-t border-divider px-5 py-3">
                     <div ref={extraBuscarRef}
                         className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-3 py-2">
                         <Search size={13} className="text-brand shrink-0" />
@@ -932,7 +932,7 @@ export default function RecepcionModal({
                         }} className="rounded-xl border border-brand/30 bg-surface-card backdrop-blur-xl shadow-2xl overflow-hidden">
                             {extraResults.map(prod => (
                                 <button key={prod.id} onMouseDown={() => addExtra(prod)}
-                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-content-2 hover:bg-brand/10 transition-colors border-b border-slate-50 last:border-0">
+                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-content-2 hover:bg-brand/10 transition-colors border-b border-divider last:border-0">
                                     <Plus size={12} className="text-brand shrink-0" />
                                     {prod.nombre}
                                 </button>
@@ -950,7 +950,7 @@ export default function RecepcionModal({
                     )}
                     <div className="flex items-center justify-between gap-2">
                         <button onClick={goBackFromExtras} disabled={saving}
-                            className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
+                            className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
                             Volver
                         </button>
                         <button onClick={goBackFromExtras}
@@ -1076,7 +1076,7 @@ export default function RecepcionModal({
             {/* Item grid */}
             <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
               <div className="max-h-[48vh] overflow-y-auto">
-                <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
+                <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
                     <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                         <span /><span />
                         <span className="col-span-2 text-center text-[10px] font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
@@ -1210,7 +1210,7 @@ export default function RecepcionModal({
                                                 className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
                                                     (errorVals[r.id] || '') === t.value
                                                         ? 'bg-chart-4 text-white border-chart-4 shadow-sm'
-                                                        : 'bg-white text-content-3 border-slate-200 hover:border-chart-4/40 hover:text-chart-4-text'
+                                                        : 'bg-white text-content-3 border-divider hover:border-chart-4/40 hover:text-chart-4-text'
                                                 }`}
                                             >{t.label}</button>
                                         ))}
@@ -1249,7 +1249,7 @@ export default function RecepcionModal({
             </PedidoModal.Body>
 
             {/* Extras — navigate to dedicated screen */}
-            <div className="flex-none border-t border-slate-100 px-5 py-3">
+            <div className="flex-none border-t border-divider px-5 py-3">
                 <button onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
                     className="flex items-center gap-1.5 text-[11px] font-semibold text-brand hover:text-brand-hover transition-colors py-0.5">
                     <PackagePlus size={13} />
@@ -1260,7 +1260,7 @@ export default function RecepcionModal({
 
             {/* Responsables */}
             {apoyo.length > 0 && (
-                <div className="flex-none border-t border-slate-100 px-5 py-3">
+                <div className="flex-none border-t border-divider px-5 py-3">
                     <p className="text-[10px] font-semibold text-content-3 uppercase tracking-wide mb-2">Responsables</p>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         {apoyo.map(a => <EmpChip key={a.id} emp={a} />)}
@@ -1278,7 +1278,7 @@ export default function RecepcionModal({
                     <button
                         onClick={hasCajaMap ? goBack : onClose}
                         disabled={saving}
-                        className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
+                        className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
                         {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
                     <div className="flex items-center gap-2">

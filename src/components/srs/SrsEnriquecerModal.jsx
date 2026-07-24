@@ -452,7 +452,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                             </div>
 
                             <button onClick={() => { cancelRef.current = true; }}
-                                className="self-center px-4 py-2 rounded-full text-[11px] font-bold text-content-3 hover:bg-surface-card-hover transition-colors border border-slate-200">
+                                className="self-center px-4 py-2 rounded-full text-[11px] font-bold text-content-3 hover:bg-surface-card-hover transition-colors border border-divider">
                                 Detener
                             </button>
                         </div>
@@ -528,8 +528,8 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                             {/* Review card */}
                             {!reviewDone && currentReview ? (
-                                <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                                    <div className="bg-surface-card-hover px-4 py-2.5 flex items-center justify-between border-b border-slate-100">
+                                <div className="border border-divider rounded-2xl overflow-hidden">
+                                    <div className="bg-surface-card-hover px-4 py-2.5 flex items-center justify-between border-b border-divider">
                                         <p className="text-[10px] font-black text-content-3 uppercase tracking-widest">
                                             Revisar — {reviewIdx + 1} / {reviewQueue.length}
                                         </p>
@@ -556,7 +556,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             className={`w-full text-left rounded-xl border p-3 transition-all ${
                                                                 isSelected
                                                                     ? 'border-chart-3/50 bg-chart-3/10'
-                                                                    : 'border-slate-100 bg-white hover:border-chart-3/30 hover:bg-chart-3/10'
+                                                                    : 'border-divider bg-white hover:border-chart-3/30 hover:bg-chart-3/10'
                                                             }`}>
                                                             <div className="flex items-start justify-between gap-2">
                                                                 <p className="text-[11px] font-bold text-content-2 leading-snug flex-1">
@@ -593,17 +593,17 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 Aplicar
                                             </button>
                                             <button onClick={() => handleReviewMarkSinPA(currentReview)} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-slate-200 hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-divider hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
                                                 <Package size={12} /> Insumo/Equipo
                                             </button>
                                             <button onClick={handleReviewSkip} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-slate-200 hover:bg-surface-card-hover transition-colors">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-divider hover:bg-surface-card-hover transition-colors">
                                                 <SkipForward size={12} /> Saltar
                                             </button>
                                         </div>
 
                                         {/* Toggle panel buttons */}
-                                        <div className="flex items-center gap-3 pt-1 border-t border-slate-100">
+                                        <div className="flex items-center gap-3 pt-1 border-t border-divider">
                                             <button onClick={() => setReviewPanel(p => p === 'srs' ? null : 'srs')}
                                                 className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'srs' ? 'text-brand' : 'text-content-3 hover:text-brand'}`}>
                                                 <Search size={12} /> Buscar en SRS
@@ -617,7 +617,7 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                                         {/* SRS search panel */}
                                         {reviewPanel === 'srs' && (
-                                            <div className="rounded-xl border border-slate-100 bg-surface-card-hover p-3">
+                                            <div className="rounded-xl border border-divider bg-surface-card-hover p-3">
                                                 <SrsBuscadorWidget
                                                     initialQuery={currentReview.product.nombre}
                                                     onSelectResult={(srsProduct) => {
@@ -633,7 +633,7 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                                         {/* Manual entry panel */}
                                         {reviewPanel === 'manual' && (
-                                            <div className="rounded-xl border border-slate-100 bg-surface-card-hover p-3 flex flex-col gap-2">
+                                            <div className="rounded-xl border border-divider bg-surface-card-hover p-3 flex flex-col gap-2">
                                                 <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">
                                                     Principio activo manual
                                                 </p>
@@ -646,14 +646,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
                                                                 placeholder="Nombre del principio"
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3"
+                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-divider rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3"
                                                             />
                                                             <input
                                                                 value={item.concentracion}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
                                                                 placeholder="Cant."
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3 text-center"
+                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-divider rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3 text-center"
                                                             />
                                                             <button onClick={() => setManualItems(prev =>
                                                                 prev.length > 1
@@ -689,7 +689,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     </div>
                                 </div>
                             ) : reviewDone && (
-                                <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-card-hover border border-slate-200">
+                                <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-card-hover border border-divider">
                                     <Check size={18} className="text-success shrink-0" />
                                     <p className="text-[13px] font-bold text-content-2">Revisión completada.</p>
                                 </div>
@@ -703,8 +703,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     </p>
 
                                     {noMatchList.length > 0 && (
-                                        <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                                            <div className="bg-surface-card-hover px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                                        <div className="border border-divider rounded-2xl overflow-hidden">
+                                            <div className="bg-surface-card-hover px-4 py-2.5 border-b border-divider flex items-center justify-between">
                                                 <p className="text-[10px] font-black text-content-3 uppercase tracking-widest">
                                                     Sin resultado en SRS ({noMatchList.length})
                                                 </p>
@@ -722,7 +722,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             </button>
                                                         ) : (
                                                             <button onClick={() => handleMarkSinPA(p.id)}
-                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-content-3 border border-slate-200 hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
+                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-content-3 border border-divider hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
                                                                 <Package size={9} /> Insumo
                                                             </button>
                                                         )}

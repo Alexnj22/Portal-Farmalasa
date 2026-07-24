@@ -46,7 +46,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     : isUrgent && isRead
                     ? 'border-danger/30 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
                     : isRead
-                    ? 'border-slate-200/70 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
+                    ? 'border-divider shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
                     : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl'
             }`}
             onClick={() => { if (!isRead) onRead(ann.id); }}
@@ -167,7 +167,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
             )}
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+            <div className="flex items-center justify-between pt-1 border-t border-divider">
                 <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                     <Clock size={11} />
                     {new Date(ann.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -431,7 +431,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 ? 'border-success/50 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-white'
                                 : isUrgent
                                 ? 'border-danger/30   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-white'
-                                : 'border-slate-200/50 shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-white'
+                                : 'border-divider shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-white'
                         }`}
                     >
                         <div className="p-7 flex flex-col gap-5">
@@ -556,7 +556,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div className="flex items-center justify-center flex-wrap gap-x-3 gap-y-1.5 mt-4 select-none opacity-40 hover:opacity-70 transition-opacity duration-300">
                         {[['↵', 'Enter'], ['→', ''], ['Space', '']].map(([key, label]) => (
                             <div key={key} className="flex items-center gap-1.5">
-                                <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-slate-200 text-[10px] font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">
+                                <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-[10px] font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">
                                     {key}
                                 </kbd>
                                 {label && <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">{label}</span>}
@@ -564,7 +564,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         ))}
                         <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">— confirmar</span>
                         <span className="text-content-3">·</span>
-                        <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-slate-200 text-[10px] font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">←</kbd>
+                        <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-[10px] font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">←</kbd>
                         <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">— retroceder</span>
                     </div>
                 </div>

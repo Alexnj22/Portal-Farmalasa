@@ -378,7 +378,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     {showTimePickers && (
                         <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
                             
-                            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                            <div className="flex items-center justify-between border-b border-divider pb-2">
                                 <span className="text-[9px] font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                                     <Clock size={10} /> Cálculo de Horas
                                 </span>
@@ -470,7 +470,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         disabled={isSaveDisabled}
                         className={`w-full py-3.5 text-[12px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
                         ${isSaveDisabled 
-                            ? 'bg-surface-card-hover text-content-3 border border-slate-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
+                            ? 'bg-surface-card-hover text-content-3 border border-divider shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
                             : 'bg-gradient-to-r from-brand to-brand-hover text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
                     >
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}

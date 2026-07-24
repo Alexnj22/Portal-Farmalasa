@@ -15,6 +15,9 @@ const spring = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
  *   onSearchChange  – (value: string) => void
  *   placeholder     – string
  *   showSearch      – bool
+ *   trailingActions – ReactNode, opcional — botones extra entre los tabs y el
+ *                     buscador (ej. toggle de privacidad de VentasView). Se
+ *                     separa del bloque de tabs con el mismo divisor.
  */
 export default function ViewTabBar({
   tabs = [],
@@ -24,6 +27,7 @@ export default function ViewTabBar({
   onSearchChange,
   placeholder = 'Buscar...',
   showSearch = true,
+  trailingActions = null,
 }) {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const inputRef = useRef(null);
@@ -42,7 +46,7 @@ export default function ViewTabBar({
 
   const activeTabCls = 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]';
   const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active';
-  const dividerCls   = 'bg-surface-card';
+  const dividerCls   = 'bg-divider';
   const inputCls     = 'text-content-2 placeholder:text-content-3';
   const closeBtnCls  = 'text-content-3 hover:bg-surface-tab-active hover:text-brand hover:shadow-md';
   const clearBtnCls  = 'text-content-3 hover:text-danger';
@@ -128,7 +132,9 @@ export default function ViewTabBar({
           </div>
         )}
 
-        {showSearch && tabs.length > 0 && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
+        {tabs.length > 0 && (trailingActions || showSearch) && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
+
+        {trailingActions}
 
         {showSearch && (
           <button onClick={openSearch}

@@ -28,7 +28,7 @@ const EVENT_BADGE = {
 };
 
 const VACATION_STATUS = {
-    DRAFT:            { label: 'Borrador',      color: 'bg-surface-card-hover text-content-3 border-slate-200' },
+    DRAFT:            { label: 'Borrador',      color: 'bg-surface-card-hover text-content-3 border-divider' },
     PRE_APPROVED:     { label: 'Pre-aprobado',  color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' },
     CHANGE_REQUESTED: { label: 'Cambio solicitado', color: 'bg-warning/10 text-warning-text border-warning/30' },
     APPROVED:         { label: 'Aprobado',      color: 'bg-success/10 text-success-text border-success/30' },
@@ -277,7 +277,7 @@ const EmployeeScheduleView = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     {d.event ? (
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${EVENT_BADGE[d.event.type]?.color || 'bg-surface-card-hover text-content-2 border-slate-200'}`}>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${EVENT_BADGE[d.event.type]?.color || 'bg-surface-card-hover text-content-2 border-divider'}`}>
                                             {EVENT_BADGE[d.event.type]?.label || d.event.type}
                                         </span>
                                     ) : d.shift ? (
@@ -388,7 +388,7 @@ const EmployeeScheduleView = () => {
                             </button>
                         </div>
 
-                        <div className="bg-surface-card-hover border border-slate-100 rounded-2xl px-4 py-3">
+                        <div className="bg-surface-card-hover border border-divider rounded-2xl px-4 py-3">
                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Fechas actuales</p>
                             <p className="text-[12px] font-bold text-content-2">
                                 {fmtDate(changeTarget.start_date)} → {fmtDate(changeTarget.end_date)}
@@ -421,7 +421,7 @@ const EmployeeScheduleView = () => {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowChangeForm(false)}
-                                className="flex-1 py-3 rounded-2xl border border-slate-200 text-content-3 text-[11px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all"
+                                className="flex-1 py-3 rounded-2xl border border-divider text-content-3 text-[11px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all"
                             >
                                 Cancelar
                             </button>

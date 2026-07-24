@@ -27,7 +27,7 @@ const roleOrder = (emp) => {
 };
 
 const STATUS_META = {
-    DRAFT:    { label: 'Borrador',  color: 'bg-surface-card-hover text-content-2 border-slate-200' },
+    DRAFT:    { label: 'Borrador',  color: 'bg-surface-card-hover text-content-2 border-divider' },
     APPROVED: { label: 'Aprobada', color: 'bg-success/10 text-success-text border-success/30' },
     PAID:     { label: 'Pagada',   color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' },
 };

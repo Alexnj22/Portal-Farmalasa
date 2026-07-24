@@ -9,7 +9,7 @@ import LiquidSelect from '../common/LiquidSelect';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
-        <h4 className="text-[11px] font-black uppercase tracking-widest text-brand flex items-center gap-2 pt-5 border-t border-slate-200/60">
+        <h4 className="text-[11px] font-black uppercase tracking-widest text-brand flex items-center gap-2 pt-5 border-t border-divider">
             <Icon size={13} strokeWidth={2.5} /> {children}
         </h4>
     );
@@ -155,7 +155,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
     return (
         <div className="flex flex-col gap-5 p-1">
             {/* Datos fiscales — solo lectura, vienen del DTE */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-surface-card-hover/70 border border-slate-200/60">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-surface-card-hover/70 border border-divider">
                 <FiscalRow icon={FileText} label={formData?.nit ? 'NIT' : 'DUI'} value={formData?.nit || formData?.dui} />
                 {formData?.nrc && <FiscalRow icon={FileText} label="NRC" value={formData.nrc} />}
                 <FiscalRow icon={FileText} label="Giro" value={formData?.desc_actividad} />
@@ -164,7 +164,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <FiscalRow icon={Phone} label="Teléfono" value={formData?.telefono} />
                 <FiscalRow icon={Mail} label="Correo" value={formData?.correo} />
 
-                <div className="col-span-full flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60 text-[10px] text-content-3">
+                <div className="col-span-full flex flex-wrap items-center gap-3 pt-2 border-t border-divider text-[10px] text-content-3">
                     <span>{formData?.docs_count || 0} documento{formData?.docs_count === 1 ? '' : 's'}</span>
                     <span>·</span>
                     <span>Primera vez: {fmtDate(formData?.primera_vez_visto)}</span>
@@ -201,7 +201,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             Categoría Contable
                         </label>
                         <div className="h-[44px] flex items-center">
-                            <span className="text-[12px] font-bold text-content-2 bg-slate-500/10 border border-slate-500/20 px-3 py-1.5 rounded-full">
+                            <span className="text-[12px] font-bold text-content-2 bg-slate-500/10 border border-divider0/20 px-3 py-1.5 rounded-full">
                                 {claseActual ? CLASE_LABELS[claseActual] || claseActual : 'Sin categoría asignada'}
                             </span>
                         </div>
@@ -242,7 +242,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.contacto_nombre}
                             onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
                             placeholder="Nombre del contacto"
-                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-white border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                     <div>
@@ -251,7 +251,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.telefono2}
                             onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
                             placeholder="Teléfono adicional"
-                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-white border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                     <div>
@@ -260,7 +260,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.alias}
                             onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
                             placeholder="Nombre alterno de búsqueda"
-                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-white border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                     <div>
@@ -269,7 +269,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.nombre_cheques}
                             onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
                             placeholder="Si difiere de la razón social"
-                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-white border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                 </div>
@@ -306,7 +306,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
                             rows={3}
                             placeholder="Notas internas"
-                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 resize-none"
+                            className="w-full px-3.5 py-2.5 bg-white border border-divider rounded-[1rem] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 resize-none"
                         />
                     </div>
                 </div>
@@ -319,7 +319,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 lo fija al fondo del viewport visible sin necesitar que el botón viva
                 fuera del contenedor scrolleable (pedido del usuario: que se comporte
                 como el footer fijo de Nuevo Empleado). */}
-            <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-slate-200/70">
+            <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider">
                 {error && <div className="text-[11px] text-danger px-1 mb-2">{error}</div>}
                 <button type="button" onClick={save} disabled={loading}
                     className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">

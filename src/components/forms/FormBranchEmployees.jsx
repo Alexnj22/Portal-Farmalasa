@@ -162,7 +162,7 @@ const hasInjections = legal.injections === true;
                                 
                                 {/* 🚨 Panel Deslizante Liquid Glass */}
                                 <div className="absolute inset-0 bg-surface-card backdrop-blur-xl border-t border-border-card p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                                    <div className="flex justify-between items-center mb-2 border-b border-slate-200/60 pb-2">
+                                    <div className="flex justify-between items-center mb-2 border-b border-divider pb-2">
                                         <span className="text-content font-black text-[12px] truncate">{emp.name}</span>
                                         <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center shadow-md">
                                             <ArrowUpRight size={12} className="text-white shrink-0" strokeWidth={3} />
@@ -180,7 +180,7 @@ const hasInjections = legal.injections === true;
             </div>
 
             {/* 🛡️ SECCIÓN 2: SOPORTE OPERATIVO (SECUNDARIOS) */}
-            <div className="pt-6 border-t border-slate-200/50" style={gpuLockStyle}>
+            <div className="pt-6 border-t border-divider" style={gpuLockStyle}>
                 <div className="flex items-center gap-2 mb-4 px-1 opacity-80">
                     <Globe size={14} className="text-content-3" strokeWidth={2.5} />
                     <h3 className="text-[10px] font-black text-content-3 uppercase tracking-widest">Soporte Operativo & Global</h3>
@@ -193,8 +193,8 @@ const hasInjections = legal.injections === true;
 
                         if (!emp) {
                             return (
-                                <div key={slot.id} className="flex items-center gap-3 p-3 rounded-[1rem] bg-surface-card-hover/50 backdrop-blur-sm border border-dashed border-slate-200 h-[72px]">
-                                    <div className="w-9 h-9 rounded-lg bg-surface-card flex items-center justify-center text-content-3 shrink-0 border border-slate-100">
+                                <div key={slot.id} className="flex items-center gap-3 p-3 rounded-[1rem] bg-surface-card-hover/50 backdrop-blur-sm border border-dashed border-divider h-[72px]">
+                                    <div className="w-9 h-9 rounded-lg bg-surface-card flex items-center justify-center text-content-3 shrink-0 border border-divider">
                                         <slot.icon size={14} strokeWidth={2.5} />
                                     </div>
                                     <div className="flex flex-col flex-1">
@@ -207,7 +207,7 @@ const hasInjections = legal.injections === true;
 
                         return (
                             <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-[1rem] bg-surface-card-hover/50 backdrop-blur-sm border border-border-card shadow-sm hover:bg-white hover:border-brand/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-[10px] border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-surface-card-hover border-slate-200 p-0'}`}>
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-[10px] border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-surface-card-hover border-divider p-0'}`}>
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>
                                 <div className="flex-1 min-w-0">

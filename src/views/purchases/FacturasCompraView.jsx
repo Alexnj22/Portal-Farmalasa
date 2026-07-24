@@ -820,7 +820,7 @@ function TabDocumentos({
 
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex items-start justify-end gap-3 flex-wrap shrink-0">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible flex-wrap">
+                <div className="group flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-divider shrink-0 overflow-visible flex-wrap">
 
                     {/* Período + clear individual */}
                     <div className="flex items-center">
@@ -843,7 +843,7 @@ function TabDocumentos({
                                 <button onClick={downloadBulk}
                                     disabled={bulkDownloading}
                                     title="Descargar todos los filtrados en un ZIP"
-                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
+                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-divider hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
                                     <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
                                     {bulkProgress?.total > 0
                                         ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
@@ -862,7 +862,7 @@ function TabDocumentos({
                                     className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                                         syncing
                                             ? 'bg-chart-1/10 border-chart-1/30 text-chart-1-text'
-                                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
+                                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'
                                     } disabled:opacity-60`}>
                                     <RefreshCw size={11} strokeWidth={2.5} className={syncing ? 'animate-spin' : ''} />
                                     {syncing ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando') : 'Sincronizar'}
@@ -897,7 +897,7 @@ function TabDocumentos({
                         </DataCell>
                         <DataCell>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] font-bold text-content-2 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
+                                <span className="text-[10px] font-bold text-content-2 bg-slate-500/10 border border-divider0/25 px-2.5 py-0.5 rounded-full">
                                     {dteTypeLabel(row.tipo_dte)}
                                 </span>
                                 {row.invalidado && (
@@ -947,7 +947,7 @@ function TabDocumentos({
                                     <>
                                         <span
                                             title="Este documento se confirmó manualmente desde Revisión sin JSON asociado — no cumple conservación del DTE (Art. 147 CT)"
-                                            className="text-[9px] font-black text-content-3 bg-slate-500/10 border border-slate-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                            className="text-[9px] font-black text-content-3 bg-slate-500/10 border border-divider0/25 px-2 py-0.5 rounded-full whitespace-nowrap"
                                         >
                                             Sin JSON
                                         </span>

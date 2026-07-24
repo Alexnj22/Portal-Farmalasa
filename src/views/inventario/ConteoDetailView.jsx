@@ -238,7 +238,7 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
             </DataCell>
             <DataCell hideBelow="lg"><span className="text-[11px] text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
             <DataCell align="center" hideBelow="md">
-                <span className="text-[10px] font-bold text-content-3 bg-surface-card-hover border border-slate-200 px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
+                <span className="text-[10px] font-bold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
             </DataCell>
             <DataCell hideBelow="md" />
             <DataCell align="center" hideBelow="lg">
@@ -613,7 +613,7 @@ export default function ConteoDetailView() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center rounded-2xl border border-slate-200/70 bg-surface-card overflow-hidden">
+                    <div className="flex items-center rounded-2xl border border-divider bg-surface-card overflow-hidden">
                         {FILTRO_PILLS.map((f, idx) => (
                             <React.Fragment key={f.key}>
                                 {idx > 0 && <div className="h-5 w-px bg-divider" />}
@@ -798,7 +798,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
             <div className="flex items-center gap-2">
                 <div>
                     <label className="text-[9px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Vencimiento</label>
-                    <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} disabled={lote !== '__OTRO__'} className="text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-chart-9 disabled:bg-surface-card-hover disabled:text-content-3" />
+                    <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} disabled={lote !== '__OTRO__'} className="text-[16px] bg-white border border-divider rounded-xl px-3 py-2 outline-none focus:border-chart-9 disabled:bg-surface-card-hover disabled:text-content-3" />
                 </div>
                 <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold text-white bg-chart-9 rounded-xl hover:bg-chart-9/80 disabled:opacity-40 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo

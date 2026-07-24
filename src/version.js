@@ -5,11 +5,45 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.54.1';
+export const APP_VERSION = '2.55.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
-// v2.54.1 — docs(theme): cierra formalmente la decisión de Liquid Glass.
+// v2.55.0 — fix(theme): border-slate-* → border-divider (119 archivos) +
+// consolida el duplicado de ViewTabBar en VentasView.
 //
+// Al revisar "qué más falta" se encontró un gap real en el gate mecánico de
+// T7.1: la regex oficial (`text-slate-[0-9]|bg-white/|bg-slate-[0-9]|
+// border-white/|#hex`) nunca cubrió `border-slate-*` — quedaron 780+ usos
+// crudos en 121 archivos, invisibles al gate porque el patrón nunca los
+// buscó. Migrados los tonos claros (slate-50 a slate-300, cualquier
+// opacidad — 771 usos / 119 archivos) a `border-divider`; los tonos
+// oscuros (400+) se dejan intactos a propósito, mismo criterio que la
+// excepción ya documentada de `bg-slate-500+` (botones/chips siempre-
+// oscuros, paneles WFM dark, tooltips de charts, kiosco de asistencia) —
+// confirmado archivo por archivo antes de excluirlos, no fue un corte
+// arbitrario por número. Verificado con Playwright en 4 temas (FacturacionView,
+// StaffManagementView) — las líneas divisoras se ven correctas y sutiles en
+// los 4, incluido dark/solid-dark donde antes el valor crudo no reaccionaba
+// al tema.
+//
+// De paso, dos gaps de indirección que el regex de línea del backfill
+// anterior (v2.53.4) no pudo detectar por vivir en variables JS separadas
+// de su uso: `ViewTabBar.jsx` seguía con `dividerCls = 'bg-surface-card'`
+// para su propio divisor, y `VentasView.jsx` tenía `dividerCls =
+// 'border-slate-100/80'` (este sí lo agarró el regex de archivo completo
+// de border-slate, no el anterior de línea).
+//
+// **Consolidación real, no solo tokens**: `VentasView.jsx` tenía su propia
+// copia hand-rolled del pill de `ViewTabBar` (DESIGN.md §32/§23,
+// "duplicado conocido" desde T2) — reemplazada por el componente
+// compartido real. Requirió agregar `trailingActions` (prop nuevo, opcional)
+// a `ViewTabBar` para el único elemento que el duplicado tenía de más (el
+// toggle de privacidad). Efecto colateral bueno: los botones de tab del
+// duplicado eran h-9/h-10 (36/40px, bajo el mínimo táctil de 44px que esta
+// misma auditoría fijó en otras partes) — ahora heredan los 44px reales
+// de ViewTabBar. Verificado con Playwright: tabs, búsqueda (abrir/cerrar/
+// escribir), toggle de privacidad y el dropdown móvil, en liquid y dark,
+// sin errores de consola.
 // AUDITORIA-TEMA-2026-07.md §11 y DESIGN.md (encabezado + §2) seguían
 // diciendo "decisión pendiente/diferida" sobre si Liquid Glass sobrevive
 // como tema — quedó stale: el usuario ya la tomó en esta misma sesión

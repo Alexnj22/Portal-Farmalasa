@@ -91,12 +91,12 @@ const FormDispositivos = ({ formData }) => {
                                 const isConfirming = confirmingId === kiosk.id;
 
                                 return (
-                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-[1.5rem] transition-all duration-300 ${isConfirming ? 'bg-surface-card border-2 border-danger/30 shadow-md' : 'bg-surface-card border border-slate-100 shadow-[var(--shadow-elevation-xs)] hover:shadow-md hover:-translate-y-0.5'}`}>
+                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-[1.5rem] transition-all duration-300 ${isConfirming ? 'bg-surface-card border-2 border-danger/30 shadow-md' : 'bg-surface-card border border-divider shadow-[var(--shadow-elevation-xs)] hover:shadow-md hover:-translate-y-0.5'}`}>
                                         
                                         {/* FILA 1: INFORMACIÓN PRINCIPAL (Nunca se desborda gracias al min-w-0 y truncate) */}
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover border border-slate-100 text-content-3'}`}>
+                                                <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover border border-divider text-content-3'}`}>
                                                     <Laptop size={20} strokeWidth={isConfirming ? 2.5 : 2} />
                                                 </div>
                                                 <div className="min-w-0">
@@ -111,7 +111,7 @@ const FormDispositivos = ({ formData }) => {
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-surface-card-hover border border-slate-100 text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
+                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-surface-card-hover border border-divider text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
                                                     <PowerOff size={14} strokeWidth={2.5} />
                                                 </button>
                                             )}
@@ -142,8 +142,8 @@ const FormDispositivos = ({ formData }) => {
                                 );
                             })
                         ) : (
-                            <div className="text-center py-10 rounded-[1.5rem] bg-white border border-slate-100 shadow-sm">
-                                <div className="w-12 h-12 bg-surface-card-hover border border-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-content-3">
+                            <div className="text-center py-10 rounded-[1.5rem] bg-white border border-divider shadow-sm">
+                                <div className="w-12 h-12 bg-surface-card-hover border border-divider rounded-xl flex items-center justify-center mx-auto mb-3 text-content-3">
                                     <Laptop size={20} strokeWidth={2} />
                                 </div>
                                 <p className="text-[11px] text-content-3 font-black uppercase tracking-widest">Ningún equipo conectado</p>

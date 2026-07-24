@@ -7,7 +7,7 @@ const SERVICE_CONFIG = {
     water: { title: 'Agua Potable', icon: Droplet, color: 'text-chart-5-text bg-chart-5/10 border-chart-5/30', ring: 'focus:border-chart-5 focus:ring-chart-5/20', providerLabel: 'Servicio de Agua' },
     internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-chart-1-text bg-chart-1/10 border-chart-1/30', ring: 'focus:border-chart-1 focus:ring-chart-1/20', providerLabel: 'Proveedor ISP' },
     phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-success focus:ring-success/20', providerLabel: 'Telefonía Móvil' },
-    taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-slate-300', ring: 'focus:border-slate-500 focus:ring-slate-500/20', providerLabel: 'Alcaldía / Entidad' }
+    taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-divider', ring: 'focus:border-divider0 focus:ring-slate-500/20', providerLabel: 'Alcaldía / Entidad' }
 };
 
 const FormServicePayment = ({ formData, setFormData }) => {
@@ -49,7 +49,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
     // Lógica en tiempo real para previsualizar el estado
     const calculatePreviewStatus = () => {
         const { dueDay, paidThrough } = currentData;
-        if (!dueDay || !paidThrough) return { state: 'Sin Configurar', color: 'text-content-3 bg-surface-card-hover border-slate-200', icon: AlertTriangle };
+        if (!dueDay || !paidThrough) return { state: 'Sin Configurar', color: 'text-content-3 bg-surface-card-hover border-divider', icon: AlertTriangle };
         
         const today = new Date();
         const currentYear = today.getFullYear();
@@ -89,13 +89,13 @@ const FormServicePayment = ({ formData, setFormData }) => {
                 </div>
             </div>
 
-            <div className="bg-surface-card-hover/50 border border-slate-200 rounded-[2rem] p-6 shadow-sm space-y-5">
+            <div className="bg-surface-card-hover/50 border border-divider rounded-[2rem] p-6 shadow-sm space-y-5">
                 <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{config.providerLabel}</label>
                     <input 
                         required
                         type="text" 
-                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                         placeholder={`Ej: Proveedor de ${config.title}`}
                         value={providerValue || ""} 
                         onChange={(e) => handleChange('provider', e.target.value)} 
@@ -108,7 +108,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <input 
                             required
                             type="number" min="0" step="0.01" 
-                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                             placeholder="0.00"
                             value={currentData.amount || ""} 
                             onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))} 
@@ -119,7 +119,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <input 
                             required
                             type="number" min="1" max="31" 
-                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                             placeholder="Ej: 15"
                             value={currentData.dueDay || ""} 
                             onChange={(e) => handleChange('dueDay', parseInt(e.target.value, 10))} 
@@ -127,14 +127,14 @@ const FormServicePayment = ({ formData, setFormData }) => {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200">
+                <div className="pt-4 border-t border-divider">
                     <label className="text-[10px] font-black uppercase tracking-widest text-brand ml-1 mb-2 flex items-center gap-2">
                         <CalendarCheck size={14}/> Último Mes Pagado
                     </label>
                     <input 
                         required
                         type="month" 
-                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                         value={currentData.paidThrough || ""} 
                         onChange={(e) => handleChange('paidThrough', e.target.value)} 
                     />

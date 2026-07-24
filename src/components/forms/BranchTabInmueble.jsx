@@ -78,7 +78,7 @@ const BranchTabInmueble = ({
                                 required
                                 icon={User}
                                 placeholder="Ej: Juan Perez"
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordName ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordName ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
                                 value={rent.landlordName ?? ""}
                                 onChange={(val) => updateNestedSetting('rent', 'landlordName', val)}
                             />
@@ -96,7 +96,7 @@ const BranchTabInmueble = ({
                                 value={rent.landlordPhone ?? ""}
                                 onChange={(val) => updateNestedSetting('rent', 'landlordPhone', formatPhoneMask(val))}
                                 maxLength={9}
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordPhone ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordPhone ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
                             />
 
                         </div>
@@ -109,7 +109,7 @@ const BranchTabInmueble = ({
                                 type="number"
                                 icon={DollarSign}
                                 placeholder="0.00"
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.amount ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.amount ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
                                 value={rent.amount ?? ""}
                                 onChange={(val) => updateNestedSetting('rent', 'amount', val === "" ? null : Number(val))}
                             />
@@ -119,7 +119,7 @@ const BranchTabInmueble = ({
                             <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
-                            <div className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.startDate ? '!border-danger bg-danger/10' : ''}`}>
+                            <div className={`bg-white rounded-2xl border border-divider shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.startDate ? '!border-danger bg-danger/10' : ''}`}>
                                 <LiquidDatePicker
                                     value={rentContract.startDate ?? ""}
                                     onChange={(val) => handleContractChange('startDate', val || null)}
@@ -137,7 +137,7 @@ const BranchTabInmueble = ({
                                 type="number"
                                 icon={CalendarDays}
                                 placeholder="Ej: 12"
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.termMonths ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.termMonths ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
                                 value={rentContract.termMonths ?? ""}
                                 onChange={(val) => handleContractChange('termMonths', val === "" ? null : clampInt(val, 1, 240))}
                             />
@@ -152,7 +152,7 @@ const BranchTabInmueble = ({
                             </div>
                         )}
 
-                        <div className="md:col-span-2 mt-2 pt-4 border-t border-slate-200/60">
+                        <div className="md:col-span-2 mt-2 pt-4 border-t border-divider">
                             <FileUploader
                                 label="Contrato de Arrendamiento (PDF)"
                                 icon={FileText}
@@ -196,7 +196,7 @@ const BranchTabInmueble = ({
                                 placeholder="Ej: 12345-A"
                                 value={legal.municipalAccount || ""}
                                 onChange={(val) => updateNestedSetting('legal', 'municipalAccount', val)}
-                                className={`!bg-white shadow-sm ${inputHoverClass} border-slate-200/80`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} border-divider`}
                             />
                         </div>
                         <div className="relative focus-within:z-50">
@@ -306,7 +306,7 @@ const BranchTabInmueble = ({
                                 placeholder="Ej: 2"
                                 value={legal.extinguisherCount || ""}
                                 onChange={(val) => updateNestedSetting('legal', 'extinguisherCount', val ? Number(val) : null)}
-                                className={`!bg-white shadow-sm ${inputHoverClass} border-slate-200/80`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} border-divider`}
                             />
                         </div>
 
@@ -352,7 +352,7 @@ const BranchTabInmueble = ({
                                 placeholder="Nombre de la empresa"
                                 value={legal.pestControlCompany || ""}
                                 onChange={(val) => updateNestedSetting('legal', 'pestControlCompany', val)}
-                                className={`!bg-white shadow-sm ${inputHoverClass} border-slate-200/80`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} border-divider`}
                             />
                         </div>
 
@@ -360,7 +360,7 @@ const BranchTabInmueble = ({
                             <label className="text-[10px] font-black uppercase tracking-widest text-success ml-1 mb-2 block flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={3} /> Última Fumigación
                             </label>
-                            <div className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
+                            <div className={`bg-white rounded-2xl border border-divider shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
                                 <LiquidDatePicker
                                     value={legal.lastFumigationDate || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'lastFumigationDate', val)}
@@ -369,7 +369,7 @@ const BranchTabInmueble = ({
                             </div>
                         </div>
 
-                        <div className="pt-2 border-t border-slate-200/60 mt-2">
+                        <div className="pt-2 border-t border-divider mt-2">
                             <FileUploader
                                 label="Certificado de Fumigación (PDF)"
                                 file={legal.fumigationFile}

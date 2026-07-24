@@ -285,7 +285,7 @@ const FormWfmAnalytics = ({ branches }) => {
                 </div>
 
                 {/* FILTROS DE RANGO (PILL TABS) */}
-                <div className="flex items-center bg-surface-card-hover rounded-full p-1 border border-slate-200/80 shadow-inner w-full sm:w-auto h-[48px] justify-between">
+                <div className="flex items-center bg-surface-card-hover rounded-full p-1 border border-divider shadow-inner w-full sm:w-auto h-[48px] justify-between">
                     {[
                         { value: '0', label: 'Hoy' },
                         { value: '30', label: '30 Días' },
@@ -324,7 +324,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
                     <div className="flex flex-col items-end gap-2.5">
                         {/* FILA 1: SEMANA | GENERAL (PILL TABS) */}
-                        <div className="flex items-center bg-surface-card-hover/70 p-1 rounded-full border border-slate-200 shadow-inner w-max">
+                        <div className="flex items-center bg-surface-card-hover/70 p-1 rounded-full border border-divider shadow-inner w-max">
                             {timeRange !== '0' && (
                                 <button
                                     type="button"
@@ -345,7 +345,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
                         {/* FILA 2: L M M J V S D (Se oculta si el filtro es de hoy) (PILL TABS) */}
                         {timeRange !== '0' && (
-                            <div className="flex items-center bg-surface-card-hover/70 p-1 rounded-full border border-slate-200 shadow-inner w-max gap-0.5">
+                            <div className="flex items-center bg-surface-card-hover/70 p-1 rounded-full border border-divider shadow-inner w-max gap-0.5">
                                 {DAYS_ORDER.map(d => (
                                     <button
                                         key={d}

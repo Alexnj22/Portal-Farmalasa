@@ -46,7 +46,7 @@ const DOC_CFG = {
 };
 const DEFAULT_CFG = {
     label: 'Documento', Icon: FileText,
-    bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-slate-200',
+    bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider',
     iconBg: 'bg-surface-card-hover', accent: 'bg-content-3',
     glow: 'hover:shadow-[var(--shadow-elevation-md)]',
 };
@@ -55,7 +55,7 @@ const STATUS_CFG = {
     APPROVED:  { label: 'Aprobada',  Icon: CheckCircle2, cls: 'bg-success/10 text-success-text border-success/30' },
     PENDING:   { label: 'Pendiente', Icon: Clock,         cls: 'bg-warning/10  text-warning-text  border-warning/30'   },
     REJECTED:  { label: 'Rechazada', Icon: XCircle,       cls: 'bg-danger/10    text-danger    border-danger/30'     },
-    CANCELLED: { label: 'Cancelada', Icon: X,             cls: 'bg-surface-card-hover  text-content-3  border-slate-200'   },
+    CANCELLED: { label: 'Cancelada', Icon: X,             cls: 'bg-surface-card-hover  text-content-3  border-divider'   },
 };
 
 const CERT_LABELS = {
@@ -83,7 +83,7 @@ const TABS = [
 const DocCard = ({ doc }) => {
     const cfg    = DOC_CFG[doc.type] || DEFAULT_CFG;
     const DocIcon = cfg.Icon;
-    const status = STATUS_CFG[doc.status] || { label: doc.status, Icon: AlertCircle, cls: 'bg-surface-card-hover text-content-3 border-slate-200' };
+    const status = STATUS_CFG[doc.status] || { label: doc.status, Icon: AlertCircle, cls: 'bg-surface-card-hover text-content-3 border-divider' };
     const StatusIcon = status.Icon;
 
     const title = doc.type === 'CERTIFICATE' && doc.meta?.certificateType
@@ -132,7 +132,7 @@ const DocCard = ({ doc }) => {
                     )}
 
                     {/* Footer: fecha + archivo */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap mt-2 pt-2 border-t border-slate-100/80">
+                    <div className="flex items-center justify-between gap-2 flex-wrap mt-2 pt-2 border-t border-divider">
                         <p className="text-[10px] text-content-3 font-medium">
                             Solicitado el {new Date(doc.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
@@ -165,7 +165,7 @@ const DocCard = ({ doc }) => {
                                 </span>
                             ))}
                             {doc.meta.permissionDates.length > 5 && (
-                                <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-surface-card-hover text-content-3 border border-slate-200">
+                                <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-surface-card-hover text-content-3 border border-divider">
                                     +{doc.meta.permissionDates.length - 5} más
                                 </span>
                             )}
@@ -314,11 +314,11 @@ const EmployeeDocumentsView = () => {
                         <div>
                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-2">Período de solicitud</p>
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                                <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                 </div>
                                 <span className="text-content-3 text-[12px] font-bold shrink-0">→</span>
-                                <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                                <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                 </div>
                             </div>
@@ -332,7 +332,7 @@ const EmployeeDocumentsView = () => {
                                     <button
                                         key={s.key}
                                         onClick={() => setFilterStatus(s.key)}
-                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-content-3 border-slate-200 hover:border-slate-300'}`}
+                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-content-3 border-divider hover:border-divider'}`}
                                     >
                                         {s.label}
                                     </button>

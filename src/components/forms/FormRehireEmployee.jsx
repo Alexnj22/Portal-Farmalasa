@@ -75,7 +75,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Nueva Fecha de Ingreso {reqBadge}
                         </label>
-                        <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-danger bg-danger/10' : 'border-slate-200/80'}`}>
+                        <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-danger bg-danger/10' : 'border-divider'}`}>
                             <LiquidDatePicker value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} placeholder="DD / MM / AAAA" />
                         </div>
                     </div>
@@ -123,7 +123,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Horas semanales */}
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Semanales</label>
-                        <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHover}`}>
+                        <div className={`relative bg-white rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3"><Clock size={14} strokeWidth={2.5} /></div>
                             <input type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
                                 className="w-full h-full bg-transparent text-[16px] font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -133,7 +133,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Salario base */}
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Salario Base</label>
-                        <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHover}`}>
+                        <div className={`relative bg-white rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3 font-black text-[13px]">$</div>
                             <input type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
                                 placeholder="0.00" className="w-full h-full bg-transparent text-[16px] font-bold text-content-2 outline-none pl-8 pr-4" />
@@ -146,7 +146,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <textarea value={formData.rehire_notes || ''} onChange={e => set('rehire_notes', e.target.value)}
                             rows={2}
                             placeholder="Ej. Regresa tras cierre de proyecto externo, aplica para período de prueba..."
-                            className={`w-full bg-white rounded-[1rem] border border-slate-200/80 shadow-sm text-[16px] font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
+                            className={`w-full bg-white rounded-[1rem] border border-divider shadow-sm text-[16px] font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
                     </div>
 
                 </div>

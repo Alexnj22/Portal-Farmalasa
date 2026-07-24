@@ -1113,7 +1113,7 @@ const DashboardView = ({ openModal }) => {
           onPointerDown={e => startDrag(e, id)}
           className={`absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-100 scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? "relative before:absolute before:content-[''] before:-inset-2.5" : ''}`}
         >
-          <div className="bg-white border border-slate-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
+          <div className="bg-white border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
             <span className="text-[8px] font-black text-content-2 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
           </div>
@@ -1129,7 +1129,7 @@ const DashboardView = ({ openModal }) => {
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
-              className={`relative w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-brand border-brand text-white' : 'bg-white border-slate-200 text-content-3 hover:text-brand hover:border-brand/50'} ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}
+              className={`relative w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-brand border-brand text-white' : 'bg-white border-divider text-content-3 hover:text-brand hover:border-brand/50'} ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}
               title="Cambiar tamaño"
             >
               <Maximize2 size={11} strokeWidth={2.5} />
@@ -1140,7 +1140,7 @@ const DashboardView = ({ openModal }) => {
                 {/* gap ampliado + before:-inset-1 en mobile: mejora el touch target
                     de 24px a ~32px sin que las zonas de toque de números
                     vecinos se solapen (gap-1.5=6px era insuficiente, v2.47.4) */}
-                <div className={`bg-surface-card backdrop-blur-sm border border-slate-200 rounded-2xl px-3 py-2.5 shadow-xl flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
+                <div className={`bg-surface-card backdrop-blur-sm border border-divider rounded-2xl px-3 py-2.5 shadow-xl flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
                   <span className="text-[8px] font-black text-content-2 uppercase tracking-widest mr-0.5">W</span>
                   {Array.from({length: activeCols}, (_, i) => i + 1).map(n => (
                     <button key={n}
@@ -1178,7 +1178,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('trend',
         <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
           action={
-            <div className="flex items-center gap-1 bg-surface-card-hover border border-slate-100 rounded-xl px-1 py-0.5">
+            <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl px-1 py-0.5">
               <button onClick={() => setTrendOffset(o=>o-1)} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand hover:bg-white transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={13} strokeWidth={2.5} /></button>
               <span className="text-[11px] font-bold text-content-2 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
               <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={13} strokeWidth={2.5} /></button>
@@ -1276,7 +1276,7 @@ const DashboardView = ({ openModal }) => {
           }>
           <div className="px-5 pb-5 pt-3 overflow-visible h-full flex flex-col">
             <div className="relative flex-1 min-h-0">
-              <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-slate-500 w-full"/><div className="border-t border-dashed border-slate-500 w-full"/></div>
+              <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-divider0 w-full"/><div className="border-t border-dashed border-divider0 w-full"/></div>
               <div className="flex items-end gap-1.5 w-full h-full relative overflow-visible">
                 {!effectiveSalesBranch?(
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-[9px] font-black text-content-2/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
@@ -1474,7 +1474,7 @@ const DashboardView = ({ openModal }) => {
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
-                <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-surface-card-hover/50">
+                <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-divider bg-surface-card-hover/50">
                   <Skel className="w-5 h-5 rounded-full flex-shrink-0" />
                   <div className="flex-1 space-y-1.5">
                     <Skel className="h-2.5 w-2/3" />
@@ -1650,7 +1650,7 @@ const DashboardView = ({ openModal }) => {
                     ? 'bg-warning/10 border-warning/30 shadow-[var(--shadow-glow-warning)]'
                     : e.isPast
                     ? 'bg-surface-card border-border-card opacity-40'
-                    : 'bg-surface-card border-border-card hover:bg-surface-card hover:border-slate-200/60 hover:shadow-sm';
+                    : 'bg-surface-card border-border-card hover:bg-surface-card hover:border-divider hover:shadow-sm';
                   return (
                     <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-[background-color,border-color,box-shadow] duration-200 ${cardCls}`}>
                       {/* Avatar */}
@@ -1696,7 +1696,7 @@ const DashboardView = ({ openModal }) => {
           action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
-              <div className="flex items-end gap-4 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
+              <div className="flex items-end gap-4 px-4 pt-3 pb-2 border-b border-divider shrink-0">
                 <div className="space-y-1.5">
                   <Skel className="h-8 w-10" />
                   <Skel className="h-2 w-16" />
@@ -1721,7 +1721,7 @@ const DashboardView = ({ openModal }) => {
             </div>
           ) : (
           <div className="flex flex-col h-full">
-            <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
+            <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-divider shrink-0">
               <div>
                 <p className="text-[32px] font-black text-content leading-none">{cotizStats.activas}</p>
                 <p className="text-[10px] font-semibold text-content-3 mt-0.5">últ. 30 días</p>
@@ -2006,7 +2006,7 @@ const DashboardView = ({ openModal }) => {
           const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
           return (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 space-y-3">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-white rounded-[1.5rem] border border-divider shadow-sm p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
@@ -2015,7 +2015,7 @@ const DashboardView = ({ openModal }) => {
                 </button>
               </div>
               {/* Tab selector inside panel */}
-              <div className="flex items-center gap-1 bg-surface-card-hover border border-slate-100 rounded-[0.875rem] p-1">
+              <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-[0.875rem] p-1">
                 {TABS.map(tab => {
                   const TabIcon = tab.icon;
                   return (
@@ -2036,7 +2036,7 @@ const DashboardView = ({ openModal }) => {
                   const WIcon = w.icon;
                   return (
                     <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
-                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-slate-100' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-white border-slate-200 hover:bg-surface-card-hover'}`}>
+                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-white border-divider hover:bg-surface-card-hover'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-brand' : 'text-content-3'}/>
                       <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
                       <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-brand' : 'bg-surface-card-hover'}`}>

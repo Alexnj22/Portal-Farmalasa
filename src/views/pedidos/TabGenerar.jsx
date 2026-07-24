@@ -50,7 +50,7 @@ const SIN_BODEGA_COLS = [
     { key: 'total_ventas_6m', label: 'Ventas 6m',  align: 'center', sortable: true, hideBelow: 'sm' },
 ];
 
-const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
+const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 
 const SUC_ANIM_CSS = `
 @keyframes suc-pop {
@@ -337,7 +337,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
                             globalMode
                                 ? 'bg-chart-3 border-chart-3 text-white shadow-sm'
-                                : 'bg-white border-slate-200 text-content-3 hover:border-chart-3/50 hover:text-chart-3-text'
+                                : 'bg-white border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text'
                         }`}
                     >
                         Distribución global de bodega
@@ -366,7 +366,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                             return (
                                 <div
                                     key={id}
-                                    className="relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center overflow-hidden bg-surface-card-hover/60 border-slate-200/40 opacity-60 cursor-not-allowed"
+                                    className="relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center overflow-hidden bg-surface-card-hover/60 border-divider opacity-60 cursor-not-allowed"
                                 >
                                     <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none" />
                                     <Building2 size={20} className="text-content-3 mt-1" />
@@ -389,7 +389,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 ? 'bg-gradient-to-b from-warning/10 to-white/60 border-warning/30 backdrop-blur-sm'
                                 : urgLevel === 'low'
                                     ? 'bg-gradient-to-b from-success/10 to-white/50 border-success/30 backdrop-blur-sm'
-                                    : 'bg-gradient-to-b from-white/80 to-white/50 border-slate-200/60 backdrop-blur-sm';
+                                    : 'bg-gradient-to-b from-white/80 to-white/50 border-divider backdrop-blur-sm';
 
                         // Selection adds a glow ring; no-selection adds hover effects
                         const stateCls = isOn
@@ -398,7 +398,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 ? 'hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)] transition-all duration-200'
                                 : urgLevel === 'mid'
                                     ? 'hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)] transition-all duration-200'
-                                    : 'hover:border-slate-300 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200';
+                                    : 'hover:border-divider hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200';
 
                         // Urgency badge color
                         const urgBadgeCls = urgLevel === 'high'
@@ -551,7 +551,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                             <div className="flex flex-wrap gap-1">
                                 {(row.sucursales || []).map(s => (
                                     <span key={s.erp_sucursal_id}
-                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-card-hover border border-slate-200 whitespace-nowrap"
+                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-card-hover border border-divider whitespace-nowrap"
                                         title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
                                         <span className="font-medium text-content-2">{ERP_NAMES[s.erp_sucursal_id]}</span>
                                         <span className="text-danger font-semibold">{s.reponer}</span>

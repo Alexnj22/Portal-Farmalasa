@@ -196,11 +196,11 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                 <PedidoModal.Footer>
                     <div className="flex justify-between gap-2">
                         <button onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}
-                            className="px-3 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[12px] transition-colors">
+                            className="px-3 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[12px] transition-colors">
                             Limpiar
                         </button>
                         <div className="flex gap-2">
-                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
+                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
                                 Cancelar
                             </button>
                             {employee && (

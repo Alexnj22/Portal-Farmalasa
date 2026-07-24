@@ -49,7 +49,7 @@ const BranchTabLegal = ({
                                 placeholder="Ej: SRS-2024-001"
                                 value={legal.srsPermit || ""}
                                 onChange={(val) => updateNestedSetting('legal', 'srsPermit', val)}
-                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-slate-200/80 ${inputHoverClass}`}
+                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`}
                             />
                         </div>
                         <div className="relative focus-within:z-50">
@@ -65,7 +65,7 @@ const BranchTabLegal = ({
                             </div>
                         </div>
                         {/* mt-auto empuja el uploader siempre al fondo de la tarjeta */}
-                        <div className="pt-4 border-t border-slate-200/60 mt-auto">
+                        <div className="pt-4 border-t border-divider mt-auto">
                             <FileUploader
                                 label="Documento Físico Licencia (PDF)"
                                 file={legal.srsPermitFile}
@@ -111,7 +111,7 @@ const BranchTabLegal = ({
                                 />
                             </div>
                         </div>
-                        <div className="pt-4 border-t border-slate-200/60 mt-auto">
+                        <div className="pt-4 border-t border-divider mt-auto">
                             <FileUploader
                                 label="Contrato de Regencia (PDF)"
                                 file={legal.regentCredentialFile}
@@ -157,7 +157,7 @@ const BranchTabLegal = ({
                                 />
                             </div>
                         </div>
-                        <div className="pt-4 border-t border-slate-200/60 mt-auto">
+                        <div className="pt-4 border-t border-divider mt-auto">
                             <FileUploader
                                 label="Contrato / Designación (PDF)"
                                 file={legal.farmacovigilanciaAuthFile}
@@ -194,7 +194,7 @@ const BranchTabLegal = ({
                                                     key={emp.id}
                                                     type="button"
                                                     onClick={() => toggleNurse(emp.id)}
-                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-[11px] font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-white text-content-3 border border-slate-100 hover:border-brand/30 hover:shadow-sm'}`}
+                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-[11px] font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-white text-content-3 border border-divider hover:border-brand/30 hover:shadow-sm'}`}
                                                 >
                                                     {emp.name.split(' ')[0]} {isSelected && '✓'}
                                                 </button>
@@ -203,7 +203,7 @@ const BranchTabLegal = ({
                                     </div>
                                 )}
                             </div>
-                            <div className="pt-4 border-t border-slate-200/60 mt-auto">
+                            <div className="pt-4 border-t border-divider mt-auto">
                                 <FileUploader
                                     label="Permiso de Área (PDF)"
                                     file={legal.nursingServicePermitFile}
@@ -242,7 +242,7 @@ const BranchTabLegal = ({
                                 placeholder="Ej: RES-LIB-2025"
                                 value={legal.controlledBooksRes || ""}
                                 onChange={(val) => updateNestedSetting('legal', 'controlledBooksRes', val)}
-                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-slate-200/80 ${inputHoverClass}`}
+                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`}
                             />
                         </div>
                         <div className="pt-2 md:pt-0">

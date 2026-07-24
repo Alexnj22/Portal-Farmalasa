@@ -268,7 +268,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     </div>
                 </div>
             </div>
-            <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pt-2 border-t border-dashed border-slate-100 ${isCCF ? '' : 'justify-end'}`}>
+            <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pt-2 border-t border-dashed border-divider ${isCCF ? '' : 'justify-end'}`}>
                 {isCCF ? (
                     <>
                         <div className="flex items-center gap-1.5">
@@ -776,7 +776,7 @@ export default function CotizacionesView() {
 
                     {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-10 gap-3 text-content-3">
-                            <div className="w-12 h-12 rounded-[1rem] bg-surface-card-hover flex items-center justify-center border border-slate-100"><Package size={22} strokeWidth={1.5} /></div>
+                            <div className="w-12 h-12 rounded-[1rem] bg-surface-card-hover flex items-center justify-center border border-divider"><Package size={22} strokeWidth={1.5} /></div>
                             <p className="text-[12px] font-bold">Busca y selecciona productos</p>
                         </div>
                     ) : (
@@ -800,7 +800,7 @@ export default function CotizacionesView() {
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(totals.base)} />
                             <Row label="IVA 13%" val={fmt(totals.iva)} />
                             {appliesRetention && <Row label="Retención 1%" val={`–${fmt(totals.retention)}`} className="text-warning" />}
-                            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+                            <div className="flex justify-between items-center pt-3 border-t border-divider">
                                 <span className="text-[14px] font-black text-content">TOTAL</span>
                                 <span className="text-[22px] font-black text-brand">{fmt(totals.total)}</span>
                             </div>
@@ -847,7 +847,7 @@ export default function CotizacionesView() {
                         {cot.status === 'ACTIVA' && canEdit && (
                             <>
                                 <button onClick={() => startEdit(cot)}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-surface-card-hover text-content-2 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-surface-card-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-surface-card-hover text-content-2 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-divider hover:bg-surface-card-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                     <Edit2 size={13} strokeWidth={2.5} /> Editar
                                 </button>
                                 <button onClick={() => setConfirmAnular(cot.id)}
@@ -966,7 +966,7 @@ export default function CotizacionesView() {
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(vTotals.base)} />
                             <Row label="IVA 13%" val={fmt(vTotals.iva)} />
                             {cot.applies_retention && <Row label="Retención 1%" val={`–${fmt(vTotals.retention)}`} className="text-warning" />}
-                            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+                            <div className="flex justify-between items-center pt-3 border-t border-divider">
                                 <span className="text-[14px] font-black text-content">TOTAL</span>
                                 <span className="text-[22px] font-black text-brand">{fmt(vTotals.total)}</span>
                             </div>

@@ -80,7 +80,7 @@ const MinMaxStatusCard = memo(({ req }) => {
 
             <p className="text-[13px] font-bold text-content leading-tight">{req.product_name || `Producto ${req.erp_product_id}`}</p>
 
-            <div className="flex items-center justify-center gap-3 rounded-2xl bg-surface-card border border-slate-100 py-2">
+            <div className="flex items-center justify-center gap-3 rounded-2xl bg-surface-card border border-divider py-2">
                 <div className="text-right text-[12px] font-bold tabular-nums text-content-3">
                     <div>MIN {req.current_min ?? '—'}</div>
                     <div>MAX {req.current_max ?? '—'}</div>
@@ -94,7 +94,7 @@ const MinMaxStatusCard = memo(({ req }) => {
 
             {req.reason && <p className="text-[11px] text-content-3 italic leading-snug">“{req.reason}”</p>}
             {req.status !== 'pending' && req.decision_note && (
-                <p className="text-[11px] text-content-2 font-medium bg-surface-card-hover/70 border border-slate-100 rounded-xl px-3 py-1.5">
+                <p className="text-[11px] text-content-2 font-medium bg-surface-card-hover/70 border border-divider rounded-xl px-3 py-1.5">
                     Respuesta del supervisor: {req.decision_note}
                 </p>
             )}
@@ -139,7 +139,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
 
             {/* Shift comparison grid */}
             <div className="grid grid-cols-2 gap-2">
-                <div className="bg-surface-card border border-slate-100 rounded-2xl p-3">
+                <div className="bg-surface-card border border-divider rounded-2xl p-3">
                     <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
                     <p className="text-[12px] font-black text-content-2">
                         {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
@@ -186,8 +186,8 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
 // RequestCard — solicitud propia
 // ─────────────────────────────────────────────────────────────────────────────
 const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
-    const typeConf  = REQUEST_TYPES[req.type]    || { label: req.type,   color: 'bg-surface-card-hover text-content-2', border: 'border-slate-200' };
-    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-slate-200', dot: 'bg-content-3' };
+    const typeConf  = REQUEST_TYPES[req.type]    || { label: req.type,   color: 'bg-surface-card-hover text-content-2', border: 'border-divider' };
+    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
     const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : 3;
     const [meta, setMeta] = useState(
@@ -240,7 +240,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
             </div>
 
             {/* ── Contenido ── */}
-            <div className="px-5 pb-5 flex flex-col gap-3 border-t border-slate-100/80 pt-4">
+            <div className="px-5 pb-5 flex flex-col gap-3 border-t border-divider pt-4">
                 {req.note && (
                     <p className="text-content-2 text-[14px] leading-relaxed font-medium whitespace-pre-wrap">
                         {req.note}
@@ -265,7 +265,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             </div>
                         )}
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-surface-card border border-slate-100 rounded-2xl p-3">
+                            <div className="bg-surface-card border border-divider rounded-2xl p-3">
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
                                 <p className="text-[12px] font-black text-content-2">
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
@@ -297,13 +297,13 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         )}
                         {meta.docUrl && (
                             <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-slate-200 text-[11px] font-bold text-content-2 hover:text-brand hover:border-brand/30 transition-all">
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[11px] font-bold text-content-2 hover:text-brand hover:border-brand/30 transition-all">
                                 <FileImage size={13} strokeWidth={2} />
                                 {meta.docName || 'Ver certificado adjunto'}
                             </a>
                         )}
                         {req.status === 'PENDING' && uploadFileToStorage && (
-                            <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-slate-200 opacity-60' : 'border-warning/30 hover:border-warning hover:bg-warning/10'}`}>
+                            <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-divider opacity-60' : 'border-warning/30 hover:border-warning hover:bg-warning/10'}`}>
                                 {uploadingDoc
                                     ? <Loader2 size={13} className="text-warning animate-spin flex-shrink-0" />
                                     : <Upload size={13} className="text-warning flex-shrink-0" strokeWidth={2} />
@@ -336,7 +336,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                     <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-[12px] font-bold border ${
                         req.status === 'APPROVED' ? 'bg-success/10 border-success/30 text-success-text' :
                         req.status === 'REJECTED' ? 'bg-danger/10 border-danger/30 text-danger' :
-                        'bg-surface-card-hover border-slate-200/60 text-content-2'
+                        'bg-surface-card-hover border-divider text-content-2'
                     }`}>
                         <AlertCircle size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                         <span>{req.approver_note}</span>
@@ -772,13 +772,13 @@ const EmployeeRequestsView = () => {
                                 />
                             </div>
                             {vacationInfo.inWindow && (
-                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-slate-200/70 text-[10px] font-bold text-content-3">
+                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-bold text-content-3">
                                     <CalendarDays size={11} strokeWidth={2} />
                                     Ventana disponible: {fmt(vacationInfo.windowStart)} — {fmt(vacationInfo.windowEnd)}
                                 </div>
                             )}
                             {!vacationInfo.inWindow && (
-                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-slate-200/70 text-[10px] font-bold text-content-3">
+                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-bold text-content-3">
                                     <CalendarDays size={11} strokeWidth={2} />
                                     Próximo período disponible desde {fmt(vacationInfo.nextAnniv)}
                                 </div>
@@ -809,7 +809,7 @@ const EmployeeRequestsView = () => {
                             <CalendarDays size={11} strokeWidth={2.5} className="text-chart-3-text" />
                             Días de Permiso
                         </label>
-                        <div className="bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                        <div className="bg-white border border-divider rounded-xl h-10 overflow-hidden">
                             <LiquidDatePicker
                                 key={permPickerKey}
                                 value=""
@@ -855,7 +855,7 @@ const EmployeeRequestsView = () => {
                             <CalendarDays size={11} strokeWidth={2.5} className="text-chart-5" />
                             Fecha del cambio
                         </label>
-                        <div className="bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                        <div className="bg-white border border-divider rounded-xl h-10 overflow-hidden">
                             <LiquidDatePicker
                                 value={payload.date || ''}
                                 onChange={v => setPayload(prev => ({ ...prev, date: v }))}
@@ -883,7 +883,7 @@ const EmployeeRequestsView = () => {
                     {/* Turnos lado a lado */}
                     {showShifts && !targetEmpStatus?.blocked && (
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-surface-card border border-slate-100 rounded-2xl p-3">
+                            <div className="bg-surface-card border border-divider rounded-2xl p-3">
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Mi turno ese día</p>
                                 <p className="text-[12px] font-black text-content-2">
                                     {myShiftOnDate ? `${myShiftOnDate.start} – ${myShiftOnDate.end}` : '—'}
@@ -964,7 +964,7 @@ const EmployeeRequestsView = () => {
                             <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                 Primer día
                             </label>
-                            <div className="bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                            <div className="bg-white border border-divider rounded-xl h-10 overflow-hidden">
                                 <LiquidDatePicker
                                     value={payload.startDate || ''}
                                     onChange={v => setPayload(prev => ({ ...prev, startDate: v }))}
@@ -983,7 +983,7 @@ const EmployeeRequestsView = () => {
                                 value={payload.days || ''}
                                 onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
                                 placeholder="Ej. 3"
-                                className="w-full py-2.5 px-4 bg-white border border-slate-200 focus:bg-white focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-slate-300 h-10"
+                                className="w-full py-2.5 px-4 bg-white border border-divider focus:bg-white focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-slate-300 h-10"
                             />
                         </div>
                     </div>
@@ -1138,7 +1138,7 @@ const EmployeeRequestsView = () => {
                                             >
                                                 <Icon size={16} strokeWidth={2} />
                                                 <span className="flex-1 text-left text-[11px] font-black uppercase tracking-widest">{sel?.label}</span>
-                                                <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest border border-slate-200 rounded-full px-2 py-0.5 bg-surface-card">Cambiar</span>
+                                                <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest border border-divider rounded-full px-2 py-0.5 bg-surface-card">Cambiar</span>
                                             </button>
                                         );
                                     })()
@@ -1220,7 +1220,7 @@ const EmployeeRequestsView = () => {
                                         />
                                     ))}
                                 </div>
-                                <div className="border-t border-slate-200/50 mt-5 mb-1" />
+                                <div className="border-t border-divider mt-5 mb-1" />
                             </div>
                         )}
 

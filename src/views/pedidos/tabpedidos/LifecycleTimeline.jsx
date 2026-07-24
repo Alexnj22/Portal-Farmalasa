@@ -154,7 +154,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         isDone      ? `${tlDot(idx)} shadow-sm` :
                                         isPausedDot ? 'bg-warning shadow-md' :
                                         isActive    ? `bg-white border-2 ${tlBorder(idx)}` :
-                                                      'bg-surface-card-hover border border-slate-200'
+                                                      'bg-surface-card-hover border border-divider'
                                     }`}
                                     initial={{ scale: 0.5, opacity: 0 }}
                                     animate={activeAnimate}

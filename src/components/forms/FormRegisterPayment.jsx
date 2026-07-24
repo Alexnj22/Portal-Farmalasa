@@ -155,7 +155,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 type="number"
                                 min="0.01"
                                 step="0.01"
-                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-surface-card border border-slate-200/80 outline-none focus:border-brand focus:bg-white font-black text-content text-lg shadow-sm transition-all group-hover:border-brand/50 placeholder:text-content-3"
+                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-white font-black text-content text-lg shadow-sm transition-all group-hover:border-brand/50 placeholder:text-content-3"
                                 placeholder="0.00"
                                 value={paymentData.amount}
                                 onChange={(e) => handleUpdate('amount', e.target.value)}
@@ -197,7 +197,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     </label>
                     <input
                         type="text"
-                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-slate-200/80 outline-none focus:border-brand focus:bg-white font-bold text-content-2 text-sm shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
+                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-white font-bold text-content-2 text-sm shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
                         placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
                         value={paymentData.notes}
                         onChange={(e) => handleUpdate('notes', e.target.value)}
@@ -212,7 +212,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
                             ? 'bg-success/10 border-success/50 hover:bg-success/10'
-                            : 'bg-surface-card-hover/50 border-slate-300 hover:bg-brand/5 hover:border-brand/50'
+                            : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'
                         }`}>
                         <input
                             type="file"

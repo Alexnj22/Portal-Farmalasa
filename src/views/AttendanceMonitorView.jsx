@@ -284,7 +284,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     { id: "EXTRA", label: "Horas Extra", count: stats.extra, color: "text-chart-3-text", border: "border-chart-3/30", bg: "bg-chart-3/10" },
     { id: "PAUSE", label: "En Pausa", count: stats.pause, color: "text-chart-4-text", border: "border-chart-4/30", bg: "bg-chart-4/10" },
     { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-danger-text", border: "border-danger/30", bg: "bg-danger/10", icon: AlertTriangle },
-    { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-slate-200/60", bg: "bg-surface-card-hover/40" },
+    { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-divider", bg: "bg-surface-card-hover/40" },
   ];
 
   const getStatusCardStyle = (status, isLate) => {

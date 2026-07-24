@@ -159,7 +159,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
     });
 
     return (
-        <div className="border-b border-slate-50 last:border-0">
+        <div className="border-b border-divider last:border-0">
             <button className="w-full text-left px-4 py-3 hover:bg-surface-card-hover/60 transition-colors flex items-start gap-3"
                 onClick={onToggle}>
                 <span className="shrink-0 w-7 h-7 rounded-lg bg-surface-card-hover flex items-center justify-center text-[10px] font-black text-content-3 mt-0.5">
@@ -620,7 +620,7 @@ export default function EncuestaView() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate('/encuesta-admin')}
-                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 bg-white"
+                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 bg-white"
                         title="Volver a Gestión de Encuesta">
                         <ArrowLeft size={15} strokeWidth={2.5} className="text-content-3" />
                     </button>
@@ -635,7 +635,7 @@ export default function EncuestaView() {
                     <div className="space-y-5">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-divider bg-white shadow-sm">
                                     <div className="w-8 h-8 skeleton rounded-lg shrink-0" />
                                     <div className="space-y-1.5 flex-1">
                                         <div className="h-5 w-10 skeleton rounded-full" />
@@ -644,9 +644,9 @@ export default function EncuestaView() {
                                 </div>
                             ))}
                         </div>
-                        <div className="rounded-[1.5rem] border border-slate-100 bg-white shadow-sm p-5 space-y-3">
+                        <div className="rounded-[1.5rem] border border-divider bg-white shadow-sm p-5 space-y-3">
                             {Array.from({ length: 5 }).map((_, i) => (
-                                <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
+                                <div key={i} className="flex items-center gap-3 py-2 border-b border-divider last:border-0">
                                     <div className="h-3 w-8 skeleton rounded-full" />
                                     <div className="flex-1 h-2.5 skeleton rounded-full" style={{ width: `${60 + i * 8}%` }} />
                                     <div className="h-2.5 w-8 skeleton rounded-full" />
@@ -667,7 +667,7 @@ export default function EncuestaView() {
                                 { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-slate-500 to-slate-400' },
                                 { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-chart-9 to-success' },
                             ].map(({ label, value, sub, Icon, grad }) => (
-                                <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                                <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-divider bg-white shadow-sm">
                                     <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                                         <Icon size={14} className="text-white" />
                                     </div>
@@ -683,7 +683,7 @@ export default function EncuestaView() {
                         {/* Score global + por bloque */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Score global */}
-                            <div className="flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm p-6 gap-2">
+                            <div className="flex flex-col items-center justify-center bg-white rounded-2xl border border-divider shadow-sm p-6 gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-content-2">Score Global</span>
                                 <div className="relative w-28 h-28">
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -706,7 +706,7 @@ export default function EncuestaView() {
                             </div>
 
                             {/* Scores por bloque */}
-                            <div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                            <div className="md:col-span-2 bg-white rounded-2xl border border-divider shadow-sm p-4">
                                 <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3">Puntaje por Bloque</h3>
                                 <div className="space-y-2.5">
                                     {bloquesScores.map(b => {
@@ -733,7 +733,7 @@ export default function EncuestaView() {
 
                         {/* Razones de permanencia */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                            <div className="bg-white rounded-2xl border border-divider shadow-sm p-4">
                                 <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3 flex items-center gap-1.5">
                                     <Heart size={12} className="text-danger-text" /> ¿Por qué siguen en la empresa?
                                 </h3>
@@ -763,7 +763,7 @@ export default function EncuestaView() {
                             </div>
 
                             {/* Autocalificación */}
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-3">
+                            <div className="bg-white rounded-2xl border border-divider shadow-sm p-4 flex flex-col gap-3">
                                 <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
                                     <Star size={12} className="text-warning" /> Autocalificación como trabajador/a
                                 </h3>
@@ -802,7 +802,7 @@ export default function EncuestaView() {
                                             </div>
                                         </div>
                                         {/* Distribution rows */}
-                                        <div className="space-y-1.5 pt-1 border-t border-slate-50">
+                                        <div className="space-y-1.5 pt-1 border-t border-divider">
                                             {ranges.map(({ k, label, bar, text }) => {
                                                 const n = selfRatings.dist[k] || 0;
                                                 const pct = total > 0 ? Math.round((n / total) * 100) : 0;
@@ -824,7 +824,7 @@ export default function EncuestaView() {
                         </div>
 
                         {/* Comunicación de inconformidades */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                        <div className="bg-white rounded-2xl border border-divider shadow-sm p-4">
                             <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3 flex items-center gap-1.5">
                                 <Info size={12} className="text-chart-1-text" /> ¿Con quién comunican las inconformidades?
                             </h3>
@@ -879,7 +879,7 @@ export default function EncuestaView() {
                                 : null;
 
                             return (
-                                <div key={bloque.id} className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+                                <div key={bloque.id} className="rounded-2xl border border-divider bg-white shadow-sm overflow-hidden">
                                     {/* Header */}
                                     <button className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-surface-card-hover/50 transition-colors"
                                         onClick={() => setExpandedBloque(isOpen ? null : bloque.id)}>
@@ -909,7 +909,7 @@ export default function EncuestaView() {
                                     </button>
 
                                     {isOpen && (
-                                        <div className="border-t border-slate-50">
+                                        <div className="border-t border-divider">
                                             {/* Nota contextual */}
                                             {ctx && (
                                                 <div className={`mx-4 mt-3 mb-1 px-3 py-2.5 rounded-xl border text-[10px] text-content-2 leading-relaxed flex gap-2 items-start ${ctx.badge.replace('text-', 'border-').replace('bg-', 'bg-')} bg-opacity-30`}
@@ -950,7 +950,7 @@ export default function EncuestaView() {
                                                                             {sColabs < 55 && <AlertTriangle size={11} className="text-danger-text shrink-0" />}
                                                                         </div>
                                                                         {/* Tooltip: individual colab scores */}
-                                                                        <div className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 min-w-[190px] pointer-events-none">
+                                                                        <div className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block bg-white rounded-xl shadow-xl border border-divider p-2.5 min-w-[190px] pointer-events-none">
                                                                             <p className="text-[9px] font-black uppercase tracking-wider text-content-2 mb-1.5">Respuestas individuales</p>
                                                                             {colabRows.map(r => {
                                                                                 const s = blockScore([r], bloque.indices, invertedIndices);
@@ -1061,7 +1061,7 @@ export default function EncuestaView() {
                 {tab === 'segmentos' && (
                     <div className="space-y-5">
                         {/* Jefes vs Empleados */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                        <div className="bg-white rounded-2xl border border-divider shadow-sm p-4">
                             <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-4 flex items-center gap-1.5">
                                 <Award size={12} className="text-chart-3-text" /> Jefes vs Empleados
                             </h3>
@@ -1084,7 +1084,7 @@ export default function EncuestaView() {
                                             const delta = sJ && sC ? sJ - sC : null;
                                             const c = PCT_COLORS[b.color];
                                             return (
-                                                <tr key={b.id} className="border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40">
+                                                <tr key={b.id} className="border-b border-divider last:border-0 hover:bg-surface-card-hover/40">
                                                     <td className="px-3 py-2.5">
                                                         <span className={`text-[10px] font-black ${c.text}`}>{b.nombre}</span>
                                                     </td>
@@ -1111,7 +1111,7 @@ export default function EncuestaView() {
                         </div>
 
                         {/* Por sucursal */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                        <div className="bg-white rounded-2xl border border-divider shadow-sm p-4">
                             <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-4 flex items-center gap-1.5">
                                 <Building2 size={12} className="text-chart-9-text" /> Score Global por Sucursal
                             </h3>
@@ -1144,7 +1144,7 @@ export default function EncuestaView() {
                         </div>
 
                         {/* Detalle por sucursal y bloque */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 overflow-x-auto">
+                        <div className="bg-white rounded-2xl border border-divider shadow-sm p-4 overflow-x-auto">
                             <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3">Desglose por Sucursal × Bloque</h3>
                             <table className="w-full text-xs min-w-[600px]">
                                 <thead>
@@ -1161,7 +1161,7 @@ export default function EncuestaView() {
                                     {sucursales.map(suc => {
                                         const rows = RESPUESTAS.filter(r => r.sucursal === suc);
                                         return (
-                                            <tr key={suc} className="border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40">
+                                            <tr key={suc} className="border-b border-divider last:border-0 hover:bg-surface-card-hover/40">
                                                 <td className="px-2 py-2 font-black text-[11px] text-content-2 whitespace-nowrap">{suc}</td>
                                                 {BLOQUES.map(b => {
                                                     const s = blockScore(rows, b.indices, invertedIndices);
@@ -1215,7 +1215,7 @@ export default function EncuestaView() {
 
                         {personasBySucursal.map(([branchName, branchRows]) => (
                             <div key={branchName} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden shadow-sm">
-                                <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100/60 bg-surface-card">
+                                <div className="flex items-center gap-2 px-5 py-3 border-b border-divider bg-surface-card">
                                     <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
                                     <span className="text-[12px] font-black text-content-2">{branchName}</span>
                                     <span className="text-[11px] text-content-3">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
@@ -1245,7 +1245,7 @@ export default function EncuestaView() {
                                                 return (
                                                     <React.Fragment key={i}>
                                                     <tr
-                                                        className={`border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40 cursor-pointer ${isExpanded ? 'bg-chart-1/10' : ''}`}
+                                                        className={`border-b border-divider last:border-0 hover:bg-surface-card-hover/40 cursor-pointer ${isExpanded ? 'bg-chart-1/10' : ''}`}
                                                         onClick={() => setExpandedPersonIdx(isExpanded ? null : i)}>
                                                         <td className="px-4 py-2.5">
                                                             <div className="flex items-center gap-2.5">
@@ -1292,13 +1292,13 @@ export default function EncuestaView() {
                                                     {isExpanded && (
                                                         <tr className="bg-chart-1/10">
                                                             <td colSpan={BLOQUES.length + 4} className="px-4 pb-4 pt-0">
-                                                                <div className="bg-surface-card rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-1">
+                                                                <div className="bg-surface-card rounded-2xl border border-divider shadow-sm overflow-hidden mt-1">
                                                                     {BLOQUES.map(bloque => {
                                                                         const bqs = PREGUNTAS.filter(p => p.bloque === bloque.id && p.tipo !== 'sucursal');
                                                                         if (!bqs.length) return null;
                                                                         const c = PCT_COLORS[bloque.color];
                                                                         return (
-                                                                            <div key={bloque.id} className="border-b border-slate-50 last:border-0">
+                                                                            <div key={bloque.id} className="border-b border-divider last:border-0">
                                                                                 <div className={`px-4 py-2 flex items-center gap-2 ${c.bg}`}>
                                                                                     <span className={`text-[10px] font-black uppercase tracking-wider ${c.text}`}>{bloque.nombre}</span>
                                                                                 </div>
@@ -1313,7 +1313,7 @@ export default function EncuestaView() {
                                                                                             'Nunca / Totalmente en desacuerdo',
                                                                                         ];
                                                                                         return (
-                                                                                            <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-slate-50 last:border-0">
+                                                                                            <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-divider last:border-0">
                                                                                                 <span className="shrink-0 w-5 h-5 rounded bg-surface-card-hover flex items-center justify-center text-[8px] font-black text-content-3 mt-0.5">{p.id}</span>
                                                                                                 <div className="flex-1 min-w-0 space-y-1">
                                                                                                     <p className="text-[10px] text-content-3 leading-snug">{p.texto}</p>
@@ -1490,7 +1490,7 @@ export default function EncuestaView() {
                         {/* Individual comments */}
                         <h3 className="text-[11px] font-black uppercase tracking-wider text-content-2 px-1">{withComment.length} comentarios individuales</h3>
                         {withComment.map((row, i) => (
-                            <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                            <div key={i} className="bg-white rounded-2xl border border-divider shadow-sm p-4">
                                 <div className="flex items-center gap-2.5 mb-2">
                                     <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={34} />
                                     <div>

@@ -10,7 +10,7 @@ const Card = ({ title, children, accent }) => (
 );
 
 const Row = ({ label, value, ok }) => (
-    <div className="flex items-center justify-between py-1.5 border-b border-slate-100/60 last:border-0">
+    <div className="flex items-center justify-between py-1.5 border-b border-divider last:border-0">
         <span className="text-[13px] text-content-2">{label}</span>
         <div className="flex items-center gap-1.5">
             {ok != null && (ok
@@ -61,7 +61,7 @@ const IOSTestView = () => {
                             'Al hacer scroll, el glass del header permanece fijo',
                         ].map((item, i) => (
                             <div key={i} className="flex items-start gap-2.5">
-                                <div className="w-5 h-5 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5" />
+                                <div className="w-5 h-5 rounded-full border-2 border-divider flex-shrink-0 mt-0.5" />
                                 <p className="text-[13px] text-content-2 leading-snug">{item}</p>
                             </div>
                         ))}

@@ -32,7 +32,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
     ) : null;
 
     const apoyoBtn = (
-        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-slate-200 active:scale-[0.97] transition-all shrink-0">
+        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all shrink-0">
             <UserPlus size={10} />Apoyo
         </button>
     );
@@ -53,7 +53,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
         : !!segundaLlegadaAt;
 
     return (
-        <div className="border-t border-slate-100 px-4 py-3 space-y-2">
+        <div className="border-t border-divider px-4 py-3 space-y-2">
             <div className="text-[10px] font-semibold text-content-3 uppercase tracking-wide mb-2">Recepción</div>
 
             {/* Paso 1: Llegada — solo visible cuando aún no confirmada */}

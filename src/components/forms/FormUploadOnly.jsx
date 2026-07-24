@@ -3,7 +3,7 @@ import { CheckCircle, Upload } from 'lucide-react';
 
 const FormUploadOnly = ({ formData, setFormData }) => (
     <div className="space-y-4 text-center py-6">
-        <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-surface-card-hover group hover:border-chart-1 transition-all">
+        <div className="p-8 border-2 border-dashed border-divider rounded-2xl bg-surface-card-hover group hover:border-chart-1 transition-all">
             <input
                 type="file"
                 id="filePost"

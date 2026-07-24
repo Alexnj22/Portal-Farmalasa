@@ -688,7 +688,7 @@ export default function EncuestaAdminView() {
                                                             return (
                                                                 <button key={e.id} type="button"
                                                                     onClick={() => { toggleScopeId(e.id); setSfEmpSearch(''); }}
-                                                                    className="w-full px-4 py-2.5 hover:bg-brand/10 text-left flex items-center gap-3 transition-colors border-b border-slate-50 last:border-0">
+                                                                    className="w-full px-4 py-2.5 hover:bg-brand/10 text-left flex items-center gap-3 transition-colors border-b border-divider last:border-0">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={24} />
                                                                     <div className="flex-1 min-w-0">
                                                                         <p className="text-[12px] font-bold text-content-2">{fn}</p>
@@ -1023,8 +1023,8 @@ export default function EncuestaAdminView() {
                                             <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
                                                 s.estado === 'activa'    ? 'text-success bg-success/10 border-success/30' :
                                                 s.estado === 'cerrada'   ? 'text-chart-1-text bg-chart-1/10 border-chart-1/30' :
-                                                s.estado === 'borrador'  ? 'text-content-3 bg-surface-card-hover border-slate-200/50' :
-                                                                           'text-content-3 bg-surface-card-hover border-slate-200/50'
+                                                s.estado === 'borrador'  ? 'text-content-3 bg-surface-card-hover border-divider' :
+                                                                           'text-content-3 bg-surface-card-hover border-divider'
                                             }`}>{s.estado}</span>
                                             <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
                                                 s.tipo === 'clima'        ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' :

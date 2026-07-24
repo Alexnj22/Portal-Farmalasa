@@ -76,9 +76,9 @@ const getStatusInfo = (rawStatus) => {
   if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-chart-6-text bg-chart-6/10 border-chart-6/30' };
   if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-chart-2-text bg-chart-2/10 border-chart-2/30' };
   if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/10 border-danger/30' };
-  if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-slate-300' };
+  if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-divider' };
 
-  return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-content-2 bg-surface-card-hover/80 border-slate-200' };
+  return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-content-2 bg-surface-card-hover/80 border-divider' };
 };
 
 // calcAgeYears decide si el documento de identidad esperado es DUI (adulto)
@@ -429,7 +429,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 // "Información Pendiente" falsos si se reutilizara ese componente tal cual.
 const PRACTICANTE_ESTADO_CFG = {
   ACTIVO:     { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', icon: CheckCircle2, label: 'Activo' },
-  FINALIZADO: { bg: 'bg-surface-card-hover',  text: 'text-content-2',   border: 'border-slate-200',   icon: UserMinus,    label: 'Finalizado' },
+  FINALIZADO: { bg: 'bg-surface-card-hover',  text: 'text-content-2',   border: 'border-divider',   icon: UserMinus,    label: 'Finalizado' },
   CANCELADO:  { bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',      icon: UserX,        label: 'Cancelado' },
 };
 
@@ -937,7 +937,7 @@ const StaffManagementView = ({
             />
           </div>
 
-          <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+          <div className="group flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
             <div className="px-2 py-2 overflow-visible" style={{ width: '220px' }}>
               <LiquidSelect
                 value={selectedBranch}
@@ -955,7 +955,7 @@ const StaffManagementView = ({
             <button
               type="button"
               onClick={handleExportCSV}
-              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-success/10 text-success border border-slate-200/70 hover:border-success/30 shrink-0 transition-all hover:-translate-y-0.5"
+              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-success/10 text-success border border-divider hover:border-success/30 shrink-0 transition-all hover:-translate-y-0.5"
               title="Exportar a Excel"
             >
               <Download size={13} strokeWidth={2.5} />

@@ -395,7 +395,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 if (typeof setView === 'function') setView('dashboard');
                                 else navigate('/dashboard');
                             }} 
-                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Personal"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
@@ -443,7 +443,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </div>
                         </div>
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-surface-card-hover text-content-3 border-slate-100/50'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
+                            <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-surface-card-hover text-content-3 border-divider'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Tardanzas (Mes)</p>
                                 <p className={`text-[13px] md:text-[14px] font-bold ${latePunches > 0 ? 'text-danger' : 'text-content'}`}>{latePunches} Acumuladas</p>
@@ -504,7 +504,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     
                                     <div className="w-full space-y-3">
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-brand group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-brand group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Correo</p>
                                                 <p className="text-[12px] font-bold text-content-2 truncate">{emp.email || emp.username || 'No registrado'}</p>
@@ -512,7 +512,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)] relative">
-                                            <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Celular</p>
                                                 <p className="text-[12px] font-bold text-content-2">{emp.phone || 'No registrado'}</p>
@@ -525,7 +525,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
                                                 <p className="text-[12px] font-bold text-content-2">{emp.dui || 'No registrado'}</p>
@@ -533,7 +533,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
                                                 <p className="text-[12px] font-bold text-content-2 truncate">{branch ? branch.name : 'Sin Asignar'}</p>
@@ -596,11 +596,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         </div>
 
-                                        <div className="relative border-l-[3px] border-slate-200/70 ml-4 md:ml-6 space-y-8 pb-4">
+                                        <div className="relative border-l-[3px] border-divider ml-4 md:ml-6 space-y-8 pb-4">
                                             {timeline.length > 0 ? timeline.map((ev, idx) => {
                                                 const label = ev.category || EVENT_TYPES[ev.type]?.label || ev.type;
                                                 const isHiring = ev.type === 'HIRE' || ev.type === 'HIRING';
-                                                let evTheme = { label, bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-slate-200' };
+                                                let evTheme = { label, bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider' };
 
                                                 // Tokenizado T7 — mismo criterio en toda la app: hitos claramente
                                                 // buenos/malos usan success/warning/danger; el resto (transferencias,
@@ -658,13 +658,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             )}
                                                             
                                                             {ev.metadata?.old_value && ev.metadata?.new_value && (
-                                                                 <p className="text-[11px] font-medium text-content-3 mt-2 bg-surface-card-hover p-2 rounded-lg border border-slate-100 flex gap-2 items-center">
+                                                                 <p className="text-[11px] font-medium text-content-3 mt-2 bg-surface-card-hover p-2 rounded-lg border border-divider flex gap-2 items-center">
                                                                      <span className="font-bold line-through opacity-70">{ev.metadata.old_value}</span> <ArrowRightLeft size={10}/> <span className="font-bold text-brand">{ev.metadata.new_value}</span>
                                                                  </p>
                                                             )}
                                                             
                                                             {!ev.isSystem && typeof openModal === 'function' && (
-                                                                <div className="pt-4 mt-3 border-t border-slate-200/60 flex justify-between items-center">
+                                                                <div className="pt-4 mt-3 border-t border-divider flex justify-between items-center">
                                                                     {ev.metadata?.status === 'CANCELLED' ? (
                                                                         <span className="px-2 py-1 bg-danger/10 text-danger rounded-full text-[9px] font-black uppercase tracking-widest">
                                                                             CANCELADO
@@ -723,7 +723,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 );
                                             }) : (
                                                 <div className="flex flex-col items-center justify-center py-20 opacity-50 px-4">
-                                                    <div className="w-16 h-16 bg-surface-card-hover rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-slate-200">
+                                                    <div className="w-16 h-16 bg-surface-card-hover rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-divider">
                                                         <Clock size={28} className="text-content-3" strokeWidth={2}/>
                                                     </div>
                                                     <p className="font-black uppercase tracking-widest text-[11px] text-content-2">Historial en Blanco</p>
@@ -764,7 +764,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <X size={10} strokeWidth={3}/> {ausenciasSelectedDay}
                                                     </button>
                                                 )}
-                                                <div className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-white border-slate-200 px-2.5 py-1 w-40' : 'bg-surface-card border-slate-200/60 w-8 h-8 justify-center'}`}>
+                                                <div className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-white border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
                                                     <button type="button"
                                                         onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}
                                                         className="flex-shrink-0 text-content-3 hover:text-content-2 transition-colors">
@@ -883,7 +883,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 })}
                                             </div>
                                             {/* Leyenda */}
-                                            <div className="flex flex-wrap items-center gap-3 mt-3 pt-2.5 border-t border-slate-100">
+                                            <div className="flex flex-wrap items-center gap-3 mt-3 pt-2.5 border-t border-divider">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="w-3 h-3 rounded-sm bg-warning/10 border border-warning/30 flex-shrink-0"/>
                                                     <span className="text-[9px] font-black text-content-2 uppercase tracking-widest">Permiso</span>
@@ -974,7 +974,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center py-16 opacity-50">
-                                                <div className="w-14 h-14 bg-surface-card-hover rounded-2xl flex items-center justify-center mb-3 border border-slate-200">
+                                                <div className="w-14 h-14 bg-surface-card-hover rounded-2xl flex items-center justify-center mb-3 border border-divider">
                                                     <Stethoscope size={24} className="text-content-3" strokeWidth={1.5}/>
                                                 </div>
                                                 <p className="font-black uppercase tracking-widest text-[11px] text-content-3">
@@ -1006,7 +1006,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Depósito de Planilla</p>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-[14px] font-bold text-content-2">{emp.bank_name || 'No configurado'}</span>
-                                                            <span className="px-3 py-1 bg-surface-card-hover text-content-2 rounded-lg text-[11px] font-black tracking-wider border border-slate-200">CTA: {emp.account_number || '---'}</span>
+                                                            <span className="px-3 py-1 bg-surface-card-hover text-content-2 rounded-lg text-[11px] font-black tracking-wider border border-divider">CTA: {emp.account_number || '---'}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1014,7 +1014,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         )}
 
                                         <div>
-                                            <div className="flex justify-between items-center mb-5 pt-4 border-t border-slate-200/50">
+                                            <div className="flex justify-between items-center mb-5 pt-4 border-t border-divider">
                                                 <h3 className="font-black text-content uppercase tracking-tight text-[16px] flex items-center gap-2">
                                                     <CalendarDays size={18} className="text-brand"/> Turnos de la Semana
                                                 </h3>
@@ -1044,11 +1044,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 w-full">
                                                                         <div>
                                                                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Entrada</p>
-                                                                            <p className="text-[13px] font-bold text-content bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100 w-max">{dia.start}</p>
+                                                                            <p className="text-[13px] font-bold text-content bg-white px-3 py-1.5 rounded-xl shadow-sm border border-divider w-max">{dia.start}</p>
                                                                         </div>
                                                                         <div>
                                                                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Salida</p>
-                                                                            <p className="text-[13px] font-bold text-content bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100 w-max">{dia.end}</p>
+                                                                            <p className="text-[13px] font-bold text-content bg-white px-3 py-1.5 rounded-xl shadow-sm border border-divider w-max">{dia.end}</p>
                                                                         </div>
                                                                         <div className="col-span-2 md:col-span-1">
                                                                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Almuerzo / Receso</p>
@@ -1111,8 +1111,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         ) : (
                                             <div className="space-y-3">
                                                 {empRequests.map(req => {
-                                                    const typeConf = REQUEST_TYPES[req.type]  || { label: req.type,   color: 'bg-surface-card-hover text-content-2', border: 'border-slate-200' };
-                                                    const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-slate-200', dot: 'bg-content-3' };
+                                                    const typeConf = REQUEST_TYPES[req.type]  || { label: req.type,   color: 'bg-surface-card-hover text-content-2', border: 'border-divider' };
+                                                    const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
                                                     const TypeIcon = { VACATION: Palmtree, PERMIT: FileText, SHIFT_CHANGE: RefreshCw, OVERTIME: Coffee, ADVANCE: DollarSign, CERTIFICATE: FileCheck }[req.type] || FileText;
                                                     return (
                                                         <div key={req.id} className={`flex items-start gap-4 p-4 rounded-[1.5rem] border bg-surface-card backdrop-blur-md ${typeConf.border}`}>
@@ -1174,7 +1174,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             Compártela con <span className="font-bold text-content-2">{emp.name}</span>. Deberá cambiarla en su próximo acceso.
                             <br /><span className="text-warning font-bold">No se volverá a mostrar.</span>
                         </p>
-                        <div className="w-full flex items-center gap-2 bg-surface-card-hover border border-slate-200 rounded-2xl pl-4 pr-2 py-2.5 mb-4">
+                        <div className="w-full flex items-center gap-2 bg-surface-card-hover border border-divider rounded-2xl pl-4 pr-2 py-2.5 mb-4">
                             <span className="flex-1 text-[20px] font-black tracking-[0.2em] text-content text-center select-all">{resetResult.password}</span>
                             <button
                                 onClick={async () => {
@@ -1228,11 +1228,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </>
                         )}
                     </div>
-                    <div className="p-4 sm:p-5 backdrop-blur-md border-t bg-surface-card-hover/50 border-slate-100 flex gap-3 relative z-10">
+                    <div className="p-4 sm:p-5 backdrop-blur-md border-t bg-surface-card-hover/50 border-divider flex gap-3 relative z-10">
                         <button
                             onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
                             disabled={isCancelling}
-                            className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border flex-1 transition-all ${isCancelling ? 'hidden' : 'text-content-2 bg-white border-slate-200 hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'}`}>
+                            className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border flex-1 transition-all ${isCancelling ? 'hidden' : 'text-content-2 bg-white border-divider hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'}`}>
                             Volver
                         </button>
                         <button

@@ -347,11 +347,11 @@ const RolesView = ({ openModal }) => {
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
 
         return (
-            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.7)] rounded-[1.5rem] p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-slate-300/50' : 'bg-surface-card border border-border-card'}`}>
+            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.7)] rounded-[1.5rem] p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
-                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-200 shadow-sm z-10`}>
+                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-divider shadow-sm z-10`}>
                         Staff
                     </div>
                 )}
@@ -380,7 +380,7 @@ const RolesView = ({ openModal }) => {
                             e.stopPropagation();
                             if (openModal) openModal('viewRoleEmployees', { role });
                         }}
-                        className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-surface-card text-content-3 border border-slate-200 hover:bg-surface-card-hover hover:text-content-2' : 'bg-brand/10 text-brand border border-brand/20 hover:bg-brand hover:text-white'}`}
+                        className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-surface-card text-content-3 border border-divider hover:bg-surface-card-hover hover:text-content-2' : 'bg-brand/10 text-brand border border-brand/20 hover:bg-brand hover:text-white'}`}
                     >
                         <Users size={12} strokeWidth={2.5} /> {roleEmps.length} Personas
                     </button>
@@ -408,13 +408,13 @@ const RolesView = ({ openModal }) => {
                     {staffChildren[0] && (
                         <div className="absolute right-full flex items-center">
                             <OrgNodeCard role={staffChildren[0]} isExternal={true} />
-                            <div className="w-8 border-t-[3px] border-slate-300/50"></div>
+                            <div className="w-8 border-t-[3px] border-divider"></div>
                         </div>
                     )}
                     <OrgNodeCard role={role} isExternal={isExternal} />
                     {staffChildren[1] && (
                         <div className="absolute left-full flex items-center">
-                            <div className="w-8 border-t-[3px] border-slate-300/50"></div>
+                            <div className="w-8 border-t-[3px] border-divider"></div>
                             <OrgNodeCard role={staffChildren[1]} isExternal={true} />
                         </div>
                     )}
@@ -717,7 +717,7 @@ const RolesView = ({ openModal }) => {
                                             key={role.id}
                                             className={`p-5 rounded-[2rem] flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
                                                 ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[var(--shadow-elevation-md)] animate-subtle-shake z-10' : isExternal
-                                                    ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-slate-300 shadow-sm hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1'
+                                                    ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-divider shadow-sm hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1'
                                                     : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:bg-surface-card hover:-translate-y-1'
                                                 }`}
                                         >
@@ -746,7 +746,7 @@ const RolesView = ({ openModal }) => {
                                                                 </span>
                                                             )}
                                                             {isExternal && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-slate-300 text-[8px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md border border-divider text-[8px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">
                                                                     Staff
                                                                 </span>
                                                             )}
@@ -812,7 +812,7 @@ const RolesView = ({ openModal }) => {
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
                                                     className={`w-9 h-9 rounded-xl bg-white border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
                                                         ? 'border-warning/30 text-warning hover:bg-warning hover:text-white'
-                                                        : 'border-slate-100 text-content-3 hover:bg-brand hover:text-white hover:border-brand'
+                                                        : 'border-divider text-content-3 hover:bg-brand hover:text-white hover:border-brand'
                                                         }`}
                                                     title="Ver Empleados"
                                                 >

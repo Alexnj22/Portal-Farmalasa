@@ -82,7 +82,7 @@ const HolidaysPanel = ({
                 </div>
                 {canEdit && (
                     <button onClick={() => setShowForm(v => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-slate-200 text-content-2' : 'bg-warning hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-divider text-content-2' : 'bg-warning hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
                         {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
                         {showForm ? 'Cancelar' : 'Agregar feriado'}
                     </button>
@@ -97,16 +97,16 @@ const HolidaysPanel = ({
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
+                                className="w-full bg-white border border-divider rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
                             <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
+                                className="w-full bg-white border border-divider rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
-                        <div className="flex items-center gap-1.5 bg-surface-card-hover rounded-full p-1 border border-slate-200">
+                        <div className="flex items-center gap-1.5 bg-surface-card-hover rounded-full p-1 border border-divider">
                             <button onClick={() => setHType('NATIONAL')}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'NATIONAL' ? 'bg-white text-warning shadow-sm' : 'text-content-3 hover:text-warning'}`}>
                                 <Globe size={11} strokeWidth={2} /> Nacional
@@ -118,10 +118,10 @@ const HolidaysPanel = ({
                         </div>
                         {hType === 'MUNICIPAL' && (
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
-                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[16px] font-bold text-content outline-none focus:border-chart-1 transition-all" />
+                                className="flex-1 min-w-[140px] bg-white border border-divider rounded-full px-3 py-2 text-[16px] font-bold text-content outline-none focus:border-chart-1 transition-all" />
                         )}
                         <button onClick={() => setHRecurring(v => !v)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-success/40 text-success-text' : 'bg-white border-slate-200 text-content-3 hover:border-success/40 hover:text-success'}`}>
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-success/40 text-success-text' : 'bg-white border-divider text-content-3 hover:border-success/40 hover:text-success'}`}>
                             <RefreshCw size={11} strokeWidth={2} /> Recurrente
                         </button>
                     </div>

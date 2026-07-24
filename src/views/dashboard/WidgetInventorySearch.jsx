@@ -22,7 +22,7 @@ const ERP_BRANCH_MAP = {
 };
 const BRANCH_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
-const NEUTRAL_THEME = { dot: '#64748B', pill: 'bg-surface-card-hover border-slate-200/70', label: 'text-content-2' };
+const NEUTRAL_THEME = { dot: '#64748B', pill: 'bg-surface-card-hover border-divider', label: 'text-content-2' };
 const VENCIDOS_THEME = { dot: '#E11D48', pill: 'bg-danger/10 border-danger/30', label: 'text-danger-text' };
 const DEFAULT_THEME = NEUTRAL_THEME;
 
@@ -154,7 +154,7 @@ function PhotoThumb({ url, onZoom }) {
   return (
     <button
       onClick={e => { e.stopPropagation(); onZoom(url); }}
-      className="relative w-8 h-8 rounded-lg overflow-hidden border border-slate-200 bg-surface-card-hover shrink-0 group"
+      className="relative w-8 h-8 rounded-lg overflow-hidden border border-divider bg-surface-card-hover shrink-0 group"
     >
       <img src={url} alt="" className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -219,7 +219,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-surface-card backdrop-blur-sm px-3 py-2.5 flex flex-col gap-1.5">
+    <div className="rounded-xl border border-divider bg-surface-card backdrop-blur-sm px-3 py-2.5 flex flex-col gap-1.5">
       {/* Header row: nombre + estatus + reportar */}
       <div className="flex items-start gap-1.5">
         <p className="text-[11px] font-black text-content leading-tight flex-1">{nombre || '—'}</p>
@@ -238,7 +238,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
               type="number" min="1"
               value={qty}
               onChange={e => setQty(e.target.value)}
-              className="w-10 px-1.5 py-0.5 rounded-lg border border-slate-200 text-[16px] font-black text-content-2 text-center outline-none focus:border-danger"
+              className="w-10 px-1.5 py-0.5 rounded-lg border border-divider text-[16px] font-black text-content-2 text-center outline-none focus:border-danger"
             />
             <button
               onClick={submit}
@@ -517,7 +517,7 @@ export default function WidgetInventorySearch() {
           {drillProduct.fotoUrl ? (
             <button
               onClick={() => setLightboxUrl(drillProduct.fotoUrl)}
-              className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-200 bg-surface-card-hover shrink-0 group"
+              className="relative w-11 h-11 rounded-xl overflow-hidden border border-divider bg-surface-card-hover shrink-0 group"
             >
               <img src={drillProduct.fotoUrl} alt="" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -525,7 +525,7 @@ export default function WidgetInventorySearch() {
               </div>
             </button>
           ) : (
-            <div className="w-11 h-11 rounded-xl bg-surface-card-hover border border-slate-200 flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded-xl bg-surface-card-hover border border-divider flex items-center justify-center shrink-0">
               <Package size={18} strokeWidth={1.5} className="text-content-3" />
             </div>
           )}
@@ -628,7 +628,7 @@ export default function WidgetInventorySearch() {
           value={query}
           onChange={e => handleInput(e.target.value)}
           placeholder="Buscar por nombre o principio activo..."
-          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200/80 bg-surface-card backdrop-blur-sm text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
+          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
           spellCheck={false}
           autoComplete="off"
         />

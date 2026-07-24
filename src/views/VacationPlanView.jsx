@@ -19,13 +19,13 @@ const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV'
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
 
 const STATUS_META = {
-    DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-slate-200',   bar: 'bg-content-3'   },
+    DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3'   },
     PRE_APPROVED:     { label: 'Pre-aprobado',  bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1'    },
     CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30',   bar: 'bg-warning'   },
     APPROVED:         { label: 'Aprobado',      bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success' },
     PLANNED:          { label: 'Planificado',   bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1'    },
     CONFIRMED:        { label: 'Confirmado',    bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success' },
-    TAKEN:            { label: 'Tomado',        bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-slate-200',   bar: 'bg-content-3'   },
+    TAKEN:            { label: 'Tomado',        bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3'   },
     CANCELLED:        { label: 'Cancelado',     bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',     bar: 'bg-danger/60'     },
 };
 
@@ -193,7 +193,7 @@ const GanttChart = ({ plans, year }) => {
                     {months.map(m => (
                         <div
                             key={m.idx}
-                            className="text-[9px] font-black text-content-2 uppercase tracking-widest text-center border-l border-slate-100/80 first:border-l-0 py-1"
+                            className="text-[9px] font-black text-content-2 uppercase tracking-widest text-center border-l border-divider first:border-l-0 py-1"
                             style={{ flex: `${m.days} 0 0%` }}
                         >
                             {m.label}
@@ -226,12 +226,12 @@ const GanttChart = ({ plans, year }) => {
                                         </div>
                                         <span className="text-[11px] font-bold text-content-2 truncate group-hover/row:text-brand transition-colors">{emp?.name || 'Empleado'}</span>
                                     </div>
-                                    <div className="flex-1 h-7 bg-surface-card border border-slate-100 rounded-xl relative overflow-visible">
+                                    <div className="flex-1 h-7 bg-surface-card border border-divider rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}
                                         {months.map(m => (
                                             <div
                                                 key={m.idx}
-                                                className="absolute top-0 bottom-0 border-l border-slate-100/60"
+                                                className="absolute top-0 bottom-0 border-l border-divider"
                                                 style={{ left: `${pct(`${year}-${String(m.idx + 1).padStart(2, '0')}-01`)}%` }}
                                             />
                                         ))}
@@ -938,7 +938,7 @@ const VacationPlanView = () => {
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[600px] text-[12px]">
                                         <thead>
-                                            <tr className="border-b border-slate-100">
+                                            <tr className="border-b border-divider">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
                                                     <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
                                                 ))}
@@ -980,7 +980,7 @@ const VacationPlanView = () => {
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[600px] text-[12px]">
                                         <thead>
-                                            <tr className="border-b border-slate-100">
+                                            <tr className="border-b border-divider">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Saldo', 'Comentario', 'Estado', ''].map(h => (
                                                     <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
                                                 ))}

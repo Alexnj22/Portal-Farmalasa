@@ -47,9 +47,9 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                                         disabled={isUsed}
                                         onClick={() => !isUsed && setRazonSel(opt.key)}
                                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
-                                            isUsed ? 'border-slate-100 bg-surface-card-hover text-content-3 cursor-not-allowed' :
+                                            isUsed ? 'border-divider bg-surface-card-hover text-content-3 cursor-not-allowed' :
                                             isSel  ? 'border-warning bg-warning/10 text-warning-text shadow-sm' :
-                                                     'border-slate-200 text-content-2 hover:bg-surface-card-hover'
+                                                     'border-divider text-content-2 hover:bg-surface-card-hover'
                                         }`}
                                     >
                                         <Icon size={15} className={isUsed ? 'text-content-3' : isSel ? 'text-warning' : 'text-content-3'} />
@@ -72,14 +72,14 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             onChange={e => setComment(e.target.value)}
                             placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
                             rows={2}
-                            className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-warning bg-white resize-none transition-colors text-content-2"
+                            className="w-full text-[16px] border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-warning bg-white resize-none transition-colors text-content-2"
                         />
                     </div>
                 </PedidoModal.Body>
 
                 <PedidoModal.Footer>
                     <div className="flex justify-end gap-2">
-                        <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
+                        <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
                             Cancelar
                         </button>
                         <button

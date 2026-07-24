@@ -518,7 +518,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             onClick={conductorBtnClick}
             disabled={conductorBtnDisabled}
             title={conductorBtnLabel}
-            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-white shadow-md border border-slate-200 rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-white shadow-md border border-divider rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {isConductor
               ? <Crosshair size={11} className={gpsIconColor} />
@@ -551,7 +551,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           <div className="space-y-1.5">
             {paradas.map((stop, i) => (
               <div key={stop.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${
-                stop.entregado_at ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
+                stop.entregado_at ? 'bg-success/10 border-success/30' : 'bg-white border-divider'
               }`}>
                 <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
                   stop.entregado_at ? 'bg-success text-white' : 'bg-chart-3/10 text-chart-3-text'

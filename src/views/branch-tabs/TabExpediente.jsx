@@ -40,7 +40,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
     return (
         <div className={`group relative flex flex-col p-5 rounded-[1.5rem] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-50 ${isMissing
-            ? 'bg-surface-card border-2 border-dashed border-slate-300 hover:border-brand/40 hover:bg-surface-card min-h-[160px]'
+            ? 'bg-surface-card border-2 border-dashed border-divider hover:border-brand/40 hover:bg-surface-card min-h-[160px]'
             : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] min-h-[160px]'
             }`}>
 
@@ -49,7 +49,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-slate-100 text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
                         title="Ver PDF"
                     >
                         <Eye size={14} strokeWidth={2.5} />
@@ -58,7 +58,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                 <button
                     onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-slate-100 text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
                     title="Editar/Actualizar Datos"
                 >
                     <Edit3 size={14} strokeWidth={2.5} />
@@ -67,7 +67,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.isCustom && !doc.url && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-slate-100 text-content-3 hover:text-danger hover:bg-danger/10 transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-danger hover:bg-danger/10 transition-all active:scale-[0.97]"
                         title="Eliminar Espacio"
                     >
                         <Trash2 size={14} strokeWidth={2.5} />

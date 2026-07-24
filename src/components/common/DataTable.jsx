@@ -65,7 +65,7 @@ export function useExpandStyle() {
   const tk = useTable();
   if (!tk) {
     // Fallback si se usa fuera de DataTable (no debería ocurrir)
-    return { expandBg: '', expandBorderColor: 'border-slate-100', expandText: 'text-content-3', expandTextStrong: 'text-content-2' };
+    return { expandBg: '', expandBorderColor: 'border-divider', expandText: 'text-content-3', expandTextStrong: 'text-content-2' };
   }
   return {
     expandBg: tk.expandBg,

@@ -129,7 +129,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             ? 'border-success bg-success/10 hover:bg-success/10' 
                             : isEditing && !data.url
                                 ? 'border-danger/40 bg-danger/10 hover:bg-danger/10 hover:border-danger' // Alerta roja si falta subir en edición
-                                : 'border-slate-300 bg-surface-card backdrop-blur-md hover:bg-white hover:border-brand/50'
+                                : 'border-divider bg-surface-card backdrop-blur-md hover:bg-white hover:border-brand/50'
                         }`}
                     >
                         {data.file ? (
@@ -156,7 +156,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             </div>
 
             {/* 4. Control de Fechas */}
-            <div className="pt-4 border-t border-slate-100 space-y-6">
+            <div className="pt-4 border-t border-divider space-y-6">
                 
                 {/* Toggle Fecha de Emisión */}
                 <div className="flex flex-col gap-3">

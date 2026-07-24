@@ -72,7 +72,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </div>
                 </div>
             ) : (
-                <div className="py-3.5 text-center rounded-[1rem] bg-surface-card-hover/50 border border-slate-200/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-colors duration-300 group-hover:bg-surface-card-hover">
+                <div className="py-3.5 text-center rounded-[1rem] bg-surface-card-hover/50 border border-divider shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-colors duration-300 group-hover:bg-surface-card-hover">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-300 group-hover:text-content-3">
                         Cerrado
                     </p>

@@ -393,7 +393,7 @@ const BranchCard = memo(({
 
                             <div className="flex items-center gap-2 mt-1">
                                 {branch.type && branch.type !== 'FARMACIA' && (
-                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-surface-card-hover text-content-3 border-slate-200'}`}>
+                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-surface-card-hover text-content-3 border-divider'}`}>
                                         {BRANCH_TYPE_META[branch.type]?.label}
                                     </span>
                                 )}
@@ -409,28 +409,28 @@ const BranchCard = memo(({
 
                 <div className="flex flex-col gap-2.5 mt-2">
                     <a href={branch.settings?.location?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || branch.name)}`} target="_blank" rel="noreferrer" className={`group/map flex items-start gap-3 p-3.5 rounded-[1.25rem] ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Abrir en Maps">
-                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-brand border border-slate-100"><MapPin size={16} strokeWidth={2.5} /></div>
+                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-brand border border-divider"><MapPin size={16} strokeWidth={2.5} /></div>
                         <div className="flex-1 flex justify-between items-start gap-2 pr-1">
                             <div className="min-w-0 flex-1">
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-300 group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
                                 <p className="text-[12px] font-semibold text-content-2 leading-snug break-words">{[branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || "No registrada"}</p>
                             </div>
                             <div className="shrink-0 mt-0.5" onClick={e => e.stopPropagation()}>
-                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ')); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); }} className="p-1.5 rounded-md bg-black/[0.03] text-content-3 hover:text-content hover:bg-white hover:border-slate-200 border border-transparent hover:scale-105 hover:shadow-sm transition-all" title="Copiar"><Copy size={12} /></button>
+                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ')); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); }} className="p-1.5 rounded-md bg-black/[0.03] text-content-3 hover:text-content hover:bg-white hover:border-divider border border-transparent hover:scale-105 hover:shadow-sm transition-all" title="Copiar"><Copy size={12} /></button>
                             </div>
                         </div>
                     </a>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-brand"><Phone size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-brand"><Phone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
                                 <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Fijo</p>
                                 <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.phone || "—"}</p>
                             </div>
                         </button>
                         <button onClick={(e) => handlePhoneAction(e, branch.cell, 'Celular')} className={`group/cell flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full pr-8 ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-brand"><Smartphone size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-brand"><Smartphone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
                                 <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Celular</p>
                                 <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
@@ -715,7 +715,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                     </div>
                 </div>
 
-                <div className={`flex items-center shrink-0 border-l transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-slate-200/60 ${isFilterPickerOpen ? "max-w-0 opacity-0 scale-95 pointer-events-none ml-0 pl-0 border-transparent m-0" : "max-w-[600px] opacity-100 scale-100 ml-2 pl-2 gap-2"}`}>
+                <div className={`flex items-center shrink-0 border-l transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-divider ${isFilterPickerOpen ? "max-w-0 opacity-0 scale-95 pointer-events-none ml-0 pl-0 border-transparent m-0" : "max-w-[600px] opacity-100 scale-100 ml-2 pl-2 gap-2"}`}>
                     {filterStatus !== "ALL" && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-11 h-11 rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
                     )}

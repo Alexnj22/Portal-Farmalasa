@@ -327,7 +327,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               </div>
             </div>
           ) : (
-            <div className="bg-surface-card-hover/80 border border-slate-200/60 rounded-2xl px-4 py-3">
+            <div className="bg-surface-card-hover/80 border border-divider rounded-2xl px-4 py-3">
               <p className="text-[11px] font-bold text-content-3">Sin horario planificado para este día</p>
             </div>
           )}
@@ -362,7 +362,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
           </div>
 
           {/* Agregar marcaje */}
-          <div className="bg-surface-card-hover/70 border border-slate-200/50 rounded-2xl p-4 space-y-3">
+          <div className="bg-surface-card-hover/70 border border-divider rounded-2xl p-4 space-y-3">
             <p className="text-[9px] font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
               <Plus size={10} strokeWidth={3} /> Agregar marcaje
             </p>
@@ -504,8 +504,8 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {isToday && <span className="text-[8px] font-black uppercase tracking-widest bg-brand text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
             {isOff && (
               isNoSchedule
-                ? <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-dashed border-slate-300 px-2 py-0.5 rounded-full">Sin turno</span>
-                : <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-slate-200 px-2 py-0.5 rounded-full">Libre</span>
+                ? <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-dashed border-divider px-2 py-0.5 rounded-full">Sin turno</span>
+                : <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-divider px-2 py-0.5 rounded-full">Libre</span>
             )}
             {isFuture && !isOff && <span className="text-[9px] font-black uppercase tracking-widest text-content-2 px-1">Próximo</span>}
             {!isOff && !isFuture && inconsistencies.length > 0 && !ts?.absence_type && (
@@ -524,7 +524,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-[9px] font-black uppercase tracking-widest bg-success/10 text-success-text border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
             {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <span className="text-[9px] font-black uppercase tracking-widest bg-danger/10 text-danger-text border border-danger/30 px-2 py-0.5 rounded-full">Incapacidad</span>}
             {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <span className="text-[9px] font-black uppercase tracking-widest bg-chart-2/10 text-chart-2-text border border-chart-2/30 px-2 py-0.5 rounded-full">Permiso</span>}
-            {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-3 border border-slate-200 px-2 py-0.5 rounded-full">Ausente</span>}
+            {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-3 border border-divider px-2 py-0.5 rounded-full">Ausente</span>}
           </div>
           {!isOff && shift && (
             <p className="text-[10px] font-bold text-content-3">

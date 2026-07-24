@@ -45,7 +45,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
         onClick={onToggle}
         className={`relative inline-flex items-center flex-shrink-0 w-10 h-5 md:w-11 md:h-6 rounded-full border-2 transition-all duration-300 ease-in-out cursor-pointer ${
             disabled ? "opacity-50 cursor-not-allowed bg-surface-card border-border-card" 
-            : on ? "bg-brand border-brand shadow-[var(--shadow-glow-brand)]" : "bg-surface-card-hover border-slate-200 hover:bg-content-3 hover:border-slate-300"
+            : on ? "bg-brand border-brand shadow-[var(--shadow-glow-brand)]" : "bg-surface-card-hover border-divider hover:bg-content-3 hover:border-divider"
         }`}
     >
         <span className={`absolute top-[1px] left-[1px] w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${on ? "translate-x-5 md:translate-x-6" : "translate-x-0"}`} />
@@ -64,7 +64,7 @@ const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
             className={`w-4 h-4 rounded-[4px] flex items-center justify-center transition-all duration-200 border cursor-pointer outline-none ${
                 checked 
                 ? `${activeBg} border-transparent shadow-sm scale-110` 
-                : `bg-surface-card border-slate-300 ${shadowHover} hover:bg-white`
+                : `bg-surface-card border-divider ${shadowHover} hover:bg-white`
             }`}
         >
             {checked && <Check size={11} strokeWidth={4} className="text-white" />}
@@ -159,7 +159,7 @@ const DayRow = memo(({
                         </div>
                     </div>
                 ) : isWorking ? (
-                    <div className="flex-1 flex flex-col gap-2.5 xl:border-l xl:border-slate-200/50 xl:pl-5 pt-3 xl:pt-0 border-t border-slate-200/50 xl:border-t-0 overflow-visible">
+                    <div className="flex-1 flex flex-col gap-2.5 xl:border-l xl:border-divider xl:pl-5 pt-3 xl:pt-0 border-t border-divider xl:border-t-0 overflow-visible">
                         
                         <div className={`grid grid-cols-1 md:grid-cols-2 ${isMultiBranch ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 overflow-visible`}>
                             {/* SUCURSAL */}
@@ -214,7 +214,7 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-content-2 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
+                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-[8px] font-bold text-content-2 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
                                 )}
                             </div>
 
@@ -239,15 +239,15 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-content-2 uppercase tracking-widest shadow-inner">No Aplica</div>
+                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-[8px] font-bold text-content-2 uppercase tracking-widest shadow-inner">No Aplica</div>
                                 )}
                             </div>
                         </div>
 
                         {/* 🚨 BANNER HORARIO REAL (SOLO VISIBLE SI HAY MODIFICACIÓN LÓGICA) */}
                         {isPhysicalScheduleModified && (
-                            <div className="w-full flex items-center gap-3 bg-surface-card-hover/60 border border-slate-200/50 p-2 rounded-xl mt-0.5 animate-in fade-in zoom-in-95 duration-300">
-                                <div className="flex items-center gap-1.5 text-[8.5px] text-content-2 border-r border-slate-200 pr-2.5">
+                            <div className="w-full flex items-center gap-3 bg-surface-card-hover/60 border border-divider p-2 rounded-xl mt-0.5 animate-in fade-in zoom-in-95 duration-300">
+                                <div className="flex items-center gap-1.5 text-[8.5px] text-content-2 border-r border-divider pr-2.5">
                                     <Clock size={10} className="text-content-3"/> 
                                     <span className="font-black uppercase tracking-widest text-content-3">Horario Físico Real:</span>
                                 </div>
@@ -268,8 +268,8 @@ const DayRow = memo(({
 
                     </div>
                 ) : (
-                    <div className="flex-1 flex items-center justify-center xl:border-l xl:border-slate-200/50 xl:pl-6 pt-3 xl:pt-0 border-t border-slate-200/50 xl:border-t-0">
-                        <div className="w-full xl:w-auto px-5 py-2 rounded-[1rem] bg-surface-card border border-dashed border-slate-300/80 text-content-3 flex justify-center items-center gap-2 shadow-inner">
+                    <div className="flex-1 flex items-center justify-center xl:border-l xl:border-divider xl:pl-6 pt-3 xl:pt-0 border-t border-divider xl:border-t-0">
+                        <div className="w-full xl:w-auto px-5 py-2 rounded-[1rem] bg-surface-card border border-dashed border-divider text-content-3 flex justify-center items-center gap-2 shadow-inner">
                             <Palmtree size={14} strokeWidth={2.5}/>
                             <span className="text-[9.5px] font-black uppercase tracking-widest">Día de Descanso</span>
                         </div>

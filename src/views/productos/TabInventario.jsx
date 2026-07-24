@@ -235,7 +235,7 @@ export default function TabInventario({ searchTerm = '' }) {
             <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex items-center gap-3 flex-wrap">
 
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
+                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
                             <Package size={15} className="text-brand" />
                         </div>
@@ -255,7 +255,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterVencidos
                                 ? 'bg-danger/10 border-danger/40 shadow-md shadow-red-100/80 -translate-y-px'
-                                : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10'
+                                : 'bg-white border-divider hover:border-danger/30 hover:bg-danger/10'
                         }`}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-white' : 'bg-danger/10'}`}>
                             <AlertTriangle size={15} className="text-danger" />
@@ -275,7 +275,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterSixMonths
                                 ? 'bg-chart-4/10 border-chart-4/40 shadow-md shadow-orange-100/80 -translate-y-px'
-                                : 'bg-white border-slate-100 hover:border-chart-4/30 hover:bg-chart-4/10'
+                                : 'bg-white border-divider hover:border-chart-4/30 hover:bg-chart-4/10'
                         }`}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-white' : 'bg-chart-4/10'}`}>
                             <CalendarClock size={15} className="text-chart-4-text" />
@@ -312,7 +312,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         </button>
                     )}
 
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
+                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-success/10">
                             <DollarSign size={15} className="text-success" />
                         </div>
@@ -333,7 +333,7 @@ export default function TabInventario({ searchTerm = '' }) {
                 {(() => {
                     const anyFilter = selectedErp !== null || filterLab !== null || filterCat !== null;
                     return (
-                        <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                        <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
 
                             {/* Sucursal */}
                             <div className="flex items-center">
@@ -467,7 +467,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 >
                                     {selectedErp === null && (
                                         <DataCell className="whitespace-nowrap">
-                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-content-2 bg-surface-card-hover border-slate-200'}`}>
+                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-content-2 bg-surface-card-hover border-divider'}`}>
                                                 {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
                                             </span>
                                         </DataCell>
@@ -500,7 +500,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                         {pres.length > 0 ? (
                                             <div className="flex flex-wrap gap-1">
                                                 {pres.map(p => (
-                                                    <span key={p} className="text-[10px] font-bold text-content-3 bg-surface-card-hover/80 border border-slate-200/60 px-2 py-0.5 rounded-full">
+                                                    <span key={p} className="text-[10px] font-bold text-content-3 bg-surface-card-hover/80 border border-divider px-2 py-0.5 rounded-full">
                                                         {p}
                                                     </span>
                                                 ))}
@@ -572,7 +572,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                         const factor   = parseFactor(row.detalle);
                                                                         const rowUnits = (row.cantidad || 0) * factor;
                                                                         return (
-                                                                            <tr key={j} className="border-t border-slate-100/60">
+                                                                            <tr key={j} className="border-t border-divider">
                                                                                 <td className="py-1.5 pr-6">
                                                                                     <span className="text-[12px] font-semibold text-content-2">
                                                                                         {row.presentacion || '—'}

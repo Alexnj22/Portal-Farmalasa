@@ -31,13 +31,13 @@ function renderPresentacion(row) {
     const factor = row.dispatch_factor || row.factor || 1;
     const TIPO_LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
     if (!tipo) {
-        if (factor > 1) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 whitespace-nowrap">×{factor} unid</span>;
+        if (factor > 1) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">×{factor} unid</span>;
         return <span className="text-content-3 text-[11px]">Unidad</span>;
     }
     const label      = TIPO_LABELS[tipo] ?? tipo;
     const showFactor = factor > 1 && ['caja','blister','solo_cajas'].includes(tipo);
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 whitespace-nowrap">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
             {label}{showFactor ? ` ×${factor}` : ''}{['multiplo','multiplo_unidades'].includes(tipo) ? ` ×${factor}` : ''}
         </span>
     );
@@ -49,7 +49,7 @@ function renderPresStock(row) {
     const dispFactor = row.dispatch_factor || factor;
     if (factor === dispFactor || !row.dispatch_tipo) return renderPresentacion(row);
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 whitespace-nowrap">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
             {factor <= 1 ? 'Unidad' : `×${factor} unid`}
         </span>
     );
@@ -81,7 +81,7 @@ const COLS_ENVIADOS = [
         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
             r.status === 'recibido'       ? 'bg-success/10 text-success-text border-success/30' :
             r.status === 'con_diferencia' ? 'bg-warning/10   text-warning-text   border-warning/30'   :
-                                            'bg-surface-card-hover   text-content-3   border-slate-200'
+                                            'bg-surface-card-hover   text-content-3   border-divider'
         }`}>
             {r.status === 'recibido' ? 'Recibido' : r.status === 'con_diferencia' ? 'Diferencia' : 'Pendiente'}
         </span>
@@ -231,7 +231,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
     };
 
     return (
-        <div className="border-t border-slate-100">
+        <div className="border-t border-divider">
             <div className="flex items-center gap-1 pr-2 hover:bg-surface-card-hover/50 transition-colors">
                 <button onClick={() => setOpen(v => !v)} className="flex-1 flex items-center gap-2 px-4 py-2.5 text-left">
                     <span className="text-[11px] font-semibold text-content-2 flex-1">{label}</span>
@@ -359,7 +359,7 @@ export default function ItemSections({ allItems, loading }) {
         setErrorMap(prev => ({ ...prev, [rowId]: null }));
     }, [origMap]);
 
-    if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-content-3" /></div>;
+    if (loading) return <div className="flex justify-center py-5 border-t border-divider"><Loader2 size={16} className="animate-spin text-content-3" /></div>;
 
     const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
     const agotamiento = allItems.filter(i => i.agotamiento);
@@ -367,7 +367,7 @@ export default function ItemSections({ allItems, loading }) {
     const porRegla    = allItems.filter(i => i.revision_minmax);
     const total       = allItems.length;
 
-    if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-content-3">Sin ítems.</div>;
+    if (total === 0) return <div className="border-t border-divider py-4 text-center text-[11px] text-content-3">Sin ítems.</div>;
 
     // Mirrors the DB constraint chk_min_lt_max:
     // min=0 → max must be 0 or 1; min≥1 → max must be strictly > min
@@ -455,7 +455,7 @@ export default function ItemSections({ allItems, loading }) {
         return (
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
-                    <div className="rounded-xl border border-slate-100 bg-surface-card-hover/50 px-3 py-2 flex items-center gap-2 flex-wrap">
+                    <div className="rounded-xl border border-divider bg-surface-card-hover/50 px-3 py-2 flex items-center gap-2 flex-wrap">
                         <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">Ventas 6M</span>
                         <span className="text-[11px] font-bold tabular-nums text-content-2 shrink-0">
                             {psp === undefined ? <span className="text-content-3">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
@@ -505,7 +505,7 @@ export default function ItemSections({ allItems, loading }) {
 
     return (
         <>
-            <div className="border-t border-slate-100 px-4 py-2.5 bg-surface-card-hover/60 flex items-center gap-5 flex-wrap">
+            <div className="border-t border-divider px-4 py-2.5 bg-surface-card-hover/60 flex items-center gap-5 flex-wrap">
                 <span className="text-[11px] text-content-3">Solicitados <strong className="text-content-2">{total}</strong></span>
                 <span className="text-[11px] text-content-3">Enviados <strong className="text-success">{enviados.length}</strong></span>
                 {agotamiento.length > 0 && <span className="text-[11px] text-content-3">Stock insuficiente <strong className="text-warning-text">{agotamiento.length}</strong></span>}

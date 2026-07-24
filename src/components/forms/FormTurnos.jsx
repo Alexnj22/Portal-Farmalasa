@@ -181,7 +181,7 @@ const FormTurnos = ({ branches }) => {
         const isBusy = actionLoading === shift.id;
 
         return (
-            <div className={`bg-white rounded-[1.25rem] border shadow-sm transition-all duration-300 relative overflow-hidden group ${isCurrentlyEditing ? 'border-brand shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/10' : 'border-slate-100'} ${isBeingDeleted ? 'bg-danger/10' : 'hover:border-brand/30 hover:shadow-md'}`}>
+            <div className={`bg-white rounded-[1.25rem] border shadow-sm transition-all duration-300 relative overflow-hidden group ${isCurrentlyEditing ? 'border-brand shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/10' : 'border-divider'} ${isBeingDeleted ? 'bg-danger/10' : 'hover:border-brand/30 hover:shadow-md'}`}>
                 
                 {isArchived && <div className="absolute top-0 right-0 w-2 h-full bg-content-3"></div>}
                 
@@ -189,7 +189,7 @@ const FormTurnos = ({ branches }) => {
                     <div className="flex items-center justify-between mb-3 gap-2">
                         <div className="flex-1 min-w-0">
                             <h5 className="text-[13px] md:text-[14px] font-black text-content leading-tight mb-1 truncate">{shift.name}</h5>
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-card-hover border border-slate-200 text-[8.5px] font-black uppercase tracking-widest text-content-3">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-card-hover border border-divider text-[8.5px] font-black uppercase tracking-widest text-content-3">
                                 <Building2 size={10}/> {bName}
                             </span>
                         </div>
@@ -214,7 +214,7 @@ const FormTurnos = ({ branches }) => {
                         </div>
                     </div>
 
-                    <div className="bg-surface-card-hover rounded-xl p-3 flex items-center gap-4 border border-slate-100">
+                    <div className="bg-surface-card-hover rounded-xl p-3 flex items-center gap-4 border border-divider">
                         <div className="flex-1">
                             <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Entrada</label>
                             <p className="text-[12px] md:text-[13px] font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
@@ -236,8 +236,8 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             {/* 📝 PANEL IZQUIERDO: CREADOR / EDITOR (Estilo Glassmorphic como el Aviso) */}
             {/* ================================================================================= */}
-            <div className="flex flex-col h-full bg-white border border-slate-100 shadow-[var(--shadow-elevation-xs)] rounded-[2rem] p-6 sticky top-0">
-                <div className="flex items-center gap-3 mb-6 shrink-0 border-b border-slate-100 pb-5">
+            <div className="flex flex-col h-full bg-white border border-divider shadow-[var(--shadow-elevation-xs)] rounded-[2rem] p-6 sticky top-0">
+                <div className="flex items-center gap-3 mb-6 shrink-0 border-b border-divider pb-5">
                     <div className={`w-11 h-11 flex items-center justify-center rounded-2xl shrink-0 border ${editingShiftId ? 'bg-warning/10 text-warning border-warning/30' : 'bg-chart-3/10 text-chart-3-text border-chart-3/30'}`}>
                         {editingShiftId ? <Pencil size={20} strokeWidth={2.5} /> : <BookOpen size={20} strokeWidth={2.5} />}
                     </div>
@@ -272,7 +272,7 @@ const FormTurnos = ({ branches }) => {
                             required 
                             type="text"
                             placeholder="Ej: Mañana 8am-4pm" 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-brand shadow-sm text-[16px] md:text-[16px] font-bold text-content-2 placeholder:text-content-3" 
+                            className="mt-2 w-full p-3.5 rounded-2xl border border-divider outline-none focus:border-brand shadow-sm text-[16px] md:text-[16px] font-bold text-content-2 placeholder:text-content-3" 
                             value={currentForm.name} 
                             onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })} 
                         />
@@ -290,7 +290,7 @@ const FormTurnos = ({ branches }) => {
                     </div>
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-slate-100 flex justify-end gap-3 shrink-0">
+                <div className="mt-auto pt-6 border-t border-divider flex justify-end gap-3 shrink-0">
                     {editingShiftId && (
                          <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-full text-[10px] font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover disabled:opacity-50">Cancelar</button>
                     )}
@@ -312,8 +312,8 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             {/* 📋 PANEL DERECHO: LISTA DE TURNOS (Bento Cards + Scroll) */}
             {/* ================================================================================= */}
-            <div className="flex flex-col h-full bg-surface-card-hover rounded-[2rem] border border-slate-100 p-6 overflow-hidden">
-                <div className="flex items-center justify-between gap-4 mb-6 shrink-0 pb-5 border-b border-slate-100/60">
+            <div className="flex flex-col h-full bg-surface-card-hover rounded-[2rem] border border-divider p-6 overflow-hidden">
+                <div className="flex items-center justify-between gap-4 mb-6 shrink-0 pb-5 border-b border-divider">
                     <h4 className="text-[12px] font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <ListTodo size={16} className="text-brand"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
                     </h4>

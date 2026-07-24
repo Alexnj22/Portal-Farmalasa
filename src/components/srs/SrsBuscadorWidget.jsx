@@ -75,7 +75,7 @@ export default function SrsBuscadorWidget({
                     value={query}
                     onChange={e => handleInput(e.target.value)}
                     placeholder="Buscar en Registro SRS..."
-                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
+                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
                     autoFocus
                     spellCheck={false}
                     autoComplete="off"
@@ -124,7 +124,7 @@ export default function SrsBuscadorWidget({
                                     <button
                                         disabled={page <= 1}
                                         onClick={() => goPage(page - 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-slate-200 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                     >
                                         <ChevronLeft size={11} strokeWidth={2.5} /> Ant.
                                     </button>
@@ -134,7 +134,7 @@ export default function SrsBuscadorWidget({
                                     <button
                                         disabled={page >= lastPage}
                                         onClick={() => goPage(page + 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-slate-200 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                     >
                                         Sig. <ChevronRight size={11} strokeWidth={2.5} />
                                     </button>
@@ -188,7 +188,7 @@ function SrsResultCard({ product: p, onSelect }) {
     return (
         <div
             className={`rounded-2xl border bg-white p-3.5 flex flex-col gap-2 transition-all ${
-                onSelect ? 'cursor-pointer hover:border-brand/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-slate-200'
+                onSelect ? 'cursor-pointer hover:border-brand/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-divider'
             }`}
             onClick={onSelect || undefined}
         >

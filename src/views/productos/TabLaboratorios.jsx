@@ -204,7 +204,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 const SUMMARY_COLOR = {
     teal:   { bg: 'from-chart-9/10 to-surface-card',     border: 'border-chart-9/30',   icon: 'bg-chart-9/10 text-chart-9-text',    glow: 'shadow-chart-9/20',   text: 'text-chart-9-text'   },
     indigo: { bg: 'from-chart-3/10 to-surface-card',   border: 'border-chart-3/30', icon: 'bg-chart-3/10 text-chart-3-text',glow: 'shadow-chart-3/20', text: 'text-chart-3-text' },
-    slate:  { bg: 'from-slate-50 to-white',    border: 'border-slate-100/80',  icon: 'bg-surface-card-hover text-content-3',  glow: 'shadow-slate-100',  text: 'text-content-3'  },
+    slate:  { bg: 'from-slate-50 to-white',    border: 'border-divider',  icon: 'bg-surface-card-hover text-content-3',  glow: 'shadow-slate-100',  text: 'text-content-3'  },
 };
 
 function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
@@ -288,7 +288,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
                         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                     >
                         {/* Inner panel with subtle glass bg */}
-                        <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-slate-100 p-3">
+                        <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-divider p-3">
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                                 {branches.map((branch, idx) => (
                                     <BranchLocationCard
@@ -397,7 +397,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                             transition={{ duration: 0.12 }}
                         >
                             {!filled ? (
-                                <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-dashed border-slate-200 bg-surface-card-hover/50">
+                                <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-dashed border-divider bg-surface-card-hover/50">
                                     <MapPin className="w-3 h-3 text-content-3 flex-shrink-0" />
                                     <span className="text-[11px] text-content-3 italic">Sin ubicación — clic para agregar</span>
                                 </div>
@@ -504,7 +504,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                     whileTap={{ scale: 0.96 }}
                                     onClick={cancel}
                                     disabled={saving}
-                                    className="flex items-center justify-center w-9 rounded-xl border border-slate-200 bg-surface-card hover:bg-danger/10 hover:border-danger/30 text-content-3 hover:text-danger transition-all"
+                                    className="flex items-center justify-center w-9 rounded-xl border border-divider bg-surface-card hover:bg-danger/10 hover:border-danger/30 text-content-3 hover:text-danger transition-all"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </motion.button>
@@ -543,7 +543,7 @@ function GlassInput({ label, value, onChange, placeholder, accent }) {
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
-                className={`flex-1 text-xs px-2.5 py-1.5 rounded-xl border border-slate-200/80 bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-slate-300 transition-all font-medium`}
+                className={`flex-1 text-xs px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-slate-300 transition-all font-medium`}
             />
         </div>
     );

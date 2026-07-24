@@ -74,7 +74,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       </div>
 
       {/* Valores: actual → propuesto */}
-      <div className="flex items-center justify-center gap-3 rounded-xl bg-surface-card-hover/70 border border-slate-100 py-2">
+      <div className="flex items-center justify-center gap-3 rounded-xl bg-surface-card-hover/70 border border-divider py-2">
         <div className="text-right text-[12px] font-bold tabular-nums text-content-3">
           <div>MIN {r.current_min ?? '—'}</div>
           <div>MAX {r.current_max ?? '—'}</div>
@@ -118,7 +118,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         <div className="flex flex-col gap-2 mt-auto">
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} autoFocus
             placeholder="Motivo del rechazo (opcional)…"
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-surface-card text-[16px] text-content-2 placeholder-slate-400 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
+            className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-[16px] text-content-2 placeholder-slate-400 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
           <div className="flex items-center gap-2">
             <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
               className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-danger hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
@@ -329,7 +329,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           {[['pending', `Pendientes${pendingCount ? ` · ${pendingCount}` : ''}`], ['history', 'Historial']].map(([k, label]) => (
             <button key={k} onClick={() => { setTab(k); setSucFilter('all'); }}
               className={`px-4 py-2 rounded-full text-[12px] font-bold transition-colors ${
-                tab === k ? 'bg-brand text-white shadow-sm' : 'bg-surface-card text-content-3 border border-slate-200/70 hover:border-brand/40'
+                tab === k ? 'bg-brand text-white shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/40'
               }`}>
               {label}
             </button>
@@ -337,7 +337,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         </div>
 
         {/* Filter pill estándar */}
-        <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] shrink-0">
+        <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] shrink-0">
           <div className="px-2 py-1.5" style={{ minWidth: 150 }}>
             <LiquidSelect value={sucFilter === 'all' ? '' : sucFilter}
               onChange={v => setSucFilter(v || 'all')}

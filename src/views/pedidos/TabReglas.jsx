@@ -219,7 +219,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-150 select-none text-left ${
                                         isActive
                                             ? `${style.bg} border-transparent ${style.text} shadow-lg`
-                                            : 'bg-surface-card border-slate-200 text-content-2 hover:border-slate-300 hover:bg-white'
+                                            : 'bg-surface-card border-divider text-content-2 hover:border-divider hover:bg-white'
                                     }`}
                                 >
                                     <Icon size={15} className={isActive ? 'text-white' : style.iconInactive} />
@@ -261,7 +261,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             vals.dispatch_label === label
                                                 ? 'bg-slate-800 border-slate-700 text-white shadow-md'
-                                                : 'bg-white border-slate-200 text-content-3 hover:border-slate-400 hover:text-content-2'
+                                                : 'bg-white border-divider text-content-3 hover:border-slate-400 hover:text-content-2'
                                         }`}
                                     >
                                         <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-content-3'} />
@@ -270,7 +270,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                 ))}
                                 {vals.dispatch_label && (
                                     <button type="button" onClick={() => selectLabel(vals.dispatch_label)}
-                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-content-3 hover:text-danger-text hover:border-danger/30 transition-all bg-surface-card">
+                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-divider text-content-3 hover:text-danger-text hover:border-danger/30 transition-all bg-surface-card">
                                         <X size={10} /> quitar
                                     </button>
                                 )}
@@ -297,7 +297,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         const n = parseInt(e.target.value);
                                         if (n > 0) selectMultiplo(n);
                                     }}
-                                    className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card"
+                                    className="w-20 border border-divider rounded-xl px-2 py-1.5 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card"
                                 />
                             </div>
 
@@ -365,7 +365,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
                     onBlur={commitNotes}
                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-divider rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
             </div>
         </div>
@@ -614,7 +614,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         countCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'con'}
                         activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/10"
+                        inactiveBg="bg-white border-divider hover:border-success/30 hover:bg-success/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'con' ? '' : 'con')}
                     />
@@ -624,7 +624,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         countCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
                         active={filterRule === 'sin'}
                         activeBg="bg-danger/10 border-danger/40 shadow-md shadow-danger/20 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10"
+                        inactiveBg="bg-white border-divider hover:border-danger/30 hover:bg-danger/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
                     />
@@ -634,7 +634,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         countCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'nuevo'}
                         activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/10"
+                        inactiveBg="bg-white border-divider hover:border-success/30 hover:bg-success/10"
                         loading={statsLoading}
                         onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
                     />
@@ -643,7 +643,7 @@ export default function TabReglas({ searchTerm = '' }) {
                 {/* Botón limpiar filtro regla */}
                 {filterRule && (
                     <button onClick={() => setFilterRule('')}
-                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-sm text-[11px] text-content-3 hover:text-danger hover:border-danger/30 transition-colors whitespace-nowrap">
+                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-sm text-[11px] text-content-3 hover:text-danger hover:border-danger/30 transition-colors whitespace-nowrap">
                         <X size={11} /> Limpiar filtro
                     </button>
                 )}
@@ -703,7 +703,7 @@ export default function TabReglas({ searchTerm = '' }) {
                                             <Check size={9} /> Con regla
                                         </span>
                                     ) : (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-card-hover text-content-3 border border-slate-200 font-medium">
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-card-hover text-content-3 border border-divider font-medium">
                                             Sin regla
                                         </span>
                                     )}

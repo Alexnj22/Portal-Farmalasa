@@ -79,7 +79,7 @@ function StepInfo({ form, set, branches }) {
                         className={`px-3 py-1.5 text-[11px] font-bold rounded-full border transition-all ${
                             form.branch_ids.length === branches.length
                                 ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white shadow-sm shadow-brand/20'
-                                : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
+                                : 'bg-white border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                         }`}
                     >
                         Todas
@@ -96,7 +96,7 @@ function StepInfo({ form, set, branches }) {
                                 className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                     active
                                         ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
-                                        : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
+                                        : 'bg-white border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                 }`}
                             >
                                 {b.name}
@@ -123,8 +123,8 @@ function StepInfo({ form, set, branches }) {
 
 function ProductRow({ pp, onRemove }) {
     return (
-        <div className="bg-white border border-slate-100 rounded-xl p-3 flex gap-3 items-start shadow-sm">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="bg-white border border-divider rounded-xl p-3 flex gap-3 items-start shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-divider flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {pp.foto_url
                     ? <img src={pp.foto_url} className="w-full h-full object-cover" alt="" />
                     : <Package size={13} className="text-content-3" />}
@@ -307,7 +307,7 @@ function AddProductInline({ onAdd }) {
                                     className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                         presentacionId === opt.value
                                             ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
-                                            : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
+                                            : 'bg-white border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                     }`}
                                 >
                                     {opt.label}
@@ -572,7 +572,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none px-7 py-4 border-t border-slate-100 flex items-center justify-between bg-surface-card-hover/80">
+                <div className="flex-none px-7 py-4 border-t border-divider flex items-center justify-between bg-surface-card-hover/80">
                     <button
                         type="button"
                         onClick={step === 0 ? handleClose : () => setStep(s => s - 1)}

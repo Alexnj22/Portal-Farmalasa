@@ -29,7 +29,7 @@ const SUC_COLORS = {
     4: 'bg-warning/10 text-warning-text border-warning/30',
     5: 'bg-danger/10 text-danger-text border-danger/30',
     7: 'bg-chart-5/10 text-chart-5-text border-chart-5/30',
-    6: 'bg-surface-card-hover text-content-2 border-slate-200',
+    6: 'bg-surface-card-hover text-content-2 border-divider',
 };
 
 
@@ -41,7 +41,7 @@ const MODES = [
         Icon:   AlertTriangle,
         rpc:    'get_products_sold_no_minmax',
         activeBg:   'bg-warning/10 border-warning/40 shadow-warning/20 -translate-y-px',
-        inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10',
+        inactiveBg: 'bg-white border-divider hover:border-warning/30 hover:bg-warning/10',
         numColor:   'text-warning',
         iconColor:  'text-warning',
     },
@@ -51,8 +51,8 @@ const MODES = [
         sub:    'stock físico sin venta 6m',
         Icon:   Archive,
         rpc:    'get_stagnant_inventory',
-        activeBg:   'bg-surface-card-hover border-slate-300 shadow-slate-100/80 -translate-y-px',
-        inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-surface-card-hover',
+        activeBg:   'bg-surface-card-hover border-divider shadow-slate-100/80 -translate-y-px',
+        inactiveBg: 'bg-white border-divider hover:border-divider hover:bg-surface-card-hover',
         numColor:   'text-content-2',
         iconColor:  'text-content-3',
     },
@@ -230,7 +230,7 @@ function UltimaVentaCell({ row, allBranches }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
-const GLASS_CARD = 'bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] hover:bg-surface-card';
+const GLASS_CARD = 'bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] hover:bg-surface-card';
 
 const FILTER_CARD_CSS = `
 @keyframes cardIn {
@@ -273,7 +273,7 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
           iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
           numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
-          activeBg: 'bg-surface-card-hover/80 border-slate-300 shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
+          activeBg: 'bg-surface-card-hover/80 border-divider shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-3',
           numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
         { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados',
@@ -419,13 +419,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
     }, [mode]);
 
     const tk = {
-        card:             'bg-surface-card border-slate-200/70 shadow-[var(--shadow-glow-brand)] backdrop-blur-sm',
+        card:             'bg-surface-card border-divider shadow-[var(--shadow-glow-brand)] backdrop-blur-sm',
         thead:            'bg-gradient-to-r from-brand/[0.07] to-brand/[0.03] border-b border-brand/[0.12]',
-        rowBorder:        'border-t border-slate-100',
+        rowBorder:        'border-t border-divider',
         rowHover:         'hover:bg-brand/[0.03]',
         skeleton:         'bg-surface-card-hover/70',
-        emptyBg:          'bg-surface-card border-slate-200/70 backdrop-blur-sm',
-        filterPill:       'bg-surface-card border-slate-200/70 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]',
+        emptyBg:          'bg-surface-card border-divider backdrop-blur-sm',
+        filterPill:       'bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]',
         filterBtn:        'text-content-3 hover:text-content-2 hover:bg-surface-card',
         filterDivider:    'bg-surface-card-hover',
         totalText:        'text-content-3',
@@ -562,7 +562,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 <div className="flex items-center gap-3 flex-wrap">
 
                     {/* Total count card */}
-                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]">
+                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-brand/[0.08]">
                             <Package size={15} className="text-brand/60" />
                         </div>
@@ -579,7 +579,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Costo retenido */}
                     {mode === 'stock_ret' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-4/10">
                                 <DollarSign size={15} className="text-chart-4-text" />
                             </div>
@@ -598,7 +598,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-warning/10">
                                 <TrendingUp size={15} className="text-warning" />
                             </div>
@@ -756,7 +756,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {isIgnored ? (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-slate-200 w-fit">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit">
                                                     <EyeOff size={9} />No sugerir
                                                 </span>
                                             ) : (
@@ -783,7 +783,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                         <span className="text-[9px] text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'omitir' && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-slate-200 w-fit"><Minus size={9} />Sin acción</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit"><Minus size={9} />Sin acción</span>
                                                     )}
                                                 </div>
                                             )}
@@ -874,10 +874,10 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell>
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 {soldIn.length === 0
-                                                    ? <span className="text-[10px] font-semibold text-content-3 bg-surface-card-hover border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                    ? <span className="text-[10px] font-semibold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full italic">Sin historial</span>
                                                     : soldIn.map(s => (
                                                         <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-surface-card-hover text-content-2 border-slate-200'}`}>
+                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-surface-card-hover text-content-2 border-divider'}`}>
                                                             {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
                                                         </span>
                                                     ))}

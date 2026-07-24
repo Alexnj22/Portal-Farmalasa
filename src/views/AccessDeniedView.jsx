@@ -56,7 +56,7 @@ const AccessDeniedView = () => {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '280ms' }}>
                 <button
                     onClick={() => navigate(-1)}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-slate-200 text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-divider text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all"
                 >
                     <ArrowLeft size={14} strokeWidth={2.5} />
                     Volver

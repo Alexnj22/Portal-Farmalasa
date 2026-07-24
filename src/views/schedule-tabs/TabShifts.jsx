@@ -118,7 +118,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         </p>
                     </div>
                     <div className="flex items-center gap-2 mt-2 w-full">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-white shadow-sm border border-slate-200 text-content-2 text-[10px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-white shadow-sm border border-divider text-content-2 text-[10px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
                             Cancelar
                         </button>
                         <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-danger hover:bg-danger-hover' : 'bg-success hover:bg-success-hover'}`}>
@@ -150,7 +150,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="flex flex-wrap items-center gap-1 pr-16 relative z-10">
-                <span className="flex items-center gap-1 text-content-3 bg-surface-card-hover px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest border border-slate-200/50">
+                <span className="flex items-center gap-1 text-content-3 bg-surface-card-hover px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest border border-divider">
                     <Globe size={10} strokeWidth={2} /> Catálogo Global
                 </span>
                 {hours > 9 && (
@@ -435,7 +435,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                     </div>
 
                     <form onSubmit={handleSaveShift} className="space-y-6 relative z-10 flex-1 flex flex-col">
-                        <div className="bg-surface-card-hover border border-slate-200 p-3 rounded-xl flex items-start gap-2.5 mb-2">
+                        <div className="bg-surface-card-hover border border-divider p-3 rounded-xl flex items-start gap-2.5 mb-2">
                             <Globe size={16} className="text-content-3 mt-0.5 shrink-0" strokeWidth={2.5} />
                             <p className="text-[11px] font-medium text-content-3 leading-snug">
                                 Este turno se añadirá al <strong>Catálogo Global</strong> y podrá ser utilizado por cualquier sucursal.
@@ -464,7 +464,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                         className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border active:scale-[0.97] ${
                                             currentForm.name === tipo
                                                 ? 'bg-brand text-white border-brand shadow-[var(--shadow-glow-brand)]'
-                                                : 'bg-surface-card text-content-3 border-border-card hover:bg-surface-card hover:text-content-2 hover:border-slate-200'
+                                                : 'bg-surface-card text-content-3 border-border-card hover:bg-surface-card hover:text-content-2 hover:border-divider'
                                         }`}>
                                         {tipo}
                                     </button>

@@ -106,7 +106,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand transition-colors">
                             Vencimiento Credencial JVQF
                         </label>
-                        <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-slate-200/80 hover:border-brand/40 focus-within:border-brand overflow-hidden">
+                        <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
                              <div className="w-full relative -top-0.5">
                                 <LiquidDatePicker 
                                     value={legalData.regentCredentialExp || ""} 
@@ -122,7 +122,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block">
                             Credencial JVQF (PDF/IMG)
                         </label>
-                        <div className={`relative group border border-dashed rounded-2xl h-[50px] px-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer overflow-hidden ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-white hover:border-brand/50'}`}>
+                        <div className={`relative group border border-dashed rounded-2xl h-[50px] px-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer overflow-hidden ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-white hover:border-brand/50'}`}>
                             <input 
                                 type="file" 
                                 accept="application/pdf,image/*" 
@@ -130,7 +130,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                                 onChange={(e) => updateLegalField('regentCredentialFile', e.target.files?.[0] || null)} 
                             />
                             
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-white text-brand border border-chart-1/30' : 'bg-white text-content-3 border border-slate-100 group-hover:text-brand group-hover:border-chart-1/30'}`}>
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-white text-brand border border-chart-1/30' : 'bg-white text-content-3 border border-divider group-hover:text-brand group-hover:border-chart-1/30'}`}>
                                  {legalData.regentCredentialFile || legalData.regentCredentialUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16} strokeWidth={2} />}
                             </div>
                             
@@ -144,11 +144,11 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                 </div>
 
                 {/* FILA 3: UPLOAD INSCRIPCIÓN (OCUPA TODO EL ANCHO PARA DESTACAR) */}
-                <div className="pt-4 border-t border-slate-100/60 mt-4">
+                <div className="pt-4 border-t border-divider mt-4">
                     <label className="text-[10px] font-black text-chart-3-text/80 uppercase tracking-widest ml-1 mb-2 block">
                         Inscripción de Regencia (PDF)
                     </label>
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
+                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-divider hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
                         <input 
                             type="file" 
                             accept=".pdf,image/*" 
@@ -156,7 +156,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                             onChange={(e) => updateLegalField('regentInscriptionFile', e.target.files?.[0] || null)} 
                         />
                         
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-white text-chart-3-text border border-chart-3/30' : 'bg-white text-content-3 border border-slate-100 group-hover:text-chart-3-text group-hover:border-chart-3/30'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-white text-chart-3-text border border-chart-3/30' : 'bg-white text-content-3 border border-divider group-hover:text-chart-3-text group-hover:border-chart-3/30'}`}>
                              {legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
                         </div>
                         

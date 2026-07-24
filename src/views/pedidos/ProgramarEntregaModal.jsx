@@ -59,7 +59,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                         type="datetime-local"
                         value={value}
                         onChange={e => setValue(e.target.value)}
-                        className="w-full text-[16px] text-content-2 bg-surface-card border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-chart-3/30 focus:border-chart-3"
+                        className="w-full text-[16px] text-content-2 bg-surface-card border border-divider rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-chart-3/30 focus:border-chart-3"
                     />
                 </div>
 
@@ -74,7 +74,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                                 const emp = empMap.get(h.por);
                                 const nombre = h.nombre ?? emp?.name ?? '—';
                                 return (
-                                    <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-xl bg-surface-card-hover/80 border border-slate-100">
+                                    <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-xl bg-surface-card-hover/80 border border-divider">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[11px] font-semibold text-content-2 truncate">
                                                 {fmtDisplay(h.programada_at) ?? '—'}
@@ -93,7 +93,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
 
             <LiquidModal.Footer>
                 <div className="flex gap-2">
-                    <button onClick={onClose} className="flex-1 text-[12px] font-semibold px-4 py-2.5 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all">
+                    <button onClick={onClose} className="flex-1 text-[12px] font-semibold px-4 py-2.5 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all">
                         Cancelar
                     </button>
                     <button

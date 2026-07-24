@@ -45,7 +45,7 @@ import { usePedidosData } from './tabpedidos/usePedidosData';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
+const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 const PAGE_SIZE = 30;
 const MINI_PAGE = 15;
 const DONE_STATUSES = ['completado', 'parcial', 'anulado'];
@@ -236,7 +236,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     {isBranch && sucursalCounts.length > 0 && (() => {
                         const own = sucursalCounts[0];
                         return (
-                            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
+                            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-white min-w-[130px]">
                                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-3/10">
                                     <Building2 size={15} className="text-chart-3-text" />
                                 </div>
@@ -354,7 +354,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {row.codigo ?? `#${row.numero}`}
                                         </span>
                                         <SucPill sucId={row.erp_sucursal_id} />
-                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-surface-card-hover text-content-2 border-slate-200'}`}>
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-surface-card-hover text-content-2 border-divider'}`}>
                                             {PEDIDO_LABEL[row.pedido_status] ?? row.pedido_status}
                                         </span>
                                         <span className="ml-auto text-[10px] text-content-3 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
@@ -365,21 +365,21 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Stats pills */}
                                     {cardStats[cardKey] && (
                                         <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-slate-200">
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                 {cardStats[cardKey].enviados} enviados
                                             </span>
                                             {(cardStats[cardKey].agotamiento ?? 0) > 0 && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-slate-200">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                     {cardStats[cardKey].agotamiento} stock insuf.
                                                 </span>
                                             )}
                                             {cardStats[cardKey].sinStock > 0 && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-slate-200">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                     {cardStats[cardKey].sinStock} sin stock
                                                 </span>
                                             )}
                                             {cardStats[cardKey].porRegla > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-slate-200">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                     <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
                                                 </span>
                                             )}
@@ -391,7 +391,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
                                             <span className="text-[10px] font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
                                             {prepApoyo.map(a => (
-                                                <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-white border border-slate-200 shadow-sm">
+                                                <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-white border border-divider shadow-sm">
                                                     {a.photo_url
                                                         ? <img src={a.photo_url} alt={a.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
                                                         : <span className="w-5 h-5 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={10} className="text-content-3" /></span>
@@ -403,7 +403,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     )}
 
                                     {/* Lifecycle Timeline */}
-                                    <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
+                                    <div className="border-t border-divider px-3 pt-2 pb-1.5">
                                         {(() => {
                                             const rutaInfo = pedidoRutaMap.get(row.pedido_id);
                                             const rtStop   = rutaInfo?.stop ?? null;
@@ -417,19 +417,19 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Actions + status strip */}
                                     <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
                                         {row.total_cajas > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 tabular-nums shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
                                                 <Box size={10} className="text-content-3 shrink-0" />
                                                 {row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}
                                             </span>
                                         )}
                                         {(row.cajas_electrolit ?? 0) > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 tabular-nums shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
                                                 <Inbox size={10} className="text-content-3 shrink-0" />
                                                 {row.cajas_electrolit} Electrolit
                                             </span>
                                         )}
                                         {row.electrolit_ok === false && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
                                                 <Zap size={8} className="shrink-0" />
                                                 {(row.electrolit_faltantes ?? 0) > 0
                                                     ? `${row.electrolit_faltantes} Electrolit faltante${row.electrolit_faltantes > 1 ? 's' : ''}`
@@ -437,7 +437,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </span>
                                         )}
                                         {(row.cajas_especiales ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 tabular-nums shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
                                                 <Star size={10} className="text-content-3 shrink-0" />
                                                 {row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}
                                             </span>
@@ -453,7 +453,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </span>
                                         )}
                                         {row.pedido_status === 'parcial' && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && row.pedido_status !== 'completado' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
                                                 <ClipboardList size={8} /> Difs. pendientes
                                             </span>
                                         )}
@@ -469,7 +469,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <button
                                                     onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}
                                                     disabled={isLCBusy}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-slate-200 active:scale-[0.97] transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
                                                 >
                                                     <UserPlus size={10} />Apoyo
                                                 </button>
@@ -478,7 +478,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <button
                                                     onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}
                                                     disabled={printingPdf === row.pedido_id}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-slate-200 active:scale-[0.97] transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
                                                 >
                                                     {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
                                                 </button>
@@ -526,7 +526,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
                                                 if (conductorEnRuta) return (
-                                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-surface-card cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
+                                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
                                                         <Truck size={10} className="text-content-3" />Esperando vuelta conductor
                                                     </div>
                                                 );
@@ -639,11 +639,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                             return (
                                 <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-surface-card shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-border-card' : 'border-chart-3/30'}`}>
                                     {/* Header sin color — glass */}
-                                    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100/80 bg-surface-card" onClick={e => e.stopPropagation()}>
+                                    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-divider bg-surface-card" onClick={e => e.stopPropagation()}>
                                         {/* Foto/icono conductor */}
                                         <div className="relative shrink-0">
                                             {conductorEmp?.photo
-                                                ? <img src={conductorEmp.photo} alt={conductorEmp.name} className="w-7 h-7 rounded-xl object-cover border border-slate-200" />
+                                                ? <img src={conductorEmp.photo} alt={conductorEmp.name} className="w-7 h-7 rounded-xl object-cover border border-divider" />
                                                 : <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-surface-card-hover border-border-card' : 'bg-chart-3/10 border-chart-3/30'}`}>
                                                     <Truck size={13} className={isCompletada ? 'text-content-3' : 'text-chart-3-text'} />
                                                   </div>
@@ -701,7 +701,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {!isCompletada && (
                                                 <button
                                                     onClick={() => setRutaMapOpen(ruta)}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover border border-slate-200 text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all"
                                                 >
                                                     <MapIcon size={9} />Mapa
                                                 </button>

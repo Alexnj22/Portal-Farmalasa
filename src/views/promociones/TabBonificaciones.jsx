@@ -65,7 +65,7 @@ function PayModal({ bonif, onClose, onPaid }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-            <div className="bg-surface-card border border-slate-200 rounded-2xl shadow-xl p-5 w-80 max-w-full">
+            <div className="bg-surface-card border border-divider rounded-2xl shadow-xl p-5 w-80 max-w-full">
                 <p className="text-[13px] font-bold text-content-2 mb-1">Registrar pago</p>
                 <p className="text-[11px] text-content-3 mb-4">
                     {bonif.employees?.name || 'Empleado'} · {ROLE_STYLE[bonif.role]?.label} ·{' '}
@@ -77,7 +77,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                         <label className="text-[10px] font-medium text-content-3 mb-0.5 block">Monto ($)</label>
                         <input
                             type="number" step="0.01" min="0.01" max={pending}
-                            className="w-full text-[16px] bg-surface-card-hover border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1"
+                            className="w-full text-[16px] bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1"
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                         />
@@ -85,7 +85,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                     <div>
                         <label className="text-[10px] font-medium text-content-3 mb-0.5 block">Notas (opcional)</label>
                         <textarea
-                            className="w-full text-[16px] bg-surface-card-hover border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1 h-16 resize-none"
+                            className="w-full text-[16px] bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1 h-16 resize-none"
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
                             placeholder="Ej: Pago quincenal, efectivo..."
@@ -143,7 +143,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
         <div>
             {/* Summary pill — right-aligned, glassmorphic */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0">
+                <div className="group flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0">
                     <div className="flex items-center gap-1.5 px-3 py-2">
                         <Gift size={12} className="text-content-3" />
                         <span className="text-[11px] text-content-3">Total ganado:</span>

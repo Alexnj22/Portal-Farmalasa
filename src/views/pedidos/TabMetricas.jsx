@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { ERP_NAMES } from '../../constants/erp';
 
-const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
+const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 
 const RANGES = [
     { key: '7d',  label: 'Últimos 7 días',  days: 7  },
@@ -165,7 +165,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                         className={`text-[11px] px-3 py-1.5 rounded-full border font-medium transition-colors ${
                             range === r.key
                                 ? 'bg-chart-1 text-white border-chart-1'
-                                : 'bg-white text-content-3 border-slate-200 hover:border-slate-300 hover:text-content-2'
+                                : 'bg-white text-content-3 border-divider hover:border-divider hover:text-content-2'
                         }`}
                     >
                         {r.label}
@@ -192,7 +192,7 @@ export default function TabMetricas({ searchTerm = '' }) {
 
                     {/* Tabla por sucursal */}
                     <div className={GLASS}>
-                        <div className="px-4 py-3 border-b border-slate-100">
+                        <div className="px-4 py-3 border-b border-divider">
                             <p className="text-[12px] font-semibold text-content-2 flex items-center gap-2">
                                 <Building2 size={13} className="text-content-3" />
                                 Por sucursal
@@ -201,7 +201,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                         <div className="overflow-x-auto">
                             <table className="w-full text-[11px]">
                                 <thead>
-                                    <tr className="border-b border-slate-100">
+                                    <tr className="border-b border-divider">
                                         <th className="text-left px-4 py-2.5 font-semibold text-content-3">Sucursal</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-content-3">Pedidos</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-chart-3-text">Prep. neto</th>
@@ -213,7 +213,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                                 </thead>
                                 <tbody>
                                     {filteredSucs.map(s => (
-                                        <tr key={s.id} className="border-b border-slate-50 hover:bg-surface-card-hover/50 transition-colors">
+                                        <tr key={s.id} className="border-b border-divider hover:bg-surface-card-hover/50 transition-colors">
                                             <td className="px-4 py-2.5 font-semibold text-content-2">{s.nombre}</td>
                                             <td className="px-3 py-2.5 text-center text-content-2 tabular-nums">{s.pedidos}</td>
                                             <td className="px-3 py-2.5 text-center font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgPrep)}</td>
@@ -240,7 +240,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                     {/* Razones de pausa */}
                     {razones.length > 0 && (
                         <div className={GLASS}>
-                            <div className="px-4 py-3 border-b border-slate-100">
+                            <div className="px-4 py-3 border-b border-divider">
                                 <p className="text-[12px] font-semibold text-content-2 flex items-center gap-2">
                                     <Pause size={13} className="text-warning" />
                                     Razones de pausa

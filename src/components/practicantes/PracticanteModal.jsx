@@ -215,7 +215,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <label className={fieldLabel}>
                                     <span>Fecha de Nacimiento {age !== null && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {age} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                 </label>
-                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-warning/40 !bg-warning/10' : 'border-slate-200/80'}`}>
+                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
                                     <LiquidDatePicker value={form.birth_date} onChange={(v) => set('birth_date', v)} />
                                 </div>
                             </div>
@@ -287,7 +287,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className={fieldLabel}><span>Fecha Inicio</span>{!form.fecha_inicio && reqBadge}</label>
-                                <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!form.fecha_inicio ? '!border-danger !bg-danger/10' : ''}`}>
+                                <div className={`bg-white rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!form.fecha_inicio ? '!border-danger !bg-danger/10' : ''}`}>
                                     <LiquidDatePicker value={form.fecha_inicio} onChange={(v) => set('fecha_inicio', v)} />
                                 </div>
                             </div>
@@ -296,7 +296,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                     <span>Fecha Fin {fechasInvalid && <span className="text-danger font-bold ml-1">— debe ser posterior</span>}</span>
                                     {!form.fecha_fin && reqBadge}
                                 </label>
-                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${fechasInvalid || !form.fecha_fin ? '!border-danger !bg-danger/10' : 'border-slate-200/80'}`}>
+                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${fechasInvalid || !form.fecha_fin ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                     <LiquidDatePicker value={form.fecha_fin} onChange={(v) => set('fecha_fin', v)} highlightRangeStart={form.fecha_inicio || null} />
                                 </div>
                             </div>
@@ -317,7 +317,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <span>Convenio Institucional (PDF/imagen)</span>
                                 {convenioMissing && reqBadge}
                             </label>
-                            <div className={`relative flex items-center gap-3 bg-white rounded-[1rem] border shadow-sm h-[40px] px-3 z-10 ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-slate-200/80'}`}>
+                            <div className={`relative flex items-center gap-3 bg-white rounded-[1rem] border shadow-sm h-[40px] px-3 z-10 ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                 <label className="flex items-center gap-1.5 text-[13px] font-bold text-brand cursor-pointer">
                                     <Upload size={14} strokeWidth={2.5} />
                                     {convenioFile ? convenioFile.name : 'Adjuntar convenio...'}
@@ -338,7 +338,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 value={form.notas}
                                 onChange={(e) => set('notas', e.target.value)}
                                 placeholder="Contexto adicional..."
-                                className={`w-full h-20 resize-none bg-white rounded-[1rem] border border-slate-200/80 shadow-sm px-4 py-2.5 text-[16px] font-bold text-content-2 outline-none ${inputHoverClass}`}
+                                className={`w-full h-20 resize-none bg-white rounded-[1rem] border border-divider shadow-sm px-4 py-2.5 text-[16px] font-bold text-content-2 outline-none ${inputHoverClass}`}
                             />
                         </div>
                     </div>

@@ -277,12 +277,12 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             </div>
 
             {/* TABLA DETALLADA */}
-            <div className="border border-slate-200 rounded-xl overflow-auto shadow-sm">
+            <div className="border border-divider rounded-xl overflow-auto shadow-sm">
                 <table className="w-full text-left border-collapse bg-surface-card-hover/50 min-w-[1000px]">
                     <thead className="sticky top-0 bg-white shadow-[var(--shadow-elevation-sm)] z-20">
                         <tr>
                             <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest w-[180px] bg-white">Empleado</th>
-                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center border-r border-slate-200 bg-white w-[60px]">Hrs</th>
+                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center border-r border-divider bg-white w-[60px]">Hrs</th>
                             {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, i) => (
                                 <th key={i} className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center min-w-[120px] bg-white">{day}</th>
                             ))}
@@ -297,11 +297,11 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
                             return (
                                 <tr key={emp.id} className="hover:bg-surface-card-hover transition-colors group/row">
-                                    <td className="p-3 border-r border-slate-200 bg-white sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                                    <td className="p-3 border-r border-divider bg-white sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                                         <p className="text-[12px] font-black text-content truncate">{emp.name}</p>
                                         <p className="text-[9px] font-bold text-content-3 uppercase truncate">{emp.role}</p>
                                     </td>
-                                    <td className="p-2 text-center align-middle border-r border-slate-200">
+                                    <td className="p-2 text-center align-middle border-r border-divider">
                                         <span className={`px-2 py-1 rounded-md text-[10px] font-black tracking-widest ${isOver ? 'bg-danger/10 text-danger' : isUnder ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
                                             {weeklyHrs}H
                                         </span>
@@ -323,7 +323,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                         }
 
                                         return (
-                                            <td key={dayId} className="p-2 align-top border-l border-slate-200/60">
+                                            <td key={dayId} className="p-2 align-top border-l border-divider">
                                                 {shift ? (
                                                     <div className="flex flex-col h-full bg-white border border-chart-3/30 rounded-lg shadow-sm overflow-hidden hover:border-chart-3/50 transition-colors group/cell">
                                                         
@@ -372,13 +372,13 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                         
                                                         {/* BADGE DE HORAS */}
                                                         <div className={`mt-auto flex justify-center ${dayData.lunchTime || dayData.lactationTime ? 'pb-2' : 'py-3'}`}>
-                                                            <span className="bg-surface-card-hover text-content-2 px-2.5 py-0.5 rounded text-[9px] font-black tracking-widest border border-slate-200">
+                                                            <span className="bg-surface-card-hover text-content-2 px-2.5 py-0.5 rounded text-[9px] font-black tracking-widest border border-divider">
                                                                 {dailyHrs}H
                                                             </span>
                                                         </div>
 
                                                         {/* Mini Toolbar Editable */}
-                                                        <div className="flex border-t border-slate-100 bg-surface-card-hover/50 mt-auto">
+                                                        <div className="flex border-t border-divider bg-surface-card-hover/50 mt-auto">
                                                             <button onClick={() => toggleModifier(emp.id, dayId, 'lunchTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lunchTime ? 'text-chart-4-text bg-chart-4/10' : 'text-content-3 hover:text-chart-4-text hover:bg-surface-card-hover'}`} title="Con/Sin Almuerzo">
                                                                 <Utensils size={11} strokeWidth={2.5}/>
                                                             </button>
@@ -389,7 +389,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-surface-card-hover hover:bg-surface-card-hover text-content-3 border border-dashed border-slate-200 rounded-lg transition-colors">
+                                                    <div className="w-full h-full flex items-center justify-center bg-surface-card-hover hover:bg-surface-card-hover text-content-3 border border-dashed border-divider rounded-lg transition-colors">
                                                         <LiquidSelect
                                                             nano
                                                             bare

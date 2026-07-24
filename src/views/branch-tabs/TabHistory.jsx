@@ -35,7 +35,7 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
         case 'REGISTRO_ASISTENCIA':
             return { icon: Users, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3)]' };
         default:
-            return { icon: CheckCircle2, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-slate-200', dot: 'bg-content-3', shadow: 'shadow-sm' };
+            return { icon: CheckCircle2, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-divider', dot: 'bg-content-3', shadow: 'shadow-sm' };
     }
 };
 
@@ -253,7 +253,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             if (parsedDetails.timeline_title) itemTitle = parsedDetails.timeline_title;
                             else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) itemTitle = `Pago ${parsedDetails.servicio} ($${parsedDetails.monto})`;
                             return (
-                                <tr key={idx} className="border-b border-slate-200 break-inside-avoid">
+                                <tr key={idx} className="border-b border-divider break-inside-avoid">
                                     <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-ES')}</td>
                                     <td className="py-2.5 px-2 text-[8px] uppercase tracking-widest">{getActionLabel(item)}</td>
                                     <td className="py-2.5 px-2 font-bold text-content">{itemTitle}</td>
@@ -357,7 +357,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 )}
                             </div>
 
-                            <div className={`flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-slate-300/30 shrink-0`}>
+                            <div className={`flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-divider shrink-0`}>
                                 <button onClick={() => setIsSearchOpen(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
                                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                                 </button>

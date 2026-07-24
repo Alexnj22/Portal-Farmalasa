@@ -146,7 +146,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
       {/* Body */}
       {expanded && (
-        <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+        <div className="border-t border-divider px-4 py-3 space-y-3">
           {/* Paradas */}
           <div className="space-y-2">
             {paradas.map((stop, idx) => {
@@ -155,7 +155,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
               return (
                 <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                  isEntregado ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
+                  isEntregado ? 'bg-success/10 border-success/30' : 'bg-white border-divider'
                 }`}>
                   {/* Number */}
                   <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
@@ -330,7 +330,7 @@ export default function TabRutas({ searchTerm = '' }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-surface-card-hover border border-slate-200 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-surface-card-hover border border-divider flex items-center justify-center">
             <Navigation size={28} className="text-content-3" />
           </div>
           <div className="text-center">

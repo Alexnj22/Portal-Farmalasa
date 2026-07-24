@@ -412,8 +412,8 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
                             ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)]' :
                               conf ? conf.bg + ' border border-dashed ' + conf.border :
-                              hasShift ? 'bg-white border border-slate-200 shadow-[var(--shadow-elevation-xs)]' :
-                              'border border-dashed border-slate-300/60 bg-surface-card-hover/30 backdrop-blur-sm'
+                              hasShift ? 'bg-white border border-divider shadow-[var(--shadow-elevation-xs)]' :
+                              'border border-dashed border-divider bg-surface-card-hover/30 backdrop-blur-sm'
                             }
                             ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-danger/40 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]' : ''}
                         `}>
@@ -444,10 +444,10 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                 ) : hasShift ? (
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
-                                            <span className="text-[7.5px] 2xl:text-[8px] font-black uppercase text-content bg-surface-card-hover border border-slate-200 px-1 py-[1px] rounded truncate max-w-[70%]">
+                                            <span className="text-[7.5px] 2xl:text-[8px] font-black uppercase text-content bg-surface-card-hover border border-divider px-1 py-[1px] rounded truncate max-w-[70%]">
                                                 {shift?.name || 'Manual'}
                                             </span>
-                                            <div className={`flex items-center gap-0.5 px-1 py-[1px] rounded border shadow-sm ${isDailyOvertime ? 'bg-danger/10 border-danger/30 text-danger' : 'bg-surface-card-hover border-slate-200 text-content-3'}`}>
+                                            <div className={`flex items-center gap-0.5 px-1 py-[1px] rounded border shadow-sm ${isDailyOvertime ? 'bg-danger/10 border-danger/30 text-danger' : 'bg-surface-card-hover border-divider text-content-3'}`}>
                                                 {isDailyOvertime && <Flame size={7} className="animate-pulse" />}
                                                 <span className="text-[7px] 2xl:text-[7.5px] font-black tracking-tight">{netShiftDurationHrs}h</span>
                                             </div>
@@ -560,8 +560,8 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                             ${isCoverageDay
                                 ? 'bg-chart-3/10 border border-chart-3/40 shadow-[0_2px_8px_rgba(99,102,241,0.10)]'
                                 : hasShift
-                                    ? 'bg-surface-card border border-slate-200/50 opacity-40'
-                                    : 'border border-dashed border-slate-200/40 bg-surface-card-hover/10 opacity-30'
+                                    ? 'bg-surface-card border border-divider opacity-40'
+                                    : 'border border-dashed border-divider bg-surface-card-hover/10 opacity-30'
                             }`}>
                             <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 shadow-sm
                                 ${isCoverageDay ? 'bg-chart-3 text-white' : 'bg-content-3 text-white'}">
@@ -573,11 +573,11 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
                                             <span className={`text-[7.5px] font-black uppercase px-1 py-[1px] rounded border truncate max-w-[68%]
-                                                ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-slate-100'}`}>
+                                                ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-divider'}`}>
                                                 {shift?.name || 'Manual'}
                                             </span>
                                             <span className={`text-[7px] font-black px-1 py-[1px] rounded border
-                                                ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-slate-100'}`}>
+                                                ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-divider'}`}>
                                                 {netHrs}h
                                             </span>
                                         </div>
@@ -836,14 +836,14 @@ const ScheduleCalendar = memo(({
                                     {!showCoverageSearch ? (
                                         <button
                                             onClick={() => setShowCoverageSearch(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-content-2 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-divider text-content-2 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
                                         >
                                             <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
                                         </button>
                                     ) : (
-                                        <div className="bg-surface-card backdrop-blur-xl border border-slate-200 rounded-2xl p-3 shadow-lg">
+                                        <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <div className="flex-1 flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+                                                <div className="flex-1 flex items-center gap-2 bg-white border border-divider rounded-xl px-3 py-2 shadow-sm">
                                                     <Search size={12} className="text-content-3 shrink-0" />
                                                     <input
                                                         autoFocus

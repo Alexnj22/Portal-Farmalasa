@@ -85,10 +85,10 @@ function ItemsExpand({ receiptId }) {
 
     return (
         <div className="px-4 py-3">
-            <div className="overflow-x-auto rounded-xl border border-slate-200/60 bg-surface-card">
+            <div className="overflow-x-auto rounded-xl border border-divider bg-surface-card">
                 <table className="w-full text-[11px]">
                     <thead>
-                        <tr className="border-b border-slate-200/60 bg-surface-card-hover/60">
+                        <tr className="border-b border-divider bg-surface-card-hover/60">
                             <th className="text-left px-3 py-2 font-semibold text-content-3">#</th>
                             <th className="text-left px-3 py-2 font-semibold text-content-3">ID Producto</th>
                             <th className="text-left px-3 py-2 font-semibold text-content-3">Descripción</th>
@@ -346,7 +346,7 @@ export default function ComprasView() {
                 </button>
             )}
 
-            <div className="flex items-center gap-3 rounded-2xl bg-surface-card border border-slate-200/70 px-4 py-2 flex-wrap">
+            <div className="flex items-center gap-3 rounded-2xl bg-surface-card border border-divider px-4 py-2 flex-wrap">
                 {/* Date start */}
                 <div className="flex items-center gap-1.5">
                     <Calendar size={12} className="text-content-3" />

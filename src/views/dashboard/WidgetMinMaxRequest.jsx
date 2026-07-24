@@ -130,7 +130,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
           <ArrowLeft size={13} strokeWidth={2.5} />
         </button>
-        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface-card-hover border border-slate-100 flex items-center justify-center">
+        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">
           {product.foto_url
             ? <img src={product.foto_url} alt="" className="w-full h-full object-contain" />
             : <Package size={16} className="text-content-3" />}
@@ -147,7 +147,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Actual + contexto de ventas */}
         {erp && (
-          <div className="rounded-2xl border border-slate-100 bg-surface-card-hover/60 px-3.5 py-2.5 flex flex-col gap-1.5">
+          <div className="rounded-2xl border border-divider bg-surface-card-hover/60 px-3.5 py-2.5 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-content-2 uppercase tracking-wider">En uso ahora</span>
               {loadingCur ? <Loader2 size={13} className="animate-spin text-content-3" /> : (
@@ -164,7 +164,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
               )}
             </div>
             {!loadingCur && (
-              <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+              <div className="flex items-center justify-between border-t border-divider pt-1.5">
                 <span className="text-[10px] font-black text-content-2 uppercase tracking-wider flex items-center gap-1">
                   <TrendingUp size={11} className="text-success" /> Ventas 6 meses
                 </span>
@@ -205,7 +205,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
             placeholder="¿Por qué este ajuste? (opcional)"
-            className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
+            className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
         </div>
 
         {err && <p className="text-[11px] text-danger font-semibold px-1">{err}</p>}
@@ -297,7 +297,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
         <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-content-3 pointer-events-none" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar producto para ajustar Min/Max…"
-          className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
+          className="w-full pl-9 pr-8 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
           spellCheck={false} />
         {search && (
           <button onClick={() => setSearch('')}
@@ -323,8 +323,8 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
 
         {!loading && results.map(p => (
           <button key={p.id} onClick={() => { setPicked(p); setView('form'); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-slate-100 bg-white hover:border-brand/40 transition-colors text-left">
-            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-surface-card-hover border border-slate-100 flex items-center justify-center">
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-divider bg-white hover:border-brand/40 transition-colors text-left">
+            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">
               {p.foto_url
                 ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
                 : <Package size={14} className="text-content-3" strokeWidth={2} />}

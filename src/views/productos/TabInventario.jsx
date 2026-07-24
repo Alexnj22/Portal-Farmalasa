@@ -233,7 +233,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
             {/* ── Stats + filter pill ── */}
             <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">

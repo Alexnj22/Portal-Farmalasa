@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.46.3';
+export const APP_VERSION = '2.47.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.47.0 — fix(responsive): mismo bug de TabCatalogo.jsx (v2.46.2)
+// encontrado copiado en otros 4 archivos — auditoría de sub-tabs internas
+// de T4 (clic real por tab, no solo la ruta default). Al auditar "Gestión
+// de Stock" dentro de /productos apareció el mismo patrón: stat cards
+// apretadas en columna angosta con hueco enorme a la derecha. Grep del
+// patrón exacto (`flex items-center gap-3 flex-wrap flex-1 min-w-0`)
+// encontró 4 ocurrencias más, todas copiadas del mismo bloque original:
+// productos/TabSinVenta.jsx (la vista real detrás de "Gestión de Stock"),
+// productos/TabInventario.jsx, pedidos/TabReglas.jsx,
+// StaffManagementView.jsx. Mismo fix en las 4: quitar flex-1/min-w-0 del
+// wrapper de stat cards para que el flex-wrap del padre lo baje a su
+// propia línea completa cuando no cabe junto al cluster de filtros.
+// Verificado con Playwright a 1024×768: las 4 vistas muestran ahora sus
+// cards en fila completa sin hueco desperdiciado. Build + tests verdes.
+//
+// De paso, barrido de scroll horizontal a 1024×768 e iPhone 13 sobre las
+// 37 rutas reales: 36/37 limpias en ambos viewports (la única excepción,
+// /pedidos, sigue siendo el bug preexistente no relacionado de
+// @capacitor-community/background-geolocation). Clic real por sub-tab en
+// las 3 vistas con ViewTabBar accesibles (productos, schedules, ventas —
+// 9 tabs totales): las 9 limpias, sin scroll horizontal.
 
 // v2.46.3 — docs: AUDITORIA-TEMA-2026-07.md §10.3/10.4 — barrido automático
 // de "sin scroll horizontal a 1024×768" con Playwright logueado sobre las

@@ -549,11 +549,17 @@ export default function TabGestionStock({ searchTerm = '' }) {
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
-            {/* ── Filters row: stat cards (left) + filter pill (right) ── */}
+            {/* ── Filters row: stat cards (left) + filter pill (right) ──
+                Sin flex-1/min-w-0 a propósito en el wrapper de cards — con
+                ellos, el wrapper siempre reclama el espacio "sobrante" del
+                row en vez de envolver como bloque completo cuando no cabe
+                junto al cluster de filtros, apretando las cards en una
+                columna angosta a 1024×768 (mismo bug de TabCatalogo.jsx,
+                auditoría responsive T4, 2026-07-23). */}
             <div className="flex items-start gap-3 flex-wrap">
 
                 {/* Left: summary + cost/revenue + sub-filter cards */}
-                <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
 
                     {/* Total count card */}
                     <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]">

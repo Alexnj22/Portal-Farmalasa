@@ -909,7 +909,7 @@ const StaffManagementView = ({
       <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-700">
 
         <div className="flex items-start gap-3 flex-wrap shrink-0">
-          <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
             <StaffStatCard
               icon={Users} color="blue" label="Total" value={stats.total}
               active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}

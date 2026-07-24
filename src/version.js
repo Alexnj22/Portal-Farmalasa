@@ -5,8 +5,44 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.48.1';
+export const APP_VERSION = '2.48.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.48.2 — feat(layout): ThemeMigrationRibbon reemplaza SystemUpdateBanner +
+// UpdateIndicatorDot — a pedido directo del usuario tras ver el mockup de
+// v2.48.1 en vivo ("ese indicador magenta no me dice nada... que no se
+// pueda quitar mientras no terminamos el plan").
+//
+// El dot magenta con ping no comunicaba nada por sí solo (sin texto, fácil
+// de ignorar) y el mecanismo de "cerrar + reabrir" solo existía porque el
+// aviso ERA cerrable — la solución real era no dejarlo cerrar. Se
+// eliminaron ambos componentes (SystemUpdateBanner.jsx,
+// UpdateIndicatorDot.jsx, sessionStorage
+// `system_update_notice_dismissed_v1`) y se reemplazan por
+// `ThemeMigrationRibbon.jsx`: una franja con rayas diagonales ámbar/negro
+// (código universal de "obra en construcción", deliberadamente separado
+// del acento de marca verde/magenta) fija en la parte más alta del
+// viewport, SIN botón de cerrar, visible en todas las rutas mientras dure
+// la migración de tema (AUDITORIA-TEMA-2026-07.md) — se retira editando
+// AppLayout.jsx cuando el plan termine, no con una condición en tiempo de
+// ejecución.
+//
+// 3 tratamientos visuales prototipados en un artifact (rayas diagonales /
+// barra ámbar con dot pulsante / etiqueta junto al logo) antes de tocar
+// código — el usuario aprobó el de rayas diagonales tal cual, pidiendo
+// solo mejorar el copy.
+//
+// Detalle técnico: la franja es `fixed` (inmune al modelo de alto 100dvh
+// que ya causó regresiones reales en móvil — v2.30.0/v2.30.1 abajo en este
+// mismo archivo), así que no puede empujar contenido por sí sola. Se
+// resuelve con un spacer hermano (mismo alto exacto, constante compartida
+// `RIBBON_HEIGHT`) como primer hijo de AppLayout, antes del row
+// sidebar+main — reserva el espacio en el flujo normal en los dos modelos
+// de alto que coexisten hoy (`min-h-[100dvh]` en móvil, `lg:fixed
+// lg:inset-0` en desktop) sin tocar ninguna clase del row existente.
+// Verificado con Playwright (desktop 1440px y WebKit iPhone 13): la franja
+// se ve completa arriba de sidebar+contenido en ambos, sin solape ni salto
+// al hacer scroll, y el scroll interno de #main-scroll sigue funcionando.
 
 // v2.48.1 — feat(layout): UpdateIndicatorDot — reabre SystemUpdateBanner
 // tras cerrarlo, sin esperar a la siguiente sesión.

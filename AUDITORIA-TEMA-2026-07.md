@@ -911,9 +911,11 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   la tab "Red" (misma vista, alcance de red completa) sí muestra datos
   correctamente. No investigado más a fondo por estar fuera del alcance
   de este plan de tema/responsive. `EmployeeDetailView.jsx` (1,266
-  líneas, se abre haciendo clic en un empleado desde `/staff`, no es una
-  ruta directa) queda como el único archivo del top-13 por tamaño aún sin
-  revisión visual esta sesión.
+  líneas, se abre haciendo clic en un empleado desde `/staff`) también
+  revisado: limpio, stat cards en fila completa, avatar placeholder e
+  historial vacío con el patrón de empty state correcto. **Con esto, las
+  13 vistas más grandes del proyecto (top-13 por líneas de código) quedan
+  todas verificadas visualmente a 1024×768 en esta sesión.**
 - **`/pedidos`** (y sus tabs: `TabPedidos`, `TabReglas`, `TabMetricas`,
   `TabRutas`) sigue bloqueada para cualquier auditoría (visual o
   mecánica vía Playwright logueado) hasta que se resuelva el bug

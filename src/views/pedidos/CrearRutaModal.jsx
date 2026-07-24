@@ -450,11 +450,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       <PedidoModal.Header className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-indigo-50 rounded-xl border border-indigo-100">
-              <Truck size={16} className="text-indigo-600" />
+            <div className="p-2 bg-chart-3/10 rounded-xl border border-chart-3/30">
+              <Truck size={16} className="text-chart-3-text" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-chart-3-text uppercase tracking-wider">
                 {step === 1 ? 'Paso 1 de 2' : 'Paso 2 de 2'}
               </p>
               <h3 className="text-[16px] font-black text-content leading-tight">
@@ -471,19 +471,19 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       <PedidoModal.Body className="px-5 py-4 space-y-4">
         {loadingData ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 size={24} className="animate-spin text-indigo-400" />
+            <Loader2 size={24} className="animate-spin text-chart-3-text" />
           </div>
         ) : step === 1 ? (
           <>
             {/* Conductor (auto = usuario actual) */}
-            <div className="flex items-center gap-2.5 px-3 py-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
+            <div className="flex items-center gap-2.5 px-3 py-2.5 bg-chart-3/10 rounded-xl border border-chart-3/30">
               {conductorPhoto
-                ? <img src={conductorPhoto} className="w-7 h-7 rounded-full object-cover border-2 border-indigo-200 shrink-0" />
-                : <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0"><User size={13} className="text-white" /></div>
+                ? <img src={conductorPhoto} className="w-7 h-7 rounded-full object-cover border-2 border-chart-3/30 shrink-0" />
+                : <div className="w-7 h-7 rounded-full bg-chart-3 flex items-center justify-center shrink-0"><User size={13} className="text-white" /></div>
               }
               <div>
-                <p className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wider">Conductor (tú)</p>
-                <p className="text-[12px] font-bold text-indigo-800">{conductorNombre || '…'}</p>
+                <p className="text-[9px] font-semibold text-chart-3-text uppercase tracking-wider">Conductor (tú)</p>
+                <p className="text-[12px] font-bold text-chart-3-text">{conductorNombre || '…'}</p>
               </div>
             </div>
 
@@ -494,7 +494,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <Package size={10} />Pedidos a incluir
                 </label>
                 {pedidosDisp.length > 0 && (
-                  <button onClick={toggleAll} className="text-[10px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors">
+                  <button onClick={toggleAll} className="text-[10px] font-semibold text-chart-3-text hover:text-chart-3-text transition-colors">
                     {selected.size === pedidosDisp.length ? 'Deseleccionar todo' : 'Seleccionar todo'}
                   </button>
                 )}
@@ -511,10 +511,10 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     return (
                       <button key={item.key} onClick={() => toggleItem(item.key)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                          isSel ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-white border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/40'
+                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-white border-slate-200 hover:border-chart-3/30 hover:bg-chart-3/10/40'
                         }`}>
                         <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          isSel ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
+                          isSel ? 'bg-chart-3 border-chart-3' : 'border-slate-300'
                         }`}>
                           {isSel && <CheckCircle2 size={10} className="text-white" strokeWidth={3} />}
                         </div>
@@ -538,7 +538,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               )}
 
               {selectedItems.length > 0 && (
-                <p className="text-[10px] text-indigo-600 font-semibold mt-2">
+                <p className="text-[10px] text-chart-3-text font-semibold mt-2">
                   {selectedItems.length} pedido{selectedItems.length !== 1 ? 's' : ''} seleccionado{selectedItems.length !== 1 ? 's' : ''}
                   {' · '}{selectedItems.reduce((s, i) => s + (i.total_cajas ?? 0), 0)} cajas en total
                 </p>
@@ -548,7 +548,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         ) : (
           <>
             {/* ── Mapa ──────────────────────────────────────────────────── */}
-            <div className="relative rounded-2xl overflow-hidden border border-indigo-100 shadow-sm" style={{ height: 260 }}>
+            <div className="relative rounded-2xl overflow-hidden border border-chart-3/30 shadow-sm" style={{ height: 260 }}>
               {mapError ? (
                 <div className="w-full h-full bg-surface-card-hover flex flex-col items-center justify-center gap-2 text-center px-4">
                   <MapPin size={20} className="text-content-3" />
@@ -575,7 +575,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
               {conductorPhoto
                 ? <img src={conductorPhoto} className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0" />
-                : <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
+                : <div className="w-6 h-6 rounded-full bg-chart-3 flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
               }
               <span className="text-[12px] text-content-2 font-medium">Conductor:</span>
               <span className="text-[12px] font-bold text-content">{conductorNombre}</span>
@@ -605,18 +605,18 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 {/* Paradas */}
                 {timeline.map(({ stop, cajas, electrolit, especiales, drive, cumul }, idx) => {
                   const enc = stop.isEncargo;
-                  const dotCls = enc ? 'bg-amber-500' : 'bg-indigo-600';
+                  const dotCls = enc ? 'bg-warning' : 'bg-chart-3';
                   const cardCls = enc
                     ? 'bg-warning/10 border border-warning/30'
-                    : 'bg-indigo-50/70 border border-indigo-100';
-                  const timeCls = enc ? 'text-amber-700' : 'text-indigo-700';
+                    : 'bg-chart-3/10/70 border border-chart-3/30';
+                  const timeCls = enc ? 'text-warning-text' : 'text-chart-3-text';
                   return (
                     <div key={stop._uid ?? `${stop.erp_sucursal_id}-${idx}`}>
                       {/* Tramo de conducción */}
                       <div className="flex items-center gap-3 my-0.5 ml-3">
-                        <div className="w-px h-5 bg-indigo-200 mx-auto" style={{ marginLeft: 0 }} />
+                        <div className="w-px h-5 bg-chart-3/20 mx-auto" style={{ marginLeft: 0 }} />
                         <div className="flex items-center gap-1.5 text-[9px] text-content-3 font-medium pl-0">
-                          <Clock size={8} className="text-indigo-300" />
+                          <Clock size={8} className="text-chart-3-text" />
                           {stop.dist_m ? `${fmtDist(stop.dist_m)} · ` : ''}{drive > 0 ? `${drive} min conduciendo` : 'sin datos'}
                         </div>
                       </div>
@@ -630,11 +630,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           </div>
                           <div className="flex flex-col gap-0.5 mt-0.5">
                             <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-content-3 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronUp size={13} strokeWidth={2.5} />
                             </button>
                             <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-content-3 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronDown size={13} strokeWidth={2.5} />
                             </button>
                           </div>
@@ -647,7 +647,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                               <div className="flex items-center gap-2">
                                 <p className="text-[12px] font-bold text-content truncate">{stop.suc_name}</p>
                                 {enc && (
-                                  <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-200 text-amber-800">
+                                  <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-warning/20 text-warning-text">
                                     Encargo
                                   </span>
                                 )}
@@ -662,16 +662,16 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                               )}
                               {!enc && cajas > 0 && (
                                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-700">
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-chart-3/10 text-chart-3-text">
                                     📦 {cajas} caja{cajas !== 1 ? 's' : ''}
                                   </span>
                                   {electrolit > 0 && (
-                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-cyan-100 text-cyan-700">
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-chart-5/10 text-chart-5-text">
                                       💧 {electrolit} Electrolit
                                     </span>
                                   )}
                                   {especiales > 0 && (
-                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-warning/10 text-amber-700">
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-warning/10 text-warning-text">
                                       ⭐ {especiales} especial{especiales !== 1 ? 'es' : ''}
                                     </span>
                                   )}
@@ -685,7 +685,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                               </div>
                               <button
                                 onClick={() => removeStop(stop._uid)}
-                                className="p-1 rounded-lg text-content-3 hover:text-rose-500 hover:bg-rose-50 transition-colors mt-0.5"
+                                className="p-1 rounded-lg text-content-3 hover:text-danger-text hover:bg-danger/10 transition-colors mt-0.5"
                                 title="Quitar parada"
                               >
                                 <Trash2 size={12} />
@@ -705,7 +705,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 {showAddVisita ? (
                   <div className="ml-10 p-3 rounded-xl border border-warning/30 bg-warning/10 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">¿A qué sucursal?</p>
+                      <p className="text-[10px] font-bold text-warning-text uppercase tracking-wide">¿A qué sucursal?</p>
                       <button onClick={() => setShowAddVisita(false)} className="text-content-3 hover:text-content-2">
                         <X size={12} />
                       </button>
@@ -717,7 +717,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           <button
                             key={id}
                             onClick={() => addEncargo(Number(id))}
-                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-warning/30 bg-white hover:bg-warning/10 hover:border-amber-400 text-left transition-all active:scale-[0.97]"
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-warning/30 bg-white hover:bg-warning/10 hover:border-warning text-left transition-all active:scale-[0.97]"
                           >
                             <Building2 size={11} className="text-warning shrink-0" />
                             <span className="text-[11px] font-semibold text-content-2">{name}</span>
@@ -729,7 +729,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="ml-10">
                     <button
                       onClick={() => setShowAddVisita(true)}
-                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-content-3 hover:border-amber-400 hover:text-warning hover:bg-warning/10 transition-all"
+                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-xl border border-dashed border-border-card text-content-3 hover:border-warning hover:text-warning-text hover:bg-warning/10 transition-all"
                     >
                       <Plus size={10} />Agregar visita / encargo extra
                     </button>
@@ -768,15 +768,15 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               {/* Resumen total */}
               {totalDist > 0 && (
                 <div className="mt-3 flex gap-2">
-                  <div className="flex-1 bg-indigo-50 rounded-xl px-3 py-2 border border-indigo-100 text-center">
-                    <p className="text-[9px] text-indigo-400 font-semibold uppercase tracking-wider">Distancia</p>
-                    <p className="text-[15px] font-black text-indigo-700">{fmtDist(totalDist)}</p>
-                    <p className="text-[8px] text-indigo-300">ida + vuelta a bodega</p>
+                  <div className="flex-1 bg-chart-3/10 rounded-xl px-3 py-2 border border-chart-3/30 text-center">
+                    <p className="text-[9px] text-chart-3-text font-semibold uppercase tracking-wider">Distancia</p>
+                    <p className="text-[15px] font-black text-chart-3-text">{fmtDist(totalDist)}</p>
+                    <p className="text-[8px] text-chart-3-text">ida + vuelta a bodega</p>
                   </div>
                   <div className="flex-1 bg-warning/10 rounded-xl px-3 py-2 border border-warning/30 text-center">
                     <p className="text-[9px] text-warning font-semibold uppercase tracking-wider">Tiempo total</p>
-                    <p className="text-[15px] font-black text-amber-700">{fmtMin(totalTime)}</p>
-                    <p className="text-[8px] text-amber-300">conducir + descargas</p>
+                    <p className="text-[15px] font-black text-warning-text">{fmtMin(totalTime)}</p>
+                    <p className="text-[8px] text-warning-text/60">conducir + descargas</p>
                   </div>
                   <div className="flex-1 bg-surface-card-hover rounded-xl px-3 py-2 border border-slate-200 text-center">
                     <p className="text-[9px] text-content-2 font-semibold uppercase tracking-wider">Solo conducir</p>
@@ -798,7 +798,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               Cancelar
             </button>
             <button onClick={handleOptimize} disabled={selectedItems.length === 0 || optimizing}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-chart-3 text-white font-bold text-[13px] hover:bg-chart-3/80 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
               {optimizing
                 ? <><Loader2 size={14} className="animate-spin" />Calculando ruta…</>
                 : <><ArrowRight size={14} />Ver ruta optimizada</>
@@ -813,13 +813,13 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 ← Atrás
               </button>
               {submitError && (
-                <p className="text-[11px] text-rose-600 flex items-center gap-1 pl-1">
+                <p className="text-[11px] text-danger-text flex items-center gap-1 pl-1">
                   <AlertTriangle size={11} /> {submitError}
                 </p>
               )}
             </div>
             <button onClick={handleSubmit} disabled={submitting}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 shrink-0">
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-chart-3 text-white font-bold text-[13px] hover:bg-chart-3/80 transition-colors shadow-sm disabled:opacity-50 shrink-0">
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
               Crear Ruta
             </button>

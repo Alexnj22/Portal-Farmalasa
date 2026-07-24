@@ -3,9 +3,9 @@ import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package 
 import PedidoModal from './PedidoModal';
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-success/10 hover:text-success hover:border-success/30' },
-    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
-    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-success/10 hover:text-success hover:border-success/30' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-danger text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-danger/10 hover:text-danger-text hover:border-danger/30' },
 };
 
 const pageHint = (cajaMap, num) => {
@@ -66,7 +66,7 @@ export default function ReenvioLlegadaModal({
         <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm" className="max-h-[90vh]">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100 shrink-0">
-                <div className="w-9 h-9 rounded-xl bg-indigo-500 shadow-[0_2px_10px_rgba(99,102,241,0.4)] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-chart-3 shadow-[0_2px_10px_rgba(99,102,241,0.4)] flex items-center justify-center shrink-0">
                     <Truck size={16} className="text-white" />
                 </div>
                 <div className="flex-1">
@@ -93,10 +93,10 @@ export default function ReenvioLlegadaModal({
                             const est   = getEst(num);
                             const rowBg = est === 'ok'     ? 'bg-success/10 border-success/30'
                                         : est === 'danada' ? 'bg-warning/10 border-warning/30'
-                                        :                    'bg-rose-50/60 border-rose-200/70';
-                            const numBg = est === 'ok'     ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
-                                        : est === 'danada' ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
-                                        :                    'bg-rose-500 shadow-[0_2px_8px_rgba(239,68,68,0.4)]';
+                                        :                    'bg-danger/10 border-danger/30';
+                            const numBg = est === 'ok'     ? 'bg-success shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
+                                        : est === 'danada' ? 'bg-warning shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
+                                        :                    'bg-danger shadow-[0_2px_8px_rgba(239,68,68,0.4)]';
                             return (
                                 <div key={num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
                                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[14px] tabular-nums text-white transition-all ${numBg}`}>
@@ -131,11 +131,11 @@ export default function ReenvioLlegadaModal({
                     <div className="p-3 rounded-2xl border border-warning/30 bg-warning/10 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
                             <Zap size={13} className="text-warning shrink-0" />
-                            <span className="text-[11px] font-semibold text-amber-700 flex-1">
+                            <span className="text-[11px] font-semibold text-warning-text flex-1">
                                 ¿Llegaron las cajas de Electrolit?
                             </span>
                             {electrolitOk === null ? (
-                                <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wide animate-pulse">Pendiente</span>
+                                <span className="text-[9px] font-bold text-danger-text uppercase tracking-wide animate-pulse">Pendiente</span>
                             ) : (
                                 <span className="text-[9px] font-bold text-warning uppercase tracking-wide">
                                     {electrolitCount} caja{electrolitCount > 1 ? 's' : ''}
@@ -146,15 +146,15 @@ export default function ReenvioLlegadaModal({
                             <button
                                 onClick={() => setElectrolitOk(true)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === true
-                                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                                    ? 'bg-success text-white border-success shadow-sm'
                                     : 'bg-white text-content-3 border-slate-200 hover:border-success/30 hover:text-success'}`}>
                                 ✓ Sí llegaron
                             </button>
                             <button
                                 onClick={() => setElectrolitOk(false)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === false
-                                    ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                                    : 'bg-white text-content-3 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                    ? 'bg-danger text-white border-danger shadow-sm'
+                                    : 'bg-white text-content-3 border-slate-200 hover:border-danger/30 hover:text-danger-text'}`}>
                                 ✗ Aún faltan
                             </button>
                         </div>
@@ -163,11 +163,11 @@ export default function ReenvioLlegadaModal({
 
                 {/* Cajas especiales */}
                 {especialesList.length > 0 && (
-                    <div className="p-3 rounded-2xl border border-violet-100 bg-violet-50/60 flex flex-col gap-2">
+                    <div className="p-3 rounded-2xl border border-chart-3/30 bg-chart-3/10/60 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
-                            <Package size={13} className="text-violet-500 shrink-0" />
-                            <span className="text-[11px] font-semibold text-violet-700 flex-1">Cajas especiales pendientes</span>
-                            <span className="text-[9px] font-bold text-violet-400 uppercase tracking-wide">
+                            <Package size={13} className="text-chart-3-text shrink-0" />
+                            <span className="text-[11px] font-semibold text-chart-3-text flex-1">Cajas especiales pendientes</span>
+                            <span className="text-[9px] font-bold text-chart-3-text uppercase tracking-wide">
                                 {especialesList.length} caja{especialesList.length !== 1 ? 's' : ''}
                             </span>
                         </div>
@@ -175,15 +175,15 @@ export default function ReenvioLlegadaModal({
                             {especialesList.map(label => {
                                 const est = espEstados[label] ?? 'ok';
                                 return (
-                                    <div key={label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-rose-50/80 border-rose-200/70'}`}>
-                                        <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-rose-600'}`}>{label}</span>
+                                    <div key={label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30'}`}>
+                                        <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{label}</span>
                                         <div className="flex items-center gap-1 ml-auto shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-content-3 border-slate-200 hover:border-success/30 hover:text-success'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success text-white border-success' : 'bg-white text-content-3 border-slate-200 hover:border-success/30 hover:text-success'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-content-3 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger text-white border-danger' : 'bg-white text-content-3 border-slate-200 hover:border-danger/30 hover:text-danger-text'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -211,22 +211,22 @@ export default function ReenvioLlegadaModal({
                 {hayProblemas && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-amber-700 border border-warning/30">
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
                                 ⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}
                             </span>
                         )}
                         {cajasFaltantes.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
                                 ✗ Aún falta{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')} — se solicitará otro reenvío
                             </span>
                         )}
                         {electrolitOk === false && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-amber-700 border border-warning/30">
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
                                 ⚡ Electrolit aún pendiente
                             </span>
                         )}
                         {espFaltantes.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
                                 ✗ Esp. aún falta{espFaltantes.length > 1 ? 'n' : ''}: {espFaltantes.join(', ')}
                             </span>
                         )}
@@ -238,7 +238,7 @@ export default function ReenvioLlegadaModal({
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting || !hasContent || electrolitPending}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
+                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
                         {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}
                     </button>

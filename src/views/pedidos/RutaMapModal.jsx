@@ -464,7 +464,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     : centerOnPosition;
 
   const gpsIconColor = isConductor
-    ? (gpsStatus === 'ok' ? 'text-blue-500' : gpsStatus === 'denied' ? 'text-danger' : 'text-content-3')
+    ? (gpsStatus === 'ok' ? 'text-brand' : gpsStatus === 'denied' ? 'text-danger' : 'text-content-3')
     : (driverOnline ? 'text-success' : driverPos ? 'text-warning' : 'text-content-3');
 
   return (
@@ -472,11 +472,11 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
       <PedidoModal.Header className="px-5 pt-5 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-indigo-50 rounded-xl border border-indigo-100">
-              <MapPin size={15} className="text-indigo-600" />
+            <div className="p-2 bg-chart-3/10 rounded-xl border border-chart-3/30">
+              <MapPin size={15} className="text-chart-3-text" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-chart-3-text uppercase tracking-wider">
                 {isConductor ? 'Tu ruta activa' : 'Rastreo en vivo'}
               </p>
               <h3 className="text-[15px] font-black text-content leading-tight">
@@ -489,7 +489,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             {/* Indicador rastreo — admin */}
             {!isConductor && (
               <span className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg border ${
-                driverOnline ? 'bg-success/10 border-success/30 text-emerald-700' : driverPos ? 'bg-warning/10 border-warning/30 text-amber-700' : 'bg-surface-card-hover border-slate-200 text-content-3'
+                driverOnline ? 'bg-success/10 border-success/30 text-success-text' : driverPos ? 'bg-warning/10 border-warning/30 text-warning-text' : 'bg-surface-card-hover border-border-card text-content-3'
               }`}>
                 <Radio size={8} className={driverOnline ? 'animate-pulse' : ''} />
                 {driverOnline ? 'En vivo' : driverPos ? 'Última posición' : 'Sin señal'}
@@ -497,7 +497,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             )}
             {/* Recálculos conductor */}
             {isConductor && recalcCount > 0 && (
-              <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700">
+              <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg bg-chart-3/10 border border-chart-3/30 text-chart-3-text">
                 <RefreshCw size={8} /> {recalcCount} recálculo{recalcCount !== 1 ? 's' : ''}
               </span>
             )}
@@ -510,7 +510,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
 
       <PedidoModal.Body className="px-5 pb-4 space-y-3">
         {/* Mapa */}
-        <div className="relative rounded-2xl overflow-hidden border border-indigo-100 shadow-sm" style={{ height: 420 }}>
+        <div className="relative rounded-2xl overflow-hidden border border-chart-3/30 shadow-sm" style={{ height: 420 }}>
           <div ref={mapRef} className="w-full h-full" />
 
           {/* Botón centrar */}
@@ -530,14 +530,14 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           {/* Badge mapa */}
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-content-2 shadow-sm border border-border-card">
             {mapsMode
-              ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />Google Maps</>
-              : <><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />OpenStreetMap</>
+              ? <><span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />Google Maps</>
+              : <><span className="w-1.5 h-1.5 rounded-full bg-warning inline-block" />OpenStreetMap</>
             }
           </div>
 
           {/* Info recálculo automático — conductor */}
           {isConductor && gpsStatus === 'ok' && (
-            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-blue-600/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-white shadow-sm">
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-brand/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-white shadow-sm">
               <RefreshCw size={8} /> Recalcula c/2 min
             </div>
           )}
@@ -554,7 +554,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
                 stop.entregado_at ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
               }`}>
                 <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
-                  stop.entregado_at ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-700'
+                  stop.entregado_at ? 'bg-success text-white' : 'bg-chart-3/10 text-chart-3-text'
                 }`}>{i + 1}</span>
                 <p className="text-[12px] font-semibold text-content-2 flex-1 truncate">{stop.suc_name}</p>
                 {stop.entregado_at

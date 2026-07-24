@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.2';
+export const APP_VERSION = '2.51.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.3 — refactor(theme): T7.1 — cierra todo src/views/pedidos/ (v2.51.3).
+//
+// RecepcionModal/LlegadaModal/ReenvioLlegadaModal (los 3 casi duplicados:
+// mismo patrón ok/dañada/faltante → success/warning/danger, "teal"/
+// "violet" de conteo físico → chart-9/chart-3), TabReglas (3 tipos de
+// regla de despacho → chart-1/3/6), CrearRutaModal/RutaMapModal (tema
+// indigo del feature de rutas → chart-3, consistente con el color real
+// de los pines del mapa — esos SÍ quedan como hex crudo, es la excepción
+// ya documentada de colores de librería de mapas/gráficos).
+//
+// Con esto se cierran los ~230 reemplazos de toda la carpeta pedidos/ —
+// el árbol con más archivos afectados de los 71 originales del gate.
 
 // v2.51.2 — refactor(theme): T7.1 — Bucket B, tercera tanda (pedidos/
 // tabpedidos/*: DifSection, PostCompletionSection, ReceptionActions,

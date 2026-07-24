@@ -18,7 +18,7 @@ const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
 
 const EXPAND_BG     = 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30';
-const EXPAND_BORDER = 'border-blue-100/60';
+const EXPAND_BORDER = 'border-chart-1/30';
 
 const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '', caja_especial: false };
 
@@ -40,9 +40,9 @@ function ruleTypeLabel(rule) {
         const style = presStyle(label ? 'CAJA' : tipo);
         return { text: mult > 1 ? `${tipo} ×${mult}` : tipo, bg: style.bg, txt: style.text };
     }
-    if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-blue-100',   txt: 'text-blue-700'   };
-    if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     bg: 'bg-indigo-100', txt: 'text-indigo-700' };
-    if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-violet-100', txt: 'text-violet-700' };
+    if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-chart-1/10',   txt: 'text-chart-1-text'   };
+    if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     bg: 'bg-chart-3/10', txt: 'text-chart-3-text' };
+    if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-chart-6/10', txt: 'text-chart-6-text' };
     return { text: 'Solo cajas', bg: 'bg-surface-card-hover', txt: 'text-content-2' };
 }
 
@@ -52,10 +52,10 @@ const presStyle = (tipo) => {
     if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
         return { Icon: Box,     bg: 'bg-slate-800', text: 'text-white', iconInactive: 'text-content-3' };
     if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
-        return { Icon: Layers,  bg: 'bg-indigo-600', text: 'text-white', iconInactive: 'text-indigo-400' };
+        return { Icon: Layers,  bg: 'bg-chart-3', text: 'text-white', iconInactive: 'text-chart-3-text' };
     if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
-        return { Icon: Sigma,   bg: 'bg-violet-600', text: 'text-white', iconInactive: 'text-violet-400' };
-    return { Icon: Package, bg: 'bg-blue-600',   text: 'text-white', iconInactive: 'text-blue-400' };
+        return { Icon: Sigma,   bg: 'bg-chart-6', text: 'text-white', iconInactive: 'text-chart-6-text' };
+    return { Icon: Package, bg: 'bg-chart-1',   text: 'text-white', iconInactive: 'text-chart-1-text' };
 };
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         <Loader2 size={12} className="animate-spin" /> Cargando presentaciones…
                     </div>
                 ) : dedupedPres.length === 0 ? (
-                    <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700">
+                    <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text">
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.
                     </div>
                 ) : (
@@ -270,7 +270,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                 ))}
                                 {vals.dispatch_label && (
                                     <button type="button" onClick={() => selectLabel(vals.dispatch_label)}
-                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-content-3 hover:text-rose-500 hover:border-rose-200 transition-all bg-white">
+                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-content-3 hover:text-danger-text hover:border-danger/30 transition-all bg-surface-card">
                                         <X size={10} /> quitar
                                     </button>
                                 )}
@@ -286,8 +286,8 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         onClick={() => selectMultiplo(n)}
                                         className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             multiplo === n
-                                                ? 'bg-blue-600 border-blue-500 text-white shadow-md'
-                                                : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
+                                                ? 'bg-chart-1 border-chart-1 text-white shadow-md'
+                                                : 'bg-surface-card border-border-card text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                         }`}
                                     >×{n}</button>
                                 ))}
@@ -297,12 +297,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         const n = parseInt(e.target.value);
                                         if (n > 0) selectMultiplo(n);
                                     }}
-                                    className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[16px] focus:outline-none focus:border-blue-400 bg-surface-card"
+                                    className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card"
                                 />
                             </div>
 
                             {/* Ejemplo de redondeo — corregido según etiqueta */}
-                            <div className="px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-200/60 text-[11px] text-blue-700">
+                            <div className="px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-[11px] text-chart-1-text">
                                 <span className="font-medium">Ejemplo:</span> necesidad de 7 und.
                                 {' → '}despacha{' '}
                                 {vals.dispatch_label && multiplo > 1 ? (
@@ -330,14 +330,14 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         }}
                         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all text-[12px] font-semibold ${
                             vals.caja_especial
-                                ? 'bg-violet-600 border-violet-500 text-white shadow-md'
-                                : 'bg-white border-slate-200 text-content-3 hover:border-violet-300 hover:text-violet-600'
+                                ? 'bg-chart-6 border-chart-6 text-white shadow-md'
+                                : 'bg-surface-card border-border-card text-content-3 hover:border-chart-6/40 hover:text-chart-6-text'
                         }`}>
                         <Package size={13} />
                         {vals.caja_especial ? 'Caja especial activa — E1, E2…' : 'Activar caja especial'}
                     </button>
                     {vals.caja_especial && (
-                        <p className="text-[10px] text-violet-600 mt-1.5 px-0.5">
+                        <p className="text-[10px] text-chart-6-text mt-1.5 px-0.5">
                             Cada unidad en el pedido recibe una etiqueta E1, E2… independiente.
                         </p>
                     )}
@@ -347,7 +347,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             {/* Botón quitar regla — rojo por defecto */}
             {vals.dispatch_id_presentacion && (
                 <button onClick={clearRule} disabled={saving}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-rose-50/50 border-rose-200 text-rose-500 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-all text-[12px]">
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-danger/10 border-danger/30 text-danger-text hover:border-danger hover:bg-danger/10 hover:text-danger-text transition-all text-[12px]">
                     <Ban size={13} /> Quitar regla de despacho
                 </button>
             )}
@@ -365,7 +365,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
                     onBlur={commitNotes}
                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:border-blue-400 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
             </div>
         </div>
@@ -598,7 +598,7 @@ export default function TabReglas({ searchTerm = '' }) {
                 <div className="flex items-center gap-3 flex-wrap">
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-border-card backdrop-blur-sm shadow-sm">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
                             {statsLoading ? <Loader2 size={14} className="animate-spin text-content-3" /> : <Package size={15} className="text-brand" />}
                         </div>
                         <div>
@@ -613,7 +613,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         Icon={Check} iconBg={filterRule === 'con' ? 'bg-white' : 'bg-success/10'} iconCls="text-success"
                         countCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'con'}
-                        activeBg="bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
+                        activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
                         inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'con' ? '' : 'con')}
@@ -623,7 +623,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         Icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-white' : 'bg-danger/10'} iconCls="text-danger"
                         countCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
                         active={filterRule === 'sin'}
-                        activeBg="bg-danger/10 border-red-300 shadow-md shadow-red-100/80 -translate-y-px"
+                        activeBg="bg-danger/10 border-danger/40 shadow-md shadow-danger/20 -translate-y-px"
                         inactiveBg="bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
@@ -633,7 +633,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         Icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-white' : 'bg-success/10'} iconCls="text-success"
                         countCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'nuevo'}
-                        activeBg="bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
+                        activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
                         inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/10"
                         loading={statsLoading}
                         onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
@@ -675,7 +675,7 @@ export default function TabReglas({ searchTerm = '' }) {
                     return (
                         <React.Fragment key={prod.id}>
                             <DataRow index={i} onClick={() => toggleEdit(prod.id)}
-                                className={isEditing ? 'bg-blue-50/60' : ''}>
+                                className={isEditing ? 'bg-chart-1/10' : ''}>
 
                                 <DataCell className="text-content-3 text-[12px]">
                                     <span className="block">{prod.laboratorio_nombre ?? '—'}</span>
@@ -685,12 +685,12 @@ export default function TabReglas({ searchTerm = '' }) {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="font-medium text-content-2 text-[13px]">{prod.nombre}</span>
                                         {isNew && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-success/10 text-emerald-700 border border-success/30 font-bold uppercase tracking-wide flex-shrink-0">
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-bold uppercase tracking-wide flex-shrink-0">
                                                 <Sparkles size={8} /> Nuevo
                                             </span>
                                         )}
                                         {prod.es_antibiotico && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 font-bold uppercase tracking-wide flex-shrink-0">
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-chart-6/10 text-chart-6-text border border-chart-6/30 font-bold uppercase tracking-wide flex-shrink-0">
                                                 <FlaskConical size={8} /> Bajo receta
                                             </span>
                                         )}
@@ -699,7 +699,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                                 <DataCell align="center">
                                     {hasRule ? (
-                                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-emerald-700 border border-success/30 font-medium">
+                                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-medium">
                                             <Check size={9} /> Con regla
                                         </span>
                                     ) : (

@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.19';
+export const APP_VERSION = '2.52.20';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.20 — fix(theme): T7.1c — estandariza colores en
+// EmployeeFormModal.jsx. Mismo patrón de siempre: bordes purple-100/
+// teal-100/cyan-100 sueltos junto a bg/text ya tokenizados (Maestría/
+// Postgrado→chart-3, Vehículo→chart-9, Dependientes→chart-5), y pills de
+// farmacias asignadas con border-teal-400/300 crudo junto a bg-chart-9.
+
 
 // v2.52.19 — fix(theme): T7.1c — estandariza colores en MetasView.jsx y
 // FormPlanificador.jsx.

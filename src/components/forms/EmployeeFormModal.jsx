@@ -1442,7 +1442,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && (() => {
                                     const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
                                     return (
-                                        <div className="md:col-span-2 bg-chart-3/10 rounded-[1.25rem] p-3.5 border border-purple-100/60 animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="md:col-span-2 bg-chart-3/10 rounded-[1.25rem] p-3.5 border border-chart-3/20 animate-in fade-in zoom-in-95 duration-200">
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input type="checkbox" checked={!!formData.has_maestria} onChange={(e) => handleSelectChange('has_maestria', e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
                                                 <span className="text-[11px] font-black text-chart-3-text uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>
@@ -1476,7 +1476,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             />
                                                         </div>
                                                     )}
-                                                    <div className="pt-2 border-t border-purple-100/60">
+                                                    <div className="pt-2 border-t border-chart-3/20">
                                                         <label className="flex items-center gap-2 cursor-pointer">
                                                             <input type="checkbox" checked={!!formData.maestria_is_studying} onChange={(e) => handleSelectChange('maestria_is_studying', e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
                                                             <span className="text-[11px] font-black text-chart-3-text uppercase tracking-wide">¿Maestría en curso?</span>
@@ -1568,7 +1568,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-[0.8rem] border border-chart-9/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <Car size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Vehículo y Acreditaciones</h4>
@@ -1608,7 +1608,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-[0.8rem] border border-cyan-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-[0.8rem] border border-chart-5/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <Users size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Personas que Dependen Económicamente</h4>
@@ -1738,7 +1738,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-white border border-danger/30 text-danger text-[11px] font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
                                                 {cond}
                                                 <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
-                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-red-300 hover:text-white hover:bg-danger transition-colors">
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-danger hover:text-white hover:bg-danger transition-colors">
                                                     <X size={11} strokeWidth={2.5} />
                                                 </button>
                                             </span>
@@ -1931,7 +1931,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         return (
                                                             <button key={opt.value} type="button"
                                                                 onClick={() => setFormData(p => { const cur = (p.assigned_branch_ids || []).map(String); return { ...p, assigned_branch_ids: isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value] }; })}
-                                                                className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-chart-9 text-white border-teal-400 shadow-sm' : 'bg-white text-content-3 border-slate-200 hover:border-teal-300 hover:text-chart-9-text'}`}
+                                                                className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-chart-9 text-white border-chart-9 shadow-sm' : 'bg-white text-content-3 border-slate-200 hover:border-chart-9/50 hover:text-chart-9-text'}`}
                                                             >{opt.label}</button>
                                                         );
                                                     })}

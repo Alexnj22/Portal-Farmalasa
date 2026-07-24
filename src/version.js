@@ -5,8 +5,13 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.55.0';
+export const APP_VERSION = '2.55.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.55.1 — docs(design): actualiza ViewTabBar §14 tras la consolidación
+// de VentasView (v2.55.0) — h-9/h-10 duplicado → h-11 único, dividerCls
+// bg-white/40 stale → bg-divider real, documenta el prop trailingActions
+// nuevo, "duplicado conocido" pasa a "RESUELTO".
 
 // v2.55.0 — fix(theme): border-slate-* → border-divider (119 archivos) +
 // consolida el duplicado de ViewTabBar en VentasView.

@@ -763,9 +763,8 @@ muestra en desktop (`hidden lg:flex`). En móvil (`flex lg:hidden`) se
 reemplaza por un `LiquidSelect` compacto (`compact bare`, sin `clearable`)
 mostrando el tab activo con su ícono — evita que 4-5 tabs (o labels largos
 como "Reglas de despacho" en Pedidos a Sucursales) compitan por ancho
-horizontal o se trunquen. Mismo patrón aplicado al duplicado hand-rolled de
-`VentasView.jsx`. Nunca un `<select>` nativo ni un dropdown nuevo — regla
-del proyecto, `LiquidSelect` en todas partes.
+horizontal o se trunquen. Nunca un `<select>` nativo ni un dropdown nuevo —
+regla del proyecto, `LiquidSelect` en todas partes.
 
 **Anatomía:**
 - Contenedor: `data-surface="tab-track"` (nuevo primitivo — `background:
@@ -774,10 +773,13 @@ del proyecto, `LiquidSelect` en todas partes.
   Su sombra flotante (`shadow-[inset_0_2px_10px_...]`) queda como clase
   bespoke — no forma parte del sistema `data-surface` (es un efecto
   "pill flotante", no un nivel de elevación del contrato §8.1).
-- Botón de tab: pill `rounded-full`, `h-9 md:h-10` (ViewTabBar) / `h-11
-  min-w-[44px]` (variante con touch target ampliado usada en algunas vistas).
-- Divisor (`dividerCls`, `bg-white/40`) y botón de búsqueda (`bg-brand`)
+- Botón de tab: pill `rounded-full`, `h-11 min-w-[44px]` (touch target de
+  44px, único tamaño desde la consolidación de VentasView — ver abajo).
+- Divisor (`dividerCls`, `bg-divider`) y botón de búsqueda (`bg-brand`)
   quedan como clases bespoke (no forman parte del contrato de superficies).
+- `trailingActions` (prop opcional, agregado en la consolidación de
+  VentasView): ReactNode con botones extra entre los tabs y el buscador,
+  separado del bloque de tabs con el mismo `dividerCls`.
 
 **Variantes/tamaños:** `showSearch={false}` para tab-only bars.
 
@@ -792,11 +794,12 @@ del proyecto, `LiquidSelect` en todas partes.
 | Botón limpiar (×) | `text-content-3 hover:text-danger` |
 | Botón cerrar búsqueda | `text-content-3 hover:bg-surface-tab-active hover:text-brand` |
 
-**Duplicado conocido:** `VentasView.jsx` tenía su propia copia hand-rolled de
-este mismo pill (el "structural finding" ya documentado en §32/§23) —
-migrada a los mismos tokens en la misma pasada de T2, pero sigue siendo una
-copia separada del componente; la consolidación real (usar `ViewTabBar` en
-vez de duplicarlo) sigue pendiente para T3/T4.
+**Duplicado — RESUELTO (2026-07-24):** `VentasView.jsx` tenía su propia copia
+hand-rolled de este mismo pill (el "structural finding" documentado en
+§32/§23) — consolidada al componente real vía el prop `trailingActions`
+(único elemento que el duplicado tenía de más: el toggle de privacidad).
+Efecto colateral: sus botones de tab pasaron de `h-9 md:h-10` (36/40px, bajo
+el mínimo táctil) a los `h-11` (44px) reales.
 
 **Search pattern:** Search button (`bg-brand`) expands an input via `isSearchMode` state. Close via `ChevronRight`. Never add local search inputs inside tab components — search lives here only.
 

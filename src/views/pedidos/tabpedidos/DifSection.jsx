@@ -6,13 +6,13 @@ import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
 
 const ERROR_TIPO_LABEL = {
-    faltante:     { label: 'Faltante',        color: 'bg-danger/10 text-red-700 border-danger/30'           },
-    sobrante:     { label: 'Sobrante',        color: 'bg-success/10 text-emerald-700 border-success/30' },
-    danado:       { label: 'Dañado',          color: 'bg-orange-100 text-orange-700 border-orange-200'   },
-    vencido:      { label: 'Vencido',         color: 'bg-purple-100 text-purple-700 border-purple-200'   },
-    presentacion: { label: 'Pres. distinta',  color: 'bg-blue-100 text-blue-700 border-blue-200'         },
-    otro:         { label: 'Otro',            color: 'bg-surface-card-hover text-content-2 border-slate-200'      },
-    diferencia:   { label: 'Diferencia',      color: 'bg-warning/10 text-amber-700 border-warning/30'      },
+    faltante:     { label: 'Faltante',        color: 'bg-danger/10 text-danger-text border-danger/30'           },
+    sobrante:     { label: 'Sobrante',        color: 'bg-success/10 text-success-text border-success/30' },
+    danado:       { label: 'Dañado',          color: 'bg-chart-4/10 text-chart-4-text border-chart-4/30'   },
+    vencido:      { label: 'Vencido',         color: 'bg-chart-6/10 text-chart-6-text border-chart-6/30'   },
+    presentacion: { label: 'Pres. distinta',  color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30'         },
+    otro:         { label: 'Otro',            color: 'bg-surface-card-hover text-content-2 border-border-card'      },
+    diferencia:   { label: 'Diferencia',      color: 'bg-warning/10 text-warning-text border-warning/30'      },
 };
 
 const RESOLUCION_OPTS = {
@@ -69,10 +69,10 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
     const corrConfEmp   = row?.confirmado_correccion_por ? empMap.get(row.confirmado_correccion_por) : null;
 
     return (
-        <div className="border-t border-warning/30 bg-gradient-to-b from-amber-50/40 to-white px-4 py-3 space-y-3">
+        <div className="border-t border-warning/30 bg-gradient-to-b from-warning/10 to-surface-card px-4 py-3 space-y-3">
             <div className="flex items-center gap-1.5">
                 <AlertCircle size={12} className="text-warning shrink-0" />
-                <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide">
+                <span className="text-[10px] font-semibold text-warning-text uppercase tracking-wide">
                     {allConfirmed ? 'Diferencias resueltas ✓' : `Diferencias — pendiente resolución${difItems.length > 1 ? ` (${difItems.length})` : ''}`}
                 </span>
             </div>
@@ -91,8 +91,8 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
 
                 const borderCls = res === 'confirmada' ? 'border-success/30 bg-success/10'
                                 : res === 'rechazada'  ? 'border-danger/30 bg-danger/10'
-                                : res === 'propuesta'  ? 'border-violet-200 bg-violet-50/20'
-                                :                        'border-warning/30 bg-white';
+                                : res === 'propuesta'  ? 'border-chart-3/30 bg-chart-3/10'
+                                :                        'border-warning/30 bg-surface-card';
 
                 return (
                     <div key={item.id} className={`rounded-xl border overflow-hidden ${borderCls}`}>
@@ -125,7 +125,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         <div className="flex items-start gap-1.5 text-[10px] bg-danger/10 rounded-lg px-2.5 py-1.5 border border-danger/30">
                                             <X size={10} className="text-danger mt-0.5 shrink-0" />
                                             <div>
-                                                <span className="font-semibold text-red-700">Rechazado</span>
+                                                <span className="font-semibold text-danger-text">Rechazado</span>
                                                 {rechazadoEmp && <span className="text-danger"> por {rechazadoEmp.name?.split(' ')[0]}</span>}
                                                 {item.nota_rechazo && <p className="text-danger italic">{item.nota_rechazo}</p>}
                                             </div>
@@ -190,7 +190,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                 <button
                                                     onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}
                                                     disabled={isBusy}
-                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-danger text-white hover:bg-danger-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}
                                                 </button>
@@ -201,7 +201,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                 <button
                                                     onClick={() => onResolver(item.id, 'confirmar', null, null)}
                                                     disabled={isBusy}
-                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-[0.97] transition-all"
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}
                                                 </button>
@@ -224,7 +224,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                             {res === 'rechazada' && isBranch && (
                                 <div className="text-[10px] bg-danger/10 rounded-lg px-2.5 py-1.5 border border-danger/30 space-y-0.5">
                                     <div>
-                                        <span className="font-semibold text-red-700">Rechazada</span>
+                                        <span className="font-semibold text-danger-text">Rechazada</span>
                                         {rechazadoEmp && <span className="text-danger"> por {rechazadoEmp.name?.split(' ')[0]}</span>}
                                     </div>
                                     {item.nota_rechazo && <p className="text-danger italic">{item.nota_rechazo}</p>}
@@ -234,7 +234,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
 
                             {/* ── Estado: confirmada ── */}
                             {res === 'confirmada' && (
-                                <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-emerald-700">
+                                <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-success-text">
                                     <CheckCircle2 size={11} className="text-success shrink-0" />
                                     <strong>{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</strong>
                                     {confirmadoEmp && <span className="text-success">— {confirmadoEmp.name?.split(' ')[0]}</span>}
@@ -264,7 +264,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         <button
                                             onClick={() => onCorregirBodega?.(corrNota || null)}
                                             disabled={busyAction === 'corr_bodega'}
-                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
+                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                         >
                                             {busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}
                                         </button>
@@ -278,7 +278,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                 <div className="flex items-start gap-1.5 text-[10px] bg-success/10 rounded-lg px-2.5 py-1.5 border border-success/30">
                                     <CheckCircle2 size={10} className="text-success mt-0.5 shrink-0" />
                                     <div>
-                                        <span className="font-semibold text-emerald-700">Bodega marcó la corrección</span>
+                                        <span className="font-semibold text-success-text">Bodega marcó la corrección</span>
                                         {corrBodegaEmp && <span className="text-success"> — {corrBodegaEmp.name?.split(' ')[0]}</span>}
                                         {row.corregido_bodega_nota && <p className="text-success italic">{row.corregido_bodega_nota}</p>}
                                     </div>
@@ -286,7 +286,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                 <button
                                     onClick={() => onConfirmarCorreccion?.()}
                                     disabled={busyAction === 'confirmar_corr'}
-                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-[0.97] transition-all"
+                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
                                 >
                                     {busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar corrección recibida'}
                                 </button>
@@ -295,7 +295,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                             <p className="text-[10px] text-content-3 italic">Esperando confirmación de sucursal…</p>
                         )
                     ) : (
-                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-emerald-700">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-success-text">
                             <CheckCircle2 size={11} className="text-success shrink-0" />
                             <strong>Corrección confirmada</strong>
                             {corrConfEmp && <span className="text-success">— {corrConfEmp.name?.split(' ')[0]}</span>}
@@ -329,7 +329,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
 
             {hiddenCount > 0 && (
                 <button onClick={() => setShowAll(s => !s)}
-                    className="w-full text-[10px] font-semibold text-warning hover:text-amber-800 py-1 rounded-lg hover:bg-warning/10 transition-all text-center">
+                    className="w-full text-[10px] font-semibold text-warning-text hover:text-warning-text py-1 rounded-lg hover:bg-warning/10 transition-all text-center">
                     {showAll ? 'Ver menos ↑' : `Ver todas las diferencias (${difItems.length}) ↓`}
                 </button>
             )}

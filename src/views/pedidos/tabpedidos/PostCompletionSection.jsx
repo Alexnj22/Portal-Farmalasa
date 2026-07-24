@@ -3,10 +3,10 @@ import { useRef, useEffect } from 'react';
 import { UserCircle2, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const LLEGADA_TIPO_INFO = {
-    completa:   { cls: 'bg-success/10 border-success/30 text-emerald-700', icon: '✓', label: 'Recibido sin novedad' },
-    caja_danada:{ cls: 'bg-warning/10 border-warning/30 text-amber-700',       icon: '⚠', label: 'Caja dañada' },
-    falta_caja: { cls: 'bg-rose-50 border-rose-200 text-rose-700',          icon: '!', label: 'Caja faltante' },
-    mixto:      { cls: 'bg-orange-50 border-orange-200 text-orange-700',    icon: '!', label: 'Daños + faltantes' },
+    completa:   { cls: 'bg-success/10 border-success/30 text-success-text', icon: '✓', label: 'Recibido sin novedad' },
+    caja_danada:{ cls: 'bg-warning/10 border-warning/30 text-warning-text',       icon: '⚠', label: 'Caja dañada' },
+    falta_caja: { cls: 'bg-danger/10 border-danger/30 text-danger-text',          icon: '!', label: 'Caja faltante' },
+    mixto:      { cls: 'bg-chart-4/10 border-chart-4/30 text-chart-4-text',    icon: '!', label: 'Daños + faltantes' },
 };
 
 export default function PostCompletionSection({ row, difItems = [], empMap = new Map(), onNeedItems, itemsLoaded }) {
@@ -46,22 +46,22 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                     </span>
                 )}
                 {hasCajasDanadas && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-amber-700">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
                         ⚠ Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}
                     </span>
                 )}
                 {reenvios.length > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-indigo-50 border-indigo-200 text-indigo-700">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-chart-3/10 border-chart-3/30 text-chart-3-text">
                         <Truck size={9} />{reenvios.length} reenvío{reenvios.length > 1 ? 's' : ''}
                     </span>
                 )}
                 {difResueltas > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-success/10 border-success/30 text-emerald-700">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-success/10 border-success/30 text-success-text">
                         <CheckCircle2 size={9} />{difResueltas} dif. resuelta{difResueltas > 1 ? 's' : ''}
                     </span>
                 )}
                 {difPendientes > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-amber-700">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
                         <AlertCircle size={9} />{difPendientes} dif. pendiente{difPendientes > 1 ? 's' : ''}
                     </span>
                 )}

@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.1';
+export const APP_VERSION = '2.51.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.2 — refactor(theme): T7.1 — Bucket B, tercera tanda (pedidos/
+// tabpedidos/*: DifSection, PostCompletionSection, ReceptionActions,
+// ItemSections). Tipos de diferencia/llegada → severidad real donde
+// corresponde (faltante/caja faltante → danger, sobrante/completa →
+// success) y categórico donde no (dañado/vencido/presentación → cat-4/6/1).
+// Wizard de "Paso 1/Paso 2" → brand/chart-3 en vez de blue/indigo crudo.
 
 // v2.51.1 — refactor(theme): T7.1 — Bucket B, segunda tanda (FacturacionView,
 // DashboardView, EncuestaView, EncuestaAdminView).

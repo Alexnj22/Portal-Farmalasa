@@ -79,8 +79,8 @@ const COLS_ENVIADOS = [
     }},
     { key: 'status', label: 'Estado', render: r => (
         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
-            r.status === 'recibido'       ? 'bg-success/10 text-emerald-700 border-success/30' :
-            r.status === 'con_diferencia' ? 'bg-warning/10   text-amber-700   border-warning/30'   :
+            r.status === 'recibido'       ? 'bg-success/10 text-success-text border-success/30' :
+            r.status === 'con_diferencia' ? 'bg-warning/10   text-warning-text   border-warning/30'   :
                                             'bg-surface-card-hover   text-content-3   border-slate-200'
         }`}>
             {r.status === 'recibido' ? 'Recibido' : r.status === 'con_diferencia' ? 'Diferencia' : 'Pendiente'}
@@ -98,7 +98,7 @@ const COLS_AGOTAMIENTO = [
         const sol = calcSolicitado(r);
         const falto = sol != null ? Math.max(0, sol - (r.cantidad_asignada ?? 0)) : null;
         return falto != null
-            ? <span className="font-bold tabular-nums text-orange-600">{falto}</span>
+            ? <span className="font-bold tabular-nums text-warning-text">{falto}</span>
             : <span className="text-content-3">—</span>;
     }},
 ];
@@ -109,7 +109,7 @@ const COLS_SIN_STOCK = [
     { key: 'pres',       label: 'Presentación', render: renderPresentacion },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
     { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => (
-        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-rose-500' : 'text-content-2'}`}>
+        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-danger-text' : 'text-content-2'}`}>
             {r.stock_packs_snapshot ?? '—'}
         </span>
     )},
@@ -151,7 +151,7 @@ function fmtRegla(row) {
     const multiplo   = Number(row.dispatch_multiplo ?? 1);
     const showFactor = presFactor > 1 && tipoKey !== 'solo_cajas';
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 whitespace-nowrap">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 whitespace-nowrap">
             {base}{showFactor ? ` ×${presFactor}` : ''} | ×{multiplo}
         </span>
     );
@@ -168,7 +168,7 @@ const COLS_REGLA = [
         const units  = packs != null ? Math.round(packs * factor) : null;
         const txt    = units != null ? formatUnitsRegla(units, r.presentations) : null;
         return (
-            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-rose-500' : 'text-content-2'}`}>
+            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-danger-text' : 'text-content-2'}`}>
                 {txt ?? '—'}
             </span>
         );
@@ -181,7 +181,7 @@ const COLS_REGLA = [
         const needUnd = needed != null ? Math.ceil(needed * factor) : null;
         return (
             <div className="flex flex-col gap-0.5">
-                <span className="text-rose-600 text-[10px] font-semibold">Necesidad baja</span>
+                <span className="text-danger-text text-[10px] font-semibold">Necesidad baja</span>
                 <span className="text-content-3 text-[9px]">
                     {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de la regla` : 'Cantidad < 40% de la unidad mínima de despacho'}
                 </span>
@@ -235,7 +235,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
             <div className="flex items-center gap-1 pr-2 hover:bg-surface-card-hover/50 transition-colors">
                 <button onClick={() => setOpen(v => !v)} className="flex-1 flex items-center gap-2 px-4 py-2.5 text-left">
                     <span className="text-[11px] font-semibold text-content-2 flex-1">{label}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-blue-50 text-blue-700 border-blue-200' : badgeCls}`}>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-brand/10 text-brand border-brand/30' : badgeCls}`}>
                         {search ? `${filteredRows.length}/${count}` : count}
                     </span>
                 </button>
@@ -258,7 +258,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
+                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-brand/10 transition-colors shrink-0">
                             <Search size={12} />
                         </motion.button>
                     )}
@@ -450,7 +450,7 @@ export default function ItemSections({ allItems, loading }) {
         const v6m      = psp?.units_sold_6m ?? null;
         const inputCls = (hasErr) =>
             `w-14 text-[11px] font-bold border rounded-lg px-2 py-1 focus:outline-none bg-white text-content-2 text-center disabled:opacity-40 transition-colors ${
-                hasErr ? 'border-rose-300 focus:border-rose-400 bg-rose-50/60' : 'border-slate-200 focus:border-blue-400'
+                hasErr ? 'border-danger/40 focus:border-danger bg-danger/10' : 'border-border-card focus:border-brand'
             }`;
         return (
             <tr key={`mm_${row.id}`}>
@@ -481,19 +481,19 @@ export default function ItemSections({ allItems, loading }) {
                             }}
                             className={inputCls(!!err && err !== 'MIN inválido')}
                         />
-                        {isSaving && <Loader2 size={10} className="animate-spin text-blue-400 shrink-0" />}
+                        {isSaving && <Loader2 size={10} className="animate-spin text-brand shrink-0" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
                         <button
                             onClick={() => restoreMinMax(row)} disabled={isSaving}
                             title="Restaurar MIN/MAX original"
-                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-content-3 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 disabled:opacity-50 transition-colors shrink-0"
+                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-card text-content-3 hover:text-brand hover:border-brand/30 hover:bg-brand/10 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <RotateCcw size={9} />Restaurar
                         </button>
                         <button
                             onClick={() => resetZero(row)} disabled={isSaving}
                             title="Dejar en 0/0 — excluye del próximo pedido"
-                            className="flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-rose-200 text-rose-400 hover:text-rose-600 hover:bg-rose-50 disabled:opacity-50 transition-colors shrink-0"
+                            className="flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-danger/30 text-danger-text hover:text-danger-text hover:bg-danger/10 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <X size={9} />0 / 0
                         </button>
@@ -508,20 +508,20 @@ export default function ItemSections({ allItems, loading }) {
             <div className="border-t border-slate-100 px-4 py-2.5 bg-surface-card-hover/60 flex items-center gap-5 flex-wrap">
                 <span className="text-[11px] text-content-3">Solicitados <strong className="text-content-2">{total}</strong></span>
                 <span className="text-[11px] text-content-3">Enviados <strong className="text-success">{enviados.length}</strong></span>
-                {agotamiento.length > 0 && <span className="text-[11px] text-content-3">Stock insuficiente <strong className="text-orange-600">{agotamiento.length}</strong></span>}
+                {agotamiento.length > 0 && <span className="text-[11px] text-content-3">Stock insuficiente <strong className="text-warning-text">{agotamiento.length}</strong></span>}
                 {sinStock.length > 0 && <span className="text-[11px] text-content-3">Sin inventario <strong className="text-warning">{sinStock.length}</strong></span>}
-                {porRegla.length > 0 && <span className="text-[11px] text-content-3">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
+                {porRegla.length > 0 && <span className="text-[11px] text-content-3">Revisar regla <strong className="text-danger-text">{porRegla.length}</strong></span>}
             </div>
-            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-success/10 text-emerald-700 border-success/30" rows={enviados} columns={COLS_ENVIADOS} />
+            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-success/10 text-success-text border-success/30" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
-                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamiento} columns={COLS_AGOTAMIENTO}
-                noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
+                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-warning/10 text-warning-text border-warning/30" rows={agotamiento} columns={COLS_AGOTAMIENTO}
+                noteEl={<p className="text-[10px] text-warning-text/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
             />
-            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-warning/10 text-amber-700 border-warning/30" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
+            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-warning/10 text-warning-text border-warning/30" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
-                label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
+                label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-danger/10 text-danger-text border-danger/30" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}
-                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
+                noteEl={<div className="flex items-start gap-2 text-[10px] text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
             />
             <ConfirmModal
                 isOpen={!!resetZeroTarget}

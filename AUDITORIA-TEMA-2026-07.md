@@ -826,10 +826,21 @@ restantes** — esta clase de bug se considera cerrada (v2.46.2 → v2.47.1).
 
 Con el barrido de scroll horizontal (desktop + iPhone 13) y la auditoría
 de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
-- **Modales y tablas internas** — el clic-por-tab cubrió las 9 tabs de
-  primer nivel en `productos`/`schedules`/`ventas`, pero no abrió modales
-  individuales (ej. `CrearRutaModal`, `PromoModal`, `RecepcionModal`) ni
-  revisó cada tabla/drawer interno a 1024×768.
+- **Modales — muestra representativa revisada (v2.47.3), no exhaustiva**:
+  abiertos con Playwright a 1024×768 y verificados sin scroll horizontal +
+  captura visual: `PromoModal` (`/promociones`, wizard 2 pasos),
+  `EmployeeFormModal` (`/staff`, wizard 4 pasos, tab Personal), 
+  `NuevoConteoModal` (`/conteo-inventario`). Los 3 limpios — ancho fijo
+  centrado, sin overflow, formularios legibles. **No abiertos**: modales
+  de `/pedidos` (`CrearRutaModal`, `RecepcionModal`, `LlegadaModal`) —
+  bloqueados por el bug preexistente de `@capacitor-community/
+  background-geolocation` (ver nota al final de esta sección); modal de
+  `ShiftExceptionModal` en `/schedules` — el selector automático no
+  encontró su botón disparador (posiblemente requiere seleccionar una
+  celda del calendario primero, no un botón de header); modal de
+  `/payroll` — sin botón "nuevo" visible en el header para este usuario
+  (puede ser gated por período ya abierto o por permiso). Cobertura
+  parcial, no el 100% de los ~30 overlays hand-rolled del proyecto (§9.1).
 - **Touch targets — medido y corregido el hallazgo sistémico (v2.47.3)**:
   barrido con Playwright en viewport iPhone 13 sobre 9 rutas (`/overview`,
   `/monitor`, `/my-requests`, `/minmax`, `/ventas`, `/profile`,
@@ -866,10 +877,19 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   (usados en `TimePicker12.jsx`, `FormAiSchedulerPreview.jsx` y decenas
   de selects en toda la app) a cambio de un beneficio marginal en el modo
   menos usado. Documentado como excepción deliberada, no un olvido.
-- **Revisión visual (no solo mecánica) por vista en iPhone 13** — el
-  barrido móvil hecho fue solo a nivel de scroll horizontal por ruta; no
-  hay revisión de screenshot vista-por-vista en viewport móvil como sí se
-  hizo en desktop.
+- **Revisión visual por vista en iPhone 13 — hecha para las 4 vistas de
+  tienda accesibles (v2.47.3)**: capturas de pantalla completas (no solo
+  el barrido mecánico de scroll horizontal) en `/monitor`, `/my-requests`,
+  `/minmax`, `/ventas`. Las 4 limpias — stat cards en grid responsive de 2
+  columnas, tabs con scroll horizontal esperado, estados de carga
+  (skeletons) y vacío (`/minmax` sin sucursal seleccionada) renderizando
+  correctamente. Único hallazgo: en `/monitor`, la foto de un empleado
+  (Alva Gabriela Ayala Tobar) muestra el ícono roto de imagen + texto
+  "Foto" en vez de un placeholder — es un problema de dato (`photo_url`
+  vacío o URL firmada que falló), no de CSS/tema, fuera de alcance de
+  este plan. **No cubierto**: el resto de las ~110 vistas (esta revisión
+  fue deliberadamente acotada a las 4 vistas prioritarias de tienda, no
+  un barrido exhaustivo — `/pedidos` sigue bloqueada, ver nota abajo).
 - **`/pedidos`** (y sus tabs: `TabPedidos`, `TabReglas`, `TabMetricas`,
   `TabRutas`) sigue bloqueada para cualquier auditoría (visual o
   mecánica vía Playwright logueado) hasta que se resuelva el bug

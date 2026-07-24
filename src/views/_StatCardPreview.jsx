@@ -63,7 +63,7 @@ export default function StatCardPreview() {
                         valueCls="text-amber-700"
                         sub="este período"
                         activeBg="bg-warning/10 border-amber-300 shadow-md"
-                        inactiveBg="bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/40"
+                        inactiveBg="bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10"
                         onClick={() => alert('click')}
                     />
                 </div>

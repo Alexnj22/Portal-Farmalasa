@@ -89,8 +89,8 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                 const confirmadoEmp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por)  : null;
                 const rechazadoEmp  = item.rechazado_por      ? empMap.get(item.rechazado_por)       : null;
 
-                const borderCls = res === 'confirmada' ? 'border-success/30 bg-success/30'
-                                : res === 'rechazada'  ? 'border-danger/30 bg-danger/20'
+                const borderCls = res === 'confirmada' ? 'border-success/30 bg-success/10'
+                                : res === 'rechazada'  ? 'border-danger/30 bg-danger/10'
                                 : res === 'propuesta'  ? 'border-violet-200 bg-violet-50/20'
                                 :                        'border-warning/30 bg-white';
 

@@ -20,9 +20,9 @@ const portalProps = {
     styles: { menuPortal: base => ({ ...base, zIndex: 99999 }) },
 };
 
-const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50';
-const island    = 'bg-white/60 rounded-[1.5rem] p-4 md:p-5 border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]';
-const reqBadge  = <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200 text-[8px]">Requerido</span>;
+const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50';
+const island    = 'bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]';
+const reqBadge  = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 text-[8px]">Requerido</span>;
 
 const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
@@ -53,15 +53,15 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
             {/* TARJETA EMPLEADO */}
             <div className={`${island} flex items-center gap-4`}>
-                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-md shrink-0 bg-slate-100 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-md shrink-0 bg-surface-card-hover flex items-center justify-center">
                     <LiquidAvatar src={formData.photo || formData.photo_url} alt={formData.name} fallbackText={formData.name} className="w-full h-full" />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Recontratando a</p>
-                    <p className="font-black text-slate-800 text-[16px] leading-tight truncate">{formData.name}</p>
-                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                        Código <span className="font-black text-slate-700">{formData.code}</span>
-                        {' · '}Última salida: <span className="font-black text-slate-700">{lastExit}</span>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-0.5">Recontratando a</p>
+                    <p className="font-black text-content text-[16px] leading-tight truncate">{formData.name}</p>
+                    <p className="text-[11px] text-content-3 font-medium mt-0.5">
+                        Código <span className="font-black text-content-2">{formData.code}</span>
+                        {' · '}Última salida: <span className="font-black text-content-2">{lastExit}</span>
                     </p>
                 </div>
             </div>
@@ -72,17 +72,17 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Fecha de ingreso */}
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Nueva Fecha de Ingreso {reqBadge}
                         </label>
-                        <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-red-400 bg-red-50/50' : 'border-slate-200/80'}`}>
+                        <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-red-400 bg-danger/10' : 'border-slate-200/80'}`}>
                             <LiquidDatePicker value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} placeholder="DD / MM / AAAA" />
                         </div>
                     </div>
 
                     {/* Tipo de contrato */}
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Contrato</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Contrato</label>
                         <div className={`rounded-[1rem] h-[40px] ${inputHover}`}>
                             <LiquidSelect value={formData.rehire_contract_type || 'INDEFINIDO'} onChange={handleContractChange}
                                 options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalProps} />
@@ -91,10 +91,10 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Sucursal */}
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Sucursal {reqBadge}
                         </label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_branch_id ? 'border border-red-400 bg-red-50/50 rounded-[1rem]' : ''}`}>
+                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_branch_id ? 'border border-red-400 bg-danger/10 rounded-[1rem]' : ''}`}>
                             <LiquidSelect value={formData.rehire_branch_id || ''} onChange={v => set('rehire_branch_id', v)}
                                 options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalProps} />
                         </div>
@@ -102,10 +102,10 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Cargo principal */}
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Cargo Principal {reqBadge}
                         </label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_role_id ? 'border border-red-400 bg-red-50/50 rounded-[1rem]' : ''}`}>
+                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_role_id ? 'border border-red-400 bg-danger/10 rounded-[1rem]' : ''}`}>
                             <LiquidSelect value={formData.rehire_role_id || ''} onChange={v => set('rehire_role_id', v)}
                                 options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalProps} />
                         </div>
@@ -113,7 +113,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Cargo secundario */}
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
                         <div className={`rounded-[1rem] h-[40px] ${inputHover}`}>
                             <LiquidSelect value={formData.rehire_secondary_role_id || ''} onChange={v => set('rehire_secondary_role_id', v)}
                                 options={roleOpts} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalProps} />
@@ -122,31 +122,31 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Horas semanales */}
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Horas Semanales</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Semanales</label>
                         <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHover}`}>
-                            <div className="absolute left-3 text-slate-500"><Clock size={14} strokeWidth={2.5} /></div>
+                            <div className="absolute left-3 text-content-3"><Clock size={14} strokeWidth={2.5} /></div>
                             <input type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
-                                className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                className="w-full h-full bg-transparent text-[16px] font-bold text-content-2 outline-none pl-9 pr-4" />
                         </div>
                     </div>
 
                     {/* Salario base */}
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Salario Base</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Salario Base</label>
                         <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHover}`}>
-                            <div className="absolute left-3 text-slate-500 font-black text-[13px]">$</div>
+                            <div className="absolute left-3 text-content-3 font-black text-[13px]">$</div>
                             <input type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
-                                placeholder="0.00" className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-8 pr-4" />
+                                placeholder="0.00" className="w-full h-full bg-transparent text-[16px] font-bold text-content-2 outline-none pl-8 pr-4" />
                         </div>
                     </div>
 
                     {/* Motivo */}
                     <div className="md:col-span-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Motivo / Notas</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Motivo / Notas</label>
                         <textarea value={formData.rehire_notes || ''} onChange={e => set('rehire_notes', e.target.value)}
                             rows={2}
                             placeholder="Ej. Regresa tras cierre de proyecto externo, aplica para período de prueba..."
-                            className={`w-full bg-white rounded-[1rem] border border-slate-200/80 shadow-sm text-[16px] font-medium text-slate-700 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
+                            className={`w-full bg-white rounded-[1rem] border border-slate-200/80 shadow-sm text-[16px] font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
                     </div>
 
                 </div>

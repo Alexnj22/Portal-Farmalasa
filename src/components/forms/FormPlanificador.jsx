@@ -44,8 +44,8 @@ const Switch = memo(({ on, onToggle, disabled }) => (
         disabled={disabled}
         onClick={onToggle}
         className={`relative inline-flex items-center flex-shrink-0 w-10 h-5 md:w-11 md:h-6 rounded-full border-2 transition-all duration-300 ease-in-out cursor-pointer ${
-            disabled ? "opacity-50 cursor-not-allowed bg-white/40 border-white/50" 
-            : on ? "bg-[#0052CC] border-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.3)]" : "bg-slate-200 border-slate-200 hover:bg-slate-300 hover:border-slate-300"
+            disabled ? "opacity-50 cursor-not-allowed bg-surface-card border-border-card" 
+            : on ? "bg-brand border-brand shadow-[0_2px_8px_rgba(0,82,204,0.3)]" : "bg-surface-card-hover border-slate-200 hover:bg-content-3 hover:border-slate-300"
         }`}
     >
         <span className={`absolute top-[1px] left-[1px] w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${on ? "translate-x-5 md:translate-x-6" : "translate-x-0"}`} />
@@ -64,7 +64,7 @@ const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
             className={`w-4 h-4 rounded-[4px] flex items-center justify-center transition-all duration-200 border cursor-pointer outline-none ${
                 checked 
                 ? `${activeBg} border-transparent shadow-sm scale-110` 
-                : `bg-white/60 border-slate-300 ${shadowHover} hover:bg-white`
+                : `bg-surface-card border-slate-300 ${shadowHover} hover:bg-white`
             }`}
         >
             {checked && <Check size={11} strokeWidth={4} className="text-white" />}
@@ -131,16 +131,16 @@ const DayRow = memo(({
     return (
         <div className={`rounded-[1.2rem] border transition-all duration-200 overflow-visible flex flex-col ${
             conflict ? `${conflict.bg} ${conflict.border} shadow-sm` 
-            : isWorking ? 'bg-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.03),inset_0_1px_1px_rgba(255,255,255,0.9)] border-white/80' 
-            : 'bg-white/20 border-white/40 hover:bg-white/40'
+            : isWorking ? 'bg-surface-card shadow-[0_4px_12px_rgba(0,0,0,0.03),inset_0_1px_1px_rgba(255,255,255,0.9)] border-border-card' 
+            : 'bg-surface-card border-border-card hover:bg-surface-card'
         }`}>
             <div className="p-3.5 flex flex-col xl:flex-row xl:items-start gap-4 md:gap-5">
                 
                 {/* BLOQUE 1: SWITCH Y DÍA */}
                 <div className="w-full xl:w-36 flex items-center justify-between xl:mt-2.5 flex-shrink-0">
                     <div>
-                        <h4 className="text-[13px] md:text-[14px] font-black text-slate-800 uppercase tracking-widest">{day.name}</h4>
-                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-[#0052CC]' : 'text-slate-600'}`}>
+                        <h4 className="text-[13px] md:text-[14px] font-black text-content uppercase tracking-widest">{day.name}</h4>
+                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-brand' : 'text-content-2'}`}>
                             {conflict ? conflict.label : isWorking ? 'Día Laboral' : 'Día de Descanso'}
                         </p>
                     </div>
@@ -149,7 +149,7 @@ const DayRow = memo(({
 
                 {/* BLOQUE 2: CONFIGURACIÓN O CONFLICTO */}
                 {conflict ? (
-                    <div className={`flex-1 flex items-center gap-3 bg-white/50 p-2.5 rounded-xl border ${conflict.border} xl:mt-1`}>
+                    <div className={`flex-1 flex items-center gap-3 bg-surface-card p-2.5 rounded-xl border ${conflict.border} xl:mt-1`}>
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${conflict.iconBg} ${conflict.text}`}>
                             <conflict.icon size={16} strokeWidth={2.5}/>
                         </div>
@@ -165,7 +165,7 @@ const DayRow = memo(({
                             {/* SUCURSAL */}
                             {isMultiBranch && (
                                 <div className="lg:col-span-1 overflow-visible">
-                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-1.5">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
                                         <Building2 size={12} className="text-indigo-500"/> Ubicación
                                     </label>
                                     <LiquidSelect 
@@ -180,8 +180,8 @@ const DayRow = memo(({
 
                             {/* TURNO */}
                             <div className="lg:col-span-1 overflow-visible z-[100]">
-                                <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-1.5">
-                                    <Clock size={12} className={!config.shiftId ? 'text-red-500 animate-pulse' : 'text-[#0052CC]'}/> Turno Asignado
+                                <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
+                                    <Clock size={12} className={!config.shiftId ? 'text-danger animate-pulse' : 'text-brand'}/> Turno Asignado
                                 </label>
                                 <LiquidSelect 
                                     value={String(config.shiftId || '')}
@@ -189,72 +189,72 @@ const DayRow = memo(({
                                     options={shiftOptions}
                                     placeholder={!config.shiftId ? "FALTA TURNO" : "SELECCIONE..."}
                                     clearable={false}
-                                    className={!config.shiftId ? "[&>div]:border-red-300 [&>div]:bg-red-50" : ""}
+                                    className={!config.shiftId ? "[&>div]:border-red-300 [&>div]:bg-danger/10" : ""}
                                 />
                             </div>
 
                             {/* ALMUERZO */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                         <Utensils size={12} className="text-orange-500"/> Almuerzo (-1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lunchTime} onChange={handleLunchToggle} theme="orange" />
                                 </div>
                                 {config.lunchTime ? (
                                     <div className="flex flex-col gap-1">
-                                        <div className={`h-[34px] ${lunchWarning ? '[&_input]:border-red-400 [&_input]:bg-red-50 [&_input]:text-red-700' : ''}`}>
+                                        <div className={`h-[34px] ${lunchWarning ? '[&_input]:border-red-400 [&_input]:bg-danger/10 [&_input]:text-red-700' : ''}`}>
                                             <TimePicker12 value={config.lunchTime} onChange={(v) => onChange(day.id, 'lunchTime', v)} />
                                         </div>
                                         {lunchWarning && (
-                                            <div className="mt-0.5 flex items-start gap-1 bg-red-50 border border-red-200 px-1 py-0.5 rounded animate-in zoom-in-95">
-                                                <AlertTriangle size={8} className="text-red-500 shrink-0 mt-[1px]"/>
-                                                <span className="text-[7.5px] font-black text-red-600 uppercase leading-tight">{lunchWarning}</span>
+                                            <div className="mt-0.5 flex items-start gap-1 bg-danger/10 border border-danger/30 px-1 py-0.5 rounded animate-in zoom-in-95">
+                                                <AlertTriangle size={8} className="text-danger shrink-0 mt-[1px]"/>
+                                                <span className="text-[7.5px] font-black text-danger uppercase leading-tight">{lunchWarning}</span>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-white/40 border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-slate-600 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
+                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-content-2 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
                                 )}
                             </div>
 
                             {/* LACTANCIA */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                         <Baby size={12} className="text-pink-500"/> Lactancia (+1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lactationTime} onChange={handleLactationToggle} theme="pink" />
                                 </div>
                                 {config.lactationTime ? (
                                     <div className="flex flex-col gap-1">
-                                        <div className={`h-[34px] ${lactationWarning ? '[&_input]:border-red-400 [&_input]:bg-red-50 [&_input]:text-red-700' : ''}`}>
+                                        <div className={`h-[34px] ${lactationWarning ? '[&_input]:border-red-400 [&_input]:bg-danger/10 [&_input]:text-red-700' : ''}`}>
                                             <TimePicker12 value={config.lactationTime} onChange={(v) => onChange(day.id, 'lactationTime', v)} />
                                         </div>
                                         {lactationWarning && (
-                                            <div className="mt-0.5 flex items-start gap-1 bg-red-50 border border-red-200 px-1 py-0.5 rounded animate-in zoom-in-95">
-                                                <AlertTriangle size={8} className="text-red-500 shrink-0 mt-[1px]"/>
-                                                <span className="text-[7.5px] font-black text-red-600 uppercase leading-tight">{lactationWarning}</span>
+                                            <div className="mt-0.5 flex items-start gap-1 bg-danger/10 border border-danger/30 px-1 py-0.5 rounded animate-in zoom-in-95">
+                                                <AlertTriangle size={8} className="text-danger shrink-0 mt-[1px]"/>
+                                                <span className="text-[7.5px] font-black text-danger uppercase leading-tight">{lactationWarning}</span>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-white/40 border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-slate-600 uppercase tracking-widest shadow-inner">No Aplica</div>
+                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-content-2 uppercase tracking-widest shadow-inner">No Aplica</div>
                                 )}
                             </div>
                         </div>
 
                         {/* 🚨 BANNER HORARIO REAL (SOLO VISIBLE SI HAY MODIFICACIÓN LÓGICA) */}
                         {isPhysicalScheduleModified && (
-                            <div className="w-full flex items-center gap-3 bg-slate-50/60 border border-slate-200/50 p-2 rounded-xl mt-0.5 animate-in fade-in zoom-in-95 duration-300">
-                                <div className="flex items-center gap-1.5 text-[8.5px] text-slate-600 border-r border-slate-200 pr-2.5">
-                                    <Clock size={10} className="text-slate-400"/> 
-                                    <span className="font-black uppercase tracking-widest text-slate-500">Horario Físico Real:</span>
+                            <div className="w-full flex items-center gap-3 bg-surface-card-hover/60 border border-slate-200/50 p-2 rounded-xl mt-0.5 animate-in fade-in zoom-in-95 duration-300">
+                                <div className="flex items-center gap-1.5 text-[8.5px] text-content-2 border-r border-slate-200 pr-2.5">
+                                    <Clock size={10} className="text-content-3"/> 
+                                    <span className="font-black uppercase tracking-widest text-content-3">Horario Físico Real:</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[9.5px] font-black text-slate-800">{formatCompactTime(minsToTime(startMins))}</span>
-                                    <ArrowRight size={10} className="text-slate-300"/>
-                                    <span className={`text-[9.5px] font-black ${config.lactationTime ? 'text-pink-600' : 'text-slate-800'}`}>
+                                    <span className="text-[9.5px] font-black text-content">{formatCompactTime(minsToTime(startMins))}</span>
+                                    <ArrowRight size={10} className="text-content-3"/>
+                                    <span className={`text-[9.5px] font-black ${config.lactationTime ? 'text-pink-600' : 'text-content'}`}>
                                         {formatCompactTime(minsToTime(realEndMins))}
                                     </span>
                                     {config.lactationTime && (
@@ -269,7 +269,7 @@ const DayRow = memo(({
                     </div>
                 ) : (
                     <div className="flex-1 flex items-center justify-center xl:border-l xl:border-slate-200/50 xl:pl-6 pt-3 xl:pt-0 border-t border-slate-200/50 xl:border-t-0">
-                        <div className="w-full xl:w-auto px-5 py-2 rounded-[1rem] bg-white/40 border border-dashed border-slate-300/80 text-slate-500 flex justify-center items-center gap-2 shadow-inner">
+                        <div className="w-full xl:w-auto px-5 py-2 rounded-[1rem] bg-surface-card border border-dashed border-slate-300/80 text-content-3 flex justify-center items-center gap-2 shadow-inner">
                             <Palmtree size={14} strokeWidth={2.5}/>
                             <span className="text-[9.5px] font-black uppercase tracking-widest">Día de Descanso</span>
                         </div>
@@ -309,8 +309,8 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         if (!event) return null;
         
         const configs = {
-            VACATION: { label: 'Vacaciones', icon: Palmtree, bg: 'bg-amber-50/70', border: 'border-amber-200/60', text: 'text-amber-600', textDark: 'text-amber-800', iconBg: 'bg-amber-100' },
-            DISABILITY: { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-red-50/70', border: 'border-red-200/60', text: 'text-red-600', textDark: 'text-red-800', iconBg: 'bg-red-100' },
+            VACATION: { label: 'Vacaciones', icon: Palmtree, bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning', textDark: 'text-amber-800', iconBg: 'bg-warning/10' },
+            DISABILITY: { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-danger/10', border: 'border-danger/30', text: 'text-danger', textDark: 'text-red-800', iconBg: 'bg-danger/10' },
             PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-purple-50/70', border: 'border-purple-200/60', text: 'text-purple-600', textDark: 'text-purple-800', iconBg: 'bg-purple-100' },
             HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-indigo-50/70', border: 'border-indigo-200/60', text: 'text-indigo-600', textDark: 'text-indigo-800', iconBg: 'bg-indigo-100' }
         };
@@ -388,43 +388,43 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         <div className="flex flex-col h-full -mx-6 -my-6 p-4 md:-mx-10 md:-my-8 md:p-10 relative z-10">
             
             {/* 🚨 DASHBOARD COMPACTO Y ELEGANTE */}
-            <div className="bg-white/60 backdrop-blur-md p-3 md:p-4 rounded-[1.2rem] border border-white/80 shadow-[0_2px_15px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.9)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+            <div className="bg-surface-card backdrop-blur-md p-3 md:p-4 rounded-[1.2rem] border border-border-card shadow-[0_2px_15px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.9)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
                 <div className="flex-1 w-full">
                     <div className="flex justify-between items-end mb-1.5">
                         <div>
-                            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
-                                <Clock size={12} className={currentStats.isExcess ? 'text-red-500' : 'text-[#0052CC]'}/>
+                            <h3 className="text-[10px] font-black text-content uppercase tracking-widest flex items-center gap-1.5">
+                                <Clock size={12} className={currentStats.isExcess ? 'text-danger' : 'text-brand'}/>
                                 Horas Asignadas
                             </h3>
-                            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                            <p className="text-[8px] font-bold text-content-3 uppercase tracking-widest mt-0.5">
                                 {isMonthlyLimitedRole ? 'Límite Mensual (Especial)' : 'Límite Semanal Estándar'}
                             </p>
                         </div>
                         <div className="text-right">
-                            <span className={`text-[18px] font-black leading-none ${currentStats.isExcess ? 'text-red-500' : 'text-slate-800'}`}>{currentStats.hours}h</span>
-                            <span className="text-[10px] font-bold text-slate-500"> / {maxHours}h</span>
+                            <span className={`text-[18px] font-black leading-none ${currentStats.isExcess ? 'text-danger' : 'text-content'}`}>{currentStats.hours}h</span>
+                            <span className="text-[10px] font-bold text-content-3"> / {maxHours}h</span>
                         </div>
                     </div>
-                    <div className="h-1.5 bg-white/50 rounded-full overflow-hidden shadow-inner border border-white/80">
-                        <div className={`h-full rounded-full transition-all duration-500 ease-out ${currentStats.isExcess ? 'bg-red-500' : 'bg-[#0052CC]'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
+                    <div className="h-1.5 bg-surface-card rounded-full overflow-hidden shadow-inner border border-border-card">
+                        <div className={`h-full rounded-full transition-all duration-500 ease-out ${currentStats.isExcess ? 'bg-red-500' : 'bg-brand'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
                     </div>
                 </div>
 
                 <div className="flex flex-wrap md:flex-col gap-1.5 shrink-0 w-full md:w-auto">
                     {currentStats.isExcess && (
-                        <div className="flex items-center gap-1.5 bg-red-50 border border-red-100 text-red-600 px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
+                        <div className="flex items-center gap-1.5 bg-danger/10 border border-danger/30 text-danger px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
                             <AlertTriangle size={10} strokeWidth={2.5}/>
                             <span className="text-[8px] font-black uppercase tracking-widest">Exceso (+{Number((currentStats.hours - maxHours).toFixed(1))}h)</span>
                         </div>
                     )}
                     {currentStats.noDaysOff && (
-                        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 text-amber-600 px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
+                        <div className="flex items-center gap-1.5 bg-warning/10 border border-warning/30 text-warning px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
                             <AlertTriangle size={10} strokeWidth={2.5}/>
                             <span className="text-[8px] font-black uppercase tracking-widest">Sin días de descanso</span>
                         </div>
                     )}
                     {!currentStats.isExcess && !currentStats.noDaysOff && (
-                        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-600 px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
+                        <div className="flex items-center gap-1.5 bg-success/10 border border-success/30 text-success px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
                             <CheckCircle2 size={10} strokeWidth={2.5}/>
                             <span className="text-[8px] font-black uppercase tracking-widest">Programación Óptima</span>
                         </div>

@@ -28,18 +28,18 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const ptMonth = parseInt(ptMonthStr, 10);
 
     if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al Día', colorClass: 'border-emerald-400 bg-success/50 text-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400' };
+        return { state: 'paid', label: 'Al Día', colorClass: 'border-emerald-400 bg-success/10 text-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400' };
     }
 
     if (ptYear === currentYear && ptMonth === currentMonth - 1) {
         if (currentDay > dueDay) {
-            return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/50 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+            return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/10 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
         } else {
-            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-amber-400 bg-warning/50 text-amber-700 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-400' };
+            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-amber-400 bg-warning/10 text-amber-700 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-400' };
         }
     }
 
-    return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/50 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+    return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/10 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
 };
 
 // ============================================================================
@@ -265,7 +265,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <p className="text-[11px] font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="px-4 py-2 bg-success/10 text-success rounded-[1.25rem] border border-success/50 shadow-sm flex items-center gap-2 backdrop-blur-md">
+                    <div className="px-4 py-2 bg-success/10 text-success rounded-[1.25rem] border border-success/30 shadow-sm flex items-center gap-2 backdrop-blur-md">
                         <DollarSign size={16} strokeWidth={2.5} />
                         <span className="text-[11px] font-black uppercase tracking-widest">Total Operativo Actual</span>
                         <span className="text-[14px] font-black">${totalMonthlyEst.toFixed(2)}</span>
@@ -395,7 +395,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-amber-50/90 to-amber-100/50 backdrop-blur-xl border border-warning/60 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
+                        <div className="group bg-gradient-to-br from-amber-50/90 to-amber-100/50 backdrop-blur-xl border border-warning/30 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-amber-300/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-10">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-white">

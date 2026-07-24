@@ -5,8 +5,58 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.47.1';
+export const APP_VERSION = '2.47.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.47.2 — refactor(theme): T4 codemod extendido a src/components (49
+// archivos), + fix de un bug real ya en producción desde v2.46.0.
+//
+// El gate mecánico de T7 (grep de text-slate-*/bg-white/*/bg-slate-*/
+// border-white/*/hex crudo) solo se había corrido sobre src/views; nunca
+// se auditó src/components con el mismo criterio, pese a que el gate
+// oficial (§7 del plan) siempre incluyó ambas carpetas. Eran 60 archivos
+// con al menos un match. Mismo codemod de v2.46.0/v2.46.1 aplicado ahí:
+// 49/84 archivos migrados, gate de src/components 60 → 22 (los 22
+// restantes son las mismas 6 categorías de excepción ya documentadas en
+// AUDITORIA-TEMA-2026-07.md §10.2, más el detalle nuevo de abajo).
+//
+// **Excluidos deliberadamente de este pase** (mismo criterio que
+// AppLayout.jsx en T3): AppLayout.jsx, SidebarSyncStatus.jsx,
+// ThemeToggle.jsx y los 6 archivos de src/components/timeclock/ (pantalla
+// de reloj checador — fondo siempre oscuro, `bg-[#0A0F1C]/80` fijo). Todos
+// usan `bg-white/NN`/`border-white/NN` como overlays de vidrio DECORATIVOS
+// sobre un fondo permanentemente oscuro — convertirlos a `bg-surface-card`/
+// `border-border-card` (tokens que resuelven a superficie CLARA en tema
+// claro) los rompe visualmente, el mismo bug ya atrapado y revertido en
+// AppLayout.jsx durante T3. Confirmado por diff antes de commitear, no en
+// producción.
+//
+// **Bug real encontrado en el codemod mismo, ya en prod desde v2.46.0/
+// v2.46.1**: la función `sem()` preservaba el sufijo de opacidad original
+// al mapear `bg-{red,emerald,amber}-{50,100}/NN` y `border-{red,emerald,
+// amber}-{50,100,200}/NN` a los tokens semánticos — pero ese NN modulaba
+// la opacidad de un color YA claro (compositing de vidrio), no "qué tan
+// saturado" se ve. Al reenviarlo al token sólido (`bg-warning`, `bg-
+// danger`, `bg-success`) el resultado es mucho más intenso que el diseño
+// original: `bg-amber-50/80 border-amber-200/60` (banner de alerta suave,
+// casi blanco) se convirtió en `bg-warning/80 border-warning/60` (bloque
+// ámbar sólido y vívido). Afectaba ~60 archivos ya committeados
+// (RolesView, FacturacionView, DashboardView, StaffManagementView,
+// EmployeeProfileView, EmployeeFormModal, etc.) — invisible a build/test
+// (no es un error de sintaxis) y no cubierto por las verificaciones
+// visuales previas de esta sesión, que no apuntaban a esos banners
+// específicos. Encontrado por revisión manual del diff de este pase
+// nuevo, donde el mismo patrón reapareció en NotificationBell.jsx.
+// `sem()` corregida para SIEMPRE usar la opacidad por defecto (10 para
+// bg, 30 para border), ignorando el sufijo original. Pase correctivo
+// aplicado a los ~60 archivos ya afectados en src/views + src/components,
+// reconstruido con cuidado para NO tocar variantes `hover:`/`focus:`
+// escritas a mano con opacidad intencionalmente distinta a la base (ej.
+// PhotoEditorModal.jsx `bg-success/10 hover:bg-success/20` — un intento
+// inicial de corrección global lo aplanó por error, detectado y revertido
+// antes de commitear). Verificado con Playwright: banner de error de
+// RolesView y stat card de EmployeeProfileView muestran ahora el tinte
+// suave correcto. Build + tests (15) verdes.
 
 // v2.47.1 — fix(responsive): 2 ocurrencias más del bug de stat cards
 // (v2.46.2/v2.47.0), encontradas ampliando la búsqueda de

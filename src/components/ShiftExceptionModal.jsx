@@ -162,7 +162,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                             <p className="text-white/60 text-xs font-bold uppercase tracking-widest">{employee.name}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 bg-white/10 hover:bg-danger rounded-full transition-colors">
+                    <button onClick={onClose} className="p-2 bg-surface-card hover:bg-danger rounded-full transition-colors">
                         <X size={20} />
                     </button>
                 </div>

@@ -587,7 +587,7 @@ const RolesView = ({ openModal }) => {
                                 </div>
 
                                 {error && (
-                                    <div className="mb-5 bg-warning/80 backdrop-blur-sm border border-warning/60 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                         <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <span className="leading-tight">{error}</span>
                                     </div>
@@ -723,7 +723,7 @@ const RolesView = ({ openModal }) => {
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
                                             {role.max_limit < 99 && (
-                                                <div className={`absolute -top-3 right-4 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-indigo-50/90 text-indigo-600 border-indigo-200/80' : 'bg-warning/90 text-warning border-warning/80'}`}>
+                                                <div className={`absolute -top-3 right-4 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-indigo-50/90 text-indigo-600 border-indigo-200/80' : 'bg-warning/10 text-warning border-warning/30'}`}>
                                                     {isGlobal ? <Globe size={10} strokeWidth={2.5}/> : <Building2 size={10} strokeWidth={2.5}/>}
                                                     <span>{isGlobal ? 'GLOBAL' : 'LOCAL'} MAX: {role.max_limit}</span>
                                                 </div>
@@ -795,7 +795,7 @@ const RolesView = ({ openModal }) => {
                                                 </div>
                                             </div>
 
-                                            <div className={`flex-1 rounded-[1.25rem] p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/50 border-warning/30' : isExternal ? 'bg-surface-card border-white' : 'bg-surface-card border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] group-hover:bg-surface-card'}`}>
+                                            <div className={`flex-1 rounded-[1.25rem] p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-white' : 'bg-surface-card border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] group-hover:bg-surface-card'}`}>
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-xl bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm">
                                                         <Users size={14} strokeWidth={2.5} />

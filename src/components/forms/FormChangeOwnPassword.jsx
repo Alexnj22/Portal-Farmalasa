@@ -24,10 +24,10 @@ const FormChangeOwnPassword = ({ onClose }) => {
 
     if (done) return (
         <div className="flex flex-col items-center justify-center gap-3 py-10">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
-                <CheckCircle size={28} className="text-emerald-500" strokeWidth={2} />
+            <div className="w-14 h-14 rounded-full bg-success/10 border border-success/30 flex items-center justify-center">
+                <CheckCircle size={28} className="text-success" strokeWidth={2} />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-emerald-600">Contraseña actualizada</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-success">Contraseña actualizada</p>
         </div>
     );
 
@@ -35,18 +35,18 @@ const FormChangeOwnPassword = ({ onClose }) => {
         <div className="flex flex-col gap-5 p-1">
             {[['Nueva contraseña', newPass, setNewPass, false], ['Confirmar contraseña', confirm, setConfirm, true]].map(([label, val, setter, isLast]) => (
                 <div key={label}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">{label}</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
                     <div className="relative flex items-center">
-                        <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+                        <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
                         <input
                             type={showPw ? 'text' : 'password'}
                             placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número"
                             value={val}
                             onChange={e => setter(e.target.value)}
-                            className="w-full pl-10 pr-10 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[16px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                            className="w-full pl-10 pr-10 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[16px] font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                         {isLast && (
-                            <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 text-slate-500 hover:text-slate-600">
+                            <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 text-content-3 hover:text-content-2">
                                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                             </button>
                         )}
@@ -54,7 +54,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                 </div>
             ))}
             <button type="button" onClick={save} disabled={loading || !newPass || !confirm}
-                className="w-full h-[48px] bg-[#0052CC] hover:bg-[#003D99] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
                 {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>}
             </button>
         </div>

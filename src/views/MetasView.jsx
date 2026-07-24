@@ -75,7 +75,7 @@ function getStatus(val, goal) {
 const STATUS_STYLES = {
   green:  { row:'bg-green-50/80',  cell:'text-green-800 font-semibold', badge:'bg-green-100 text-green-700 border border-green-200',    dot:'bg-green-500',  label:'Cumplió',    ring:'ring-green-400' },
   orange: { row:'bg-orange-50/80', cell:'text-orange-800 font-semibold',badge:'bg-orange-100 text-orange-700 border border-orange-200', dot:'bg-orange-400', label:'',           ring:'ring-orange-400' },
-  red:    { row:'bg-danger/80',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',  dot:'bg-red-600',    label:'No Cumplió', ring:'ring-red-500' },
+  red:    { row:'bg-danger/10',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',  dot:'bg-red-600',    label:'No Cumplió', ring:'ring-red-500' },
 };
 
 // Linear regression → projects `ahead` steps from last non-null value

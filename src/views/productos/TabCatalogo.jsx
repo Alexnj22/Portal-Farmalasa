@@ -124,7 +124,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             sub: 'precio < costo',
             count: perdidaCount,
             activeBg: 'bg-danger/10 border-red-300 shadow-red-100/80',
-            inactiveBg: 'bg-white border-slate-200 hover:border-danger/30 hover:bg-danger/40',
+            inactiveBg: 'bg-white border-slate-200 hover:border-danger/30 hover:bg-danger/10',
             iconBg: filterMargin === 'perdida'
                 ? 'bg-white'
                 : 'bg-danger/10',
@@ -140,7 +140,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             sub: '< 15% en algún precio',
             count: bajoCount,
             activeBg: 'bg-warning/10 border-amber-300 shadow-amber-100/80',
-            inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/40',
+            inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10',
             iconBg: filterMargin === 'bajo'
                 ? 'bg-white'
                 : 'bg-warning/10',
@@ -154,7 +154,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
     // Nuevos card
     const nuevosBg = filterNuevos
         ? 'bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px'
-        : 'bg-white border-slate-100 hover:border-success/30 hover:bg-success/40';
+        : 'bg-white border-slate-100 hover:border-success/30 hover:bg-success/10';
 
     const nuevosIconBg = filterNuevos
         ? 'bg-white'
@@ -205,7 +205,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
                     filterModificados
                         ? 'bg-warning/10 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px'
-                        : 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/40'
+                        : 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/10'
                 }`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     filterModificados
@@ -949,8 +949,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         pricingThead: 'bg-brand/[0.05] border-b border-brand/[0.08]',
         pricingThText: 'text-content-3',
         pricingDivide: 'divide-y divide-slate-50',
-        pricingRowChanged: 'bg-warning/60',
-        pricingRowLoss: 'bg-danger/30',
+        pricingRowChanged: 'bg-warning/10',
+        pricingRowLoss: 'bg-danger/10',
         pricingRowNormal: 'bg-white',
         pricingCellChanged: 'bg-warning/10',
         pricingValueChanged: 'text-amber-700',
@@ -960,7 +960,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         pricingCosto: 'text-content-3',
         statusActive: 'bg-success/10 text-success border border-success/30',
         statusInactive: 'bg-surface-card-hover text-content-3',
-        changelog: 'bg-warning/50 border border-warning/30',
+        changelog: 'bg-warning/10 border border-warning/30',
         changelogDate: 'bg-white border-slate-100 text-content-3',
         changelogField: 'text-content-2',
         changelogOld: 'text-content-3',

@@ -6,8 +6,8 @@ const SERVICE_CONFIG = {
     light: { title: 'Energía Eléctrica', icon: Zap, color: 'text-orange-500 bg-orange-50 border-orange-200', ring: 'focus:border-orange-500 focus:ring-orange-500/20', providerLabel: 'Compañía Eléctrica' },
     water: { title: 'Agua Potable', icon: Droplet, color: 'text-cyan-500 bg-cyan-50 border-cyan-200', ring: 'focus:border-cyan-500 focus:ring-cyan-500/20', providerLabel: 'Servicio de Agua' },
     internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-blue-500 bg-blue-50 border-blue-200', ring: 'focus:border-blue-500 focus:ring-blue-500/20', providerLabel: 'Proveedor ISP' },
-    phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-emerald-500 bg-emerald-50 border-emerald-200', ring: 'focus:border-emerald-500 focus:ring-emerald-500/20', providerLabel: 'Telefonía Móvil' },
-    taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-slate-600 bg-slate-100 border-slate-300', ring: 'focus:border-slate-500 focus:ring-slate-500/20', providerLabel: 'Alcaldía / Entidad' }
+    phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-emerald-500 focus:ring-emerald-500/20', providerLabel: 'Telefonía Móvil' },
+    taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-slate-300', ring: 'focus:border-slate-500 focus:ring-slate-500/20', providerLabel: 'Alcaldía / Entidad' }
 };
 
 const FormServicePayment = ({ formData, setFormData }) => {
@@ -49,7 +49,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
     // Lógica en tiempo real para previsualizar el estado
     const calculatePreviewStatus = () => {
         const { dueDay, paidThrough } = currentData;
-        if (!dueDay || !paidThrough) return { state: 'Sin Configurar', color: 'text-slate-500 bg-slate-100 border-slate-200', icon: AlertTriangle };
+        if (!dueDay || !paidThrough) return { state: 'Sin Configurar', color: 'text-content-3 bg-surface-card-hover border-slate-200', icon: AlertTriangle };
         
         const today = new Date();
         const currentYear = today.getFullYear();
@@ -59,13 +59,13 @@ const FormServicePayment = ({ formData, setFormData }) => {
         const [ptYear, ptMonth] = paidThrough.split('-').map(Number);
         
         if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-            return { state: 'Estará Al Día', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: CheckCircle };
+            return { state: 'Estará Al Día', color: 'text-emerald-700 bg-success/10 border-success/30', icon: CheckCircle };
         }
         if (ptYear === currentYear && ptMonth === currentMonth - 1) {
-            if (currentDay > parseInt(dueDay, 10)) return { state: 'Estará Vencido', color: 'text-red-700 bg-red-50 border-red-200', icon: AlertTriangle };
-            return { state: 'Vence Pronto', color: 'text-amber-700 bg-amber-50 border-amber-200', icon: Clock };
+            if (currentDay > parseInt(dueDay, 10)) return { state: 'Estará Vencido', color: 'text-red-700 bg-danger/10 border-danger/30', icon: AlertTriangle };
+            return { state: 'Vence Pronto', color: 'text-amber-700 bg-warning/10 border-warning/30', icon: Clock };
         }
-        return { state: 'Estará Vencido', color: 'text-red-700 bg-red-50 border-red-200', icon: AlertTriangle };
+        return { state: 'Estará Vencido', color: 'text-red-700 bg-danger/10 border-danger/30', icon: AlertTriangle };
     };
 
     const statusPreview = calculatePreviewStatus();
@@ -89,13 +89,13 @@ const FormServicePayment = ({ formData, setFormData }) => {
                 </div>
             </div>
 
-            <div className="bg-slate-50/50 border border-slate-200 rounded-[2rem] p-6 shadow-sm space-y-5">
+            <div className="bg-surface-card-hover/50 border border-slate-200 rounded-[2rem] p-6 shadow-sm space-y-5">
                 <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">{config.providerLabel}</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{config.providerLabel}</label>
                     <input 
                         required
                         type="text" 
-                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-slate-800 shadow-sm focus:ring-4 ${config.ring}`} 
+                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                         placeholder={`Ej: Proveedor de ${config.title}`}
                         value={providerValue || ""} 
                         onChange={(e) => handleChange('provider', e.target.value)} 
@@ -104,22 +104,22 @@ const FormServicePayment = ({ formData, setFormData }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">Monto Mensual Aprox. ($)</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Monto Mensual Aprox. ($)</label>
                         <input 
                             required
                             type="number" min="0" step="0.01" 
-                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-slate-800 shadow-sm focus:ring-4 ${config.ring}`} 
+                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                             placeholder="0.00"
                             value={currentData.amount || ""} 
                             onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))} 
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">Día de Vencimiento (1-31)</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Vencimiento (1-31)</label>
                         <input 
                             required
                             type="number" min="1" max="31" 
-                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-slate-800 shadow-sm focus:ring-4 ${config.ring}`} 
+                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                             placeholder="Ej: 15"
                             value={currentData.dueDay || ""} 
                             onChange={(e) => handleChange('dueDay', parseInt(e.target.value, 10))} 
@@ -128,17 +128,17 @@ const FormServicePayment = ({ formData, setFormData }) => {
                 </div>
 
                 <div className="pt-4 border-t border-slate-200">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0052CC] ml-1 mb-2 flex items-center gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-brand ml-1 mb-2 flex items-center gap-2">
                         <CalendarCheck size={14}/> Último Mes Pagado
                     </label>
                     <input 
                         required
                         type="month" 
-                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-slate-800 shadow-sm focus:ring-4 ${config.ring}`} 
+                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-slate-200 outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                         value={currentData.paidThrough || ""} 
                         onChange={(e) => handleChange('paidThrough', e.target.value)} 
                     />
-                    <p className="mt-2 text-[10px] font-semibold text-slate-500 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
+                    <p className="mt-2 text-[10px] font-semibold text-content-3 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
                 </div>
             </div>
         </div>

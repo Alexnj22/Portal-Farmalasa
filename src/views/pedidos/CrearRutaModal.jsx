@@ -607,7 +607,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   const enc = stop.isEncargo;
                   const dotCls = enc ? 'bg-amber-500' : 'bg-indigo-600';
                   const cardCls = enc
-                    ? 'bg-warning/70 border border-warning/30'
+                    ? 'bg-warning/10 border border-warning/30'
                     : 'bg-indigo-50/70 border border-indigo-100';
                   const timeCls = enc ? 'text-amber-700' : 'text-indigo-700';
                   return (
@@ -703,7 +703,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="w-px h-4 bg-surface-card-hover" style={{ marginLeft: 0 }} />
                 </div>
                 {showAddVisita ? (
-                  <div className="ml-10 p-3 rounded-xl border border-warning/30 bg-warning/60 space-y-2">
+                  <div className="ml-10 p-3 rounded-xl border border-warning/30 bg-warning/10 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">¿A qué sucursal?</p>
                       <button onClick={() => setShowAddVisita(false)} className="text-content-3 hover:text-content-2">
@@ -729,7 +729,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="ml-10">
                     <button
                       onClick={() => setShowAddVisita(true)}
-                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-content-3 hover:border-amber-400 hover:text-warning hover:bg-warning/40 transition-all"
+                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-content-3 hover:border-amber-400 hover:text-warning hover:bg-warning/10 transition-all"
                     >
                       <Plus size={10} />Agregar visita / encargo extra
                     </button>

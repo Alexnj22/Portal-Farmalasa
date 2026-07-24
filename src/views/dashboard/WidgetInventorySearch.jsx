@@ -229,7 +229,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
           {activo ? 'ACTIVO' : 'INACTIVO'}
         </span>
         {rState === 'done' ? (
-          <span className="shrink-0 flex items-center gap-1 text-[8px] font-black text-success bg-success/10 border border-success/70 px-1.5 py-0.5 rounded-full">
+          <span className="shrink-0 flex items-center gap-1 text-[8px] font-black text-success bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
             <CheckCircle2 size={8} strokeWidth={2.5} />OK
           </span>
         ) : formOpen ? (
@@ -728,7 +728,7 @@ export default function WidgetInventorySearch() {
           <div className="flex flex-col gap-3">
 
             {/* No stock banner */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/60">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30">
               <Package size={13} className="text-warning shrink-0" strokeWidth={2} />
               <p className="text-[11px] text-amber-700 font-semibold flex-1">
                 Sin stock para <span className="font-black">"{query}"</span>

@@ -280,10 +280,10 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
   const statCards = [
     { id: "ALL", label: "Total", count: stats.total, color: "text-content", border: "border-border-card", bg: "bg-surface-card" },
-    { id: "WORKING", label: "En Turno", count: stats.working, color: "text-emerald-700", border: "border-success/60", bg: "bg-success/40" },
+    { id: "WORKING", label: "En Turno", count: stats.working, color: "text-emerald-700", border: "border-success/30", bg: "bg-success/10" },
     { id: "EXTRA", label: "Horas Extra", count: stats.extra, color: "text-purple-700", border: "border-purple-200/60", bg: "bg-purple-50/40" },
     { id: "PAUSE", label: "En Pausa", count: stats.pause, color: "text-orange-700", border: "border-orange-200/60", bg: "bg-orange-50/40" },
-    { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-red-700", border: "border-danger/60", bg: "bg-danger/40", icon: AlertTriangle },
+    { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-red-700", border: "border-danger/30", bg: "bg-danger/10", icon: AlertTriangle },
     { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-slate-200/60", bg: "bg-surface-card-hover/40" },
   ];
 

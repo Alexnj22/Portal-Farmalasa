@@ -1482,7 +1482,7 @@ const DashboardView = ({ openModal }) => {
                 const issue=getBranchIssue(b);
                 return (
                   <button key={b.id} onClick={canManage('dash_branches')?()=>navigate(`/branches/${b.id}`):undefined}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${canManage('dash_branches')?'hover:bg-warning/80 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/50`}>
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${canManage('dash_branches')?'hover:bg-warning/10 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/10`}>
                     <AlertTriangle size={13} className="text-warning shrink-0"/>
                     <div className="flex-1 min-w-0"><p className="text-[11px] font-black text-content-2 truncate">{b.name}</p><p className="text-[9px] text-warning font-semibold">{issue}</p></div>
                     {canManage('dash_branches')&&<ChevronRight size={11} className="text-content-3 shrink-0"/>}
@@ -1633,7 +1633,7 @@ const DashboardView = ({ openModal }) => {
                   const cardCls = e.isToday
                     ? 'bg-brand/5 border-brand/20 shadow-[0_4px_16px_rgba(0,82,204,0.1)]'
                     : e.isTomorrow
-                    ? 'bg-warning/10 border-warning/60 shadow-[0_4px_12px_rgba(245,158,11,0.1)]'
+                    ? 'bg-warning/10 border-warning/30 shadow-[0_4px_12px_rgba(245,158,11,0.1)]'
                     : e.isPast
                     ? 'bg-surface-card border-border-card opacity-40'
                     : 'bg-surface-card border-border-card hover:bg-surface-card hover:border-slate-200/60 hover:shadow-sm';
@@ -2108,7 +2108,7 @@ const DashboardView = ({ openModal }) => {
                 pointerEvents:   'none',
                 zIndex: 25,
               }}
-              className={`rounded-[1.75rem] border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-amber-400/60 bg-warning/40'}`}
+              className={`rounded-[1.75rem] border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-amber-400/60 bg-warning/10'}`}
             />
           )}
         </div>

@@ -22,7 +22,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
   const renderBadge = () => {
     switch (ann.badgeType) {
       case 'GLOBAL': return <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
-      case 'BRANCH': return <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/50"><Building2 size={12} strokeWidth={2} /> {ann.badgeText}</span>;
+      case 'BRANCH': return <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'ROLE': return <span className="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-purple-200/50"><Users size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'EMPLOYEE': return <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       default: return null;
@@ -118,7 +118,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             {ann.readPercentage}%
           </span>
         </div>
-        <div className={`w-full rounded-full h-2.5 overflow-hidden border ${ann.priority === 'URGENT' && !isScheduled ? 'bg-danger/50 border-danger/50' : 'bg-surface-card border-border-card'}`}>
+        <div className={`w-full rounded-full h-2.5 overflow-hidden border ${ann.priority === 'URGENT' && !isScheduled ? 'bg-danger/10 border-danger/30' : 'bg-surface-card border-border-card'}`}>
           <div
             className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'bg-red-500' : ann.readPercentage === 100 ? 'bg-emerald-500' : isScheduled ? 'bg-indigo-300' : 'bg-brand'}`}
             style={{ width: `${ann.readPercentage}%` }}
@@ -612,7 +612,7 @@ const AnnouncementsView = ({ openModal }) => {
                 )}
               </div>
 
-              {error && <div className="mb-5 bg-warning/80 backdrop-blur-sm border border-warning/60 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2"><AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} /><span className="leading-tight">{error}</span></div>}
+              {error && <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2"><AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} /><span className="leading-tight">{error}</span></div>}
 
               <form onSubmit={handlePublish} className="space-y-5 relative z-10">
                 <div>

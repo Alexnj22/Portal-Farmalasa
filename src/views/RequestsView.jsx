@@ -44,13 +44,13 @@ const TYPE_ICONS = {
 
 // circle = card colored avatar; section = section label color
 const TYPE_COLORS = {
-    VACATION:     { circle: 'bg-emerald-500',  ring: 'ring-emerald-200', section: 'text-emerald-700', border: 'border-success/60', hover: 'hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]',  sectionIcon: 'text-success bg-success/10 border-success/50'  },
+    VACATION:     { circle: 'bg-emerald-500',  ring: 'ring-emerald-200', section: 'text-emerald-700', border: 'border-success/30', hover: 'hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]',  sectionIcon: 'text-success bg-success/10 border-success/30'  },
     PERMIT:       { circle: 'bg-blue-500',     ring: 'ring-blue-200',    section: 'text-blue-700',    border: 'border-blue-200/50',    hover: 'hover:shadow-[0_8px_28px_rgba(59,130,246,0.12)]',   sectionIcon: 'text-blue-600 bg-blue-50 border-blue-200/50'           },
     SHIFT_CHANGE: { circle: 'bg-cyan-500',     ring: 'ring-cyan-200',    section: 'text-cyan-700',    border: 'border-cyan-200/50',    hover: 'hover:shadow-[0_8px_28px_rgba(6,182,212,0.12)]',    sectionIcon: 'text-cyan-600 bg-cyan-50 border-cyan-200/50'           },
-    OVERTIME:     { circle: 'bg-amber-500',    ring: 'ring-amber-200',   section: 'text-amber-700',   border: 'border-warning/50',   hover: 'hover:shadow-[0_8px_28px_rgba(245,158,11,0.12)]',   sectionIcon: 'text-warning bg-warning/10 border-warning/50'        },
+    OVERTIME:     { circle: 'bg-amber-500',    ring: 'ring-amber-200',   section: 'text-amber-700',   border: 'border-warning/30',   hover: 'hover:shadow-[0_8px_28px_rgba(245,158,11,0.12)]',   sectionIcon: 'text-warning bg-warning/10 border-warning/30'        },
     ADVANCE:      { circle: 'bg-violet-500',   ring: 'ring-violet-200',  section: 'text-violet-700',  border: 'border-violet-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(139,92,246,0.12)]',   sectionIcon: 'text-violet-600 bg-violet-50 border-violet-200/50'     },
     CERTIFICATE:  { circle: 'bg-indigo-500',   ring: 'ring-indigo-200',  section: 'text-indigo-700',  border: 'border-indigo-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(99,102,241,0.12)]',   sectionIcon: 'text-indigo-600 bg-indigo-50 border-indigo-200/50'     },
-    DISABILITY:             { circle: 'bg-red-500',      ring: 'ring-red-200',      section: 'text-red-700',      border: 'border-danger/60',      hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',     sectionIcon: 'text-danger bg-danger/10 border-danger/50'              },
+    DISABILITY:             { circle: 'bg-red-500',      ring: 'ring-red-200',      section: 'text-red-700',      border: 'border-danger/30',      hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',     sectionIcon: 'text-danger bg-danger/10 border-danger/30'              },
     ANNULMENT_REQUEST:      { circle: 'bg-rose-500',     ring: 'ring-rose-200',     section: 'text-rose-700',     border: 'border-rose-200/60',     hover: 'hover:shadow-[0_8px_28px_rgba(244,63,94,0.14)]',     sectionIcon: 'text-rose-600 bg-rose-50 border-rose-200/50'           },
     PAYMENT_CHANGE_REQUEST: { circle: 'bg-sky-500',      ring: 'ring-sky-200',      section: 'text-sky-700',      border: 'border-sky-200/50',      hover: 'hover:shadow-[0_8px_28px_rgba(14,165,233,0.12)]',    sectionIcon: 'text-sky-600 bg-sky-50 border-sky-200/50'              },
     VENDOR_CHANGE_REQUEST:  { circle: 'bg-purple-500',   ring: 'ring-purple-200',   section: 'text-purple-700',   border: 'border-purple-200/50',   hover: 'hover:shadow-[0_8px_28px_rgba(168,85,247,0.12)]',    sectionIcon: 'text-purple-600 bg-purple-50 border-purple-200/50'     },
@@ -111,7 +111,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
     return (
         <div className={`rounded-[2rem] border bg-surface-card backdrop-blur-2xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
-            ${isUrgent ? 'border-red-300' : isRejected ? 'border-danger/60' : `${tc.border}`}`}>
+            ${isUrgent ? 'border-red-300' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}
             <button onClick={() => setExpanded(v => !v)}
@@ -183,7 +183,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {req.type === 'DISABILITY' && (
                         <div className="space-y-2">
                             {meta.startDate && (
-                                <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/80 border border-danger/70">
+                                <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
                                     <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-danger mb-0.5">Período</p>
@@ -201,7 +201,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <FileImage size={12} strokeWidth={2} />{meta.docName || 'Ver certificado adjunto'}
                                 </a>
                             ) : (
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-warning/70 border border-warning/60">
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-warning/10 border border-warning/30">
                                     <AlertTriangle size={11} className="text-warning flex-shrink-0" strokeWidth={2} />
                                     <p className="text-[10px] text-amber-700 font-medium">Sin certificado adjunto.</p>
                                 </div>
@@ -211,7 +211,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* VACATION */}
                     {req.type === 'VACATION' && meta.startDate && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-success/60 border border-success/50">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-success/10 border border-success/30">
                             <CalendarDays size={13} className="text-success flex-shrink-0" strokeWidth={2} />
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-success mb-0.5">Período</p>
@@ -379,7 +379,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* Rejection reason */}
                     {isRejected && req.approver_note && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-danger/80 border border-danger/70">
+                        <div className="px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
                             <p className="text-[9px] font-black uppercase tracking-widest text-danger mb-1">Motivo de rechazo</p>
                             <p className="text-[12px] text-red-800 font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
@@ -387,7 +387,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* Approval note */}
                     {!isRejected && req.approver_note && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-success/80 border border-success/60">
+                        <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30">
                             <p className="text-[9px] font-black uppercase tracking-widest text-success mb-1">Nota del aprobador</p>
                             <p className="text-[12px] text-emerald-800 font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
@@ -398,7 +398,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                         <div className="space-y-1.5">
                             <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Historial</p>
                             {req.approvals.map((ap, i) => (
-                                <div key={i} className="flex items-start gap-2 bg-success/70 border border-success/50 rounded-2xl p-2.5">
+                                <div key={i} className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-2xl p-2.5">
                                     <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />
                                     <div className="min-w-0">
                                         <p className="text-[11px] font-black text-emerald-700">{getApproverLabel(ap)}</p>
@@ -748,7 +748,7 @@ const RequestsView = () => {
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
                     <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2.5rem] shadow-[0_32px_80px_rgba(0,0,0,0.15)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-                        <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/60 shadow-[0_6px_20px_rgba(16,185,129,0.15)]' : 'bg-danger/10 border-danger/60 shadow-[0_6px_20px_rgba(239,68,68,0.15)]'}`}>
+                        <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[0_6px_20px_rgba(16,185,129,0.15)]' : 'bg-danger/10 border-danger/30 shadow-[0_6px_20px_rgba(239,68,68,0.15)]'}`}>
                             {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
                         </div>
                         <h3 className="text-[18px] font-bold text-content text-center mb-1">

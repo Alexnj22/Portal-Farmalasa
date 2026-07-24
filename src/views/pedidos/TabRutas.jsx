@@ -155,7 +155,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
               return (
                 <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                  isEntregado ? 'bg-success/70 border-success/30' : 'bg-white border-slate-200'
+                  isEntregado ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
                 }`}>
                   {/* Number */}
                   <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${

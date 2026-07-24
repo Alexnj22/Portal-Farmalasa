@@ -262,7 +262,7 @@ const EmployeeProfileView = ({ openModal }) => {
             {/* Password button */}
             <button
                 onClick={() => openModal('changeOwnPassword', {})}
-                className="w-10 h-10 rounded-full bg-warning/80 backdrop-blur-sm border border-warning/80 text-warning flex items-center justify-center hover:bg-warning/10 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shrink-0"
+                className="w-10 h-10 rounded-full bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning flex items-center justify-center hover:bg-warning/10 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shrink-0"
                 title="Cambiar contraseña"
             >
                 <KeyRound size={15} strokeWidth={2} />
@@ -281,7 +281,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     <div className="grid grid-cols-2 gap-3">
                         {[
                             { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-blue-600',  bg: 'bg-blue-50/80'  },
-                            { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-warning', bg: 'bg-warning/80' },
+                            { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-warning', bg: 'bg-warning/10' },
                         ].map(({ label, value, icon: Icon, color, bg }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
@@ -297,7 +297,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Fecha de Ingreso',    value: emp.hire_date  ? formatDate(emp.hire_date)  : '—', icon: Calendar,  color: 'text-blue-600',   bg: 'bg-blue-50/80'   },
                             { label: 'Fecha de Nacimiento', value: emp.birth_date ? formatDate(emp.birth_date) : '—', icon: Sparkles,  color: 'text-pink-500',   bg: 'bg-pink-50/80',  extra: birthdayCountdown },
                             { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-50/80' },
-                            { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/80'  },
+                            { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
@@ -310,7 +310,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                     {/* Próximas vacaciones */}
                     {nextVacation && (
-                        <div className="flex items-center gap-2.5 bg-success/80 border border-success/70 rounded-2xl px-4 py-3">
+                        <div className="flex items-center gap-2.5 bg-success/10 border border-success/30 rounded-2xl px-4 py-3">
                             <Palmtree size={14} className="text-success shrink-0" strokeWidth={1.8} />
                             <div className="min-w-0">
                                 <p className="text-[9px] font-black text-success uppercase tracking-widest">Próximas vacaciones</p>
@@ -343,7 +343,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                     {/* Emergencia */}
                     {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                        <div className="bg-danger/70 backdrop-blur-2xl border border-danger/70 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(239,68,68,0.05)] hover:shadow-[0_8px_32px_rgba(239,68,68,0.10)] hover:-translate-y-0.5 transition-all duration-300">
+                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(239,68,68,0.05)] hover:shadow-[0_8px_32px_rgba(239,68,68,0.10)] hover:-translate-y-0.5 transition-all duration-300">
                             <SectionLabel icon={HeartPulse} label="Contacto de Emergencia" color="text-danger" />
                             <div className="space-y-2">
                                 <Field label="Avisar a"            value={emp.emergency_contact_name}  icon={User} />
@@ -363,7 +363,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
                                     const isUpcoming = vp.end_date >= new Date().toISOString().split('T')[0];
                                     return (
-                                        <div key={vp.id} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200 ${isUpcoming ? 'bg-success/60 border-success/30' : 'bg-surface-card border-border-card'}`}>
+                                        <div key={vp.id} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : 'bg-surface-card border-border-card'}`}>
                                             <div className={`p-2 rounded-xl flex-shrink-0 ${isUpcoming ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
                                                 <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={1.8} />
                                             </div>

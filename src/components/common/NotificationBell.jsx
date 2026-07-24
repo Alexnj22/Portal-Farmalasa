@@ -27,16 +27,16 @@ const tintForType = (type = '', metadata = {}, isDark = false) => {
                 : 'bg-emerald-400/10 text-emerald-300 border-emerald-300/20';
         }
         if (type.startsWith('PEDIDO')) return 'bg-blue-400/10 text-blue-300 border-blue-300/20';
-        return 'bg-white/8 text-white/60 border-white/10';
+        return 'bg-surface-card text-white/60 border-border-card';
     }
-    if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-amber-50 text-amber-600 border-amber-100';
+    if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning border-warning/30';
     if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
         return metadata?.status === 'REJECTED'
-            ? 'bg-red-50 text-red-500 border-red-100'
-            : 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            ? 'bg-danger/10 text-danger border-danger/30'
+            : 'bg-success/10 text-success border-success/30';
     }
-    if (type.startsWith('PEDIDO')) return 'bg-blue-50 text-[#0052CC] border-blue-100';
-    return 'bg-slate-100 text-slate-500 border-slate-200/70';
+    if (type.startsWith('PEDIDO')) return 'bg-blue-50 text-brand border-blue-100';
+    return 'bg-surface-card-hover text-content-3 border-slate-200/70';
 };
 
 // Tipos que esperan una acción del usuario → chip con verbo específico;
@@ -65,13 +65,13 @@ const timeAgo = (iso) => {
 
 // Barra de cuenta regresiva de la ventana Deshacer (3s, lineal)
 const UndoProgress = ({ isDark }) => (
-    <div className={`absolute bottom-0 inset-x-0 h-[2px] ${isDark ? 'bg-white/10' : 'bg-slate-200/70'}`}>
+    <div className={`absolute bottom-0 inset-x-0 h-[2px] ${isDark ? 'bg-surface-card' : 'bg-surface-card-hover/70'}`}>
         <motion.div
             initial={{ scaleX: 1 }}
             animate={{ scaleX: 0 }}
             transition={{ duration: UNDO_MS / 1000, ease: 'linear' }}
             style={{ transformOrigin: 'left' }}
-            className="h-full bg-[#0052CC]"
+            className="h-full bg-brand"
         />
     </div>
 );
@@ -268,8 +268,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         rowTitle: 'text-white/90', rowTitleRead: 'text-white/60',
         rowBody: 'text-white/50',
         rowTime: 'text-white/40',
-        iconBtn: 'text-white/45 hover:text-white/90 hover:bg-white/10',
-        emptyIconBox: 'bg-white/[0.06] border-white/10 text-white/40',
+        iconBtn: 'text-white/45 hover:text-white/90 hover:bg-surface-card',
+        emptyIconBox: 'bg-white/[0.06] border-border-card text-white/40',
         emptyTitle: 'text-white/80', emptySub: 'text-white/45',
         chipMuted: 'text-white/40',
         undoStrip: 'bg-white/[0.05]',
@@ -277,19 +277,19 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         undoBtn: 'text-blue-300 hover:bg-blue-400/10 border-blue-300/25',
     } : {
         headerBorder: 'border-slate-200/60',
-        title: 'text-slate-800',
-        rowHover: 'hover:bg-white/70',
+        title: 'text-content',
+        rowHover: 'hover:bg-surface-card',
         rowUnread: 'bg-blue-50/50',
-        rowTitle: 'text-slate-800', rowTitleRead: 'text-slate-600',
-        rowBody: 'text-slate-500',
-        rowTime: 'text-slate-500',
-        iconBtn: 'text-slate-500 hover:text-slate-700 hover:bg-white/80',
-        emptyIconBox: 'bg-white/80 border-white text-[#0052CC]/50',
-        emptyTitle: 'text-slate-700', emptySub: 'text-slate-500',
-        chipMuted: 'text-slate-500',
-        undoStrip: 'bg-slate-50/80',
-        undoText: 'text-slate-600',
-        undoBtn: 'text-[#0052CC] hover:bg-blue-50 border-blue-200/70',
+        rowTitle: 'text-content', rowTitleRead: 'text-content-2',
+        rowBody: 'text-content-3',
+        rowTime: 'text-content-3',
+        iconBtn: 'text-content-3 hover:text-content-2 hover:bg-surface-card',
+        emptyIconBox: 'bg-surface-card border-white text-brand/50',
+        emptyTitle: 'text-content-2', emptySub: 'text-content-3',
+        chipMuted: 'text-content-3',
+        undoStrip: 'bg-surface-card-hover/80',
+        undoText: 'text-content-2',
+        undoBtn: 'text-brand hover:bg-blue-50 border-blue-200/70',
     };
 
     const undoButton = (key, label = 'Deshacer') => (
@@ -305,7 +305,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     return (
         <div ref={rootRef} className="relative">
             {isDesktop && totalBadge > 0 && (
-                <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none ${hasUrgentAnn ? 'bg-red-500/30' : 'bg-[#0052CC]/20'}`} />
+                <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none ${hasUrgentAnn ? 'bg-red-500/30' : 'bg-brand/20'}`} />
             )}
 
             {/* ── Botón campana ── */}
@@ -320,17 +320,17 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                            ${hasUrgentAnn ? 'bg-red-400/15 border-red-300/30' : 'bg-white/[0.08] border-white/[0.14] hover:bg-white/[0.14]'}`
                         : `shadow-[0_8px_32px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.06)]
                            ${hasUrgentAnn
-                               ? 'bg-red-50/90 border-red-300/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
-                               : 'bg-white/75 border-blue-200/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
+                               ? 'bg-danger/10 border-red-300/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
+                               : 'bg-surface-card border-blue-200/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
             >
                 {!isDark && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-[1.25rem] pointer-events-none" />}
                 {totalBadge > 0 ? (
                     <BellRing size={18} strokeWidth={2}
                         className={`relative z-10 transition-colors
-                            ${hasUrgentAnn ? (isDark ? 'text-red-300 animate-wiggle' : 'text-red-500 animate-wiggle') : (isDark ? 'text-blue-300' : 'text-[#0052CC]')}
+                            ${hasUrgentAnn ? (isDark ? 'text-red-300 animate-wiggle' : 'text-danger animate-wiggle') : (isDark ? 'text-blue-300' : 'text-brand')}
                             ${justRang && !hasUrgentAnn ? 'animate-wiggle' : ''}`} />
                 ) : (
-                    <Bell size={18} strokeWidth={2} className={`relative z-10 ${isDark ? 'text-white/45' : 'text-slate-400'}`} />
+                    <Bell size={18} strokeWidth={2} className={`relative z-10 ${isDark ? 'text-white/45' : 'text-content-3'}`} />
                 )}
                 {totalBadge > 0 && (
                     <>
@@ -357,7 +357,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         <div data-surface="dropdown" className="overflow-hidden transform-gpu">
                             {/* Shimmer superior */}
                             <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
-                                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-[#0052CC]/40 to-transparent animate-shimmer" style={{ animationDuration: '4s' }} />
+                                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-brand/40 to-transparent animate-shimmer" style={{ animationDuration: '4s' }} />
                             </div>
 
                             {/* ── Header ── */}
@@ -375,7 +375,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <button
                                             onClick={() => markAllNotificationsRead()}
                                             title="Marcar todas como leídas"
-                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-blue-300 hover:bg-blue-400/10' : 'text-[#0052CC] hover:bg-blue-50'}`}
+                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-blue-300 hover:bg-blue-400/10' : 'text-brand hover:bg-blue-50'}`}
                                         >
                                             <CheckCheck size={13} strokeWidth={2.5} />
                                             Leídas
@@ -394,7 +394,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                             <button
                                                 onClick={handleClearAll}
                                                 title="Borrar todas"
-                                                className={`p-1.5 rounded-xl transition-colors ${isDark ? 'text-white/40 hover:text-red-300 hover:bg-red-400/10' : 'text-slate-500 hover:text-red-500 hover:bg-red-50'}`}
+                                                className={`p-1.5 rounded-xl transition-colors ${isDark ? 'text-white/40 hover:text-red-300 hover:bg-red-400/10' : 'text-content-3 hover:text-danger hover:bg-danger/10'}`}
                                             >
                                                 <Trash2 size={14} strokeWidth={2} />
                                             </button>
@@ -420,22 +420,22 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     onClick={() => { setIsOpen(false); navigate('/my-announcements'); }}
                                     className={`w-full flex items-center gap-3 px-5 py-3 text-left border-b transition-colors group/ann
                                         ${hasUrgentAnn
-                                            ? (isDark ? 'bg-red-400/[0.08] border-red-300/15 hover:bg-red-400/[0.14]' : 'bg-red-50/70 border-red-100 hover:bg-red-50')
+                                            ? (isDark ? 'bg-red-400/[0.08] border-red-300/15 hover:bg-red-400/[0.14]' : 'bg-danger/10 border-danger/30 hover:bg-danger/10')
                                             : (isDark ? 'bg-blue-400/[0.06] border-blue-300/10 hover:bg-blue-400/[0.12]' : 'bg-blue-50/50 border-blue-100/60 hover:bg-blue-50')}`}
                                 >
                                     <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0
                                         ${hasUrgentAnn
-                                            ? (isDark ? 'bg-red-400/10 text-red-300 border-red-300/20' : 'bg-red-100 text-red-500 border-red-200')
-                                            : (isDark ? 'bg-blue-400/10 text-blue-300 border-blue-300/20' : 'bg-blue-100/70 text-[#0052CC] border-blue-200/70')}`}>
+                                            ? (isDark ? 'bg-red-400/10 text-red-300 border-red-300/20' : 'bg-danger/10 text-danger border-danger/30')
+                                            : (isDark ? 'bg-blue-400/10 text-blue-300 border-blue-300/20' : 'bg-blue-100/70 text-brand border-blue-200/70')}`}>
                                         <Megaphone size={16} strokeWidth={2} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-[13px] font-bold leading-tight ${hasUrgentAnn ? (isDark ? 'text-red-300' : 'text-red-600') : cx.rowTitle}`}>
+                                        <p className={`text-[13px] font-bold leading-tight ${hasUrgentAnn ? (isDark ? 'text-red-300' : 'text-danger') : cx.rowTitle}`}>
                                             {annUnread} aviso{annUnread > 1 ? 's' : ''} sin leer{hasUrgentAnn ? ' · URGENTE' : ''}
                                         </p>
                                         <p className={`text-[11px] font-medium mt-0.5 ${cx.rowBody}`}>Comunicados de la empresa</p>
                                     </div>
-                                    <ChevronRight size={16} className={`flex-shrink-0 transition-transform group-hover/ann:translate-x-0.5 ${isDark ? 'text-white/40' : 'text-slate-500'}`} />
+                                    <ChevronRight size={16} className={`flex-shrink-0 transition-transform group-hover/ann:translate-x-0.5 ${isDark ? 'text-white/40' : 'text-content-3'}`} />
                                 </button>
                             )}
 
@@ -443,7 +443,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                             <div className="max-h-[min(60vh,440px)] overflow-y-auto overscroll-contain scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                 {notifications.length === 0 ? (
                                     <div className="relative flex flex-col items-center justify-center py-12 px-6 text-center">
-                                        <div className="absolute w-28 h-28 rounded-full bg-[#0052CC]/10 blur-2xl" />
+                                        <div className="absolute w-28 h-28 rounded-full bg-brand/10 blur-2xl" />
                                         <div className={`relative w-14 h-14 rounded-[1.25rem] border shadow-[0_8px_24px_rgba(0,82,204,0.10),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center mb-4 ${cx.emptyIconBox}`}>
                                             <Bell size={22} strokeWidth={1.5} />
                                         </div>
@@ -510,21 +510,21 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     <span className={`text-[10px] font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
                                                                     {actionLabel && (
                                                                         <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5
-                                                                            ${unread ? (isDark ? 'text-blue-300' : 'text-[#0052CC]') : cx.chipMuted}`}>
+                                                                            ${unread ? (isDark ? 'text-blue-300' : 'text-brand') : cx.chipMuted}`}>
                                                                             {actionLabel}
                                                                             <ArrowRight size={10} strokeWidth={3} />
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            {unread && <span className="w-2 h-2 rounded-full bg-[#0052CC] flex-shrink-0 mt-2 shadow-[0_0_6px_rgba(0,82,204,0.6)]" />}
+                                                            {unread && <span className="w-2 h-2 rounded-full bg-brand flex-shrink-0 mt-2 shadow-[0_0_6px_rgba(0,82,204,0.6)]" />}
                                                         </button>
                                                         {/* Borrar individual — visible al hover en desktop, siempre tenue en touch */}
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }}
                                                             title="Borrar"
                                                             aria-label="Borrar notificación"
-                                                            className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg transition-all opacity-60 lg:opacity-0 lg:group-hover:opacity-100 ${cx.iconBtn} hover:!text-red-500`}
+                                                            className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg transition-all opacity-60 lg:opacity-0 lg:group-hover:opacity-100 ${cx.iconBtn} hover:!text-danger`}
                                                         >
                                                             <X size={13} strokeWidth={2.5} />
                                                         </button>

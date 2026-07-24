@@ -232,8 +232,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Abandono', label: 'Abandono de Trabajo' }
     ];
 
-    const inputClasses = "w-full bg-white/50 border border-white/80 rounded-[1rem] h-[40px] px-4 text-[16px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400";
-    const labelClasses = "text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block";
+    const inputClasses = "w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 text-[16px] font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3";
+    const labelClasses = "text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10 w-full pb-8">
@@ -255,10 +255,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {/* ALERTAS VISUALES CONTEXTUALES */}
             {isTermination && (
-                <div className="bg-red-50/80 border border-red-200 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
-                    <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
+                <div className="bg-danger/10 border border-danger/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
+                    <AlertTriangle className="text-danger shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-red-600">Alerta de Desvinculación</p>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-danger">Alerta de Desvinculación</p>
                         <p className="text-[12px] text-red-800/80 font-medium leading-tight mt-1">Esta acción cambiará el estado del empleado a <b>INACTIVO</b> y le revocará accesos al sistema.</p>
                     </div>
                 </div>
@@ -266,7 +266,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             
             {isTransfer && !isPromotion && !isSupport && (
                 <div className="bg-blue-50/80 border border-blue-200 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
-                    <MapPin className="text-[#0052CC] shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
+                    <MapPin className="text-brand shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-blue-600">Cambio de Sucursal</p>
                         <p className="text-[12px] text-blue-800/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
@@ -286,14 +286,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {/* 🚨 ALERTA ROJA DE HEADCOUNT (Bloqueante) */}
             {headcountWarning && (
-                <div className="bg-red-50 border border-red-300 p-4 rounded-[1.5rem] flex gap-3 items-start animate-in zoom-in-95 shadow-[0_4px_15px_rgba(239,68,68,0.15)]">
-                    <AlertTriangle className="text-red-500 shrink-0 mt-0.5 animate-pulse" size={18}/>
+                <div className="bg-danger/10 border border-red-300 p-4 rounded-[1.5rem] flex gap-3 items-start animate-in zoom-in-95 shadow-[0_4px_15px_rgba(239,68,68,0.15)]">
+                    <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-red-700">Límite de Organigrama Excedido</p>
                         <p className="text-[12px] font-medium text-red-800 mt-1 leading-snug">
                             No puedes asignar este cargo. El puesto de <b>{headcountWarning.role}</b> tiene un límite estricto de {headcountWarning.limit} por {headcountWarning.scope === 'GLOBAL' ? 'empresa' : 'sucursal'}.
                         </p>
-                        <div className="mt-2 pt-2 border-t border-red-200 text-[11px] text-red-700 font-bold">
+                        <div className="mt-2 pt-2 border-t border-danger/30 text-[11px] text-red-700 font-bold">
                             Actualmente ocupado por: <span className="underline">{headcountWarning.occupants.map(o => o.name).join(', ')}</span>
                         </div>
                     </div>
@@ -324,10 +324,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {(isVacation || (isDisability && formData?.disabilityType === 'Maternidad')) && (
-                <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-red-50/90 border-red-300 shadow-[0_4px_15px_rgba(239,68,68,0.15)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-orange-50/90 border-orange-300 shadow-[0_4px_15px_rgba(249,115,22,0.15)]' : 'bg-emerald-50/80 border-emerald-200'}`}>
-                    {getHolidayInfo ? <AlertTriangle className="text-red-500 shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-orange-500 shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={18}/>}
+                <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-danger/10 border-red-300 shadow-[0_4px_15px_rgba(239,68,68,0.15)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-orange-50/90 border-orange-300 shadow-[0_4px_15px_rgba(249,115,22,0.15)]' : 'bg-success/10 border-success/30'}`}>
+                    {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-orange-500 shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-success shrink-0 mt-0.5" size={18}/>}
                     <div>
-                        <p className={`text-[11px] font-black uppercase tracking-widest ${getHolidayInfo ? 'text-red-600' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-orange-600' : 'text-emerald-600'}`}>Auditoría Legal</p>
+                        <p className={`text-[11px] font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-orange-600' : 'text-success'}`}>Auditoría Legal</p>
                         <p className={`text-[12px] font-medium leading-tight mt-1 ${getHolidayInfo ? 'text-red-800' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-orange-800' : 'text-emerald-800'}`}>
                             {getHolidayInfo ? <b>¡Día Inhábile: {getHolidayInfo.name}!</b> : <b>Días calculados: {periodDaysCount}.</b>}
                             {getHolidayInfo ? " La ley prohíbe iniciar este tipo de licencia en asueto." : 
@@ -340,7 +340,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {/* 🚨 ISLA DE FECHAS (Liquid Glass) */}
-            {type && <div className="bg-white/60 backdrop-blur-md p-5 rounded-[1.5rem] border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
+            {type && <div className="bg-surface-card backdrop-blur-md p-5 rounded-[1.5rem] border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
                 
                 {/* SI ES VACACIONES — RangeDatePicker estilo booking */}
                 {isVacation ? (
@@ -395,17 +395,17 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
                         </div>
                         
-                        <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 min-h-[80px]">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
+                        <div className="bg-surface-card-hover/50 rounded-2xl p-4 border border-slate-100 min-h-[80px]">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
                             <div className="flex flex-wrap gap-2">
                                 {formData?.permissionDates?.map((date, idx) => (
                                     <span key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-black shadow-sm animate-in zoom-in-95">
                                         {date} 
-                                        <button type="button" onClick={() => handleRemovePermissionDate(date)} className="text-blue-400 hover:text-red-500 transition-colors"><XCircle size={14} strokeWidth={2.5}/></button>
+                                        <button type="button" onClick={() => handleRemovePermissionDate(date)} className="text-blue-400 hover:text-danger transition-colors"><XCircle size={14} strokeWidth={2.5}/></button>
                                     </span>
                                 ))}
                                 {(!formData?.permissionDates || formData?.permissionDates.length === 0) && (
-                                    <span className="text-[11px] font-medium text-slate-500 italic">No hay fechas agregadas.</span>
+                                    <span className="text-[11px] font-medium text-content-3 italic">No hay fechas agregadas.</span>
                                 )}
                             </div>
                         </div>
@@ -472,15 +472,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                                 : '';
                                             setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
                                         }}
-                                        className="w-full bg-white/60 border border-white/80 rounded-[1rem] h-[40px] px-4 pr-12 text-[16px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                                        className="w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 pr-12 text-[16px] font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                                         placeholder="Ej: 3"
                                     />
-                                    <span className="absolute right-4 text-slate-600 text-[11px] font-black uppercase tracking-widest">días</span>
+                                    <span className="absolute right-4 text-content-2 text-[11px] font-black uppercase tracking-widest">días</span>
                                 </div>
                                 {formData?.endDate && formData?.disabilityDays > 0 && (() => {
                                     const retorno = new Date(formData.endDate + 'T12:00:00');
                                     retorno.setDate(retorno.getDate() + 1);
-                                    return <p className="text-[10px] text-slate-500 font-bold px-1 mt-1">Regresa el {formatDate(retorno.toISOString().split('T')[0])}</p>;
+                                    return <p className="text-[10px] text-content-3 font-bold px-1 mt-1">Regresa el {formatDate(retorno.toISOString().split('T')[0])}</p>;
                                 })()}
                             </div>
                         )}
@@ -494,8 +494,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="flex items-center justify-between mb-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-blue-600">Nuevo Cargo Asignado</label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">¿Cambia de sucursal?</span>
-                                <input type="checkbox" className="accent-[#0052CC] w-4 h-4 cursor-pointer" checked={formData?.isTransferAndPromotion || false} onChange={(e) => setFormData(prev => ({...prev, isTransferAndPromotion: e.target.checked}))} />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-content-3">¿Cambia de sucursal?</span>
+                                <input type="checkbox" className="accent-brand w-4 h-4 cursor-pointer" checked={formData?.isTransferAndPromotion || false} onChange={(e) => setFormData(prev => ({...prev, isTransferAndPromotion: e.target.checked}))} />
                             </label>
                         </div>
                         <div className="h-[40px]">
@@ -517,37 +517,37 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <div className="col-span-1 md:col-span-2 animate-in fade-in">
                         <label className={labelClasses}>N° Boleta ISSS / Médico</label>
                         <div className="relative">
-                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} strokeWidth={2.5}/>
+                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-content-3" size={14} strokeWidth={2.5}/>
                             <input type="text" placeholder="Ej. B-12345678" className={`${inputClasses} pl-9 uppercase`} value={formData?.certificateNumber || ''} onChange={(e) => setFormData(prev => ({ ...prev, certificateNumber: e.target.value }))} />
                         </div>
                     </div>
                 )}
 
                 {isTermination && (
-                    <div className="col-span-1 md:col-span-2 relative z-[20] animate-in fade-in bg-red-50/50 p-4 border border-red-100 rounded-[1.5rem]">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-red-500 ml-1 mb-1.5 block">Motivo Legal de Baja</label>
+                    <div className="col-span-1 md:col-span-2 relative z-[20] animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-[1.5rem]">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-danger ml-1 mb-1.5 block">Motivo Legal de Baja</label>
                         <div className="h-[40px] mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>
-                        <label className="flex items-center gap-2 cursor-pointer mt-2 bg-white/80 p-3 rounded-xl border border-red-100/50 shadow-sm transition-all hover:bg-white">
+                        <label className="flex items-center gap-2 cursor-pointer mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-white">
                             <input type="checkbox" className="accent-red-500 w-4 h-4 cursor-pointer" checked={formData?.hasFiniquito || false} onChange={(e) => setFormData(prev => ({...prev, hasFiniquito: e.target.checked}))} />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">¿Entregó y Firmó Finiquito Laboral?</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>
                         </label>
                     </div>
                 )}
 
                 {isCodeChange && (
-                    <div className="col-span-1 md:col-span-2 animate-in fade-in bg-white/60 p-5 border border-white/90 rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+                    <div className="col-span-1 md:col-span-2 animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className={labelClasses}>Código Actual</label>
-                                <div className="h-[40px] bg-slate-100/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-slate-500 line-through decoration-slate-300 opacity-60">
+                                <div className="h-[40px] bg-surface-card-hover/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-content-3 line-through decoration-slate-300 opacity-60">
                                     {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
                                 </div>
                             </div>
 
                             <div className="flex items-center justify-center pt-5 px-1">
-                                <div className="p-2 bg-[#0052CC]/10 text-[#0052CC] rounded-full shadow-sm">
+                                <div className="p-2 bg-brand/10 text-brand rounded-full shadow-sm">
                                     <ArrowRight size={16} strokeWidth={3} />
                                 </div>
                             </div>
@@ -555,8 +555,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <div className="flex-1">
                                 <label className={labelClasses}>Nuevo Código</label>
                                 <div className="relative">
-                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0052CC]/50" size={14} strokeWidth={2.5}/>
-                                    <input type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#0052CC] text-center focus:!ring-[#0052CC]/20`} value={formData?.newCode || ''} onChange={(e) => {
+                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-brand/50" size={14} strokeWidth={2.5}/>
+                                    <input type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-brand text-center focus:!ring-brand/20`} value={formData?.newCode || ''} onChange={(e) => {
                                         // El código es SOLO numérico (regla de negocio + trigger en BD)
                                         const cleanVal = e.target.value.replace(/\D/g, '');
                                         setFormData(prev => ({ ...prev, newCode: cleanVal }));
@@ -578,9 +578,9 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         </div>
 
                         {codeConflict && (
-                            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-red-50 border border-red-200 rounded-2xl">
-                                <AlertCircle size={14} className="text-red-500 shrink-0" />
-                                <p className="text-[11px] font-bold text-red-600">
+                            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-danger/10 border border-danger/30 rounded-2xl">
+                                <AlertCircle size={14} className="text-danger shrink-0" />
+                                <p className="text-[11px] font-bold text-danger">
                                     El código ya está en uso por <b>{codeConflict.name}</b>. Elige otro código.
                                 </p>
                             </div>
@@ -634,20 +634,20 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     const newSalary = parseFloat(formData?.newSalary);
                     const diff = currentSalary && newSalary ? newSalary - parseFloat(currentSalary) : null;
                     return (
-                        <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-white/60 p-5 border border-white/90 rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] space-y-4">
+                        <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] space-y-4">
                             {/* Contexto actual */}
                             <div className="grid grid-cols-3 gap-3">
-                                <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Salario Actual</p>
-                                    <p className="text-[15px] font-black text-slate-700">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
+                                <div className="bg-surface-card-hover/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Salario Actual</p>
+                                    <p className="text-[15px] font-black text-content-2">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
                                 </div>
-                                <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Cargo</p>
-                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{currentRole}</p>
+                                <div className="bg-surface-card-hover/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Cargo</p>
+                                    <p className="text-[11px] font-black text-content-2 leading-tight">{currentRole}</p>
                                 </div>
-                                <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Antigüedad</p>
-                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{tenure}</p>
+                                <div className="bg-surface-card-hover/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Antigüedad</p>
+                                    <p className="text-[11px] font-black text-content-2 leading-tight">{tenure}</p>
                                 </div>
                             </div>
                             {/* Nuevo salario */}
@@ -655,11 +655,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <label className={labelClasses}>Nuevo Salario Base Mensual</label>
                                 <div className="flex items-center gap-3">
                                     <div className="relative flex-1 max-w-xs">
-                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" size={16} strokeWidth={3}/>
-                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-white border border-emerald-100 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-emerald-700 outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-success" size={16} strokeWidth={3}/>
+                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-white border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-emerald-700 outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
                                     </div>
                                     {diff !== null && !isNaN(diff) && (
-                                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-black ${diff > 0 ? 'bg-emerald-100 text-emerald-700' : diff < 0 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
+                                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-black ${diff > 0 ? 'bg-success/10 text-emerald-700' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
                                             {diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {diff > 0 ? '+' : ''}${diff.toFixed(2)}
                                         </div>
                                     )}
@@ -675,21 +675,21 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <div>
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
-                            <FileText className="absolute left-3 top-3 text-slate-400" size={14} strokeWidth={2.5}/>
-                            <textarea rows="3" className="w-full bg-white/50 border border-white/80 rounded-[1.25rem] p-3 pl-9 text-[16px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+                            <FileText className="absolute left-3 top-3 text-content-3" size={14} strokeWidth={2.5}/>
+                            <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-[1.25rem] p-3 pl-9 text-[16px] font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
                         </div>
                     </div>
 
                     <div>
                         <label className={labelClasses}>Soporte Digital {isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}</label>
-                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-300/60 bg-white/40 hover:bg-white/70 hover:border-[#0052CC]/50'}`}>
+                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-emerald-400 bg-success/10' : 'border-slate-300/60 bg-surface-card hover:bg-surface-card hover:border-brand/50'}`}>
                             {formData?.file ? (
-                                <div className="flex flex-col items-center gap-1 text-emerald-600 animate-in zoom-in-95">
-                                    <div className="p-2 bg-emerald-100 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>
+                                <div className="flex flex-col items-center gap-1 text-success animate-in zoom-in-95">
+                                    <div className="p-2 bg-success/10 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>
                                     <p className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-[#0052CC] transition-colors">
+                                <div className="flex flex-col items-center gap-2 text-content-3 group-hover:text-brand transition-colors">
                                     <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
                                     <div className="text-center">
                                         <p className="text-[12px] font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>
@@ -698,7 +698,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 </div>
                             )}
                             {formData?.file && (
-                                <div className="absolute top-2 right-2 p-1.5 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white rounded-full transition-colors z-20" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
+                                <div className="absolute top-2 right-2 p-1.5 bg-danger/10 text-danger hover:bg-red-500 hover:text-white rounded-full transition-colors z-20" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
                                     <XCircle size={14} strokeWidth={3}/>
                                 </div>
                             )}

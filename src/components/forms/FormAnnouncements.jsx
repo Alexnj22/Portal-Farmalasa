@@ -10,12 +10,12 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.max(1, p - 1))}
         disabled={currentPage === 1}
-        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronLeft size={16} strokeWidth={2.5} />
       </button>
-      <div className="px-3 py-1 bg-white/40 border border-white/60 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+      <div className="px-3 py-1 bg-surface-card border border-border-card rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+          <span className="text-[10px] font-black text-content-3 uppercase tracking-widest">
           Pág {currentPage} de {totalPages}
           </span>
       </div>
@@ -23,7 +23,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
         disabled={currentPage === totalPages}
-        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronRight size={16} strokeWidth={2.5} />
       </button>
@@ -34,7 +34,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
 // 4. Componente de Avatar (Squircle con Imagen o Inicial)
 const EmployeeAvatar = ({ photoUrl, name, fallbackColor = 'bg-emerald-500' }) => {
   return (
-    <div className={`w-10 h-10 rounded-[0.8rem] flex items-center justify-center shrink-0 border border-white/20 transition-all overflow-hidden ${photoUrl ? '' : fallbackColor}`}>
+    <div className={`w-10 h-10 rounded-[0.8rem] flex items-center justify-center shrink-0 border border-border-card transition-all overflow-hidden ${photoUrl ? '' : fallbackColor}`}>
       {photoUrl ? (
         <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
       ) : (
@@ -77,15 +77,15 @@ const FormAnnouncements = ({ data }) => {
       
       {/* HEADER DEL REPORTE */}
       <div className="mb-5 pr-8 flex items-center gap-4 shrink-0">
-        <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 text-[#0052CC]">
+        <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-surface-card text-brand">
             <Eye size={22} strokeWidth={2.5} />
         </div>
         
         <div className="flex-1 min-w-0">
-            <h3 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-none truncate mb-1 drop-shadow-sm">
+            <h3 className="text-xl md:text-2xl font-black text-content tracking-tight leading-none truncate mb-1 drop-shadow-sm">
                 {readersModal.title || 'Sin Título'}
             </h3>
-            <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+            <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">
                 Reporte de Lecturas
             </p>
         </div>
@@ -93,11 +93,11 @@ const FormAnnouncements = ({ data }) => {
 
       {/* CONTENIDO DEL MENSAJE */}
       {(readersModal.content || readersModal.message || readersModal.body) && (
-        <div className="mb-8 shrink-0 relative overflow-hidden bg-white/40 backdrop-blur-sm rounded-[1rem] border border-white/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#0052CC]/40"></div>
+        <div className="mb-8 shrink-0 relative overflow-hidden bg-surface-card backdrop-blur-sm rounded-[1rem] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand/40"></div>
             <div className="p-4 md:px-5 md:py-4">
                 {/* 🚨 SCROLL OCULTO EN EL TEXTO DEL MENSAJE */}
-                <p className="text-[11px] md:text-[12px] text-slate-600 font-medium leading-relaxed max-h-[4.5rem] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-2">
+                <p className="text-[11px] md:text-[12px] text-content-2 font-medium leading-relaxed max-h-[4.5rem] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-2">
                     {readersModal.content || readersModal.message || readersModal.body}
                 </p>
             </div>
@@ -115,13 +115,13 @@ const FormAnnouncements = ({ data }) => {
           <button 
             type="button"
             onClick={() => setIsConfirmedOpen(!isConfirmedOpen)}
-            className="w-full flex items-center justify-between text-[10px] md:text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-4 border-b border-emerald-100 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
+            className="w-full flex items-center justify-between text-[10px] md:text-[11px] font-black text-success uppercase tracking-widest mb-4 border-b border-success/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} strokeWidth={2.5}/> 
               Confirmados ({confirmedList.length})
             </div>
-            <div className={`p-1 rounded-md transition-all duration-300 ${isConfirmedOpen ? 'bg-emerald-50 text-emerald-600' : 'bg-transparent text-emerald-400 group-hover:bg-emerald-50'}`}>
+            <div className={`p-1 rounded-md transition-all duration-300 ${isConfirmedOpen ? 'bg-success/10 text-success' : 'bg-transparent text-success group-hover:bg-success/10'}`}>
               <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isConfirmedOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>
@@ -135,14 +135,14 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedConfirmed.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-white/70 rounded-[1.25rem] border border-white shadow-[0_2px_10px_rgba(0,0,0,0.03)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
+                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-white shadow-[0_2px_10px_rgba(0,0,0,0.03)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-emerald-500 shadow-[0_4px_12px_rgba(16,185,129,0.4)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-black text-slate-800 truncate">
+                            <p className="text-[12px] font-black text-content truncate">
                               {emp.name}
                             </p>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
+                            <p className="text-[9px] text-content-3 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
                           </div>
                         </div>
                       ))}
@@ -150,8 +150,8 @@ const FormAnnouncements = ({ data }) => {
                   <PaginationControls currentPage={confirmedPage} totalPages={totalConfirmedPages} setPage={setConfirmedPage} />
                 </div>
               ) : (
-                <div className="p-5 bg-white/60 rounded-[1.25rem] border border-white/80 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                  <p className="text-[12px] text-slate-500 font-bold flex items-center justify-center gap-2">
+                <div className="p-5 bg-surface-card rounded-[1.25rem] border border-border-card text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+                  <p className="text-[12px] text-content-3 font-bold flex items-center justify-center gap-2">
                     Nadie ha abierto este aviso todavía <span className="text-lg">🫣</span>
                   </p>
                 </div>
@@ -168,13 +168,13 @@ const FormAnnouncements = ({ data }) => {
           <button 
             type="button"
             onClick={() => setIsPendingOpen(!isPendingOpen)}
-            className="w-full flex items-center justify-between text-[10px] md:text-[11px] font-black text-amber-500 uppercase tracking-widest mb-4 border-b border-amber-100 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
+            className="w-full flex items-center justify-between text-[10px] md:text-[11px] font-black text-warning uppercase tracking-widest mb-4 border-b border-warning/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
           >
             <div className="flex items-center gap-2">
               <AlertCircle size={16} strokeWidth={2.5}/> 
               Pendientes ({pendingList.length})
             </div>
-            <div className={`p-1 rounded-md transition-all duration-300 ${isPendingOpen ? 'bg-amber-50 text-amber-600' : 'bg-transparent text-amber-400 group-hover:bg-amber-50'}`}>
+            <div className={`p-1 rounded-md transition-all duration-300 ${isPendingOpen ? 'bg-warning/10 text-warning' : 'bg-transparent text-warning group-hover:bg-warning/10'}`}>
               <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isPendingOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>
@@ -188,14 +188,14 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedPending.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-white/40 rounded-[1.25rem] border border-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-white/60 group"
+                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-surface-card group"
                         >
-                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-slate-100 text-slate-500 group-hover:text-slate-600 transition-colors" />
+                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                            <p className="text-[12px] font-bold text-slate-600 truncate transition-colors group-hover:text-slate-800">
+                            <p className="text-[12px] font-bold text-content-2 truncate transition-colors group-hover:text-content">
                               {emp.name}
                             </p>
-                            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
+                            <p className="text-[9px] text-content-2 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
                           </div>
                         </div>
                       ))}

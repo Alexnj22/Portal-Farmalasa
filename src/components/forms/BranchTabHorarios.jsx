@@ -13,19 +13,19 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
     
     if (open) {
         if (isInvalid) {
-            cardClass += "bg-red-50/80 border border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.05),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(239,68,68,0.15),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-red-50";
+            cardClass += "bg-danger/10 border border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.05),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(239,68,68,0.15),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-danger/10";
         } else {
-            cardClass += "bg-white/80 border border-white shadow-[0_4px_15px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,82,204,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:border-[#0052CC]/30";
+            cardClass += "bg-surface-card border border-white shadow-[0_4px_15px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,82,204,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:border-brand/30";
         }
     } else {
-        cardClass += "bg-slate-50/40 border border-white/50 opacity-80 hover:opacity-100 hover:bg-white/60 hover:shadow-sm";
+        cardClass += "bg-surface-card-hover/40 border border-border-card opacity-80 hover:opacity-100 hover:bg-surface-card hover:shadow-sm";
     }
 
     return (
         <div className={cardClass}>
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-red-600' : 'text-[#0052CC]') : 'text-slate-600 group-hover:text-slate-600'}`}>
+                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-danger' : 'text-brand') : 'text-content-2 group-hover:text-content-2'}`}>
                         {day.name}
                     </p>
                     
@@ -33,7 +33,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <button
                             type="button"
                             onClick={() => copyPreviousDay(index)}
-                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-red-400 hover:text-red-600 hover:bg-red-100/50' : 'text-[#0052CC]/60 hover:text-[#0052CC] hover:bg-[#0052CC]/10'}`}
+                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-danger hover:text-danger hover:bg-danger/10' : 'text-brand/60 hover:text-brand hover:bg-brand/10'}`}
                             title={`Copiar horario de ${WEEK_DAYS[index - 1].name}`}
                         >
                             <CopyPlus size={13} strokeWidth={2.5}/>
@@ -46,10 +46,10 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
             {open ? (
                 <div className="grid grid-cols-2 gap-3 relative">
                     <div>
-                        <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-red-500' : 'text-slate-500'}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-danger' : 'text-content-3'}`}>
                             Apertura
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-[#0052CC]/10 bg-white">
+                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-white">
                             <TimePicker12
                                 value={d.start || ""}
                                 defaultMeridiem="AM"
@@ -59,10 +59,10 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </div>
 
                     <div>
-                        <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-red-500' : 'text-slate-500'}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-danger' : 'text-content-3'}`}>
                             Cierre
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-[#0052CC]/10 bg-white">
+                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-white">
                             <TimePicker12
                                 value={d.end || ""}
                                 defaultMeridiem="PM"
@@ -72,8 +72,8 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </div>
                 </div>
             ) : (
-                <div className="py-3.5 text-center rounded-[1rem] bg-slate-100/50 border border-slate-200/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-colors duration-300 group-hover:bg-slate-100">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 transition-colors duration-300 group-hover:text-slate-500">
+                <div className="py-3.5 text-center rounded-[1rem] bg-surface-card-hover/50 border border-slate-200/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-colors duration-300 group-hover:bg-surface-card-hover">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-300 group-hover:text-content-3">
                         Cerrado
                     </p>
                 </div>
@@ -85,8 +85,8 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
 // Componente Principal
 const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
 
-    const islandClass = "bg-white/60 rounded-[1.5rem] p-4 md:p-5 border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-white/80";
+    const islandClass = "bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-surface-card";
 
     return (
         <div className="w-full">
@@ -94,12 +94,12 @@ const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
                 
                 {/* ENCABEZADO PRO */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2 bg-[#0052CC]/10 text-[#0052CC] rounded-[0.8rem] border border-[#0052CC]/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-brand/10 text-brand rounded-[0.8rem] border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Clock size={16} strokeWidth={2.5} />
                     </div>
                     <div className="flex flex-col">
-                        <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800 leading-none">Definición de Horarios</h4>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configura la apertura y cierre por día</p>
+                        <h4 className="text-[12px] font-black uppercase tracking-widest text-content leading-none">Definición de Horarios</h4>
+                        <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mt-1">Configura la apertura y cierre por día</p>
                     </div>
                 </div>
                 

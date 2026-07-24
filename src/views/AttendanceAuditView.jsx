@@ -394,7 +394,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
           </div>
 
           {isDemoMode && (
-            <div className="bg-warning/80 border border-warning/60 rounded-2xl px-4 py-2.5">
+            <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
               <p className="text-[10px] text-warning font-bold text-center">Modo demo — cambios simulados, no se guardan en DB</p>
             </div>
           )}
@@ -635,7 +635,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
           {/* Inconsistencies */}
           {inconsistencies.length > 0 && (
-            <div className="bg-danger/70 border border-danger/80 rounded-xl px-3 py-2 flex flex-wrap gap-2">
+            <div className="bg-danger/10 border border-danger/30 rounded-xl px-3 py-2 flex flex-wrap gap-2">
               {inconsistencies.map(inc => (
                 <span key={inc.type} className="text-[10px] font-bold text-danger flex items-center gap-1">
                   ⚠ {inc.label} no registrada

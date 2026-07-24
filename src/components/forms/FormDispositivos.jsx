@@ -58,7 +58,7 @@ const FormDispositivos = ({ formData }) => {
 
             {/* BANNER DE ERROR DINÁMICO */}
             <div className={`transition-all duration-300 overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="bg-red-50 border border-red-200 px-4 py-3 rounded-[1rem] text-[11px] font-bold flex items-center gap-2 shadow-sm text-red-600">
+                <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-[1rem] text-[11px] font-bold flex items-center gap-2 shadow-sm text-danger">
                     <AlertCircle size={16} strokeWidth={2.5} />
                     <span>{errorMsg}</span>
                 </div>
@@ -66,10 +66,10 @@ const FormDispositivos = ({ formData }) => {
 
             {/* 🎛️ ENCABEZADO MINIMALISTA */}
             <div className="flex items-center justify-between px-1">
-                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
-                    <Activity size={16} className="text-[#0052CC]"/> Dispositivos aprobados
+                <h4 className="text-[12px] font-black uppercase tracking-widest text-content flex items-center gap-2">
+                    <Activity size={16} className="text-brand"/> Dispositivos aprobados
                 </h4>
-                <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full border border-emerald-100 flex items-center gap-1.5 shadow-sm">
+                <div className="bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1.5 shadow-sm">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     <span className="text-[9px] font-black tracking-widest uppercase">
                         {activeKiosks.length} / 3
@@ -80,8 +80,8 @@ const FormDispositivos = ({ formData }) => {
             {/* CONTENEDOR DE LISTA ÚNICA */}
             <div className="relative min-h-[150px]">
                 {loading ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
-                        <Loader2 size={28} className="animate-spin mb-3 opacity-50 text-[#0052CC]" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-content-3">
+                        <Loader2 size={28} className="animate-spin mb-3 opacity-50 text-brand" />
                         <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando...</p>
                     </div>
                 ) : (
@@ -91,19 +91,19 @@ const FormDispositivos = ({ formData }) => {
                                 const isConfirming = confirmingId === kiosk.id;
 
                                 return (
-                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-[1.5rem] transition-all duration-300 ${isConfirming ? 'bg-white/40 border-2 border-red-200 shadow-md' : 'bg-white/60 border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md hover:-translate-y-0.5'}`}>
+                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-[1.5rem] transition-all duration-300 ${isConfirming ? 'bg-surface-card border-2 border-danger/30 shadow-md' : 'bg-surface-card border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md hover:-translate-y-0.5'}`}>
                                         
                                         {/* FILA 1: INFORMACIÓN PRINCIPAL (Nunca se desborda gracias al min-w-0 y truncate) */}
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-red-50 text-red-500' : 'bg-slate-50 border border-slate-100 text-slate-500'}`}>
+                                                <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover border border-slate-100 text-content-3'}`}>
                                                     <Laptop size={20} strokeWidth={isConfirming ? 2.5 : 2} />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className={`text-[13px] font-black leading-tight truncate ${isConfirming ? 'text-red-600' : 'text-slate-800'}`}>
+                                                    <p className={`text-[13px] font-black leading-tight truncate ${isConfirming ? 'text-danger' : 'text-content'}`}>
                                                         {kiosk.device_name}
                                                     </p>
-                                                    <p className="text-[9px] font-bold tracking-widest uppercase text-slate-500 mt-0.5 truncate">
+                                                    <p className="text-[9px] font-bold tracking-widest uppercase text-content-3 mt-0.5 truncate">
                                                         {isConfirming ? 'Confirmar desconexión' : `Vinculado: ${new Date(kiosk.created_at).toLocaleDateString()}`}
                                                     </p>
                                                 </div>
@@ -111,7 +111,7 @@ const FormDispositivos = ({ formData }) => {
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-slate-50 border border-slate-100 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
+                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-surface-card-hover border border-slate-100 text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
                                                     <PowerOff size={14} strokeWidth={2.5} />
                                                 </button>
                                             )}
@@ -119,12 +119,12 @@ const FormDispositivos = ({ formData }) => {
 
                                         {/* 🚨 FILA 2: BOTONES DE CONFIRMACIÓN (Usamos grid-cols-2 para que se adapten perfecto al 50% de la tarjeta) */}
                                         {isConfirming && (
-                                            <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-red-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-danger/30 animate-in fade-in slide-in-from-top-2 duration-200">
                                                 <button 
                                                     type="button" 
                                                     disabled={isRevoking} 
                                                     onClick={() => setConfirmingId(null)} 
-                                                    className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50"
+                                                    className="w-full py-2.5 bg-surface-card-hover hover:bg-surface-card-hover text-content-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50"
                                                 >
                                                     Cancelar
                                                 </button>
@@ -143,11 +143,11 @@ const FormDispositivos = ({ formData }) => {
                             })
                         ) : (
                             <div className="text-center py-10 rounded-[1.5rem] bg-white border border-slate-100 shadow-sm">
-                                <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-500">
+                                <div className="w-12 h-12 bg-surface-card-hover border border-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-content-3">
                                     <Laptop size={20} strokeWidth={2} />
                                 </div>
-                                <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Ningún equipo conectado</p>
-                                <p className="text-[10px] text-slate-500 mt-1 font-bold px-4">Inicia sesión en la tablet de la sucursal para vincularla.</p>
+                                <p className="text-[11px] text-content-3 font-black uppercase tracking-widest">Ningún equipo conectado</p>
+                                <p className="text-[10px] text-content-3 mt-1 font-bold px-4">Inicia sesión en la tablet de la sucursal para vincularla.</p>
                             </div>
                         )}
                     </div>

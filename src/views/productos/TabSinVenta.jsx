@@ -41,7 +41,7 @@ const MODES = [
         Icon:   AlertTriangle,
         rpc:    'get_products_sold_no_minmax',
         activeBg:   'bg-warning/10 border-amber-300 shadow-amber-100/80 -translate-y-px',
-        inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/30',
+        inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10',
         numColor:   'text-warning',
         iconColor:  'text-warning',
     },
@@ -257,11 +257,11 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
     const CARDS = [
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
-          activeBg: 'bg-success/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          activeBg: 'bg-success/10 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
-          activeBg: 'bg-warning/80 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
+          activeBg: 'bg-warning/10 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
           iconBgActive: 'bg-warning/10', iconColor: 'text-warning',
           numColor: n => n > 0 ? 'text-warning' : 'text-content-3' },
         { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc., alto volumen',
@@ -322,7 +322,7 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 
     const CARDS = [
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
-          activeBg: 'bg-success/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          activeBg: 'bg-success/10 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
@@ -330,7 +330,7 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
           iconBgActive: 'bg-violet-100', iconColor: 'text-violet-600',
           numColor: n => n > 0 ? 'text-violet-600' : 'text-content-3' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
-          activeBg: 'bg-danger/80 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
+          activeBg: 'bg-danger/10 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
           iconBgActive: 'bg-danger/10', iconColor: 'text-danger',
           numColor: n => n > 0 ? 'text-danger' : 'text-content-3' },
     ];
@@ -599,7 +599,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
                         <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-warning/80">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-warning/10">
                                 <TrendingUp size={15} className="text-warning" />
                             </div>
                             <div className="text-left min-w-0">

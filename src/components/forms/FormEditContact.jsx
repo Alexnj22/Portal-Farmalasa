@@ -30,20 +30,20 @@ const FormEditContact = ({ formData, onClose }) => {
         <div className="flex flex-col gap-4 p-1">
             {FIELDS.map(({ key, label, placeholder }) => (
                 <div key={key}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">{label}</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
                     <div className="relative flex items-center">
-                        <Phone size={14} strokeWidth={2.5} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+                        <Phone size={14} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
                         <input
                             value={form[key]}
                             onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
                             placeholder={placeholder}
-                            className="w-full pl-10 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[16px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                            className="w-full pl-10 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[16px] font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                 </div>
             ))}
             <button type="button" onClick={save} disabled={loading}
-                className="w-full h-[48px] bg-[#0052CC] hover:bg-[#003D99] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
                 {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}
             </button>
         </div>

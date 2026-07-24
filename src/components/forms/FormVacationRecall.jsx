@@ -32,14 +32,14 @@ const FormVacationRecall = ({ formData, setFormData }) => {
 
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
-    const inputClass = "w-full bg-white border border-slate-200 rounded-[1rem] px-4 py-2.5 text-[16px] font-semibold text-slate-700 outline-none focus:border-[#0052CC]/50 focus:ring-2 focus:ring-[#0052CC]/10 resize-none";
-    const labelClass = "text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block";
+    const inputClass = "w-full bg-white border border-slate-200 rounded-[1rem] px-4 py-2.5 text-[16px] font-semibold text-content-2 outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/10 resize-none";
+    const labelClass = "text-[10px] font-black uppercase tracking-widest text-content-3 mb-1.5 block";
 
     return (
         <div className="space-y-4">
             {/* Alerta */}
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
-                <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+            <div className="bg-warning/10 border border-warning/30 rounded-2xl p-4 flex gap-3">
+                <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                 <div>
                     <p className="text-[11px] font-black uppercase tracking-widest text-amber-700">Ingreso durante Vacaciones</p>
                     <p className="text-[11px] text-amber-700/80 mt-0.5 leading-snug">
@@ -50,15 +50,15 @@ const FormVacationRecall = ({ formData, setFormData }) => {
 
             {/* Info empleado */}
             {emp && (
-                <div className="bg-white/70 border border-white/80 rounded-2xl p-4 flex items-center gap-3">
+                <div className="bg-surface-card border border-border-card rounded-2xl p-4 flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
                         <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-full h-full" />
                     </div>
                     <div>
-                        <p className="text-[13px] font-black text-slate-800">{emp.name}</p>
+                        <p className="text-[13px] font-black text-content">{emp.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <Palmtree size={10} className="text-emerald-500" strokeWidth={2.5} />
-                            <span className="text-[10px] text-emerald-600 font-bold">
+                            <Palmtree size={10} className="text-success" strokeWidth={2.5} />
+                            <span className="text-[10px] text-success font-bold">
                                 Vacaciones: {vacStart ? formatDate(vacStart) : '—'} → {vacEnd ? formatDate(vacEnd) : '—'}
                             </span>
                         </div>
@@ -77,7 +77,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                 />
                 {vacStart && vacEnd && formData?.recall_date &&
                     (formData.recall_date < vacStart || formData.recall_date > vacEnd) && (
-                    <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">
+                    <p className="text-[10px] text-danger font-bold mt-1 ml-1">
                         ⚠ La fecha debe estar dentro del período de vacaciones ({formatDate(vacStart)} – {formatDate(vacEnd)})
                     </p>
                 )}

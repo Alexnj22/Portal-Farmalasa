@@ -346,7 +346,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                 title={PERM_DESC[pt.key]}
                                 className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-300 ${
                                     needsView ? 'opacity-20 pointer-events-none' : ''
-                                } ${isFlashing ? (val ? 'bg-blue-50/70 scale-[1.02]' : 'bg-danger/50 scale-[0.99]') : ''}`}
+                                } ${isFlashing ? (val ? 'bg-blue-50/70 scale-[1.02]' : 'bg-danger/10 scale-[0.99]') : ''}`}
                             >
                                 <div className="flex items-center gap-2">
                                     <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
@@ -733,7 +733,7 @@ const PermissionsView = () => {
                 {selectedRoleId && canEdit && (
                     <>
                         <button onClick={() => setConfirmActivate(true)} disabled={activatingAll || copyingFrom}
-                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 transform-gpu whitespace-nowrap shrink-0 bg-transparent text-warning border-warning/60 hover:bg-warning/10 hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 transform-gpu whitespace-nowrap shrink-0 bg-transparent text-warning border-warning/30 hover:bg-warning/10 hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50">
                             {activatingAll ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} strokeWidth={2.5} />}
                             Activar todo
                         </button>
@@ -831,7 +831,7 @@ const PermissionsView = () => {
                                     className={`w-full text-left rounded-[1.5rem] border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? isSURol
-                                                ? 'bg-gradient-to-br from-amber-50/90 to-orange-50/60 border-warning/70 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
+                                                ? 'bg-gradient-to-br from-amber-50/90 to-orange-50/60 border-warning/30 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
                                                 : `${cs.bg} ${cs.border} shadow-[0_4px_16px_rgba(0,0,0,0.08)]`
                                             : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
                                     }`}

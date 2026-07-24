@@ -520,7 +520,7 @@ export default function EncuestaAdminView() {
                             </div>
 
                             {sfError && (
-                                <div className="mb-3 bg-warning/80 backdrop-blur-sm border border-warning/60 text-amber-700 px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
+                                <div className="mb-3 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
                                     <AlertCircle size={14} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                     <span className="leading-tight">{sfError}</span>
                                 </div>
@@ -602,7 +602,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setSfCompartir(v => !v)}
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfCompartir
-                                                    ? 'bg-success/80 border-emerald-300/60 text-emerald-700 shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
+                                                    ? 'bg-success/10 border-emerald-300/60 text-emerald-700 shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <Globe size={13} strokeWidth={2.5} />
@@ -787,7 +787,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setRfIsJefe(true)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
                                                 rfIsJefe
-                                                    ? 'bg-warning/80 border-amber-300/60 text-amber-700 shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
+                                                    ? 'bg-warning/10 border-amber-300/60 text-amber-700 shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <UserCheck size={14} strokeWidth={2.5} /> Jefe/a de sala
@@ -1019,7 +1019,7 @@ export default function EncuestaAdminView() {
                                         {/* Badges */}
                                         <div className="flex flex-wrap items-center gap-2 pr-28">
                                             <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                                s.estado === 'activa'    ? 'text-success bg-success/10 border-success/50' :
+                                                s.estado === 'activa'    ? 'text-success bg-success/10 border-success/30' :
                                                 s.estado === 'cerrada'   ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
                                                 s.estado === 'borrador'  ? 'text-content-3 bg-surface-card-hover border-slate-200/50' :
                                                                            'text-content-3 bg-surface-card-hover border-slate-200/50'
@@ -1028,7 +1028,7 @@ export default function EncuestaAdminView() {
                                                 s.tipo === 'clima'        ? 'text-indigo-600 bg-indigo-50 border-indigo-200/50' :
                                                 s.tipo === 'satisfaccion' ? 'text-teal-600 bg-teal-50 border-teal-200/50' :
                                                 s.tipo === 'desempeno'    ? 'text-purple-600 bg-purple-50 border-purple-200/50' :
-                                                                            'text-warning bg-warning/10 border-warning/50'
+                                                                            'text-warning bg-warning/10 border-warning/30'
                                             }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
                                             {s.anonima && (
                                                 <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
@@ -1111,7 +1111,7 @@ export default function EncuestaAdminView() {
 
                                             {/* Pending employees */}
                                             {pendingEmployees.length > 0 && (
-                                                <div className="p-4 rounded-[1.5rem] border border-warning/60 bg-warning/60 backdrop-blur-xl flex flex-col gap-2.5">
+                                                <div className="p-4 rounded-[1.5rem] border border-warning/30 bg-warning/10 backdrop-blur-xl flex flex-col gap-2.5">
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-warning flex items-center gap-1.5">
                                                         <AlertCircle size={12} strokeWidth={2.5} />
                                                         Pendientes ({pendingEmployees.length})
@@ -1120,7 +1120,7 @@ export default function EncuestaAdminView() {
                                                         {pendingEmployees.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
-                                                                <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/60">
+                                                                <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
                                                                     <span className="text-[10px] font-black text-amber-700">{fn}</span>
                                                                 </div>

@@ -324,7 +324,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 const emp    = e.employee || {};
                                 const edited = e.status === 'EDITED';
                                 return (
-                                    <DataRow key={e.id} index={ei} className={edited ? 'bg-warning/20' : ''}>
+                                    <DataRow key={e.id} index={ei} className={edited ? 'bg-warning/10' : ''}>
                                         <DataCell className="whitespace-nowrap">
                                             <div className="flex items-center gap-3">
                                                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-8 h-8 rounded-xl shrink-0" />
@@ -649,7 +649,7 @@ const PayrollView = ({ openModal }) => {
 
                                     {/* Unapproved timesheets warning */}
                                     {unapprovedCount > 0 && (
-                                        <div className="mt-3 flex items-center gap-3 bg-warning/60 border border-warning/60 rounded-2xl px-4 py-2.5">
+                                        <div className="mt-3 flex items-center gap-3 bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
                                             <AlertTriangle size={14} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                             <p className="text-[11px] font-bold text-amber-700 flex-1">
                                                 {unapprovedCount} timesheet{unapprovedCount !== 1 ? 's' : ''} sin aprobar en este período

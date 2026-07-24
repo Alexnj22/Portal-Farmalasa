@@ -115,20 +115,20 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
 
             {/* 🎨 HEADER LIQUID GLASS */}
-            <div className="relative overflow-hidden rounded-[2rem] p-5 border border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-emerald-100/40 backdrop-blur-xl shadow-[0_8px_30px_rgba(16,185,129,0.06)]">
+            <div className="relative overflow-hidden rounded-[2rem] p-5 border border-success/30 bg-gradient-to-br from-emerald-50/80 to-emerald-100/40 backdrop-blur-xl shadow-[0_8px_30px_rgba(16,185,129,0.06)]">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-300/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
                 <div className="relative z-10 flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white/80 backdrop-blur-md rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100 shrink-0">
+                    <div className="w-14 h-14 bg-surface-card backdrop-blur-md rounded-2xl flex items-center justify-center text-success shadow-sm border border-success/30 shrink-0">
                         <Receipt size={26} strokeWidth={2} />
                     </div>
                     <div>
                         <h3 className="text-xl font-black text-emerald-950 tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
                         <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 bg-white/60 rounded-md text-[9px] font-black text-emerald-700 uppercase tracking-widest border border-emerald-200/50">
+                            <span className="px-2.5 py-1 bg-surface-card rounded-md text-[9px] font-black text-emerald-700 uppercase tracking-widest border border-success/30">
                                 Sede: {formData.name}
                             </span>
                             {currentPaidThrough && (
-                                <span className="text-[10px] font-bold text-emerald-600/80 uppercase tracking-widest">
+                                <span className="text-[10px] font-bold text-success/80 uppercase tracking-widest">
                                     Último: {currentPaidThrough}
                                 </span>
                             )}
@@ -138,24 +138,24 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
             </div>
 
             {/* 📝 CONTENEDOR DE CAMPOS (GLASSMORPHISM) */}
-            <div className="bg-white/40 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 space-y-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 space-y-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* MONTO EXACTO */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
-                            <DollarSign size={12} className="text-[#0052CC]" /> Monto Pagado Exacto
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
+                            <DollarSign size={12} className="text-brand" /> Monto Pagado Exacto
                         </label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <span className="text-slate-500 font-black text-lg">$</span>
+                                <span className="text-content-3 font-black text-lg">$</span>
                             </div>
                             <input
                                 required
                                 type="number"
                                 min="0.01"
                                 step="0.01"
-                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#0052CC] focus:bg-white font-black text-slate-800 text-lg shadow-sm transition-all group-hover:border-[#0052CC]/50 placeholder:text-slate-300"
+                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-surface-card border border-slate-200/80 outline-none focus:border-brand focus:bg-white font-black text-content text-lg shadow-sm transition-all group-hover:border-brand/50 placeholder:text-content-3"
                                 placeholder="0.00"
                                 value={paymentData.amount}
                                 onChange={(e) => handleUpdate('amount', e.target.value)}
@@ -165,8 +165,8 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                     {/* MES QUE CUBRE (LIQUID DATE PICKER) */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
-                            <Calendar size={12} className={isConflict ? "text-red-500" : "text-[#0052CC]"} /> Mes que Cubre
+                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
+                            <Calendar size={12} className={isConflict ? "text-danger" : "text-brand"} /> Mes que Cubre
                         </label>
                         <div className={isConflict ? "ring-2 ring-red-400/50 rounded-2xl transition-all" : ""}>
                             <LiquidDatePicker
@@ -182,8 +182,8 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* ALERTA DE CONFLICTO */}
                 {isConflict && (
-                    <div className="flex items-center gap-3 text-red-700 bg-red-50/80 backdrop-blur-sm px-4 py-3 rounded-2xl border border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.1)] animate-in fade-in slide-in-from-top-2">
-                        <AlertCircle size={18} className="shrink-0 text-red-500" strokeWidth={2.5} />
+                    <div className="flex items-center gap-3 text-red-700 bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.1)] animate-in fade-in slide-in-from-top-2">
+                        <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
                         <span className="text-[11px] font-black uppercase tracking-widest leading-tight">
                             Ya existe un pago registrado para {currentPaidThrough} o posterior.
                         </span>
@@ -192,12 +192,12 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* NOTAS / OBSERVACIONES */}
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
-                        <FileText size={12} className="text-slate-500" /> Notas / Observaciones (Opcional)
+                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
+                        <FileText size={12} className="text-content-3" /> Notas / Observaciones (Opcional)
                     </label>
                     <input
                         type="text"
-                        className="w-full px-5 py-3.5 rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#0052CC] focus:bg-white font-bold text-slate-700 text-sm shadow-sm transition-all hover:border-[#0052CC]/50 placeholder:text-slate-400 placeholder:font-medium"
+                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-slate-200/80 outline-none focus:border-brand focus:bg-white font-bold text-content-2 text-sm shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
                         placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
                         value={paymentData.notes}
                         onChange={(e) => handleUpdate('notes', e.target.value)}
@@ -206,13 +206,13 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* UPLOAD FILE (ÁREA DE ARRASTRE MEJORADA) */}
                 <div className="pt-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 flex items-center gap-1.5">
-                        <UploadCloud size={12} className="text-[#0052CC]" /> Comprobante / Recibo (Foto o PDF)
+                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex items-center gap-1.5">
+                        <UploadCloud size={12} className="text-brand" /> Comprobante / Recibo (Foto o PDF)
                     </label>
 
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
-                            ? 'bg-emerald-50/50 border-emerald-300 hover:bg-emerald-50'
-                            : 'bg-slate-50/50 border-slate-300 hover:bg-[#0052CC]/5 hover:border-[#0052CC]/50'
+                            ? 'bg-success/10 border-emerald-300 hover:bg-success/10'
+                            : 'bg-surface-card-hover/50 border-slate-300 hover:bg-brand/5 hover:border-brand/50'
                         }`}>
                         <input
                             type="file"
@@ -223,25 +223,25 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                         {paymentData.receiptFile ? (
                             <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-300">
-                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-500 mb-1 border border-emerald-100">
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-success mb-1 border border-success/30">
                                     <CheckCircle size={24} strokeWidth={2} />
                                 </div>
                                 <p className="text-[13px] font-black text-emerald-800 tracking-tight max-w-[200px] truncate">
                                     {paymentData.receiptFile.name}
                                 </p>
-                                <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-widest">
+                                <p className="text-[10px] font-bold text-success/70 uppercase tracking-widest">
                                     Archivo adjuntado correctamente
                                 </p>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-2 transition-transform duration-300 group-hover:-translate-y-1">
-                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-[#0052CC] mb-1 group-hover:shadow-md transition-all">
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-brand mb-1 group-hover:shadow-md transition-all">
                                     <UploadCloud size={24} strokeWidth={1.5} />
                                 </div>
-                                <p className="text-[13px] font-black text-slate-700 tracking-tight">
+                                <p className="text-[13px] font-black text-content-2 tracking-tight">
                                     Toca para subir o arrastra aquí
                                 </p>
-                                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                                <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest">
                                     Si no lo subes hoy, quedará como PENDIENTE
                                 </p>
                             </div>
@@ -249,7 +249,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                         {/* Efecto hover background */}
                         {!paymentData.receiptFile && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#0052CC]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-brand/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                         )}
                     </div>
                 </div>

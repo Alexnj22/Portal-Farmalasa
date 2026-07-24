@@ -543,7 +543,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           <div className="space-y-1.5">
             {paradas.map((stop, i) => (
               <div key={stop.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${
-                stop.entregado_at ? 'bg-success/60 border-success/30' : 'bg-white border-slate-200'
+                stop.entregado_at ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
               }`}>
                 <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
                   stop.entregado_at ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-700'

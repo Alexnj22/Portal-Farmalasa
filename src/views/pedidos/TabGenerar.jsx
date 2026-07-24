@@ -374,7 +374,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     {dashLoading ? (
                                         <div className="h-6 w-14 rounded-lg bg-surface-card-hover animate-pulse mt-0.5" />
                                     ) : (
-                                        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/60 mt-0.5 text-center leading-tight">
+                                        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30 mt-0.5 text-center leading-tight">
                                             Pendiente MIN/MAX
                                         </span>
                                     )}
@@ -384,11 +384,11 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                         // Base: always urgency-based, never changes on selection
                         const baseCls = urgLevel === 'high'
-                            ? 'bg-gradient-to-b from-red-50/90 to-white/60 border-danger/80 backdrop-blur-sm'
+                            ? 'bg-gradient-to-b from-red-50/90 to-white/60 border-danger/30 backdrop-blur-sm'
                             : urgLevel === 'mid'
-                                ? 'bg-gradient-to-b from-amber-50/90 to-white/60 border-warning/80 backdrop-blur-sm'
+                                ? 'bg-gradient-to-b from-amber-50/90 to-white/60 border-warning/30 backdrop-blur-sm'
                                 : urgLevel === 'low'
-                                    ? 'bg-gradient-to-b from-emerald-50/60 to-white/50 border-success/60 backdrop-blur-sm'
+                                    ? 'bg-gradient-to-b from-emerald-50/60 to-white/50 border-success/30 backdrop-blur-sm'
                                     : 'bg-gradient-to-b from-white/80 to-white/50 border-slate-200/60 backdrop-blur-sm';
 
                         // Selection adds a glow ring; no-selection adds hover effects
@@ -402,10 +402,10 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                         // Urgency badge color
                         const urgBadgeCls = urgLevel === 'high'
-                            ? 'bg-danger/10 text-danger border-danger/80'
+                            ? 'bg-danger/10 text-danger border-danger/30'
                             : urgLevel === 'mid'
-                                ? 'bg-warning/10 text-amber-700 border-warning/80'
-                                : 'bg-success/10 text-emerald-700 border-success/80';
+                                ? 'bg-warning/10 text-amber-700 border-warning/30'
+                                : 'bg-success/10 text-emerald-700 border-success/30';
 
                         return (
                             <button

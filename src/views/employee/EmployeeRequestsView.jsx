@@ -59,7 +59,7 @@ const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5
 // ─────────────────────────────────────────────────────────────────────────────
 const MinMaxStatusCard = memo(({ req }) => {
     const cfg = req.status === 'approved'
-        ? { border: 'border-emerald-300/70 bg-success/80', badge: 'bg-success/10 text-emerald-700 border-success/30', label: 'Aprobada' }
+        ? { border: 'border-emerald-300/70 bg-success/10', badge: 'bg-success/10 text-emerald-700 border-success/30', label: 'Aprobada' }
         : req.status === 'rejected'
         ? { border: 'border-red-300 bg-surface-card', badge: 'bg-danger/10 text-danger border-danger/30', label: 'Rechazada' }
         : { border: 'border-brand/30 bg-surface-card', badge: 'bg-warning/10 text-amber-700 border-warning/30', label: 'Pendiente' };
@@ -197,7 +197,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
 
     const cardBg =
         req.status === 'PENDING'   ? 'border-brand/30 bg-surface-card backdrop-blur-2xl' :
-        req.status === 'APPROVED'  ? 'border-emerald-300/70 bg-success/80 backdrop-blur-2xl' :
+        req.status === 'APPROVED'  ? 'border-emerald-300/70 bg-success/10 backdrop-blur-2xl' :
         req.status === 'REJECTED'  ? 'border-red-300 bg-surface-card backdrop-blur-xl' :
         'border-border-card bg-surface-card backdrop-blur-md';
 
@@ -284,7 +284,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                 {req.type === 'DISABILITY' && (
                     <div className="space-y-2">
                         {meta.startDate && (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/60 border border-danger/60">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/10 border border-danger/30">
                                 <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
                                 <span className="text-[12px] font-bold text-red-700">
                                     {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
@@ -303,7 +303,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             </a>
                         )}
                         {req.status === 'PENDING' && uploadFileToStorage && (
-                            <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-slate-200 opacity-60' : 'border-warning/30 hover:border-amber-400 hover:bg-warning/40'}`}>
+                            <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-slate-200 opacity-60' : 'border-warning/30 hover:border-amber-400 hover:bg-warning/10'}`}>
                                 {uploadingDoc
                                     ? <Loader2 size={13} className="text-warning animate-spin flex-shrink-0" />
                                     : <Upload size={13} className="text-warning flex-shrink-0" strokeWidth={2} />
@@ -334,8 +334,8 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
 
                 {req.approver_note && (
                     <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-[12px] font-bold border ${
-                        req.status === 'APPROVED' ? 'bg-success/10 border-success/60 text-emerald-700' :
-                        req.status === 'REJECTED' ? 'bg-danger/10 border-danger/60 text-danger' :
+                        req.status === 'APPROVED' ? 'bg-success/10 border-success/30 text-emerald-700' :
+                        req.status === 'REJECTED' ? 'bg-danger/10 border-danger/30 text-danger' :
                         'bg-surface-card-hover border-slate-200/60 text-content-2'
                     }`}>
                         <AlertCircle size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
@@ -718,7 +718,7 @@ const EmployeeRequestsView = () => {
                         <div className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-[11px] font-bold ${
                             !vacationInfo.eligible
                                 ? 'bg-warning/10 border-warning/30 text-amber-700'
-                                : 'bg-success/70 border-success/60 text-emerald-700'
+                                : 'bg-success/10 border-success/30 text-emerald-700'
                         }`}>
                             <Clock size={13} className="flex-shrink-0" strokeWidth={2.5} />
                             {vacationInfo.eligible
@@ -1004,7 +1004,7 @@ const EmployeeRequestsView = () => {
                                 : <span>Certificado Médico <span className="text-content-3 ml-1 normal-case font-medium">(opcional)</span></span>
                             }
                         </label>
-                        <label className="flex items-center gap-3 px-4 py-3 bg-surface-card border-2 border-dashed border-danger/30 hover:border-red-400 hover:bg-danger/30 rounded-2xl cursor-pointer transition-all duration-200 group">
+                        <label className="flex items-center gap-3 px-4 py-3 bg-surface-card border-2 border-dashed border-danger/30 hover:border-red-400 hover:bg-danger/10 rounded-2xl cursor-pointer transition-all duration-200 group">
                             <div className="w-8 h-8 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition-colors">
                                 {disabilityFile ? <FileImage size={16} className="text-danger" /> : <Upload size={16} className="text-danger" />}
                             </div>
@@ -1027,7 +1027,7 @@ const EmployeeRequestsView = () => {
                         </label>
                     </div>
 
-                    <div className="px-4 py-2.5 rounded-2xl bg-danger/60 border border-danger/60">
+                    <div className="px-4 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
                         <p className="text-[11px] font-bold text-red-700 leading-relaxed">
                             Talento Humano recibirá tu solicitud como urgente. Los días se marcarán automáticamente en tu horario al ser aprobada.
                         </p>
@@ -1113,7 +1113,7 @@ const EmployeeRequestsView = () => {
                         </div>
 
                         {error && (
-                            <div className="mb-5 bg-warning/80 backdrop-blur-sm border border-warning/60 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                            <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                 <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span className="leading-tight">{error}</span>
                             </div>

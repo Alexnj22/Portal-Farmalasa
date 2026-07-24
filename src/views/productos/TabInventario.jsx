@@ -255,7 +255,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterVencidos
                                 ? 'bg-danger/10 border-red-300 shadow-md shadow-red-100/80 -translate-y-px'
-                                : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/40'
+                                : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10'
                         }`}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-white' : 'bg-danger/10'}`}>
                             <AlertTriangle size={15} className="text-danger" />
@@ -460,8 +460,8 @@ export default function TabInventario({ searchTerm = '' }) {
                                     onClick={() => handleExpand(group.erp_sucursal_id, group.erp_product_id)}
                                     className={
                                         isExpanded ? 'bg-blue-50/50' :
-                                        hasExpired ? 'bg-danger/40' :
-                                        isSoon     ? 'bg-warning/30' :
+                                        hasExpired ? 'bg-danger/10' :
+                                        isSoon     ? 'bg-warning/10' :
                                         isSixMo    ? 'bg-orange-50/20' : ''
                                     }
                                 >

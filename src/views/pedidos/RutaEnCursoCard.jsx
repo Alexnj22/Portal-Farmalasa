@@ -159,7 +159,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                 const busy  = busyStop === stop.id;
                 return (
                   <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                    done ? 'bg-success/70 border-success/30' : 'bg-white border-slate-200'
+                    done ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
                   }`}>
                     <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
                       done ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-700'

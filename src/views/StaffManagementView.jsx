@@ -69,13 +69,13 @@ const searchEmployees = (query, list, branchMap) => {
 const getStatusInfo = (rawStatus) => {
   const status = String(rawStatus || '').toUpperCase().trim();
 
-  if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-success bg-success/80 border-success/30' };
+  if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-success bg-success/10 border-success/30' };
   if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-cyan-600 bg-cyan-50/80 border-cyan-200' };
-  if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/80 border-warning/30' };
+  if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/10 border-warning/30' };
   if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-orange-600 bg-orange-50/80 border-orange-200' };
   if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-pink-600 bg-pink-50/80 border-pink-200' };
   if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-purple-600 bg-purple-50/80 border-purple-200' };
-  if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/80 border-danger/30' };
+  if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/10 border-danger/30' };
   if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-slate-300' };
 
   return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-content-2 bg-surface-card-hover/80 border-slate-200' };
@@ -508,9 +508,9 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 
 const STAT_CARD_COLORS = {
   blue:    { activeBg: 'bg-blue-50 border-blue-300 shadow-md shadow-blue-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/40',       iconBg: 'bg-blue-50',    iconColor: 'text-brand',  textColor: 'text-content-2'   },
-  emerald: { activeBg: 'bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px', inactiveBg: 'bg-white border-slate-100 hover:border-success/30 hover:bg-success/40', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
+  emerald: { activeBg: 'bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px', inactiveBg: 'bg-white border-slate-100 hover:border-success/30 hover:bg-success/10', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
   cyan:    { activeBg: 'bg-cyan-50 border-cyan-300 shadow-md shadow-cyan-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/40',       iconBg: 'bg-cyan-50',    iconColor: 'text-cyan-600',   textColor: 'text-cyan-600'    },
-  amber:   { activeBg: 'bg-warning/10 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px',     inactiveBg: 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/40',     iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning'   },
+  amber:   { activeBg: 'bg-warning/10 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px',     inactiveBg: 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/10',     iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning'   },
   violet:  { activeBg: 'bg-violet-50 border-violet-300 shadow-md shadow-violet-100/80 -translate-y-px',   inactiveBg: 'bg-white border-slate-100 hover:border-violet-200 hover:bg-violet-50/40',   iconBg: 'bg-violet-50',  iconColor: 'text-violet-600', textColor: 'text-violet-600'  },
 };
 

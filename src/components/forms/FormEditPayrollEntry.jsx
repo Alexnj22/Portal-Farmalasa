@@ -7,21 +7,21 @@ const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
 const InputLabel = ({ children }) => (
-    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
+    <p className="text-[10px] font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full h-10 px-3 bg-white/60 border border-slate-200/80 hover:border-[#0052CC]/40 focus:border-[#0052CC]/50 focus:ring-4 focus:ring-[#0052CC]/10 rounded-[1rem] text-[16px] outline-none font-bold text-slate-800 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full h-10 px-3 bg-surface-card border border-slate-200/80 hover:border-brand/40 focus:border-brand/50 focus:ring-4 focus:ring-brand/10 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 const NocturnalLegalInfo = () => (
     <div className="relative group inline-flex items-center ml-1.5">
         <Info size={11} className="text-indigo-400 cursor-help" strokeWidth={2} />
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
             <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
-            <p className="text-slate-500 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
-            <p className="text-slate-200">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
-            <p className="text-slate-200">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
-            <p className="text-slate-200">• Jornada noct. máx: 7h/día, 39h/sem</p>
-            <p className="text-slate-200">• Si &gt;4h son nocturnas → turno nocturno</p>
+            <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
+            <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
+            <p className="text-content-3">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
+            <p className="text-content-3">• Jornada noct. máx: 7h/día, 39h/sem</p>
+            <p className="text-content-3">• Si &gt;4h son nocturnas → turno nocturno</p>
         </div>
     </div>
 );
@@ -105,33 +105,33 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
     return (
         <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 bg-[#0052CC]/5 border border-[#0052CC]/15 rounded-2xl px-4 py-2.5">
-                <p className="text-[11px] font-black text-[#0052CC]">
+            <div className="col-span-2 bg-brand/5 border border-brand/15 rounded-2xl px-4 py-2.5">
+                <p className="text-[11px] font-black text-brand">
                     {emp.name} — Salario diario: ${daily.toFixed(2)}
                 </p>
             </div>
 
             {/* OT Bank widget */}
             {hasBank && !otApplied && (
-                <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-3">
+                <div className="col-span-2 bg-warning/10 border border-warning/30 rounded-2xl p-3.5 space-y-3">
                     <div className="flex items-center gap-2">
-                        <Clock size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2.5} />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-amber-600">Banco de Horas Extra</p>
+                        <Clock size={13} className="text-warning flex-shrink-0" strokeWidth={2.5} />
+                        <p className="text-[9px] font-black uppercase tracking-widest text-warning">Banco de Horas Extra</p>
                     </div>
-                    <p className="text-[9px] text-amber-500">Distribuye cada tipo — puedes pagar una parte y compensar el resto.</p>
+                    <p className="text-[9px] text-warning">Distribuye cada tipo — puedes pagar una parte y compensar el resto.</p>
 
                     {/* Diurnal section */}
                     {otBank.diurnal > 0 && (
-                        <div className="bg-white/70 border border-amber-100 rounded-xl p-2.5 space-y-2">
+                        <div className="bg-surface-card border border-warning/30 rounded-xl p-2.5 space-y-2">
                             <div className="flex items-center justify-between">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-amber-700">HE Diurnas</p>
                                 <span className="text-[13px] font-black text-amber-800">{otBank.diurnal.toFixed(1)}h</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                    <p className="text-[8px] font-black text-amber-600 mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
+                                    <p className="text-[8px] font-black text-warning mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dPayInput} onChange={e => setDPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-amber-200 focus:border-amber-400 rounded-lg text-[16px] font-black text-amber-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-warning/30 focus:border-amber-400 rounded-lg text-[16px] font-black text-amber-900 outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-blue-500 mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
@@ -140,7 +140,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 </div>
                             </div>
                             {dUsed > 0 && (
-                                <p className={`text-[9px] font-black ${dError ? 'text-red-500' : 'text-slate-500'}`}>
+                                <p className={`text-[9px] font-black ${dError ? 'text-danger' : 'text-content-3'}`}>
                                     {dError ? 'Excede el saldo diurno' : `Quedan en banco: ${dLeft.toFixed(1)}h`}
                                 </p>
                             )}
@@ -167,7 +167,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 </div>
                             </div>
                             {nUsed > 0 && (
-                                <p className={`text-[9px] font-black ${nError ? 'text-red-500' : 'text-slate-500'}`}>
+                                <p className={`text-[9px] font-black ${nError ? 'text-danger' : 'text-content-3'}`}>
                                     {nError ? 'Excede el saldo nocturno' : `Quedan en banco: ${nLeft.toFixed(1)}h`}
                                 </p>
                             )}
@@ -183,10 +183,10 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             )}
             {otApplied && (
                 <div className="col-span-2 space-y-1.5">
-                    {dPay  > 0 && <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-emerald-700">✓ {dPay.toFixed(1)}h diurnas → Hrs. Extra Diurnas (se pagan en esta planilla).</p></div>}
+                    {dPay  > 0 && <div className="bg-success/10 border border-success/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-emerald-700">✓ {dPay.toFixed(1)}h diurnas → Hrs. Extra Diurnas (se pagan en esta planilla).</p></div>}
                     {nPay  > 0 && <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-indigo-700">✓ {nPay.toFixed(1)}h nocturnas → Hrs. Extra Nocturnas ×2.25 (se pagan en esta planilla).</p></div>}
                     {(dComp > 0 || nComp > 0) && <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-blue-700">✓ {(dComp + nComp).toFixed(1)}h marcadas como tiempo compensado.</p></div>}
-                    {(dLeft > 0 || nLeft > 0) && <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-amber-700">{(dLeft + nLeft).toFixed(1)}h permanecen en banco para la siguiente quincena.</p></div>}
+                    {(dLeft > 0 || nLeft > 0) && <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-amber-700">{(dLeft + nLeft).toFixed(1)}h permanecen en banco para la siguiente quincena.</p></div>}
                 </div>
             )}
 
@@ -201,7 +201,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             </div>
 
             <div className="col-span-2 pt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3 flex items-center">
+                <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3 flex items-center">
                     Horas adicionales <NocturnalLegalInfo />
                 </p>
             </div>
@@ -211,7 +211,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             {numField('extra_hours_nocturnal', 'Hrs. Extra Nocturnas')}
 
             <div className="col-span-2 pt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Otros ingresos</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Otros ingresos</p>
             </div>
             {numField('holiday_surcharge', 'Recargo de Asuetos ($)')}
             {numField('bonifications',     'Bonificaciones ($)')}
@@ -229,26 +229,26 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             </div>
 
             <div className="col-span-2 pt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Descuentos adicionales</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Descuentos adicionales</p>
             </div>
             {numField('order_discount',  'Orden de Descuento ($)')}
             {numField('other_discounts', 'Otros Descuentos ($)')}
             {numField('salary_advance',  'Adelanto Salarial ($)')}
 
             {/* Live preview */}
-            <div className="col-span-2 bg-white/60 rounded-2xl p-4 border border-slate-200/60 mt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Vista previa</p>
+            <div className="col-span-2 bg-surface-card rounded-2xl p-4 border border-slate-200/60 mt-2">
+                <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Vista previa</p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
-                        <p className="text-[9px] text-slate-500">Subtotal A</p>
-                        <p className="text-[14px] font-black text-slate-800">{fmt(preview.subtotal_a)}</p>
+                        <p className="text-[9px] text-content-3">Subtotal A</p>
+                        <p className="text-[14px] font-black text-content">{fmt(preview.subtotal_a)}</p>
                     </div>
                     <div>
-                        <p className="text-[9px] text-slate-500">Deducciones</p>
-                        <p className="text-[14px] font-black text-red-600">{fmt(preview.total_deductions)}</p>
+                        <p className="text-[9px] text-content-3">Deducciones</p>
+                        <p className="text-[14px] font-black text-danger">{fmt(preview.total_deductions)}</p>
                     </div>
                     <div>
-                        <p className="text-[9px] text-slate-500">Líquido</p>
+                        <p className="text-[9px] text-content-3">Líquido</p>
                         <p className="text-[16px] font-black text-emerald-700">{fmt(preview.net_pay)}</p>
                     </div>
                 </div>
@@ -256,13 +256,13 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
             {/* Edit reason */}
             <div className="col-span-2">
-                <InputLabel>Motivo de edición <span className="text-red-400">*</span></InputLabel>
+                <InputLabel>Motivo de edición <span className="text-danger">*</span></InputLabel>
                 <input
                     type="text"
                     value={formData._reason || ''}
                     onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
                     placeholder="Ej: Corrección de días por permiso autorizado"
-                    className="w-full h-10 px-3 bg-amber-50/80 border border-amber-300/60 hover:border-amber-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-slate-800 transition-all duration-300"
+                    className="w-full h-10 px-3 bg-warning/10 border border-amber-300/60 hover:border-amber-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300"
                 />
             </div>
         </div>

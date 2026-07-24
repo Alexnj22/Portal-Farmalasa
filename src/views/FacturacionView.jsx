@@ -114,7 +114,7 @@ function EmptyState({ icon: Icon, iconClass, glowClass, title, subtitle }) {
 function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, placeholder }) {
     return (
         <tr>
-            <td colSpan={colSpan} className="px-5 py-4 bg-success/60 border-t border-success/30">
+            <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
                 <div className="flex items-start gap-3 max-w-2xl">
                     <textarea
                         className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-sm text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
@@ -451,7 +451,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         return (
                             <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
                                 <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/40 hover:bg-danger/70' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
+                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                     <div className="flex items-center gap-2">
                                         <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
                                         <span className="text-[13px] font-black text-content-2">{getBranch(Number(branchId))}</span>
@@ -497,7 +497,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-warning/40' : isCCF ? 'bg-danger/40' : 'bg-white'}`}>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-warning/10' : isCCF ? 'bg-danger/10' : 'bg-white'}`}>
                                                                         <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
@@ -530,7 +530,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                     const r = fechaRows.find(r => r.id === solvingId);
                                                     const isCCF = r.tipo_documento === 'CCF';
                                                     return (
-                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/40 px-4 py-3">
+                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                             <div className="flex items-center gap-2 mb-2.5">
                                                                 <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-red-700' : 'text-content-2'}`}>{r.correlativo}</span>
                                                                 {r.cliente && <span className="text-[11px] text-content-3 truncate">· {r.cliente}</span>}
@@ -908,7 +908,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                             <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
                                 {/* Branch header — collapsible */}
                                 <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/40 hover:bg-danger/70' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
+                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                     <div className="flex items-center gap-2">
                                         <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
                                         <span className="text-[13px] font-black text-content-2">{getBranch(Number(branchId))}</span>
@@ -970,7 +970,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
                                                                     {/* Tipo label (tooltip trigger) */}
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-warning/40' : hasNullCampos ? 'bg-purple-50/40' : isCCF ? 'bg-danger/40' : 'bg-white'}`}>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-warning/10' : hasNullCampos ? 'bg-purple-50/40' : isCCF ? 'bg-danger/10' : 'bg-white'}`}>
                                                                         <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning' : hasNullCampos ? 'text-purple-600' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     {/* Solventar / cancel button */}
@@ -1015,7 +1015,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                     const r    = fechaRows.find(r => r.id === solvingId);
                                                     const isCCF = r.tipo_documento === 'CCF';
                                                     return (
-                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/40 px-4 py-3">
+                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                             <div className="flex items-center gap-2 mb-2.5">
                                                                 <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-red-700' : 'text-content-2'}`}>{r.correlativo}</span>
                                                                 {r.cliente && <span className="text-[11px] text-content-3 truncate">· {r.cliente}</span>}
@@ -1286,7 +1286,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                             return (
                                 <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
                                     <button onClick={() => setCollapsedGapBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                        className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${hasCCF ? 'bg-danger/40 hover:bg-danger/70' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
+                                        className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${hasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                         <div className="flex items-center gap-2">
                                             <Building2 size={13} className={hasCCF ? 'text-danger' : 'text-content-3'} />
                                             <span className="text-[13px] font-black text-content-2">{getBranch(Number(branchId))}</span>
@@ -1310,7 +1310,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 <div className={`flex items-center px-2 py-1.5 border-r font-mono text-[10px] font-black ${isCCF ? 'bg-danger/10 text-red-700 border-danger/30' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
                                                                     {pad7(g.gap_from)}–{pad7(g.gap_to)}
                                                                 </div>
-                                                                <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-danger/40' : 'bg-white'}`}>
+                                                                <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-danger/10' : 'bg-white'}`}>
                                                                     <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-danger' : 'text-content-3'}`}>{g.tipo_documento}</span>
                                                                 </div>
                                                                 <button onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
@@ -1342,7 +1342,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                             {branchGaps.some(g => solvingGap === gapKey(g)) && (() => {
                                                 const g = branchGaps.find(g => solvingGap === gapKey(g));
                                                 return (
-                                                    <div className="mt-2.5 rounded-xl border border-success/30 bg-success/40 px-4 py-3">
+                                                    <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-orange-600">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
                                                         <div className="flex items-start gap-3">
                                                             <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
@@ -1409,7 +1409,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     {isCopied ? <Check size={8} /> : <Copy size={8} />}
                                                                     {n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
                                                                 </button>
-                                                                <div className="flex items-center gap-1 px-2 py-1.5 border-r border-slate-100 bg-danger/40">
+                                                                <div className="flex items-center gap-1 px-2 py-1.5 border-r border-slate-100 bg-danger/10">
                                                                     {(n.campos_nulos || []).slice(0, 2).map(c => (
                                                                         <span key={c} className="text-[8px] font-black text-danger uppercase">{c}</span>
                                                                     ))}
@@ -1448,7 +1448,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                             {branchNulls.some(n => n.id === solvingNull) && (() => {
                                                 const n = branchNulls.find(n => n.id === solvingNull);
                                                 return (
-                                                    <div className="mt-2.5 rounded-xl border border-success/30 bg-success/40 px-4 py-3">
+                                                    <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
                                                         <div className="flex items-start gap-3">
                                                             <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"

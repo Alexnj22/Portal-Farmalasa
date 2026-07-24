@@ -35,7 +35,7 @@ const LiquidToast = () => {
             data-surface="dropdown"
             className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[9999] flex items-center gap-4 p-3 pr-12 animate-in slide-in-from-bottom-10 fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu max-w-[400px] transition-colors"
         >
-            <div className={`w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/20 transition-all ${config.iconContainer}`}>
+            <div className={`w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card transition-all ${config.iconContainer}`}>
                 {config.icon}
             </div>
 

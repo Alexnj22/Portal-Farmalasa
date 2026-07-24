@@ -16,9 +16,9 @@ import { fetchBranchHourlySalesAll } from '../../data/schedules';
 // ============================================================================
 const getStaffTheme = (colorTheme) => {
     const themes = {
-        amber: { bg: 'bg-surface-card hover:bg-warning/50', text: 'text-warning', ring: 'border-amber-400', badge: 'bg-amber-500', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-amber-400 to-orange-500' },
+        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-amber-400', badge: 'bg-amber-500', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-amber-400 to-orange-500' },
         blue: { bg: 'bg-surface-card hover:bg-blue-50/50', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-indigo-500' },
-        emerald: { bg: 'bg-surface-card hover:bg-success/50', text: 'text-success', ring: 'border-emerald-400', badge: 'bg-emerald-500', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-emerald-400 to-teal-500' },
+        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-emerald-400', badge: 'bg-emerald-500', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-emerald-400 to-teal-500' },
         purple: { bg: 'bg-surface-card hover:bg-purple-50/50', text: 'text-purple-600', ring: 'border-purple-400', badge: 'bg-purple-500', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-purple-400 to-fuchsia-500' },
         slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
     };
@@ -66,7 +66,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     if (isMissing) {
         return (
-            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-danger/60 bg-danger/30 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-red-400/50 hover:shadow-[0_8px_20px_rgba(239,68,68,0.1)] hover:-translate-y-1 min-h-[260px]">
+            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-red-400/50 hover:shadow-[0_8px_20px_rgba(239,68,68,0.1)] hover:-translate-y-1 min-h-[260px]">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
@@ -110,7 +110,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             {missingDocs && missingDocs.length > 0 && (
-                <div className="mx-2 mb-3 mt-1 p-2 bg-danger/70 border border-danger/60 rounded-xl flex items-start gap-1.5 backdrop-blur-sm shadow-inner">
+                <div className="mx-2 mb-3 mt-1 p-2 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-1.5 backdrop-blur-sm shadow-inner">
                     <FileX size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
                     <div className="flex flex-col">
                         <span className="text-[8px] font-black text-danger uppercase tracking-widest leading-tight">Faltan Archivos</span>
@@ -453,7 +453,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                     {/* 🚨 PÍLDORA WFM / DÉFICIT — solo farmacias */}
                     {isFarmacia && isStaffDeficit && (
-                        <div className="relative group/wfm flex items-center gap-2.5 bg-warning/50 backdrop-blur-md border border-warning/80 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
+                        <div className="relative group/wfm flex items-center gap-2.5 bg-warning/10 backdrop-blur-md border border-warning/30 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
                             <Calculator size={14} className="text-warning shrink-0" />
                             <div className="flex flex-col gap-1 w-28">
                                 <div className="flex justify-between items-center w-full">
@@ -690,7 +690,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 </p>
                                                 <p className="text-[9px] font-bold text-blue-500">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
                                             </div>
-                                            <div className="bg-warning/80 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
+                                            <div className="bg-warning/10 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-warning">Impacto en Plantilla</p>
                                                 <p className="text-[18px] font-black text-amber-700 mt-1">+{extraVolumeHours} Hrs</p>
                                                 <p className="text-[9px] font-bold text-warning">Añadidas al presupuesto semanal</p>
@@ -754,7 +754,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     ))}
 
                                     {(wfmApplied || isNewBranch || isStaffDeficit) && Array.from({ length: minStaff > coverageStaffCount ? minStaff - coverageStaffCount : 0 }).map((_, i) => (
-                                        <div key={`deficit-${i}`} onClick={handleEditHROperative} className="group flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-warning/30 bg-warning/20 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/40 min-h-[220px]">
+                                        <div key={`deficit-${i}`} onClick={handleEditHROperative} className="group flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
                                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>

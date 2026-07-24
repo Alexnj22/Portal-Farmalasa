@@ -11,9 +11,9 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 
 const STATUS_CFG = {
-  pending:  { label: 'Pendiente', cls: 'bg-warning/80 text-amber-700 border-warning/30' },
-  approved: { label: 'Aprobada',  cls: 'bg-success/80 text-emerald-700 border-success/30' },
-  rejected: { label: 'Rechazada', cls: 'bg-danger/80 text-danger border-danger/30' },
+  pending:  { label: 'Pendiente', cls: 'bg-warning/10 text-amber-700 border-warning/30' },
+  approved: { label: 'Aprobada',  cls: 'bg-success/10 text-emerald-700 border-success/30' },
+  rejected: { label: 'Rechazada', cls: 'bg-danger/10 text-danger border-danger/30' },
 };
 
 function relTime(iso) {
@@ -66,7 +66,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
             <Building2 size={10} /> {ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}
           </span>
           {r.current_sales_6m != null && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success/70 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
               <TrendingUp size={10} /> {Number(r.current_sales_6m).toLocaleString()} und · 6m
             </span>
           )}

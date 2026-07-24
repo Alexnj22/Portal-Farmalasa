@@ -195,7 +195,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             {hasDraft && (
                                                 <div className="flex flex-col items-start gap-0.5 mt-0.5">
                                                     <span className="text-[7px] font-black uppercase tracking-wide text-warning leading-none">Borrador</span>
-                                                    <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-amber-300 bg-warning/50">
+                                                    <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-amber-300 bg-warning/10">
                                                         <span className="text-warning font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
                                                         <span className="text-amber-300">·</span>
                                                         <span className="text-warning font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
@@ -264,7 +264,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     <span className="text-[9px] font-black uppercase tracking-widest text-warning">Traslado sugerido</span>
                     <div className="flex flex-wrap gap-2">
                         {transferSuggestions.map(s => (
-                            <div key={s.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/80 border border-warning/80">
+                            <div key={s.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
                                 <Building2 size={9} className="text-warning shrink-0" />
                                 <span className="text-[10px] font-black text-amber-800">{s.name}</span>
                                 <span className="text-[10px] font-bold text-warning tabular-nums">{s.transferable.toLocaleString()} und disponibles</span>
@@ -581,7 +581,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                             ) : (
                                 <div className="flex flex-wrap gap-2">
                                     <button onClick={() => logDeadStockAction('transfer')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-amber-700 bg-warning/80 border border-warning/80 rounded-xl hover:bg-warning/80 transition-colors">
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-amber-700 bg-warning/10 border border-warning/30 rounded-xl hover:bg-warning/10 transition-colors">
                                         <Building2 size={11} /> Marcar para traslado
                                     </button>
                                     <button onClick={() => logDeadStockAction('liquidate')}

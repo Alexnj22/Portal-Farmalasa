@@ -69,7 +69,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Confirmado: llegada de cajas (7A.5) */}
             {llegadaOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/40 border-success/30 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/10 border-success/30 text-[11px]">
                     <PackageCheck size={13} className="text-success" />
                     <span className="text-emerald-700">
                         Llegada confirmada{llegadaTipo && LLEGADA_TIPO_LABEL[llegadaTipo] ? ` — ${LLEGADA_TIPO_LABEL[llegadaTipo]}` : ''}
@@ -145,7 +145,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Completado en ERP */}
             {erpOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/40 border-success/30 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/10 border-success/30 text-[11px]">
                     <Database size={13} className="text-success" />
                     <span className="text-emerald-700">Confirmado en Sistema de Ventas</span>
                     <div className="ml-auto flex items-center gap-1.5">

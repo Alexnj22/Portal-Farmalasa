@@ -91,8 +91,8 @@ export default function ReenvioLlegadaModal({
                         </p>
                         {cajasCiclo.map(num => {
                             const est   = getEst(num);
-                            const rowBg = est === 'ok'     ? 'bg-success/60 border-success/70'
-                                        : est === 'danada' ? 'bg-warning/60 border-warning/70'
+                            const rowBg = est === 'ok'     ? 'bg-success/10 border-success/30'
+                                        : est === 'danada' ? 'bg-warning/10 border-warning/30'
                                         :                    'bg-rose-50/60 border-rose-200/70';
                             const numBg = est === 'ok'     ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
                                         : est === 'danada' ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
@@ -128,7 +128,7 @@ export default function ReenvioLlegadaModal({
 
                 {/* Electrolit */}
                 {electrolitCount > 0 && (
-                    <div className="p-3 rounded-2xl border border-warning/30 bg-warning/60 flex flex-col gap-2.5">
+                    <div className="p-3 rounded-2xl border border-warning/30 bg-warning/10 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
                             <Zap size={13} className="text-warning shrink-0" />
                             <span className="text-[11px] font-semibold text-amber-700 flex-1">
@@ -175,7 +175,7 @@ export default function ReenvioLlegadaModal({
                             {especialesList.map(label => {
                                 const est = espEstados[label] ?? 'ok';
                                 return (
-                                    <div key={label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/80 border-success/70' : 'bg-rose-50/80 border-rose-200/70'}`}>
+                                    <div key={label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-rose-50/80 border-rose-200/70'}`}>
                                         <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-rose-600'}`}>{label}</span>
                                         <div className="flex items-center gap-1 ml-auto shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}

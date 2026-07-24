@@ -614,7 +614,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         countCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'con'}
                         activeBg="bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/40"
+                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'con' ? '' : 'con')}
                     />
@@ -624,7 +624,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         countCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
                         active={filterRule === 'sin'}
                         activeBg="bg-danger/10 border-red-300 shadow-md shadow-red-100/80 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/40"
+                        inactiveBg="bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
                     />
@@ -634,7 +634,7 @@ export default function TabReglas({ searchTerm = '' }) {
                         countCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'nuevo'}
                         activeBg="bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/40"
+                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/10"
                         loading={statsLoading}
                         onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
                     />

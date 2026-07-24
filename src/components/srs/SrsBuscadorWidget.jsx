@@ -66,8 +66,8 @@ export default function SrsBuscadorWidget({
             <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     {loading
-                        ? <Loader2 size={14} className="text-[#0052CC] animate-spin" />
-                        : <Search size={14} className="text-slate-400" />
+                        ? <Loader2 size={14} className="text-brand animate-spin" />
+                        : <Search size={14} className="text-content-3" />
                     }
                 </div>
                 <input
@@ -75,14 +75,14 @@ export default function SrsBuscadorWidget({
                     value={query}
                     onChange={e => handleInput(e.target.value)}
                     placeholder="Buscar en Registro SRS..."
-                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
                     autoFocus
                     spellCheck={false}
                     autoComplete="off"
                 />
                 {query && (
                     <button onClick={() => { setQuery(''); setResults(null); setTotal(0); }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">
                         <X size={11} strokeWidth={2.5} />
                     </button>
                 )}
@@ -90,7 +90,7 @@ export default function SrsBuscadorWidget({
 
             {/* Error */}
             {error && (
-                <div className="px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-[11px] text-red-500 font-medium">
+                <div className="px-4 py-3 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] text-danger font-medium">
                     {error}
                 </div>
             )}
@@ -99,12 +99,12 @@ export default function SrsBuscadorWidget({
             {results !== null && (
                 <>
                     {results.length === 0 ? (
-                        <div className="py-8 text-center text-[12px] text-slate-500 font-medium">
+                        <div className="py-8 text-center text-[12px] text-content-3 font-medium">
                             Sin resultados para "{query}"
                         </div>
                     ) : (
                         <>
-                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-1">
+                            <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest px-1">
                                 {total} resultado{total !== 1 ? 's' : ''} en SRS
                             </p>
 
@@ -124,17 +124,17 @@ export default function SrsBuscadorWidget({
                                     <button
                                         disabled={page <= 1}
                                         onClick={() => goPage(page - 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-slate-500 border border-slate-200 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-slate-200 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                     >
                                         <ChevronLeft size={11} strokeWidth={2.5} /> Ant.
                                     </button>
-                                    <span className="text-[11px] text-slate-500 font-medium">
+                                    <span className="text-[11px] text-content-3 font-medium">
                                         Pág. {page} / {lastPage}
                                     </span>
                                     <button
                                         disabled={page >= lastPage}
                                         onClick={() => goPage(page + 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-slate-500 border border-slate-200 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-slate-200 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                     >
                                         Sig. <ChevronRight size={11} strokeWidth={2.5} />
                                     </button>
@@ -188,17 +188,17 @@ function SrsResultCard({ product: p, onSelect }) {
     return (
         <div
             className={`rounded-2xl border bg-white p-3.5 flex flex-col gap-2 transition-all ${
-                onSelect ? 'cursor-pointer hover:border-[#0052CC]/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-slate-200'
+                onSelect ? 'cursor-pointer hover:border-brand/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-slate-200'
             }`}
             onClick={onSelect || undefined}
         >
             {/* Header row */}
             <div className="flex items-start justify-between gap-2">
-                <p className="text-[12px] font-black text-slate-800 leading-tight flex-1">
-                    {nombre || <span className="text-slate-500 font-normal italic">Sin nombre</span>}
+                <p className="text-[12px] font-black text-content leading-tight flex-1">
+                    {nombre || <span className="text-content-3 font-normal italic">Sin nombre</span>}
                 </p>
                 <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full ${
-                    activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                    activo ? 'bg-success/10 text-emerald-700' : 'bg-surface-card-hover text-content-3'
                 }`}>
                     {activo ? 'ACTIVO' : 'INACTIVO'}
                 </span>
@@ -208,14 +208,14 @@ function SrsResultCard({ product: p, onSelect }) {
             {(lab || forma) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                     {lab && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                            <Building2 size={10} className="text-slate-400 shrink-0" />
+                        <span className="flex items-center gap-1 text-[11px] text-content-3">
+                            <Building2 size={10} className="text-content-3 shrink-0" />
                             {lab}
                         </span>
                     )}
                     {forma && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                            <Pill size={10} className="text-slate-400 shrink-0" />
+                        <span className="flex items-center gap-1 text-[11px] text-content-3">
+                            <Pill size={10} className="text-content-3 shrink-0" />
                             {forma}
                         </span>
                     )}
@@ -237,10 +237,10 @@ function SrsResultCard({ product: p, onSelect }) {
             {(noregistro || fechaStr) && (
                 <div className="flex items-center gap-3 pt-0.5">
                     {noregistro && (
-                        <span className="text-[10px] text-slate-500 font-mono">{noregistro}</span>
+                        <span className="text-[10px] text-content-3 font-mono">{noregistro}</span>
                     )}
                     {fechaStr && (
-                        <span className="text-[10px] text-slate-500">{fechaStr}</span>
+                        <span className="text-[10px] text-content-3">{fechaStr}</span>
                     )}
                 </div>
             )}

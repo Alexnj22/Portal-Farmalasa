@@ -152,7 +152,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
             {/* ── Oportunidades de traslado ── */}
             {!loading && transferOps.length > 0 && (
-                <div className="rounded-2xl border border-warning/60 bg-warning/50 backdrop-blur-sm p-4 flex flex-col gap-3"
+                <div className="rounded-2xl border border-warning/30 bg-warning/10 backdrop-blur-sm p-4 flex flex-col gap-3"
                     style={{ boxShadow: '0 4px 20px rgba(245,158,11,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
                     <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-warning">Oportunidades de traslado</span>
@@ -265,7 +265,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 {pageRows.map((row, i) => {
                     const bs     = row.branches || {};
                     const maxSev = Math.max(...Object.values(bs).map(b => SEVERITY[b.alr] ?? 0), 0);
-                    const rowTint = maxSev >= 4 ? 'bg-danger/40' : maxSev >= 3 ? 'bg-orange-50/30' : '';
+                    const rowTint = maxSev >= 4 ? 'bg-danger/10' : maxSev >= 3 ? 'bg-orange-50/30' : '';
                     return (
                         <DataRow key={row.erp_product_id} index={i} className={rowTint}>
                             <DataCell align="left" className="!py-2">

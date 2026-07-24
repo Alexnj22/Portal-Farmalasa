@@ -339,7 +339,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {canEdit && <button
                             onClick={() => setIsEditMode(!isEditMode)}
                             className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-full transition-all duration-300 transform-gpu active:scale-[0.97] shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
-                                    ? 'bg-danger/10 text-danger border border-danger/50 hover:bg-red-500 hover:text-white'
+                                    ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-red-500 hover:text-white'
                                     : 'bg-white text-brand border border-white hover:border-brand/30'
                                 }`}
                             title={isEditMode ? "Cerrar edición" : "Configurar sucursal"}

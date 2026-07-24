@@ -347,9 +347,9 @@ const EmployeeDocumentsView = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         {[
                             { label: 'Total',         value: allDocs.length,                                               color: 'text-content-2',    bg: 'bg-surface-card'       },
-                            { label: 'Incapacidades', value: allDocs.filter(d => d.type === 'DISABILITY').length,           color: 'text-danger',      bg: 'bg-danger/80'      },
+                            { label: 'Incapacidades', value: allDocs.filter(d => d.type === 'DISABILITY').length,           color: 'text-danger',      bg: 'bg-danger/10'      },
                             { label: 'Constancias',   value: allDocs.filter(d => d.type === 'CERTIFICATE').length,          color: 'text-blue-600',     bg: 'bg-blue-50/80'     },
-                            { label: 'Con Archivo',   value: allDocs.filter(d => d.meta?.docUrl).length,                   color: 'text-success',  bg: 'bg-success/80'  },
+                            { label: 'Con Archivo',   value: allDocs.filter(d => d.meta?.docUrl).length,                   color: 'text-success',  bg: 'bg-success/10'  },
                         ].map(s => (
                             <div key={s.label} className={`${s.bg} backdrop-blur-sm border border-border-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.03)]`}>
                                 <div className="flex-1 min-w-0">

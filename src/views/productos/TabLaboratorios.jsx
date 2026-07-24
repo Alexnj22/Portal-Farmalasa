@@ -521,7 +521,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
 
 function GlassChip({ icon, label, sub, color }) {
     const cls = color === 'amber'
-        ? 'bg-gradient-to-r from-amber-50 to-amber-50/60 border-warning/70 text-amber-700'
+        ? 'bg-gradient-to-r from-amber-50 to-amber-50/60 border-warning/30 text-amber-700'
         : 'bg-gradient-to-r from-teal-50 to-teal-50/60 border-teal-200/70 text-teal-700';
     return (
         <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold backdrop-blur-sm ${cls}`}>

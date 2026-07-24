@@ -974,7 +974,7 @@ export default function CotizacionesView() {
                     </div>
 
                     {cot.notes && (
-                        <div className="bg-warning/80 border border-warning/60 rounded-2xl px-5 py-4">
+                        <div className="bg-warning/10 border border-warning/30 rounded-2xl px-5 py-4">
                             <p className="text-[9px] font-black text-warning uppercase tracking-widest mb-1">Notas</p>
                             <p className="text-[13px] font-bold text-amber-900">{cot.notes}</p>
                         </div>
@@ -1068,7 +1068,7 @@ export default function CotizacionesView() {
                             key={cot.id}
                             index={i}
                             onClick={() => openCot(cot)}
-                            className={isAnulada ? 'opacity-50 bg-danger/20' : ''}
+                            className={isAnulada ? 'opacity-50 bg-danger/10' : ''}
                         >
                             <DataCell>
                                 <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-content-3' : 'text-brand'}`}>{cot.numero}</span>

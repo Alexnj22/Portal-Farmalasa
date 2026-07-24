@@ -33,7 +33,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const badgeEl = ann.targetType === 'GLOBAL'
         ? <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={11} strokeWidth={2} /> Global</span>
         : ann.targetType === 'BRANCH'
-        ? <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/50"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
+        ? <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
         : ann.targetType === 'ROLE'
         ? <span className="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-purple-200/50"><User size={11} strokeWidth={2} /> Cargo</span>
         : <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={11} strokeWidth={2} /> Personal</span>;
@@ -80,7 +80,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
             {/* Detalle del metadata según tipo de solicitud */}
             {meta?.requestType && (
                 <div className={`rounded-2xl border p-3 space-y-2 ${
-                    meta.status === 'APPROVED' ? 'bg-success/60 border-success/60' : 'bg-danger/60 border-danger/60'
+                    meta.status === 'APPROVED' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30'
                 }`}>
                     {/* Cambio de turno */}
                     {meta.requestType === 'SHIFT_CHANGE' && (
@@ -320,7 +320,7 @@ const UnreadStack = memo(({ list, onRead }) => {
     const badgeEl = current.targetType === 'GLOBAL'
         ? <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
         : current.targetType === 'BRANCH'
-        ? <span className="flex items-center gap-1.5 text-emerald-700 bg-success/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-success/60"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
+        ? <span className="flex items-center gap-1.5 text-emerald-700 bg-success/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
         : current.targetType === 'ROLE'
         ? <span className="flex items-center gap-1.5 text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-purple-200/60"><User size={10} strokeWidth={2.5}/> Cargo</span>
         : <span className="flex items-center gap-1.5 text-orange-700 bg-orange-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-orange-200/60"><User size={10} strokeWidth={2.5}/> Personal</span>;
@@ -430,7 +430,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                             phase === 'check'
                                 ? 'border-emerald-300 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-white'
                                 : isUrgent
-                                ? 'border-danger/70   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-white'
+                                ? 'border-danger/30   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-white'
                                 : 'border-slate-200/50 shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-white'
                         }`}
                     >
@@ -463,8 +463,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                             {meta?.requestType && (
                                 <div className={`rounded-2xl border p-4 space-y-2.5 ${
                                     meta.status === 'APPROVED'
-                                        ? 'bg-gradient-to-br from-emerald-50 to-teal-50/40 border-success/70'
-                                        : 'bg-gradient-to-br from-red-50 to-orange-50/40 border-danger/70'
+                                        ? 'bg-gradient-to-br from-emerald-50 to-teal-50/40 border-success/30'
+                                        : 'bg-gradient-to-br from-red-50 to-orange-50/40 border-danger/30'
                                 }`}>
                                     {meta.requestType === 'SHIFT_CHANGE' && (<>
                                         {meta.targetEmployeeName && (
@@ -580,7 +580,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         {/* barra de countdown que se encoge en 5s */}
                         <div
                             key={undoKey}
-                            className="absolute inset-0 bg-warning/80"
+                            className="absolute inset-0 bg-warning/10"
                             style={{ transformOrigin: 'left center', animation: 'undo-shrink 5s linear forwards' }}
                         />
                         <ChevronLeft size={14} strokeWidth={2.5} className="relative z-10 flex-shrink-0" />
@@ -739,7 +739,7 @@ const EmployeeAnnouncementsView = () => {
                                     key === 'URGENT'
                                         ? isActive
                                             ? 'bg-red-500 text-white border-red-500 shadow-[0_3px_8px_rgba(239,68,68,0.35)] scale-[1.02]'
-                                            : 'bg-transparent text-danger border-danger/60 hover:bg-danger/10 hover:-translate-y-0.5'
+                                            : 'bg-transparent text-danger border-danger/30 hover:bg-danger/10 hover:-translate-y-0.5'
                                         : isActive
                                         ? 'bg-white text-content border-white shadow-md scale-[1.02]'
                                         : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5'

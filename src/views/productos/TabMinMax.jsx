@@ -1233,7 +1233,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     )}
                                                     <span
                                                         title="Hover para ver sucursales pendientes"
-                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-warning/10 border border-warning/80 cursor-help select-none"
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-warning/10 border border-warning/30 cursor-help select-none"
                                                         onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                         onMouseLeave={closeBodegaTooltip}
                                                     >
@@ -1274,7 +1274,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const pendingBadge = isBodega && row.has_pending_branches ? (
                                                 <span
                                                     title="Hover para ver sucursales pendientes"
-                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-warning/10 border border-warning/80 cursor-help select-none"
+                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-warning/10 border border-warning/30 cursor-help select-none"
                                                     onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                     onMouseLeave={closeBodegaTooltip}
                                                 >

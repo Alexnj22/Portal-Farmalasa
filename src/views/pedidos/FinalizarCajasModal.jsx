@@ -233,7 +233,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                     className={`rounded-2xl border transition-all ${
                                         hasAssignment
                                             ? 'bg-surface-card border-slate-200/70'
-                                            : 'bg-warning/60 border-warning/30'
+                                            : 'bg-warning/10 border-warning/30'
                                     }`}>
                                     {/* Page info row */}
                                     <div className="flex items-center gap-3 px-3 pt-3 pb-2">

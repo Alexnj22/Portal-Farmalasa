@@ -40,8 +40,8 @@ function useTokens() {
     theadBorderRow:    'border-b border-brand/[0.09]',
     thText:            'text-content-3',
     thHover:           'hover:bg-surface-card-hover hover:text-content',
-    toolbarBorder:     'border-b border-white/40',
-    footerBorder:      'border-t border-white/40',
+    toolbarBorder:     'border-b border-border-card',
+    footerBorder:      'border-t border-border-card',
     divide:            'divide-y divide-divider',
     rowHover:          'hover:bg-brand/[0.032]',
     cellText:          'text-content',
@@ -65,7 +65,7 @@ export function useExpandStyle() {
   const tk = useTable();
   if (!tk) {
     // Fallback si se usa fuera de DataTable (no debería ocurrir)
-    return { expandBg: '', expandBorderColor: 'border-slate-100', expandText: 'text-slate-500', expandTextStrong: 'text-slate-700' };
+    return { expandBg: '', expandBorderColor: 'border-slate-100', expandText: 'text-content-3', expandTextStrong: 'text-content-2' };
   }
   return {
     expandBg: tk.expandBg,

@@ -58,7 +58,7 @@ const EligibilityBanner = ({ info }) => {
     let cfg;
     if (isEligible && inWindow) {
         cfg = {
-            bg: 'bg-success/80 border-success/60',
+            bg: 'bg-success/10 border-success/30',
             icon: <CheckCircle2 size={10} strokeWidth={2.5} className="text-emerald-700" />,
             label: 'Dentro de ventana válida',
             labelColor: 'text-emerald-700',
@@ -66,7 +66,7 @@ const EligibilityBanner = ({ info }) => {
         };
     } else if (isEligible && !inWindow) {
         cfg = {
-            bg: 'bg-warning/80 border-warning/60',
+            bg: 'bg-warning/10 border-warning/30',
             icon: <AlertCircle size={10} strokeWidth={2.5} className="text-amber-700" />,
             label: 'Fuera de ventana óptima',
             labelColor: 'text-amber-700',
@@ -82,7 +82,7 @@ const EligibilityBanner = ({ info }) => {
         };
     } else {
         cfg = {
-            bg: 'bg-danger/80 border-danger/60',
+            bg: 'bg-danger/10 border-danger/30',
             icon: <Ban size={10} strokeWidth={2.5} className="text-red-700" />,
             label: 'No elegible',
             labelColor: 'text-red-700',
@@ -830,7 +830,7 @@ const VacationPlanView = () => {
 
                                 {/* Confirmación inline al guardar edición */}
                                 {confirmingEdit && (
-                                    <div className="flex items-center gap-3 px-4 py-3 bg-warning/80 border border-warning/60 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-warning/10 border border-warning/30 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
                                         <AlertCircle size={14} className="text-warning shrink-0" strokeWidth={2.5} />
                                         <span className="text-[11px] font-black text-amber-800 flex-1">¿Confirmar cambios?</span>
                                         <button type="button" onClick={() => setConfirmingEdit(false)} className="text-[10px] font-black text-content-3 hover:text-content-2 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-surface-card transition-all">No</button>
@@ -993,7 +993,7 @@ const VacationPlanView = () => {
                                                 const remaining = 15 - usedDays;
                                                 return (
                                                     <React.Fragment key={p.id}>
-                                                        <tr className={`group/row hover:bg-surface-card transition-colors ${isEditing ? 'bg-warning/60' : ''}`}>
+                                                        <tr className={`group/row hover:bg-surface-card transition-colors ${isEditing ? 'bg-warning/10' : ''}`}>
                                                             <td className="py-3 pr-4">
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
                                                                     <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">
@@ -1079,7 +1079,7 @@ const VacationPlanView = () => {
 
                         {/* Solicitudes de cambio */}
                         {vacationChangeRequests.length > 0 && (
-                            <div className="bg-surface-card backdrop-blur-[30px] border border-warning/60 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                            <div className="bg-surface-card backdrop-blur-[30px] border border-warning/30 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-warning flex items-center gap-1.5 mb-4">
                                     <MessageSquare size={10} /> Solicitudes de cambio ({vacationChangeRequests.length})
                                 </p>
@@ -1089,7 +1089,7 @@ const VacationPlanView = () => {
                                         const isProcessing = processingRequestId === req.id;
                                         const emp = req.employee;
                                         return (
-                                            <div key={req.id} className="bg-warning/60 border border-warning/60 rounded-2xl p-4">
+                                            <div key={req.id} className="bg-warning/10 border border-warning/30 rounded-2xl p-4">
                                                 <div className="flex flex-wrap items-start gap-3 justify-between">
                                                     <div className="flex items-center gap-2.5">
                                                         <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">

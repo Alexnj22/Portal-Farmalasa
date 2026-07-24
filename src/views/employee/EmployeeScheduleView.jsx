@@ -350,7 +350,7 @@ const EmployeeScheduleView = () => {
 
                                     {/* Requested change info */}
                                     {vp.status === 'CHANGE_REQUESTED' && vp.change_requested_start && (
-                                        <div className="flex items-center gap-2 bg-warning/10 border border-warning/60 rounded-xl px-3 py-2">
+                                        <div className="flex items-center gap-2 bg-warning/10 border border-warning/30 rounded-xl px-3 py-2">
                                             <MessageSquare size={11} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                             <p className="text-[10px] text-amber-700 font-bold">
                                                 Cambio solicitado: {fmtDate(vp.change_requested_start)} → {fmtDate(vp.change_requested_end)}

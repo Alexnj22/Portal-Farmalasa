@@ -171,8 +171,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 <div className="space-y-2">
                     {cajas.map(c => {
                         const est = getEst(c.num);
-                        const rowBg = est === 'ok'      ? 'bg-success/60 border-success/70'
-                                    : est === 'danada'  ? 'bg-warning/60 border-warning/70'
+                        const rowBg = est === 'ok'      ? 'bg-success/10 border-success/30'
+                                    : est === 'danada'  ? 'bg-warning/10 border-warning/30'
                                     :                     'bg-rose-50/60 border-rose-200/70';
                         const numBg = est === 'ok'      ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
                                     : est === 'danada'  ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
@@ -216,7 +216,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {/* Electrolit — cuántas no llegaron */}
                 {cajasElectrolit > 0 && (
-                    <div className="p-3 rounded-2xl border border-warning/30 bg-warning/60 flex flex-col gap-2.5">
+                    <div className="p-3 rounded-2xl border border-warning/30 bg-warning/10 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
                             <Zap size={13} className="text-warning shrink-0" />
                             <span className="text-[11px] font-semibold text-amber-700 flex-1">
@@ -277,7 +277,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             {cajasEspeciales.map(e => {
                                 const est = espEstados[e.label] ?? 'ok';
                                 return (
-                                    <div key={e.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/80 border-success/70' : 'bg-rose-50/80 border-rose-200/70'}`}>
+                                    <div key={e.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-rose-50/80 border-rose-200/70'}`}>
                                         <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-rose-600'}`}>{e.label}</span>
                                         <span className="flex-1 text-[10px] text-content-2 leading-tight">{e.product_name}</span>
                                         <div className="flex items-center gap-1 shrink-0">
@@ -302,7 +302,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {/* Cajas de más */}
                 <div>
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-warning/80 bg-warning/40">
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-warning/30 bg-warning/10">
                         <HelpCircle size={13} className="text-warning shrink-0" />
                         <span className="text-[11px] text-content-2 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
                         <div className="flex items-center gap-1.5 shrink-0">

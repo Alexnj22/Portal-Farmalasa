@@ -16,11 +16,11 @@ import { Loader2, X } from 'lucide-react';
  *
  * Props:
  *   icon       (component, obligatorio) -- icono Lucide
- *   iconBg     (string)                 -- clases Tailwind para el squircle, ej. 'bg-red-50'
- *   iconCls    (string)                 -- clases para el icono, ej. 'text-red-500'
+ *   iconBg     (string)                 -- clases Tailwind para el squircle, ej. 'bg-danger/10'
+ *   iconCls    (string)                 -- clases para el icono, ej. 'text-danger'
  *   label      (string, obligatorio)    -- etiqueta superior
  *   value      (string|number, oblig.)  -- numero/valor principal
- *   valueCls   (string)                 -- color del numero, ej. 'text-red-600'
+ *   valueCls   (string)                 -- color del numero, ej. 'text-danger'
  *   sub        (string, opcional)       -- texto terciario; altura SIEMPRE reservada
  *   active     (boolean)               -- estado seleccionado
  *   onClick    (fn, opcional)           -- si se pasa: card clickable con hover lift

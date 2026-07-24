@@ -424,7 +424,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     {/* --- MINI-DASHBOARD (SIGNOS VITALES) --- */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 mb-4 md:mb-5">
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className="p-2.5 bg-success/10 text-success rounded-xl shadow-sm border border-success/50"><CheckCircle size={18} strokeWidth={2.5}/></div>
+                            <div className="p-2.5 bg-success/10 text-success rounded-xl shadow-sm border border-success/30"><CheckCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Estado</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-content">{emp.effectiveStatus || emp.status || 'Activo'}</p>
@@ -445,7 +445,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </div>
                         </div>
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-danger/10 text-danger border-danger/50' : 'bg-surface-card-hover text-content-3 border-slate-100/50'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
+                            <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-surface-card-hover text-content-3 border-slate-100/50'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Tardanzas (Mes)</p>
                                 <p className={`text-[13px] md:text-[14px] font-bold ${latePunches > 0 ? 'text-danger' : 'text-content'}`}>{latePunches} Acumuladas</p>
@@ -547,7 +547,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                             {/* TARJETA DE EMERGENCIA */}
                             {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                                <div className="w-full bg-danger/50 backdrop-blur-md rounded-[2rem] border border-danger/50 shadow-sm p-6 relative overflow-hidden group">
+                                <div className="w-full bg-danger/10 backdrop-blur-md rounded-[2rem] border border-danger/30 shadow-sm p-6 relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 text-danger group-hover:scale-110 transition-transform duration-500"><HeartPulse size={80} /></div>
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2">
                                         <HeartPulse size={14} strokeWidth={3}/> Contacto de Emergencia
@@ -571,7 +571,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         )}
                                         {emp.blood_type && (
-                                            <div className="pt-2 border-t border-danger/50">
+                                            <div className="pt-2 border-t border-danger/30">
                                                 <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest">Tipo de Sangre</p>
                                                 <p className="text-[13px] font-black text-danger">{emp.blood_type}</p>
                                             </div>
@@ -914,12 +914,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     const isInsuranceDays = isDisability && daysNum > 3;
 
                                                     const cfg = isDisability
-                                                        ? { bg: 'bg-danger/60',    border: 'border-danger/60',    text: 'text-red-700',    badge: 'bg-danger/10 text-red-700 border-danger/30',       leftBorder: 'border-red-300',    Icon: Stethoscope, label: 'Incapacidad',
+                                                        ? { bg: 'bg-danger/10',    border: 'border-danger/30',    text: 'text-red-700',    badge: 'bg-danger/10 text-red-700 border-danger/30',       leftBorder: 'border-red-300',    Icon: Stethoscope, label: 'Incapacidad',
                                                             hover: 'hover:bg-danger/10 hover:border-red-300 hover:shadow-[0_8px_24px_rgba(239,68,68,0.12)]' }
                                                         : hasHours
                                                         ? { bg: 'bg-orange-50/60', border: 'border-orange-200/60', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-700 border-orange-200', leftBorder: 'border-orange-300', Icon: Clock,       label: 'Permiso por Horas',
                                                             hover: 'hover:bg-orange-50 hover:border-orange-300 hover:shadow-[0_8px_24px_rgba(249,115,22,0.12)]' }
-                                                        : { bg: 'bg-warning/60',  border: 'border-warning/60',  text: 'text-amber-700',  badge: 'bg-warning/10 text-amber-700 border-warning/30',  leftBorder: 'border-amber-300',  Icon: FileText,    label: 'Permiso',
+                                                        : { bg: 'bg-warning/10',  border: 'border-warning/30',  text: 'text-amber-700',  badge: 'bg-warning/10 text-amber-700 border-warning/30',  leftBorder: 'border-amber-300',  Icon: FileText,    label: 'Permiso',
                                                             hover: 'hover:bg-warning/10 hover:border-amber-300 hover:shadow-[0_8px_24px_rgba(245,158,11,0.12)]' };
 
                                                     return (

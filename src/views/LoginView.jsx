@@ -356,16 +356,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 <div className={[
                     'flex items-center gap-3 px-4 rounded-[1.5rem] border backdrop-blur-md transition-all duration-300',
                     compact ? 'py-2.5' : 'py-3',
-                    st === 'error'   ? 'bg-danger/55 border-danger/80' :
-                    st === 'success' ? 'bg-success/55 border-success/80' :
+                    st === 'error'   ? 'bg-danger/10 border-danger/30' :
+                    st === 'success' ? 'bg-success/10 border-success/30' :
                     paused           ? 'bg-white/[0.14] border-border-card' :
                                        'bg-brand/[0.05] border-brand/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]',
                 ].join(' ')}>
                     <div className={[
                         'relative shrink-0 flex items-center justify-center rounded-[1rem] border transition-all duration-300',
                         compact ? 'w-10 h-10' : 'w-11 h-11',
-                        st === 'error'   ? 'bg-danger/60 border-danger/30' :
-                        st === 'success' ? 'bg-success/60 border-success/30' :
+                        st === 'error'   ? 'bg-danger/10 border-danger/30' :
+                        st === 'success' ? 'bg-success/10 border-success/30' :
                         paused           ? 'bg-surface-card border-border-card' :
                                            'bg-surface-card border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]',
                     ].join(' ')}>
@@ -457,7 +457,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </div>
                 ))}
                 {error && (
-                    <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 py-3 bg-danger/50 backdrop-blur-md border border-danger/80 rounded-[1.25rem] flex items-center gap-3">
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 py-3 bg-danger/10 backdrop-blur-md border border-danger/30 rounded-[1.25rem] flex items-center gap-3">
                         <AlertCircle size={15} className="text-danger shrink-0" strokeWidth={2.5} />
                         <p className="text-danger text-[10px] font-black uppercase tracking-widest">{error}</p>
                     </div>
@@ -497,7 +497,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-[16px] rounded-[1.25rem]`} />
                                 </div>
                             ))}
-                            {changePassError && <div className="px-4 py-2.5 bg-danger/60 border border-danger/80 rounded-[1rem] flex items-center gap-2"><AlertCircle size={14} className="text-danger shrink-0" strokeWidth={2.5}/><p className="text-[11px] font-black text-danger">{changePassError}</p></div>}
+                            {changePassError && <div className="px-4 py-2.5 bg-danger/10 border border-danger/30 rounded-[1rem] flex items-center gap-2"><AlertCircle size={14} className="text-danger shrink-0" strokeWidth={2.5}/><p className="text-[11px] font-black text-danger">{changePassError}</p></div>}
                             <GlassButton type="submit" disabled={changePassLoading||!newPassword||!confirmPassword} height="h-[52px]">
                                 {changePassLoading?<Loader2 size={18} className="animate-spin"/>:'Guardar contraseña'}
                             </GlassButton>

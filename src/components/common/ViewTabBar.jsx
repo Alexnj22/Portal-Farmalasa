@@ -42,7 +42,7 @@ export default function ViewTabBar({
 
   const activeTabCls = 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]';
   const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active';
-  const dividerCls   = 'bg-white/40';
+  const dividerCls   = 'bg-surface-card';
   const inputCls     = 'text-content-2 placeholder:text-content-3';
   const closeBtnCls  = 'text-content-3 hover:bg-surface-tab-active hover:text-brand hover:shadow-md';
   const clearBtnCls  = 'text-content-3 hover:text-danger';

@@ -181,48 +181,48 @@ const FormTurnos = ({ branches }) => {
         const isBusy = actionLoading === shift.id;
 
         return (
-            <div className={`bg-white rounded-[1.25rem] border shadow-sm transition-all duration-300 relative overflow-hidden group ${isCurrentlyEditing ? 'border-[#0052CC] shadow-[0_8px_30px_rgba(0,82,204,0.1)] ring-2 ring-[#0052CC]/10' : 'border-slate-100'} ${isBeingDeleted ? 'bg-red-50' : 'hover:border-[#0052CC]/30 hover:shadow-md'}`}>
+            <div className={`bg-white rounded-[1.25rem] border shadow-sm transition-all duration-300 relative overflow-hidden group ${isCurrentlyEditing ? 'border-brand shadow-[0_8px_30px_rgba(0,82,204,0.1)] ring-2 ring-brand/10' : 'border-slate-100'} ${isBeingDeleted ? 'bg-danger/10' : 'hover:border-brand/30 hover:shadow-md'}`}>
                 
-                {isArchived && <div className="absolute top-0 right-0 w-2 h-full bg-slate-300"></div>}
+                {isArchived && <div className="absolute top-0 right-0 w-2 h-full bg-content-3"></div>}
                 
                 <div className="p-4 md:p-5">
                     <div className="flex items-center justify-between mb-3 gap-2">
                         <div className="flex-1 min-w-0">
-                            <h5 className="text-[13px] md:text-[14px] font-black text-slate-800 leading-tight mb-1 truncate">{shift.name}</h5>
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[8.5px] font-black uppercase tracking-widest text-slate-500">
+                            <h5 className="text-[13px] md:text-[14px] font-black text-content leading-tight mb-1 truncate">{shift.name}</h5>
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-card-hover border border-slate-200 text-[8.5px] font-black uppercase tracking-widest text-content-3">
                                 <Building2 size={10}/> {bName}
                             </span>
                         </div>
                         
                         {/* CONTROLES DE ACCIÓN (Glassmorphic) */}
-                        <div className={`flex items-center gap-1.5 shrink-0 bg-white/70 backdrop-blur-md border border-white/90 p-1.5 rounded-full shadow-inner ${isArchived || isBeingDeleted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                        <div className={`flex items-center gap-1.5 shrink-0 bg-surface-card backdrop-blur-md border border-border-card p-1.5 rounded-full shadow-inner ${isArchived || isBeingDeleted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                             {isBusy ? (
-                                <Loader2 size={16} className="animate-spin text-slate-400" />
+                                <Loader2 size={16} className="animate-spin text-content-3" />
                             ) : isBeingDeleted ? (
                                 <>
-                                    <button onClick={() => setConfirmingArchiveId(null)} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"><X size={14} strokeWidth={3}/></button>
+                                    <button onClick={() => setConfirmingArchiveId(null)} className="w-7 h-7 rounded-full flex items-center justify-center bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-colors"><X size={14} strokeWidth={3}/></button>
                                     <button onClick={() => handleArchiveShift(shift)} className="w-7 h-7 rounded-full flex items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-colors shadow-md"><Check size={14} strokeWidth={3}/></button>
                                 </>
                             ) : isArchived ? (
-                                <button onClick={() => handleRestoreShift(shift)} title="Restaurar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"><Plus size={16} strokeWidth={2.5}/></button>
+                                <button onClick={() => handleRestoreShift(shift)} title="Restaurar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-success/10 text-success hover:bg-emerald-500 hover:text-white transition-colors"><Plus size={16} strokeWidth={2.5}/></button>
                             ) : (
                                 <>
-                                    <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-[#0052CC] hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Pencil size={15} strokeWidth={2.5}/></button>
-                                    <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Package size={15} strokeWidth={2.5}/></button>
+                                    <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-card-hover text-content-2 hover:bg-brand hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Pencil size={15} strokeWidth={2.5}/></button>
+                                    <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-danger/10 text-danger hover:bg-red-500 hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Package size={15} strokeWidth={2.5}/></button>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-4 border border-slate-100">
+                    <div className="bg-surface-card-hover rounded-xl p-3 flex items-center gap-4 border border-slate-100">
                         <div className="flex-1">
-                            <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Entrada</label>
-                            <p className="text-[12px] md:text-[13px] font-bold text-slate-700 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
+                            <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Entrada</label>
+                            <p className="text-[12px] md:text-[13px] font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
                         </div>
-                        <div className="w-px h-8 bg-slate-200"></div>
+                        <div className="w-px h-8 bg-surface-card-hover"></div>
                         <div className="flex-1">
-                            <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Salida</label>
-                            <p className="text-[12px] md:text-[13px] font-bold text-slate-700 font-mono tracking-tighter">{formatTime12h(shift.end_time || shift.end)}</p>
+                            <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Salida</label>
+                            <p className="text-[12px] md:text-[13px] font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.end_time || shift.end)}</p>
                         </div>
                     </div>
                 </div>
@@ -238,23 +238,23 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             <div className="flex flex-col h-full bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.03)] rounded-[2rem] p-6 sticky top-0">
                 <div className="flex items-center gap-3 mb-6 shrink-0 border-b border-slate-100 pb-5">
-                    <div className={`w-11 h-11 flex items-center justify-center rounded-2xl shrink-0 border ${editingShiftId ? 'bg-amber-50 text-amber-500 border-amber-100' : 'bg-indigo-50 text-indigo-500 border-indigo-100'}`}>
+                    <div className={`w-11 h-11 flex items-center justify-center rounded-2xl shrink-0 border ${editingShiftId ? 'bg-warning/10 text-warning border-warning/30' : 'bg-indigo-50 text-indigo-500 border-indigo-100'}`}>
                         {editingShiftId ? <Pencil size={20} strokeWidth={2.5} /> : <BookOpen size={20} strokeWidth={2.5} />}
                     </div>
                     <div>
-                        <h4 className="text-[13px] md:text-[14px] font-black text-slate-800 uppercase tracking-tightleading-none mb-1">
+                        <h4 className="text-[13px] md:text-[14px] font-black text-content uppercase tracking-tightleading-none mb-1">
                             {editingShiftId ? 'Editor de Turno' : 'Creador de Turno'}
                         </h4>
-                        <p className="text-[10px] md:text-[11px] font-bold text-slate-600 uppercase tracking-widest">Configuración del Catálogo</p>
+                        <p className="text-[10px] md:text-[11px] font-bold text-content-2 uppercase tracking-widest">Configuración del Catálogo</p>
                     </div>
                     {editingShiftId && (
-                        <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
+                        <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
                     )}
                 </div>
 
                 <div className="flex-1 space-y-6">
                     <div>
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sucursal Asignada</label>
+                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest">Sucursal Asignada</label>
                         <div className="mt-2">
                             <LiquidSelect
                                 value={currentForm.branchId}
@@ -267,12 +267,12 @@ const FormTurnos = ({ branches }) => {
                     </div>
                     
                     <div>
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nombre Identificador del Turno</label>
+                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest">Nombre Identificador del Turno</label>
                         <input 
                             required 
                             type="text"
                             placeholder="Ej: Mañana 8am-4pm" 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#0052CC] shadow-sm text-[16px] md:text-[16px] font-bold text-slate-700 placeholder:text-slate-300" 
+                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-brand shadow-sm text-[16px] md:text-[16px] font-bold text-content-2 placeholder:text-content-3" 
                             value={currentForm.name} 
                             onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })} 
                         />
@@ -280,11 +280,11 @@ const FormTurnos = ({ branches }) => {
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Hora de Entrada</label>
+                            <label className="text-[10px] font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Entrada</label>
                             <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm({ ...currentForm, start: v })} />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Hora de Salida</label>
+                            <label className="text-[10px] font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Salida</label>
                             <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm({ ...currentForm, end: v })} />
                         </div>
                     </div>
@@ -292,13 +292,13 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="mt-auto pt-6 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                     {editingShiftId && (
-                         <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-100 disabled:opacity-50">Cancelar</button>
+                         <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-full text-[10px] font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover disabled:opacity-50">Cancelar</button>
                     )}
                     <button 
                         type="button" 
                         onClick={handleSaveShift} 
                         disabled={isLoading}
-                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 hover:shadow-lg' : 'bg-[#0052CC] text-white border-[#003D99] hover:bg-[#003D99] hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 hover:shadow-lg' : 'bg-brand text-white border-brand-hover hover:bg-brand-hover hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         {isLoading ? (
                             <><Loader2 size={14} className="animate-spin"/> Guardando</>
@@ -312,10 +312,10 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             {/* 📋 PANEL DERECHO: LISTA DE TURNOS (Bento Cards + Scroll) */}
             {/* ================================================================================= */}
-            <div className="flex flex-col h-full bg-slate-50 rounded-[2rem] border border-slate-100 p-6 overflow-hidden">
+            <div className="flex flex-col h-full bg-surface-card-hover rounded-[2rem] border border-slate-100 p-6 overflow-hidden">
                 <div className="flex items-center justify-between gap-4 mb-6 shrink-0 pb-5 border-b border-slate-100/60">
-                    <h4 className="text-[12px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
-                        <ListTodo size={16} className="text-[#0052CC]"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
+                    <h4 className="text-[12px] font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                        <ListTodo size={16} className="text-brand"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
                     </h4>
                     
                     {/* FILTROS DE SUCURSAL Y ESTADO (Minificados) */}
@@ -344,8 +344,8 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-hide pb-8 relative">
                     {allShifts === null ? (
-                         <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-3 opacity-60">
-                             <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-[#0052CC]" />
+                         <div className="h-full flex flex-col items-center justify-center text-content-3 gap-3 opacity-60">
+                             <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-brand" />
                              <p className="text-[10px] font-black uppercase tracking-widest text-center">Conectando a Supabase...</p>
                          </div>
                     ) : visibleShifts.length > 0 ? (
@@ -353,7 +353,7 @@ const FormTurnos = ({ branches }) => {
                             {visibleShifts.map(shift => <TurnoCard key={shift.id} shift={shift} />)}
                         </div>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-3 opacity-60">
+                        <div className="h-full flex flex-col items-center justify-center text-content-3 gap-3 opacity-60">
                             {statusFilter === 'ARCHIVED' ? <Package size={32} /> : <BookOpen size={32} strokeWidth={1.5} />}
                             <p className="text-[10px] font-black uppercase tracking-widest text-center">No hay turnos registrados en esta vista</p>
                         </div>

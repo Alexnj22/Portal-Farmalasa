@@ -185,10 +185,10 @@ async function applyPrincipios(productId, principios) {
 function ConfBadge({ score }) {
     const pct = Math.round(score * 100);
     const cls = score >= AUTO_MIN
-        ? 'bg-emerald-100 text-emerald-700'
+        ? 'bg-success/10 text-emerald-700'
         : score >= REVIEW_MIN
-            ? 'bg-amber-100 text-amber-700'
-            : 'bg-red-100 text-red-600';
+            ? 'bg-warning/10 text-amber-700'
+            : 'bg-danger/10 text-danger';
     return (
         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full tabular-nums ${cls}`}>
             {pct}%
@@ -383,11 +383,11 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <FlaskConical size={15} className="text-violet-600" />
                             </div>
                             <div>
-                                <p className="text-[14px] font-black text-slate-800">Enriquecer desde SRS</p>
-                                <p className="text-[11px] text-slate-500">Busca y aplica principios activos del Registro Sanitario</p>
+                                <p className="text-[14px] font-black text-content">Enriquecer desde SRS</p>
+                                <p className="text-[11px] text-content-3">Busca y aplica principios activos del Registro Sanitario</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 text-slate-500 transition-colors">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-card text-content-3 transition-colors">
                             <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>
@@ -402,16 +402,16 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <Zap size={28} className="text-violet-500" />
                             </div>
                             <div>
-                                <p className="text-[15px] font-black text-slate-800">Matching automático con SRS</p>
-                                <p className="text-[12px] text-slate-500 mt-1 max-w-sm">
+                                <p className="text-[15px] font-black text-content">Matching automático con SRS</p>
+                                <p className="text-[12px] text-content-3 mt-1 max-w-sm">
                                     Busca hasta {BATCH_SIZE} productos en el Registro Sanitario de El Salvador,
                                     aplica los matches seguros automáticamente y te consulta los dudosos.
                                 </p>
                             </div>
                             <div className="flex gap-4 text-[11px] font-bold">
-                                <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> ≥ 70% — auto-aplica</span>
-                                <span className="flex items-center gap-1.5 text-amber-600"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> {'< 70%'} — te consulta</span>
-                                <span className="flex items-center gap-1.5 text-slate-500"><span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"/> Sin resultados SRS — descarta</span>
+                                <span className="flex items-center gap-1.5 text-success"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> ≥ 70% — auto-aplica</span>
+                                <span className="flex items-center gap-1.5 text-warning"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> {'< 70%'} — te consulta</span>
+                                <span className="flex items-center gap-1.5 text-content-3"><span className="w-2.5 h-2.5 rounded-full bg-content-3 inline-block"/> Sin resultados SRS — descarta</span>
                             </div>
                             <button onClick={handleStart}
                                 className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-violet-600 hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200">
@@ -426,13 +426,13 @@ export default function SrsEnriquecerModal({ onClose }) {
                             <div className="flex items-center gap-3">
                                 <Loader2 size={18} className="text-violet-500 animate-spin shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-black text-slate-700">Escaneando productos…</p>
-                                    <p className="text-[11px] text-slate-500">{scanned} de {total} procesados</p>
+                                    <p className="text-[13px] font-black text-content-2">Escaneando productos…</p>
+                                    <p className="text-[11px] text-content-3">{scanned} de {total} procesados</p>
                                 </div>
                             </div>
 
                             {/* Progress bar */}
-                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2 bg-surface-card-hover rounded-full overflow-hidden">
                                 <div className="h-full bg-violet-500 rounded-full transition-all duration-300"
                                     style={{ width: total ? `${(scanned / total) * 100}%` : '0%' }} />
                             </div>
@@ -440,19 +440,19 @@ export default function SrsEnriquecerModal({ onClose }) {
                             {/* Live counters */}
                             <div className="grid grid-cols-3 gap-3">
                                 {[
-                                    { label: 'Auto-aplica', count: autoQueue.length, cls: 'text-emerald-600', bg: 'bg-emerald-50' },
-                                    { label: 'Para revisar', count: reviewQueue.length, cls: 'text-amber-600', bg: 'bg-amber-50' },
-                                    { label: 'Sin coincidencia', count: noMatchList.length, cls: 'text-slate-500', bg: 'bg-slate-50' },
+                                    { label: 'Auto-aplica', count: autoQueue.length, cls: 'text-success', bg: 'bg-success/10' },
+                                    { label: 'Para revisar', count: reviewQueue.length, cls: 'text-warning', bg: 'bg-warning/10' },
+                                    { label: 'Sin coincidencia', count: noMatchList.length, cls: 'text-content-3', bg: 'bg-surface-card-hover' },
                                 ].map(c => (
                                     <div key={c.label} className={`${c.bg} rounded-2xl p-3 text-center`}>
                                         <p className={`text-[22px] font-black tabular-nums ${c.cls}`}>{c.count}</p>
-                                        <p className="text-[10px] font-bold text-slate-500">{c.label}</p>
+                                        <p className="text-[10px] font-bold text-content-3">{c.label}</p>
                                     </div>
                                 ))}
                             </div>
 
                             <button onClick={() => { cancelRef.current = true; }}
-                                className="self-center px-4 py-2 rounded-full text-[11px] font-bold text-slate-500 hover:bg-slate-100 transition-colors border border-slate-200">
+                                className="self-center px-4 py-2 rounded-full text-[11px] font-bold text-content-3 hover:bg-surface-card-hover transition-colors border border-slate-200">
                                 Detener
                             </button>
                         </div>
@@ -465,25 +465,25 @@ export default function SrsEnriquecerModal({ onClose }) {
                             {/* Summary bar */}
                             <div className="grid grid-cols-4 gap-2 text-center">
                                 {[
-                                    { label: 'Escaneados', v: scanned, cls: 'text-slate-700' },
-                                    { label: 'Auto-aplica', v: autoQueue.length, cls: 'text-emerald-600' },
-                                    { label: 'Para revisar', v: reviewQueue.length - reviewIdx, cls: 'text-amber-600' },
-                                    { label: 'Aplicados', v: applied, cls: 'text-[#0052CC]' },
+                                    { label: 'Escaneados', v: scanned, cls: 'text-content-2' },
+                                    { label: 'Auto-aplica', v: autoQueue.length, cls: 'text-success' },
+                                    { label: 'Para revisar', v: reviewQueue.length - reviewIdx, cls: 'text-warning' },
+                                    { label: 'Aplicados', v: applied, cls: 'text-brand' },
                                 ].map(c => (
-                                    <div key={c.label} className="bg-slate-50 rounded-2xl py-2.5 px-1">
+                                    <div key={c.label} className="bg-surface-card-hover rounded-2xl py-2.5 px-1">
                                         <p className={`text-[18px] font-black tabular-nums ${c.cls}`}>{c.v}</p>
-                                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wide">{c.label}</p>
+                                        <p className="text-[9px] font-bold text-content-2 uppercase tracking-wide">{c.label}</p>
                                     </div>
                                 ))}
                             </div>
 
                             {/* Auto-apply list — reviewable */}
                             {autoQueue.length > 0 && (
-                                <div className="rounded-2xl border border-emerald-200 overflow-hidden">
-                                    <div className="bg-emerald-50 px-4 py-2.5 border-b border-emerald-100 flex items-center justify-between gap-3 shrink-0">
+                                <div className="rounded-2xl border border-success/30 overflow-hidden">
+                                    <div className="bg-success/10 px-4 py-2.5 border-b border-success/30 flex items-center justify-between gap-3 shrink-0">
                                         <div>
                                             <p className="text-[12px] font-black text-emerald-800">Alta confianza</p>
-                                            <p className="text-[10px] text-emerald-600">
+                                            <p className="text-[10px] text-success">
                                                 {autoQueue.length - autoRejected.size} de {autoQueue.length} seleccionados · toca ✗ para excluir
                                             </p>
                                         </div>
@@ -501,7 +501,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 <div key={entry.product.id} className={`px-4 py-2.5 flex items-center gap-2.5 transition-opacity ${rejected ? 'opacity-30' : ''}`}>
                                                     <ConfBadge score={entry.score} />
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-[11px] font-bold text-slate-700 truncate">{entry.product.nombre}</p>
+                                                        <p className="text-[11px] font-bold text-content-2 truncate">{entry.product.nombre}</p>
                                                         {entry.principios.length > 0 && (
                                                             <p className="text-[10px] text-violet-600 truncate">
                                                                 {entry.principios.map(p => [p.nombre, p.concentracion].filter(Boolean).join(' ')).join(' + ')}
@@ -514,8 +514,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         return n;
                                                     })} className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-full border transition-all ${
                                                         rejected
-                                                            ? 'border-emerald-200 text-emerald-500 bg-emerald-50 hover:bg-emerald-100'
-                                                            : 'border-red-100 text-red-400 hover:bg-red-50 hover:border-red-200'
+                                                            ? 'border-success/30 text-success bg-success/10 hover:bg-success/10'
+                                                            : 'border-danger/30 text-danger hover:bg-danger/10 hover:border-danger/30'
                                                     }`}>
                                                         {rejected ? <Check size={10} strokeWidth={3}/> : <X size={10} strokeWidth={2.5}/>}
                                                     </button>
@@ -529,8 +529,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                             {/* Review card */}
                             {!reviewDone && currentReview ? (
                                 <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                                    <div className="bg-slate-50 px-4 py-2.5 flex items-center justify-between border-b border-slate-100">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                    <div className="bg-surface-card-hover px-4 py-2.5 flex items-center justify-between border-b border-slate-100">
+                                        <p className="text-[10px] font-black text-content-3 uppercase tracking-widest">
                                             Revisar — {reviewIdx + 1} / {reviewQueue.length}
                                         </p>
                                         <ConfBadge score={currentReview.score} />
@@ -539,13 +539,13 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     <div className="p-4 flex flex-col gap-3">
                                         {/* DB product */}
                                         <div>
-                                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Tu producto</p>
-                                            <p className="text-[13px] font-black text-slate-800">{currentReview.product.nombre}</p>
+                                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Tu producto</p>
+                                            <p className="text-[13px] font-black text-content">{currentReview.product.nombre}</p>
                                         </div>
 
                                         {/* Candidates */}
                                         <div>
-                                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Coincidencias SRS</p>
+                                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5">Coincidencias SRS</p>
                                             <div className="flex flex-col gap-1.5">
                                                 {currentReview.candidates.map((cand, ci) => {
                                                     const isSelected = cand.srs === currentReview.srs;
@@ -559,7 +559,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                     : 'border-slate-100 bg-white hover:border-violet-200 hover:bg-violet-50/40'
                                                             }`}>
                                                             <div className="flex items-start justify-between gap-2">
-                                                                <p className="text-[11px] font-bold text-slate-700 leading-snug flex-1">
+                                                                <p className="text-[11px] font-bold text-content-2 leading-snug flex-1">
                                                                     {cand.srs.nombre_comercial || cand.srs.nombreComercial}
                                                                 </p>
                                                                 <ConfBadge score={cand.score} />
@@ -593,11 +593,11 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 Aplicar
                                             </button>
                                             <button onClick={() => handleReviewMarkSinPA(currentReview)} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
                                                 <Package size={12} /> Insumo/Equipo
                                             </button>
                                             <button onClick={handleReviewSkip} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-slate-500 border border-slate-200 hover:bg-slate-50 transition-colors">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-slate-200 hover:bg-surface-card-hover transition-colors">
                                                 <SkipForward size={12} /> Saltar
                                             </button>
                                         </div>
@@ -605,19 +605,19 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         {/* Toggle panel buttons */}
                                         <div className="flex items-center gap-3 pt-1 border-t border-slate-100">
                                             <button onClick={() => setReviewPanel(p => p === 'srs' ? null : 'srs')}
-                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'srs' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-[#0052CC]'}`}>
+                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'srs' ? 'text-brand' : 'text-content-3 hover:text-brand'}`}>
                                                 <Search size={12} /> Buscar en SRS
                                             </button>
-                                            <span className="text-slate-200">|</span>
+                                            <span className="text-content-3">|</span>
                                             <button onClick={() => setReviewPanel(p => p === 'manual' ? null : 'manual')}
-                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'manual' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-[#0052CC]'}`}>
+                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'manual' ? 'text-brand' : 'text-content-3 hover:text-brand'}`}>
                                                 <FlaskConical size={12} /> Ingresar manualmente
                                             </button>
                                         </div>
 
                                         {/* SRS search panel */}
                                         {reviewPanel === 'srs' && (
-                                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                            <div className="rounded-xl border border-slate-100 bg-surface-card-hover p-3">
                                                 <SrsBuscadorWidget
                                                     initialQuery={currentReview.product.nombre}
                                                     onSelectResult={(srsProduct) => {
@@ -633,39 +633,39 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                                         {/* Manual entry panel */}
                                         {reviewPanel === 'manual' && (
-                                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 flex flex-col gap-2">
-                                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                                            <div className="rounded-xl border border-slate-100 bg-surface-card-hover p-3 flex flex-col gap-2">
+                                                <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">
                                                     Principio activo manual
                                                 </p>
                                                 <div className="space-y-1.5">
                                                     {manualItems.map((item, idx) => (
                                                         <div key={item._key} className="flex items-center gap-1.5">
-                                                            <span className="text-[9px] text-slate-500 font-bold w-3 text-right shrink-0">{idx + 1}</span>
+                                                            <span className="text-[9px] text-content-3 font-bold w-3 text-right shrink-0">{idx + 1}</span>
                                                             <input
                                                                 value={item.nombre}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
                                                                 placeholder="Nombre del principio"
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300"
+                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3"
                                                             />
                                                             <input
                                                                 value={item.concentracion}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
                                                                 placeholder="Cant."
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300 text-center"
+                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3 text-center"
                                                             />
                                                             <button onClick={() => setManualItems(prev =>
                                                                 prev.length > 1
                                                                     ? prev.filter(p => p._key !== item._key)
                                                                     : [{ nombre: '', concentracion: '', _key: Date.now() }]
-                                                            )} className="w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
+                                                            )} className="w-6 h-6 rounded-full flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all shrink-0">
                                                                 <X size={10} />
                                                             </button>
                                                         </div>
                                                     ))}
                                                     <button onClick={() => setManualItems(prev => [...prev, { nombre: '', concentracion: '', _key: Date.now() }])}
-                                                        className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-[#0052CC] transition-colors pt-0.5">
+                                                        className="flex items-center gap-1 text-[10px] font-bold text-content-3 hover:text-brand transition-colors pt-0.5">
                                                         <Plus size={10} /> Agregar principio
                                                     </button>
                                                 </div>
@@ -681,7 +681,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         setReviewPanel(null);
                                                         setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
                                                     }}
-                                                    className="self-end px-4 py-1.5 rounded-full bg-[#0052CC] text-white text-[11px] font-black disabled:opacity-40 hover:bg-[#003D99] transition-colors">
+                                                    className="self-end px-4 py-1.5 rounded-full bg-brand text-white text-[11px] font-black disabled:opacity-40 hover:bg-brand-hover transition-colors">
                                                     Usar estos principios
                                                 </button>
                                             </div>
@@ -689,40 +689,40 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     </div>
                                 </div>
                             ) : reviewDone && (
-                                <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                                    <Check size={18} className="text-emerald-500 shrink-0" />
-                                    <p className="text-[13px] font-bold text-slate-700">Revisión completada.</p>
+                                <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-card-hover border border-slate-200">
+                                    <Check size={18} className="text-success shrink-0" />
+                                    <p className="text-[13px] font-bold text-content-2">Revisión completada.</p>
                                 </div>
                             )}
 
                             {/* Done / close */}
                             {(isDone || allDone) && (
                                 <div className="flex flex-col gap-3 pt-2">
-                                    <p className="text-[13px] font-black text-slate-700 text-center">
+                                    <p className="text-[13px] font-black text-content-2 text-center">
                                         ✓ {applied} aplicados · {skipped} saltados · {noMatchList.length} sin coincidencia en SRS
                                     </p>
 
                                     {noMatchList.length > 0 && (
                                         <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                                            <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                            <div className="bg-surface-card-hover px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                                                <p className="text-[10px] font-black text-content-3 uppercase tracking-widest">
                                                     Sin resultado en SRS ({noMatchList.length})
                                                 </p>
-                                                <p className="text-[10px] text-slate-500">SRS no devolvió ningún candidato</p>
+                                                <p className="text-[10px] text-content-3">SRS no devolvió ningún candidato</p>
                                             </div>
                                             <div className="max-h-48 overflow-y-auto divide-y divide-slate-50">
                                                 {noMatchList.map(p => (
                                                     <div key={p.id} className="px-4 py-2.5 flex items-center gap-2">
-                                                        <span className="text-[10px] text-slate-500 font-mono shrink-0">#{p.id}</span>
-                                                        <span className="text-[12px] text-slate-600 font-medium truncate flex-1">{p.nombre}</span>
+                                                        <span className="text-[10px] text-content-3 font-mono shrink-0">#{p.id}</span>
+                                                        <span className="text-[12px] text-content-2 font-medium truncate flex-1">{p.nombre}</span>
                                                         {markedSinPA.has(p.id) ? (
                                                             <button onClick={() => handleUnmarkSinPA(p.id)}
-                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-success bg-success/10 border border-success/30 hover:bg-success/10 transition-colors">
                                                                 <Check size={9} strokeWidth={3} /> Insumo
                                                             </button>
                                                         ) : (
                                                             <button onClick={() => handleMarkSinPA(p.id)}
-                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
+                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-content-3 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
                                                                 <Package size={9} /> Insumo
                                                             </button>
                                                         )}
@@ -733,7 +733,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     )}
 
                                     <button onClick={onClose}
-                                        className="self-center px-6 py-2.5 rounded-full text-[12px] font-black text-white bg-[#0052CC] hover:bg-[#003D99] transition-colors">
+                                        className="self-center px-6 py-2.5 rounded-full text-[12px] font-black text-white bg-brand hover:bg-brand-hover transition-colors">
                                         Cerrar
                                     </button>
                                 </div>

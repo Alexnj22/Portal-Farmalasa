@@ -1341,7 +1341,7 @@ export default function EncuestaView() {
                                                                         );
                                                                     })}
                                                                     {row.comentario && row.comentario.trim() && row.comentario !== 'null' && (
-                                                                        <div className="px-4 py-3 bg-warning/40 border-t border-warning/60">
+                                                                        <div className="px-4 py-3 bg-warning/10 border-t border-warning/30">
                                                                             <p className="text-[9px] font-black text-warning uppercase tracking-wider mb-1 flex items-center gap-1">
                                                                                 <MessageSquare size={10} /> Comentario
                                                                             </p>

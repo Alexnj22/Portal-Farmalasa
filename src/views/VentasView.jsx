@@ -257,7 +257,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                 ${active
                     ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-warning/10'
                     : isFilter
-                        ? 'border-warning/30 bg-warning/40 hover:bg-warning/10'
+                        ? 'border-warning/30 bg-warning/10 hover:bg-warning/10'
                         : 'border-slate-100 bg-white'
                 }`}
         >
@@ -691,7 +691,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             <DataRow
                                 index={i}
                                 onClick={() => toggleRow(r.id)}
-                                className={isCancelled ? 'opacity-50 bg-danger/30' : isExpanded ? 'bg-blue-50/50' : ''}
+                                className={isCancelled ? 'opacity-50 bg-danger/10' : isExpanded ? 'bg-blue-50/50' : ''}
                             >
                                 <DataCell>
                                     <p className={`text-[12px] font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>

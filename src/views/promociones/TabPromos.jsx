@@ -50,7 +50,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
             relative bg-surface-card backdrop-blur-sm border rounded-2xl overflow-hidden
             shadow-[0_2px_12px_rgba(0,0,0,0.05),inset_0_1px_4px_rgba(255,255,255,0.9)]
             transition-all duration-200 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]
-            ${promo.estado === 'active' ? 'border-success/70' : 'border-border-card'}
+            ${promo.estado === 'active' ? 'border-success/30' : 'border-border-card'}
         `}>
             {/* Active glow stripe */}
             {promo.estado === 'active' && (

@@ -86,7 +86,7 @@ const IOSTestView = () => {
                 </Card>
 
                 {/* Info */}
-                <Card title="Acerca de esta vista" accent="border-warning/60">
+                <Card title="Acerca de esta vista" accent="border-warning/30">
                     <p className="text-[12px] text-content-3 leading-relaxed">
                         Esta vista es solo para verificar el comportamiento del layout en iOS. Puede eliminarse
                         una vez confirmado que las safe areas, el glass blur y el scroll funcionan correctamente.

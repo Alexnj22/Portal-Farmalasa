@@ -73,7 +73,7 @@ const GlassViewLayout = ({
                                 {headerLeft ? headerLeft : (
                                     <div className="flex items-center gap-2.5">
                                         {Icon && (
-                                            <div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer">
+                                            <div className="bg-gradient-to-tr from-brand to-[#6929C4] rounded-xl shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer">
                                                 <Icon className="text-white" size={17} strokeWidth={1.5} />
                                                 {liveIndicator && (
                                                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -105,7 +105,7 @@ const GlassViewLayout = ({
                         ) : (
                             <>
                                 {Icon && (
-                                    <div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl shadow-[0_4px_12px_rgba(0,82,204,0.3)] p-2 flex-shrink-0 relative">
+                                    <div className="bg-gradient-to-tr from-brand to-[#6929C4] rounded-xl shadow-[0_4px_12px_rgba(0,82,204,0.3)] p-2 flex-shrink-0 relative">
                                         <Icon className="text-white" size={16} strokeWidth={1.5} />
                                         {liveIndicator && (
                                             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
@@ -163,7 +163,7 @@ const GlassViewLayout = ({
                             className={floatBtn}
                             style={floatStyle}
                         >
-                            <ChevronUp size={18} strokeWidth={2.5} className="text-slate-600" />
+                            <ChevronUp size={18} strokeWidth={2.5} className="text-content-2" />
                         </motion.button>
                         <motion.button
                             onClick={() => scrollTo(scrollContainerRef.current?.scrollHeight ?? 99999)}
@@ -174,7 +174,7 @@ const GlassViewLayout = ({
                             className={floatBtn}
                             style={floatStyle}
                         >
-                            <ChevronDown size={18} strokeWidth={2.5} className="text-slate-600" />
+                            <ChevronDown size={18} strokeWidth={2.5} className="text-content-2" />
                         </motion.button>
                     </motion.div>
                 )}

@@ -37,8 +37,8 @@ const buildBranchOpts = (branches) => TYPE_ORDER.flatMap((type) => {
 
 // Mismas "islas" blancas con header de icono+título que usa EmployeeFormModal
 // para agrupar secciones — ver islandClass/islandHoverClass ahí.
-const islandClass = "bg-white/60 rounded-[1.5rem] p-4 md:p-5 border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
-const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-white/80";
+const islandClass = "bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
+const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-surface-card";
 
 const IslandHeader = ({ icon: Icon, title }) => (
     <div className="flex items-center gap-3 mb-4">
@@ -47,8 +47,8 @@ const IslandHeader = ({ icon: Icon, title }) => (
     </div>
 );
 
-const fieldLabel = "text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between";
-const reqBadge = <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>;
+const fieldLabel = "text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
+const reqBadge = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>;
 
 const emptyForm = {
     first_names: '', last_names: '', birth_date: '', dui: '', alt_identity_document: '', phone: '',
@@ -183,21 +183,21 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
     if (!isOpen) return null;
 
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 backdrop-blur-md";
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-surface-card backdrop-blur-md";
 
     return (
         <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}>
-            <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex items-center justify-between relative z-10 shrink-0">
+            <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-10 shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-violet-600`}><GraduationCap size={22} strokeWidth={2.5} /></div>
                     <div>
-                        <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
+                        <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
                             {isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}
                         </h3>
-                        <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
+                        <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
                     </div>
                 </div>
-                <button type="button" onClick={handleClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
+                <button type="button" onClick={handleClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
                     <X size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -213,9 +213,9 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
                             <div>
                                 <label className={fieldLabel}>
-                                    <span>Fecha de Nacimiento {age !== null && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-amber-600' : 'text-slate-500'}`}>· {age} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
+                                    <span>Fecha de Nacimiento {age !== null && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {age} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                 </label>
-                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-amber-300 !bg-amber-50/40' : 'border-slate-200/80'}`}>
+                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-amber-300 !bg-warning/10' : 'border-slate-200/80'}`}>
                                     <LiquidDatePicker value={form.birth_date} onChange={(v) => set('birth_date', v)} />
                                 </div>
                             </div>
@@ -229,8 +229,8 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                             )}
 
                             {isMinor && (
-                                <div className="md:col-span-2 bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
-                                    <ShieldAlert size={18} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <div className="md:col-span-2 bg-warning/10 border border-warning/30 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
+                                    <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                     <p className="text-[11px] text-amber-700 font-medium leading-tight">
                                         <span className="font-black">Menor de edad.</span> En El Salvador el DUI no se tramita hasta los 18 años (Art. 23.2 Código de Trabajo) — por eso se solicita un documento alterno (partida de nacimiento, carné de minoridad).
                                     </p>
@@ -239,7 +239,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
                             <div className="md:col-span-2">
                                 <label className={fieldLabel}><span>Sucursal</span>{!form.branch_id && reqBadge}</label>
-                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!form.branch_id ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!form.branch_id ? '!border-red-400 !bg-danger/10' : ''}`}>
                                     <LiquidSelect value={form.branch_id} onChange={(v) => set('branch_id', v)} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} />
                                 </div>
                             </div>
@@ -287,16 +287,16 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className={fieldLabel}><span>Fecha Inicio</span>{!form.fecha_inicio && reqBadge}</label>
-                                <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!form.fecha_inicio ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!form.fecha_inicio ? '!border-red-400 !bg-danger/10' : ''}`}>
                                     <LiquidDatePicker value={form.fecha_inicio} onChange={(v) => set('fecha_inicio', v)} />
                                 </div>
                             </div>
                             <div>
                                 <label className={fieldLabel}>
-                                    <span>Fecha Fin {fechasInvalid && <span className="text-red-600 font-bold ml-1">— debe ser posterior</span>}</span>
+                                    <span>Fecha Fin {fechasInvalid && <span className="text-danger font-bold ml-1">— debe ser posterior</span>}</span>
                                     {!form.fecha_fin && reqBadge}
                                 </label>
-                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${fechasInvalid || !form.fecha_fin ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
+                                <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${fechasInvalid || !form.fecha_fin ? '!border-red-400 !bg-danger/10' : 'border-slate-200/80'}`}>
                                     <LiquidDatePicker value={form.fecha_fin} onChange={(v) => set('fecha_fin', v)} highlightRangeStart={form.fecha_inicio || null} />
                                 </div>
                             </div>
@@ -317,19 +317,19 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <span>Convenio Institucional (PDF/imagen)</span>
                                 {convenioMissing && reqBadge}
                             </label>
-                            <div className={`relative flex items-center gap-3 bg-white rounded-[1rem] border shadow-sm h-[40px] px-3 z-10 ${inputHoverClass} ${convenioMissing ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
-                                <label className="flex items-center gap-1.5 text-[13px] font-bold text-[#0052CC] cursor-pointer">
+                            <div className={`relative flex items-center gap-3 bg-white rounded-[1rem] border shadow-sm h-[40px] px-3 z-10 ${inputHoverClass} ${convenioMissing ? '!border-red-400 !bg-danger/10' : 'border-slate-200/80'}`}>
+                                <label className="flex items-center gap-1.5 text-[13px] font-bold text-brand cursor-pointer">
                                     <Upload size={14} strokeWidth={2.5} />
                                     {convenioFile ? convenioFile.name : 'Adjuntar convenio...'}
                                     <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => setConvenioFile(e.target.files?.[0] || null)} />
                                 </label>
                                 {practicante?.convenio_url && !convenioFile && (
-                                    <button type="button" onClick={() => openStoredFile(practicante.convenio_url)} className="ml-auto flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 shrink-0">
+                                    <button type="button" onClick={() => openStoredFile(practicante.convenio_url)} className="ml-auto flex items-center gap-1 text-[10px] font-bold text-success hover:text-emerald-700 shrink-0">
                                         <FileCheck size={12} /> Ver actual
                                     </button>
                                 )}
                             </div>
-                            <p className="text-[9px] text-slate-500 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
+                            <p className="text-[9px] text-content-3 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
                         </div>
 
                         <div className="mt-4">
@@ -338,7 +338,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 value={form.notas}
                                 onChange={(e) => set('notas', e.target.value)}
                                 placeholder="Contexto adicional..."
-                                className={`w-full h-20 resize-none bg-white rounded-[1rem] border border-slate-200/80 shadow-sm px-4 py-2.5 text-[16px] font-bold text-slate-700 outline-none ${inputHoverClass}`}
+                                className={`w-full h-20 resize-none bg-white rounded-[1rem] border border-slate-200/80 shadow-sm px-4 py-2.5 text-[16px] font-bold text-content-2 outline-none ${inputHoverClass}`}
                             />
                         </div>
                     </div>
@@ -346,15 +346,15 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 </div>
             </div>
 
-            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">
-                <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-white/50 border border-white/80 text-slate-500 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 transition-colors disabled:opacity-50">
+            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-10 shrink-0">
+                <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-content transition-colors disabled:opacity-50">
                     Cancelar
                 </button>
                 <button
                     type="button"
                     onClick={handleSave}
                     disabled={saving || !isValid}
-                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#0052CC] text-white shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                 >
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Check size={16} strokeWidth={3} /> {isEditMode ? 'Guardar Cambios' : 'Registrar Practicante'}</>}
                 </button>

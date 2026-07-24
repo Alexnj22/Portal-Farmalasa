@@ -23,12 +23,12 @@ const ERP_NAMES = {
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 const SUC_COLORS = {
-    1: 'bg-blue-50 text-blue-700 border-blue-200',
-    2: 'bg-violet-50 text-violet-700 border-violet-200',
-    3: 'bg-success/10 text-emerald-700 border-success/30',
-    4: 'bg-warning/10 text-amber-700 border-warning/30',
-    5: 'bg-rose-50 text-rose-700 border-rose-200',
-    7: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+    1: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
+    2: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
+    3: 'bg-success/10 text-success-text border-success/30',
+    4: 'bg-warning/10 text-warning-text border-warning/30',
+    5: 'bg-danger/10 text-danger-text border-danger/30',
+    7: 'bg-chart-5/10 text-chart-5-text border-chart-5/30',
     6: 'bg-surface-card-hover text-content-2 border-slate-200',
 };
 
@@ -40,7 +40,7 @@ const MODES = [
         sub:    'se venden pero sin parámetros',
         Icon:   AlertTriangle,
         rpc:    'get_products_sold_no_minmax',
-        activeBg:   'bg-warning/10 border-amber-300 shadow-amber-100/80 -translate-y-px',
+        activeBg:   'bg-warning/10 border-warning/40 shadow-warning/20 -translate-y-px',
         inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10',
         numColor:   'text-warning',
         iconColor:  'text-warning',
@@ -71,7 +71,7 @@ function getSuggestion(row) {
     const stock  = Number(row.current_stock);
     if (!stock) {
         if (row.in_minmax)
-            return { label: 'Sin existencias', detail: 'Tiene Min/Max asignado pero sin stock físico — reabastecer', icon: AlertCircle, cls: 'bg-violet-50 text-violet-700 border-violet-200' };
+            return { label: 'Sin existencias', detail: 'Tiene Min/Max asignado pero sin stock físico — reabastecer', icon: AlertCircle, cls: 'bg-chart-3/10 text-chart-3-text border-chart-3/30' };
         return null;
     }
     const soldIn = row.sold_in || [];
@@ -79,18 +79,18 @@ function getSuggestion(row) {
     if (row.fecha_vencimiento_min)
         daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - new Date()) / 86_400_000);
     if (daysToExpiry !== null && daysToExpiry < 0)
-        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, cls: 'bg-danger/10 text-red-800 border-red-300' };
+        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, cls: 'bg-danger/10 text-danger-text border-danger/40' };
     if (daysToExpiry !== null && daysToExpiry <= 30)
-        return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, cls: 'bg-danger/10 text-red-700 border-danger/30' };
+        return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, cls: 'bg-danger/10 text-danger-text border-danger/30' };
     const urgentExpiry = daysToExpiry !== null && daysToExpiry <= 90;
     if (soldIn.length === 0)
-        return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-surface-card-hover text-content-3 border-slate-200' };
+        return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-surface-card-hover text-content-3 border-border-card' };
     const best = soldIn[0], bestUnits = Number(best.units), bestName = ERP_NAMES[best.esid] || `Suc.${best.esid}`;
     if (bestUnits < 5)
-        return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-surface-card-hover text-content-3 border-slate-200' };
+        return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-surface-card-hover text-content-3 border-border-card' };
     if (bestUnits < 20)
-        return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-blue-50 text-blue-700 border-blue-200' };
-    return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-success/10 text-emerald-700 border-success/30' };
+        return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-chart-1/10 text-chart-1-text border-chart-1/30' };
+    return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-success/10 text-success-text border-success/30' };
 }
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
@@ -166,7 +166,7 @@ function UltimaVentaCell({ row, allBranches }) {
     }
 
     const days  = Math.floor((now - new Date(fecha)) / 86_400_000);
-    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-orange-500' : 'text-content-2';
+    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-chart-4-text' : 'text-content-2';
     const label = new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
 
     if (!allBranches) {
@@ -208,7 +208,7 @@ function UltimaVentaCell({ row, allBranches }) {
             <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
             {sorted.map(s => {
                 const d = Math.floor((now - new Date(s.fecha)) / 86_400_000);
-                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-orange-500' : 'text-brand';
+                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand';
                 return (
                     <div key={s.esid} className="flex items-center justify-between gap-6 whitespace-nowrap">
                         <span className="text-[12px] font-semibold text-content-2">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
@@ -257,21 +257,21 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
     const CARDS = [
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
-          activeBg: 'bg-success/10 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          activeBg: 'bg-success/10 border-success/40 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
-          activeBg: 'bg-warning/10 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
+          activeBg: 'bg-warning/10 border-warning/40 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
           iconBgActive: 'bg-warning/10', iconColor: 'text-warning',
           numColor: n => n > 0 ? 'text-warning' : 'text-content-3' },
         { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc., alto volumen',
-          activeBg: 'bg-orange-50/80 border-orange-300 shadow-[0_4px_16px_rgba(249,115,22,0.20)] -translate-y-1',
-          iconBgActive: 'bg-orange-100', iconColor: 'text-orange-500',
-          numColor: n => n > 0 ? 'text-orange-600' : 'text-content-3' },
+          activeBg: 'bg-chart-4/10 border-chart-4/40 shadow-[0_4px_16px_rgba(249,115,22,0.20)] -translate-y-1',
+          iconBgActive: 'bg-chart-4/10', iconColor: 'text-chart-4-text',
+          numColor: n => n > 0 ? 'text-chart-4-text' : 'text-content-3' },
         { id: 'mayorista', Icon: Truck, label: 'Mayorista', sub: 'compra por volumen · no agregar',
-          activeBg: 'bg-indigo-50/80 border-indigo-300 shadow-[0_4px_16px_rgba(99,102,241,0.20)] -translate-y-1',
-          iconBgActive: 'bg-indigo-100', iconColor: 'text-indigo-500',
-          numColor: n => n > 0 ? 'text-indigo-600' : 'text-content-3' },
+          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[0_4px_16px_rgba(99,102,241,0.20)] -translate-y-1',
+          iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
+          numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
           activeBg: 'bg-surface-card-hover/80 border-slate-300 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-3',
@@ -322,15 +322,15 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 
     const CARDS = [
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
-          activeBg: 'bg-success/10 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          activeBg: 'bg-success/10 border-success/40 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
-          activeBg: 'bg-violet-50/80 border-violet-300 shadow-[0_4px_16px_rgba(139,92,246,0.20)] -translate-y-1',
-          iconBgActive: 'bg-violet-100', iconColor: 'text-violet-600',
-          numColor: n => n > 0 ? 'text-violet-600' : 'text-content-3' },
+          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[0_4px_16px_rgba(139,92,246,0.20)] -translate-y-1',
+          iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
+          numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
-          activeBg: 'bg-danger/10 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
+          activeBg: 'bg-danger/10 border-danger/40 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
           iconBgActive: 'bg-danger/10', iconColor: 'text-danger',
           numColor: n => n > 0 ? 'text-danger' : 'text-content-3' },
     ];
@@ -580,16 +580,16 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     {/* Costo retenido */}
                     {mode === 'stock_ret' && (
                         <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50/80">
-                                <DollarSign size={15} className="text-orange-500" />
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-4/10">
+                                <DollarSign size={15} className="text-chart-4-text" />
                             </div>
                             <div className="text-left min-w-0">
-                                <div className="text-[22px] font-black leading-none tabular-nums text-orange-600">
+                                <div className="text-[22px] font-black leading-none tabular-nums text-chart-4-text">
                                     {activeLoading ? <span className="text-content-3">–</span> : fmtMoney(totalCost)}
                                 </div>
                                 <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">Costo retenido</div>
                                 {filteredCost > 0 && filteredCost !== totalCost
-                                    ? <div className="text-[9px] text-orange-400">{fmtMoney(filteredCost)} en filtro</div>
+                                    ? <div className="text-[9px] text-chart-4-text">{fmtMoney(filteredCost)} en filtro</div>
                                     : <div className="text-[9px] text-content-3">total sucursal</div>
                                 }
                             </div>
@@ -675,7 +675,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
             {activeError && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger font-semibold">
                     <AlertTriangle size={14} /> {activeError}
-                    <button onClick={() => loadMode(selectedErp, mode)} className="ml-auto text-danger hover:text-red-700 font-bold">Reintentar</button>
+                    <button onClick={() => loadMode(selectedErp, mode)} className="ml-auto text-danger hover:text-danger-text font-bold">Reintentar</button>
                 </div>
             )}
 
@@ -742,7 +742,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell align="center" hideBelow="lg">
                                             <div className="flex items-center justify-center gap-0.5">
                                                 {Array.from({ length: 6 }).map((_, i) => (
-                                                    <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-surface-card-hover'}`} />
+                                                    <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-warning' : 'bg-surface-card-hover'}`} />
                                                 ))}
                                             </div>
                                             <div className="text-[9px] text-content-3 mt-0.5 text-center">{sugg.months}/6</div>
@@ -762,24 +762,24 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             ) : (
                                                 <div className="flex flex-col gap-1">
                                                     {lvl === 'agregar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-emerald-700 border-success/30 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
                                                         <span className="text-[9px] text-content-3 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
                                                         <span className="text-[9px] text-content-3 italic">{sugg.reason}</span>
                                                         <span className="text-[9px] text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'evaluar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-warning/10 text-amber-700 border-warning/30 w-fit"><AlertTriangle size={9} />Evaluar</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-warning/10 text-warning-text border-warning/30 w-fit"><AlertTriangle size={9} />Evaluar</span>
                                                         <span className="text-[9px] text-content-3 italic">{sugg.reason}</span>
                                                         <span className="text-[9px] text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'encargo' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200 w-fit"><ShoppingBag size={9} />Posible encargo</span>
-                                                        <span className="text-[9px] text-orange-500 font-semibold">{sugg.reason}</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-chart-4/10 text-chart-4-text border-chart-4/30 w-fit"><ShoppingBag size={9} />Posible encargo</span>
+                                                        <span className="text-[9px] text-chart-4-text font-semibold">{sugg.reason}</span>
                                                         <span className="text-[9px] text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'mayorista' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200 w-fit"><Truck size={9} />Venta mayorista</span>
-                                                        <span className="text-[9px] text-indigo-500 font-semibold">{sugg.reason}</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30 w-fit"><Truck size={9} />Venta mayorista</span>
+                                                        <span className="text-[9px] text-chart-3-text font-semibold">{sugg.reason}</span>
                                                         <span className="text-[9px] text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'omitir' && (
@@ -834,7 +834,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell hideBelow="md" className="text-[12px] text-content-3">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {stock === 0 ? (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200">Sin stock</span>
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30">Sin stock</span>
                                             ) : (
                                                 <>
                                                     <span className="text-[13px] font-bold text-content-2 tabular-nums">{stock.toLocaleString()}</span>
@@ -844,18 +844,18 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {cost > 0
-                                                ? <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
+                                                ? <span className="text-[12px] font-bold text-chart-4-text tabular-nums">{fmtMoney(cost)}</span>
                                                 : <span className="text-[11px] text-content-3">—</span>}
                                         </DataCell>
                                         <DataCell align="center" hideBelow="md">
                                             {row.in_minmax ? (
                                                 <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-emerald-700 border-success/30"><CheckCircle2 size={9} />Con Min/Max</span>
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30"><CheckCircle2 size={9} />Con Min/Max</span>
                                                     {(row.min_qty != null || row.max_qty != null) && (
                                                         <span className="text-[9px] font-mono text-content-3 tabular-nums">
-                                                            <span className="text-orange-500 font-bold">{Number(row.min_qty ?? 0).toLocaleString()}</span>
+                                                            <span className="text-chart-4-text font-bold">{Number(row.min_qty ?? 0).toLocaleString()}</span>
                                                             <span className="text-content-3 mx-0.5">/</span>
-                                                            <span className="text-blue-500 font-bold">{Number(row.max_qty ?? 0).toLocaleString()}</span>
+                                                            <span className="text-chart-1-text font-bold">{Number(row.max_qty ?? 0).toLocaleString()}</span>
                                                         </span>
                                                     )}
                                                 </div>

@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.4';
+export const APP_VERSION = '2.51.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.5 — refactor(theme): T7.1 — StaffManagementView + TabSinVenta/
+// TabMinMax (v2.51.5).
+//
+// StaffManagementView: estados de empleado (Apoyo/Incapacitado/Permiso)
+// → cat-5/danger/cat-2 (mismo criterio que RequestsView/DashboardView
+// para el mismo concepto); chips de filtro por categoría → paleta cat-N.
+// TabSinVenta/TabMinMax (los dos archivos más grandes de esta tanda,
+// ~195 reemplazos juntos): clasificación 1-7 de productos sin venta →
+// cat-N; indicadores de stock bajo mínimo/sobre máximo → warning/cat-1;
+// filtros ABC/riesgo de despacho/dispersión → danger/warning reales;
+// badges MANUAL/RIESGO REGLA/SIN SALAS → cat-3/danger; un `background:
+// '#0052CC'` inline (no era concatenación de alpha como KpiCard, style
+// object simple) → `var(--brand)`.
 
 // v2.51.4 — refactor(theme): T7.1 — BranchesView + TabLaboratorios/
 // TabPoliticaVencimiento (v2.51.4).

@@ -70,11 +70,11 @@ const getStatusInfo = (rawStatus) => {
   const status = String(rawStatus || '').toUpperCase().trim();
 
   if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-success bg-success/10 border-success/30' };
-  if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-cyan-600 bg-cyan-50/80 border-cyan-200' };
+  if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-chart-5-text bg-chart-5/10 border-chart-5/30' };
   if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/10 border-warning/30' };
-  if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-orange-600 bg-orange-50/80 border-orange-200' };
+  if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-danger-text bg-danger/10 border-danger/30' };
   if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-pink-600 bg-pink-50/80 border-pink-200' };
-  if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-purple-600 bg-purple-50/80 border-purple-200' };
+  if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-chart-2-text bg-chart-2/10 border-chart-2/30' };
   if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/10 border-danger/30' };
   if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-slate-300' };
 
@@ -147,7 +147,7 @@ const PendingBadge = ({ emp }) => {
             <ul className="space-y-1">
               {items.map((item, i) => (
                 <li key={i} className="flex items-baseline gap-1.5 text-[11px] whitespace-nowrap">
-                  <span className="w-1 h-1 rounded-full bg-amber-400 shrink-0 self-center" />
+                  <span className="w-1 h-1 rounded-full bg-warning shrink-0 self-center" />
                   <span className="font-bold">{item.label}</span>
                   <span className="text-content-3 font-medium">— {item.hint}</span>
                 </li>
@@ -299,10 +299,10 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 </span>
             )}
             {(computedStatus === 'Activo' || computedStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm z-10" title="Disponible"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-surface-card rounded-full shadow-sm z-10" title="Disponible"></span>
             )}
             {isAbsent && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-400 border-2 border-white rounded-full shadow-sm z-10" title="Ausencia"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-warning border-2 border-surface-card rounded-full shadow-sm z-10" title="Ausencia"></span>
             )}
           </div>
 
@@ -332,13 +332,13 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {anniversaryInfo && (
                 <div className="flex items-center gap-0.5" title={`Aniversario laboral: Cumple ${anniversaryInfo.years} años el día ${anniversaryInfo.day} de este mes`}>
                   <Medal size={12} strokeWidth={2.5} className="text-warning shrink-0" />
-                  <span className="text-[8px] font-black text-amber-700 bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
+                  <span className="text-[8px] font-black text-warning-text bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
                 </div>
               )}
               {expiryInfo && (
                 <div className="flex items-center gap-0.5" title={expiryInfo.tooltip}>
                   <ShieldAlert size={12} strokeWidth={2.5} className={`${expiryInfo.isExpired ? 'text-danger' : 'text-warning'} shrink-0`} />
-                  <span className={`text-[8px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-red-700 bg-danger/10' : 'text-amber-700 bg-warning/10'}`}>{expiryInfo.label}</span>
+                  <span className={`text-[8px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-danger-text bg-danger/10' : 'text-warning-text bg-warning/10'}`}>{expiryInfo.label}</span>
                 </div>
               )}
             </div>
@@ -352,7 +352,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                   <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="text-success hover:text-success hover:scale-110 hover:-translate-y-0.5 transition-all bg-success/10 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
                     <MessageCircle size={10} strokeWidth={3} />
                   </a>
-                  <a href={`tel:${phoneDigits}`} className="text-brand hover:text-blue-600 hover:scale-110 hover:-translate-y-0.5 transition-all bg-blue-50 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
+                  <a href={`tel:${phoneDigits}`} className="text-brand hover:text-brand-hover hover:scale-110 hover:-translate-y-0.5 transition-all bg-brand/10 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
                     <Phone size={10} strokeWidth={3} />
                   </a>
                 </div>
@@ -410,7 +410,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-white text-content-2 hover:text-brand transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-border-card hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
             <ChevronRight size={16} strokeWidth={3} />
@@ -428,7 +428,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 // employee_documents...) no existen en un practicante y generarían badges de
 // "Información Pendiente" falsos si se reutilizara ese componente tal cual.
 const PRACTICANTE_ESTADO_CFG = {
-  ACTIVO:     { bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30', icon: CheckCircle2, label: 'Activo' },
+  ACTIVO:     { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', icon: CheckCircle2, label: 'Activo' },
   FINALIZADO: { bg: 'bg-surface-card-hover',  text: 'text-content-2',   border: 'border-slate-200',   icon: UserMinus,    label: 'Finalizado' },
   CANCELADO:  { bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',      icon: UserX,        label: 'Cancelado' },
 };
@@ -447,13 +447,13 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
     <DataRow index={staggerIndex}>
       <DataCell className="w-[360px]">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-500 shrink-0">
+          <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-chart-3/10 border border-chart-3/30 flex items-center justify-center text-chart-3-text shrink-0">
             <GraduationCap size={18} strokeWidth={2} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <p className="font-black text-content text-[12px] md:text-[13px] truncate tracking-tight" title={fullName}>{fullName}</p>
-              <span className="text-[8px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
             </div>
             <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest truncate mt-0.5">
               {p.institucion_educativa} · {fmtShortDate(p.fecha_inicio)}→{fmtShortDate(p.fecha_fin)}
@@ -470,7 +470,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       </DataCell>
 
       <DataCell className="max-w-[200px]">
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[8px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-violet-50 text-violet-700 border-violet-200">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[8px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
           <GraduationCap size={10} strokeWidth={2.5} /> Horas Sociales
         </span>
       </DataCell>
@@ -507,11 +507,11 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 });
 
 const STAT_CARD_COLORS = {
-  blue:    { activeBg: 'bg-blue-50 border-blue-300 shadow-md shadow-blue-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/40',       iconBg: 'bg-blue-50',    iconColor: 'text-brand',  textColor: 'text-content-2'   },
-  emerald: { activeBg: 'bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px', inactiveBg: 'bg-white border-slate-100 hover:border-success/30 hover:bg-success/10', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
-  cyan:    { activeBg: 'bg-cyan-50 border-cyan-300 shadow-md shadow-cyan-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/40',       iconBg: 'bg-cyan-50',    iconColor: 'text-cyan-600',   textColor: 'text-cyan-600'    },
-  amber:   { activeBg: 'bg-warning/10 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px',     inactiveBg: 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/10',     iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning'   },
-  violet:  { activeBg: 'bg-violet-50 border-violet-300 shadow-md shadow-violet-100/80 -translate-y-px',   inactiveBg: 'bg-white border-slate-100 hover:border-violet-200 hover:bg-violet-50/40',   iconBg: 'bg-violet-50',  iconColor: 'text-violet-600', textColor: 'text-violet-600'  },
+  blue:    { activeBg: 'bg-chart-1/10 border-chart-1/40 shadow-md shadow-chart-1/20 -translate-y-px',       inactiveBg: 'bg-surface-card border-border-card hover:border-chart-1/30 hover:bg-chart-1/10',       iconBg: 'bg-chart-1/10',    iconColor: 'text-chart-1-text',  textColor: 'text-content-2'   },
+  emerald: { activeBg: 'bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px', inactiveBg: 'bg-surface-card border-border-card hover:border-success/30 hover:bg-success/10', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
+  cyan:    { activeBg: 'bg-chart-5/10 border-chart-5/40 shadow-md shadow-chart-5/20 -translate-y-px',       inactiveBg: 'bg-surface-card border-border-card hover:border-chart-5/30 hover:bg-chart-5/10',       iconBg: 'bg-chart-5/10',    iconColor: 'text-chart-5-text',   textColor: 'text-chart-5-text'    },
+  amber:   { activeBg: 'bg-warning/10 border-warning/40 shadow-md shadow-warning/20 -translate-y-px',     inactiveBg: 'bg-surface-card border-border-card hover:border-warning/30 hover:bg-warning/10',     iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning'   },
+  violet:  { activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-md shadow-chart-3/20 -translate-y-px',   inactiveBg: 'bg-surface-card border-border-card hover:border-chart-3/30 hover:bg-chart-3/10',   iconBg: 'bg-chart-3/10',  iconColor: 'text-chart-3-text', textColor: 'text-chart-3-text'  },
 };
 
 function StaffStatCard({ icon: Icon, label, value, active, onClick, color, loading }) {
@@ -879,7 +879,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewPracticante}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-violet-600/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-chart-3 text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GraduationCap size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Practicante</span>
@@ -893,7 +893,7 @@ const StaffManagementView = ({
             title="Buscar empleado"
           >
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-            {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
+            {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
           </button>
         </div>
       </div>
@@ -967,7 +967,7 @@ const StaffManagementView = ({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0"
+                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0"
                   title="Limpiar filtros"
                 >
                   <Trash2 size={11} strokeWidth={3} />
@@ -978,7 +978,7 @@ const StaffManagementView = ({
         </div>
 
         {isStaffSearchFuzzy && normalizedSearch && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
             <Search size={12} strokeWidth={2.5} className="shrink-0" />
             Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
           </div>

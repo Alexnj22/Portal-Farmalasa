@@ -1,6 +1,10 @@
 # Portal Farmalasa — Design System
 
-> **v1.0 — 2026-06-24**
+> **v2.0 — 2026-07-24** — refleja el cierre de T7 (`AUDITORIA-TEMA-2026-07.md`):
+> color 100% tokenizado (T7.1, 119 archivos), sombras consolidadas al 56%
+> en 19 tokens canónicos (T7.3), matriz de QA de 4 temas verificada (T7.2).
+> Pendiente: decisión sobre si Liquid Glass sobrevive como tema seleccionable
+> o se retira (diferida explícitamente hasta después de T7 — ver §2).
 
 ## Cómo usar este doc
 
@@ -33,14 +37,27 @@ Portal uses a single design language called **Liquid Glass**: frosted translucen
 
 ## 2. Themes
 
-Four named themes, controlled by `data-theme` on `<html>`. The default (Liquid Light) has no attribute.
+Four named themes, controlled by `data-theme` on `<html>`. `liquid` is the
+only one with no attribute (falls through to `:root` defaults).
 
 | Theme key | `data-theme` | Description |
 |---|---|---|
-| `liquid` | *(none)* | LiquidGlass Light — default |
+| `liquid` | *(none)* | LiquidGlass Light |
 | `dark` | `dark` | LiquidGlass Dark |
-| `solid` | `solid` | Solid Light — no blur |
+| `solid` | `solid` | Solid Light — no blur — **default para usuarios nuevos (Fase T6)** |
 | `solid-dark` | `solid-dark` | Solid Dark — no blur |
+
+**Default cambió en Fase T6 (2026-07-23):** `resolveInitialTheme()` en
+`ThemeContext.jsx` usa la preferencia guardada si existe; si no,
+`solid`/`solid-dark` según `prefers-color-scheme` del SO (resuelto una
+sola vez al cargar, no reactivo a cambios posteriores del SO) —
+**Liquid Glass ya NO es el default**, sigue existiendo como opción
+seleccionable vía `ThemeToggle`, montado permanentemente en el sidebar
+(footer expandido + rail colapsado) desde T6.
+
+**Decisión pendiente** (diferida explícitamente hasta el cierre de T7):
+si Liquid Glass sobrevive como tema seleccionable o se retira del todo.
+No decidir esto sin consultarlo primero — ver `AUDITORIA-TEMA-2026-07.md`.
 
 **ThemeContext** (`src/context/ThemeContext.jsx`) persists choice to `localStorage` under key `portal-theme`.
 Exposes `{ theme, setTheme, cycleTheme, isDark, isSolid, isLiquid, themes }`.
@@ -110,6 +127,9 @@ All tokens live in `:root` in `src/index.css` and are overridden by `[data-theme
 ```
 
 ### Shadow tokens (nombres primitivos — mismo motivo, ver §3.1)
+
+Sombras estructurales de layout (card/header/modal, consumidas vía `@theme
+inline` como `shadow-card`/`shadow-modal` etc.):
 ```
 --card-shadow            : inset 0 1px 0 rgba(255,255,255,0.85), 0 8px 32px rgba(0,0,0,0.07)
 --card-shadow-hover       : inset 0 1px 0 rgba(255,255,255,0.90), 0 16px 40px rgba(0,0,0,0.10)
@@ -119,16 +139,67 @@ All tokens live in `:root` in `src/index.css` and are overridden by `[data-theme
 --btn-brand-shadow-hover  : 0 8px 20px rgba(0,82,204,0.40)
 ```
 
-### Semantic color tokens (index.css `:root`)
+### Escala canónica de sombras (Fase T7.3, 2026-07-24)
+
+Antes de T7.3, cada vista escribía su propio `shadow-[0_Npx_Mpx_rgba(...)]`
+a mano — auditoría encontró **974 usos, 556 valores únicos** sin ningún
+sistema detrás (el mismo problema que T7.1 resolvió para color). Estos 14
+tokens (+5 agregados en la 2ª pasada para glows categóricos) reemplazan la
+fragmentación real — **542 de 967 usos (56%) ya migrados**. Deliberadamente
+NO usan el namespace `--shadow-*` de `@theme` (ese lo ocupa Tailwind para
+generar `shadow-sm`/`md`/`lg` nativos — 960 usos sanos que no se tocan) —
+se consumen vía arbitrary value: `className="shadow-[var(--shadow-md-token)]"`.
+
+```
+/* Elevación neutra — reemplaza ~295 usos de sombra negra pura */
+--shadow-elevation-xs: 0 2px 8px rgba(0,0,0,.04)    /* reposo: fila, chip */
+--shadow-elevation-sm: 0 4px 16px rgba(0,0,0,.06)   /* tarjeta pequeña */
+--shadow-elevation-md: 0 8px 28px rgba(0,0,0,.08)   /* tarjeta / hover, la más común */
+--shadow-elevation-lg: 0 16px 48px rgba(0,0,0,.12)  /* panel flotante, dropdown */
+--shadow-elevation-xl: 0 24px 64px rgba(0,0,0,.16)  /* modal, overlay principal */
+
+/* Glass compound (inset claro + sombra exterior) — ~72 usos */
+--shadow-glass-sm: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 10px rgba(0,0,0,.06)
+--shadow-glass-md: inset 0 2px 10px rgba(255,255,255,.4), 0 8px 24px rgba(0,0,0,.08)
+--shadow-glass-lg: inset 0 2px 15px rgba(255,255,255,.7), 0 8px 30px rgba(0,0,0,.04)
+
+/* Glow de marca + severidad (hover/focus) — ~208 + ~141 usos */
+--shadow-glow-brand:   0 6px 20px rgba(0,82,204,.4)
+--shadow-glow-success: 0 4px 15px rgba(18,183,106,.35)
+--shadow-glow-warning: 0 4px 15px rgba(247,144,9,.35)
+--shadow-glow-danger:  0 4px 15px rgba(240,68,56,.35)
+--shadow-ring-brand:   0 0 0 4px rgba(0,82,204,.15)
+
+/* Glow de acento categórico — mismo patrón, agregado en la 2ª pasada
+   de T7.3 al descubrir que existían glows de chart-N no cubiertos por
+   el mockup original (violeta/naranja/azul/dorado/pizarra) */
+--shadow-glow-chart-1: 0 4px 15px rgba(59,130,246,.35)  /* azul */
+--shadow-glow-chart-3: 0 4px 15px rgba(139,92,246,.35)  /* violeta */
+--shadow-glow-chart-4: 0 4px 15px rgba(249,115,22,.35)  /* naranja */
+--shadow-glow-chart-7: 0 4px 15px rgba(234,179,8,.35)   /* dorado */
+--shadow-glow-chart-8: 0 4px 15px rgba(100,116,139,.3)  /* pizarra */
+```
+
+**Qué queda sin tocar (~426 usos, decisión deliberada):** shadows de
+**varias capas combinadas** (p.ej. un anillo de foco + glow + highlight de
+glass en una sola declaración con 3-4 grupos separados por coma). Forzar
+esos a un solo token aplanaría una composición que hoy tiene más de una
+intención visual superpuesta — eso es rediseño, no consolidación de
+duplicados, y no estaba dentro del alcance aprobado. Mismo criterio que el
+resto de excepciones documentadas en este archivo: no mecanizar lo que
+requiere criterio caso por caso.
+
+### Semantic color tokens (index.css `:root`) — MIGRACIÓN COMPLETA (Fase T7.1, 2026-07-24)
 ```
 --brand:        #0052CC
 --brand-dark:   #003D99
 --brand-purple: #6929C4
---success: #12B76A   ← used as KpiCard color prop in DashboardView; NOT a Tailwind emerald shade
+--success: #12B76A
 --warning: #F79009
 --danger:  #F04438
+--success-text/--warning-text/--danger-text: variantes theme-aware (ver §6)
 ```
-These are defined but consumed mostly as inline hex strings (e.g. `color="#12B76A"` on KpiCard). For badges and text, prefer the Tailwind semantic classes (`text-emerald-600`, `text-amber-600`, `text-red-600`) which visually match these values — until the T4 codemod migrates them to `text-success`/`text-warning`/`text-danger` (ya disponibles desde T1, ver §3.1).
+Migración cerrada: **119 archivos, ~1,400+ usos de color crudo (`bg-emerald-500`, `text-red-600`, etc.) reemplazados** por `bg-success`/`text-warning-text`/etc. — ya no hay una fase "pendiente", esto es el estado real del código. Ver §6 (Color System) para la regla de 3 buckets que gobernó la migración y las excepciones documentadas.
 
 ### Focus ring, scrim, divisor (net-new, Fase T1)
 Antes hardcodeados en cada punto de consumo — ahora son tokens únicos:
@@ -138,13 +209,54 @@ Antes hardcodeados en cada punto de consumo — ahora son tokens únicos:
 --divider:          rgba(203,213,225,0.5) ← ~13 archivos repiten variantes de esto para el patrón `w-px h-N` (consumo pendiente T3/T4)
 ```
 
-### Paleta dataviz (net-new, Fase T1)
+### Paleta dataviz — categórica, EN USO ACTIVO (Fase T7.1, extendida de 6 a 9)
 
-**Categórica (6)** — hoy cada vista define su propio set de colores ad hoc (`MetasView.jsx` por sucursal, `AbcXyzMatrix.jsx` para ABC/XYZ). Tokenizados a partir de los colores ya más usados en ese rol; consumo real (wrapper de charts compartido) es T4:
+9 hues, cada uno con su variante `-text` (AA-safe para texto sobre el
+propio tinte de fondo, theme-aware: oscuro en temas claros, claro en
+temas oscuros — mismo patrón que success/warning/danger):
 ```
---chart-1: #3b82f6   --chart-2: #10b981   --chart-3: #8b5cf6
---chart-4: #f97316   --chart-5: #06b6d4   --chart-6: #ec4899
+--chart-1: #3b82f6  --chart-1-text: #1d4ed8  /* azul */
+--chart-2: #10b981  --chart-2-text: #047857  /* esmeralda */
+--chart-3: #8b5cf6  --chart-3-text: #6d28d9  /* violeta */
+--chart-4: #f97316  --chart-4-text: #c2410c  /* naranja */
+--chart-5: #06b6d4  --chart-5-text: #0e7490  /* cian */
+--chart-6: #ec4899  --chart-6-text: #be185d  /* rosa */
+--chart-7: #eab308  --chart-7-text: #854d0e  /* dorado, T7.1 */
+--chart-8: #64748b  --chart-8-text: #334155  /* pizarra, T7.1 */
+--chart-9: #14b8a6  --chart-9-text: #0f766e  /* teal, T7.1 — RequestsView necesitaba 9 categorías reales */
 ```
+
+**La regla de 3 buckets** que gobernó toda la migración de T7.1 (aplica a
+cualquier color nuevo que se agregue de aquí en adelante):
+- **Bucket A — severidad real** (¿es un estado bueno/malo/atención?) →
+  `success`/`warning`/`danger` (y variantes `Badge` component).
+- **Bucket B — categórico genuino** (¿necesito distinguir varios
+  tipos/categorías en la misma vista, sin jerarquía de severidad entre
+  ellos?) → `chart-1`..`chart-9`, asignados por posición y reusados
+  consistentemente entre archivos que comparten el mismo enum (p.ej.
+  `RequestsView.jsx` y `EmployeeProfileView.jsx` usan el mismo mapeo de
+  `VACATION`/`PERMIT`/`DISABILITY`/etc.).
+- **Bucket C — decorativo sin valor informativo** → quitar el color, usar
+  `bg-surface-card-hover` + `text-content-2` (neutro).
+
+**Excepciones documentadas** (no se tokenizan, no son "color suelto sin
+revisar" — fueron evaluadas y decididas explícitamente):
+- **Superficies fijas-oscuras** (sidebar de AppLayout, paneles de kiosco,
+  tooltips flotantes con `bg-slate-900/95`, el wallboard `isDarkConcept`
+  de `AttendanceMonitorView.jsx`): usan la variante **base** de los tokens
+  (`text-success`, no `text-success-text`) porque no seguían el tema activo
+  — usar la variante `-text` ahí perdería contraste si el tema real fuera
+  claro.
+- **Shimmer decorativo de IA** (gradiente `indigo→purple→cyan`, idéntico en
+  6+ archivos: `TabStaff.jsx`, `TabHistory.jsx`, `BranchesView.jsx`,
+  `TabExpediente.jsx`, `FormAiSchedulerPreview.jsx`): es una identidad
+  visual ya estandarizada por repetición exacta, no una duplicación por
+  resolver.
+- **`KpiCard`** (`color + '18'` string-concat para alpha): limitación
+  técnica, no puede usar `var()` en ese contexto.
+- **Leaflet/Google Maps markers, Recharts/canvas, plantillas de impresión
+  PDF** (`CotizacionesView.jsx`): colores hex directos, fuera del sistema
+  de tokens CSS por naturaleza de la tecnología.
 
 **Semáforo de riesgo de stock (7 estados)** — el real de `src/views/productos/tabminmax/constants.js` (`STAT_CFGS`), no el que se mencionaba antes en este documento:
 ```
@@ -190,7 +302,7 @@ Todos los tokens de arriba se alían a namespaces de Tailwind v4 en un bloque `@
 
 **Z-index no tiene namespace `@theme`** en Tailwind v4 — se resuelve con `@utility` (ver §9).
 
-Ningún componente consume estas utilidades todavía (Fase T1 es solo infraestructura); la migración vista-por-vista es T3/T4 del plan de `AUDITORIA-TEMA-2026-07.md`.
+**Actualización T7 (2026-07-24):** en el momento de escribir esto (Fase T1) ningún componente consumía estas utilidades todavía. Eso ya no es cierto — `bg-success`/`bg-chart-N`/`shadow-[var(--shadow-*)]` etc. están en uso activo en 119+ archivos tras el cierre de T7.1/T7.3. Ver §6 y la sección de sombras más abajo para el estado real.
 
 ### 3.2 Fase T2 — refinamiento "Solid Modern" + contrato de tema ampliado
 
@@ -293,14 +405,37 @@ glow decorativo nuevo.
 Utilidades Tailwind ya disponibles vía `@theme inline`: `text-logo-green`,
 `bg-logo-magenta`, `text-logo-green-soft`, `bg-logo-magenta-soft`, etc.
 
-### Semantic (applied as text / icon colors — never as card/row backgrounds)
-| Role | Colors | Usage |
+### Semantic — severidad real (Fase T7.1, reemplaza la tabla de clases crudas de abajo)
+| Role | Token | Uso |
 |---|---|---|
-| Success | `text-emerald-500/600/700` | Confirmed, paid, positive delta |
-| Error / Danger | `text-red-500/600/700` | Lost sales, errors, critical |
-| Warning | `text-amber-500/600/700` | Pending, approaching threshold |
-| Info | `text-blue-500/600/700` or `text-[#0052CC]` | Secondary brand info |
-| Indigo accent | `text-indigo-400/500/600/700` | Charts, secondary accents |
+| Success | `bg-success`/`text-success`/`text-success-text` | Confirmado, pagado, delta positivo, "cumplió" |
+| Danger | `bg-danger`/`text-danger`/`text-danger-text` | Ventas perdidas, errores, vencido, crítico |
+| Warning | `bg-warning`/`text-warning`/`text-warning-text` | Pendiente, acercándose a umbral, atención |
+
+La variante **`-text`** (no la base) es la que se usa para texto sobre el
+propio tinte de fondo del token (`bg-success/10 text-success-text`) — es
+AA-safe y theme-aware (oscuro en temas claros, claro en temas oscuros). La
+variante **base** (`text-success` sin sufijo) es para íconos o texto que
+NO está sobre un tinte del mismo color, y es la que corresponde en
+superficies fijas-oscuras (ver excepciones en §3, "Paleta dataviz").
+Este fue el bug real que tenía `Badge.jsx` antes de T7.1: usaba hex
+hardcodeado en vez del token `-text`, invisible porque el componente no
+tenía usos reales en ese momento.
+
+### Categórico — 9 acentos `chart-N` (Fase T7.1)
+Ver tabla completa + regla de 3 buckets en §3 ("Paleta dataviz"). Resumen:
+`chart-1` azul, `chart-2` esmeralda, `chart-3` violeta, `chart-4` naranja,
+`chart-5` cian, `chart-6` rosa, `chart-7` dorado, `chart-8` pizarra,
+`chart-9` teal — asignados por posición dentro del mismo enum de negocio,
+NUNCA "porque quedaba bien" (esa era la causa raíz de tener 30+ colores
+sin sistema antes de T7.1).
+
+### ~~Semantic (legado, clases crudas — YA NO USAR)~~
+La tabla original de este documento recomendaba `text-emerald-500/600/700`,
+`text-red-500/600/700`, etc. directos de Tailwind. Esa fue exactamente la
+causa del problema que T7.1 cerró (119 archivos, ~1,400 usos de color
+crudo sin sistema). No usar clases de color crudo para severidad o
+categoría — siempre los tokens de arriba.
 
 ### Sidebar palette (always dark regardless of theme)
 - Background: `bg-[#07031a]/80`
@@ -1410,6 +1545,7 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 
 | Version | Date | Notes |
 |---|---|---|
+| v2.0 | 2026-07-24 | **T7.4** — cierre de `AUDITORIA-TEMA-2026-07.md` T7. Reescribe §3 (paleta dataviz: 6→9 chart-N, regla de 3 buckets, excepciones documentadas; escala canónica de sombras nueva, 542/967 usos consolidados en 19 tokens) y §6 (tabla "Semantic" de clases crudas reemplazada por los tokens reales de severidad — esa tabla vieja era literalmente la causa del problema que T7.1 cerró). Corrige §2 (default cambió a Solid Modern en T6, ya no es Liquid). Migración de color: 119 archivos, ~1,400+ usos de color crudo → tokens. Decisión de si Liquid Glass sobrevive como tema sigue diferida — ver §2. |
 | v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |
 | v1.1 | 2026-07-10 | Fase 4 design/UX audit (`AUDITORIA-2026-07.md`). Added §32 Mobile & Responsive Standard (did not exist before). Fixed project-wide: `active:scale-90/95` → `active:scale-[0.97]` (§31 compliance, ~300 sites), input font-size floor 16px (~170 inputs, iOS zoom fix), touch targets in `ViewTabBar`/`AppLayout` header to 44px, 9 native `<select>` → `LiquidSelect` swaps. Found but NOT fixed (documented only, too large/risky for a mechanical pass): ~1,288 `text-slate-300/400`-on-light-surface contrast violations across 127 files. |
 | v1.5 | 2026-07-23 | Los cambios de v1.4 pasaron de prototipo a **código real** en `AppLayout.jsx` (v2.35.0): los 3 blobs ambientales del sidebar, shimmer, glow/borde del logo, ícono de nav activo y barra de acento ya usan `--logo-green`/`--logo-magenta`. De paso: `ViewTabBar.jsx` y el duplicado de `VentasView.jsx` ganan un modo responsive — fila de tabs solo en desktop, `LiquidSelect` compacto con el tab activo en móvil (resuelve el caso de 5 tabs/labels largos de Pedidos a Sucursales). Verificado con Playwright en desktop y móvil (iPhone 13, drawer incluido), cero errores de consola. Pendiente: los 5 blobs ambientales GLOBALES de `AppLayout.jsx` (fondo detrás de `<main>`) siguen en violeta/azul genérico, fuera del alcance de esta sesión. |

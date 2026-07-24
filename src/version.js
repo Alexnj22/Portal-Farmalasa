@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.53.2';
+export const APP_VERSION = '2.53.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.53.3 — docs(design): T7.4 — DESIGN.md v2.0, cierra AUDITORIA-TEMA-2026-07.md T7.
+//
+// Reescribe las secciones que quedaron stale tras T7.1 (color) y T7.3
+// (sombras): paleta dataviz 6→9 chart-N + regla de 3 buckets + excepciones
+// documentadas, escala canónica de sombras nueva, tabla "Semantic" de
+// clases Tailwind crudas (que era literalmente la causa del problema)
+// reemplazada por los tokens reales. Corrige el default de tema (§2:
+// cambió a Solid Modern en T6, el doc seguía diciendo Liquid). No es un
+// rediseño — es que el doc dejara de describir un estado que ya no existe.
+
 
 // v2.53.2 — feat(theme): T7.3 — segunda pasada de consolidación de sombras.
 //

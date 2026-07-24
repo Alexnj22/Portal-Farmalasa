@@ -33,8 +33,8 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
     return (
         <div className={`p-5 rounded-[2.5rem] border bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
             ${isError
-                ? 'border-rose-500/30 shadow-[inset_0_2px_10px_rgba(244,63,94,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(244,63,94,0.2)]'
-                : 'border-cyan-500/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]'}`}>
+                ? 'border-danger/30 shadow-[inset_0_2px_10px_rgba(244,63,94,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(244,63,94,0.2)]'
+                : 'border-chart-5/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]'}`}>
 
             <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
                 <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-danger' : 'bg-chart-5'}`} />
@@ -42,12 +42,12 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
 
             <div className="flex items-center justify-between relative z-10 pr-8">
                 <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border
-                    ${isError ? 'text-rose-300 bg-danger/10 border-rose-500/20' : 'text-cyan-300 bg-chart-5/10 border-cyan-500/20'}`}>
+                    ${isError ? 'text-danger bg-danger/10 border-danger/20' : 'text-chart-5 bg-chart-5/10 border-chart-5/20'}`}>
                     <Bot size={12} strokeWidth={2} /> {isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}
                 </span>
                 {isError
                     ? <AlertTriangle size={16} className="text-danger-text animate-pulse" />
-                    : <Sparkles size={16} className="text-cyan-400 animate-pulse" />}
+                    : <Sparkles size={16} className="text-chart-5 animate-pulse" />}
             </div>
 
             <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-content-3 hover:text-white hover:bg-surface-card transition-all active:scale-[0.97] z-20" title="Ignorar aviso">
@@ -56,7 +56,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
 
             <div className="relative z-10 flex-1">
                 <h4 className="font-black text-white text-[16px] leading-tight tracking-tight mb-2">{insight.branch}</h4>
-                <p className={`text-[12px] font-medium leading-relaxed ${isError ? 'text-rose-100/80' : 'text-cyan-100/70'}`}>{insight.text}</p>
+                <p className={`text-[12px] font-medium leading-relaxed ${isError ? 'text-danger/80' : 'text-chart-5/70'}`}>{insight.text}</p>
             </div>
 
             {insight.action && (
@@ -481,21 +481,21 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                         {currentForm.start && currentForm.end && (
                             <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-cyan-500/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_10px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
+                                <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-chart-5/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_10px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-chart-5 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-10">
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black text-cyan-400 uppercase tracking-widest">
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black text-chart-5 uppercase tracking-widest">
                                             <Bot size={13} /> SALY AI AUDITOR
                                         </div>
-                                        <div className="flex items-center gap-1 text-cyan-100 font-bold text-[12px] uppercase tracking-tight">
-                                            <Sparkles size={13} className="text-cyan-400" /> {autoName}
+                                        <div className="flex items-center gap-1 text-chart-5/70 font-bold text-[12px] uppercase tracking-tight">
+                                            <Sparkles size={13} className="text-chart-5" /> {autoName}
                                         </div>
                                     </div>
                                     <div className="relative z-10">
                                         {activeAlerts.length > 0 ? (
                                             <div className="flex flex-col gap-2.5">
                                                 {activeAlerts.map((alert, idx) => (
-                                                    <div key={idx} className={`p-3 rounded-xl flex items-start gap-2.5 border ${alert.type === 'error' ? 'bg-danger/20 border-rose-500/30 text-rose-200' : 'bg-warning/20 border-warning/30 text-amber-200'}`}>
+                                                    <div key={idx} className={`p-3 rounded-xl flex items-start gap-2.5 border ${alert.type === 'error' ? 'bg-danger/20 border-danger/30 text-danger' : 'bg-warning/20 border-warning/30 text-warning'}`}>
                                                         {alert.type === 'error' ? <AlertCircle size={15} className="shrink-0 mt-0.5 text-danger-text" /> : <AlertTriangle size={15} className="shrink-0 mt-0.5 text-warning" />}
                                                         <span className="text-[11px] font-bold leading-snug">{alert.text}</span>
                                                     </div>
@@ -504,7 +504,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                         ) : (
                                             <div className="p-3 text-center">
                                                 <CheckCircle2 size={24} className="text-success mx-auto" strokeWidth={1.5} />
-                                                <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mt-2">Horario coherente</p>
+                                                <p className="text-[10px] font-black text-success uppercase tracking-widest mt-2">Horario coherente</p>
                                             </div>
                                         )}
                                     </div>

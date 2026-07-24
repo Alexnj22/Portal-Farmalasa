@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.9';
+export const APP_VERSION = '2.52.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.10 — fix(theme): T7.1c — estandariza colores en
+// TabShifts.jsx (tarjetas SALY fijas-oscuras, mismo criterio de tokens
+// base que TabStaff/AppLayout) y PromoModal.jsx (botones/gradientes de
+// marca azul crudos → brand/chart-1, bloque de bonificaciones →
+// success/chart-9, header del modal → brand/chart-1/chart-3).
+
 
 // v2.52.9 — fix(theme): T7.1c — estandariza colores en NotificationBell.jsx.
 //

@@ -78,7 +78,7 @@ function StepInfo({ form, set, branches }) {
                             ? [] : branches.map(b => b.id))}
                         className={`px-3 py-1.5 text-[11px] font-bold rounded-full border transition-all ${
                             form.branch_ids.length === branches.length
-                                ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white shadow-sm shadow-blue-200'
+                                ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white shadow-sm shadow-brand/20'
                                 : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                         }`}
                     >
@@ -95,7 +95,7 @@ function StepInfo({ form, set, branches }) {
                                     : [...form.branch_ids, b.id])}
                                 className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                     active
-                                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
+                                        ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
                                         : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                 }`}
                             >
@@ -276,7 +276,7 @@ function AddProductInline({ onAdd }) {
     const numInp = `${inp} text-center`;
 
     return (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-chart-1/30 rounded-2xl p-4 space-y-3.5 shadow-sm">
+        <div className="bg-gradient-to-br from-chart-1/10 to-chart-1/5 border border-chart-1/30 rounded-2xl p-4 space-y-3.5 shadow-sm">
             <div>
                 <label className={lbl}>Producto *</label>
                 <LiquidSelect
@@ -306,7 +306,7 @@ function AddProductInline({ onAdd }) {
                                     onClick={() => setPresentacionId(opt.value)}
                                     className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                         presentacionId === opt.value
-                                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
+                                            ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
                                             : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                     }`}
                                 >
@@ -339,7 +339,7 @@ function AddProductInline({ onAdd }) {
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-success/30 rounded-xl p-3 space-y-2.5">
+                    <div className="bg-gradient-to-br from-success/10 to-chart-9/5 border border-success/30 rounded-xl p-3 space-y-2.5">
                         <p className="text-[10px] font-bold text-success-text uppercase tracking-wider flex items-center gap-1.5">
                             <Gift size={10} /> Bonificaciones por trigger
                         </p>
@@ -370,7 +370,7 @@ function AddProductInline({ onAdd }) {
                     type="button"
                     onClick={handleAdd}
                     disabled={!pid}
-                    className="px-4 py-1.5 text-[11px] font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 transition-all shadow-sm shadow-blue-200 flex items-center gap-1.5"
+                    className="px-4 py-1.5 text-[11px] font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand disabled:opacity-40 transition-all shadow-sm shadow-brand/20 flex items-center gap-1.5"
                 >
                     <Plus size={10} /> Agregar
                 </button>
@@ -500,7 +500,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
         <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-xl" className="max-h-[90vh]" ariaLabel="Nueva Promoción">
 
                 {/* Header — gradient */}
-                <div className="flex-none bg-gradient-to-br from-blue-700 via-blue-600 to-violet-600 px-7 pt-7 pb-6">
+                <div className="flex-none bg-gradient-to-br from-brand via-chart-1 to-chart-3 px-7 pt-7 pb-6">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3.5">
                             <div className="w-11 h-11 flex items-center justify-center rounded-2xl bg-surface-card border border-border-card text-white shadow-inner">
@@ -510,7 +510,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                 <h3 className="font-black text-white text-[19px] tracking-tight leading-none mb-0.5">
                                     Nueva Promoción
                                 </h3>
-                                <p className="text-[10px] font-semibold text-blue-200 uppercase tracking-[0.18em]">
+                                <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">
                                     {step === 0 ? 'Datos generales' : 'Productos y bonificaciones'}
                                 </p>
                             </div>
@@ -541,8 +541,8 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                         className="flex items-center gap-2 shrink-0"
                                     >
                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                                            isActive ? 'bg-white border-white text-chart-1-text scale-110 shadow-lg shadow-blue-900/30'
-                                            : isDone  ? 'bg-success border-emerald-300 text-white'
+                                            isActive ? 'bg-white border-white text-chart-1-text scale-110 shadow-lg shadow-brand/30'
+                                            : isDone  ? 'bg-success border-success/50 text-white'
                                             : 'bg-surface-card border-border-card text-white/50'
                                         }`}>
                                             {isDone ? <Check size={13} /> : <StepIcon size={12} />}
@@ -586,7 +586,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                         <button
                             type="button"
                             onClick={() => setStep(1)}
-                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm shadow-blue-200"
+                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand transition-all shadow-sm shadow-brand/20"
                         >
                             Siguiente <ChevronRight size={13} />
                         </button>
@@ -595,7 +595,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                             type="button"
                             onClick={handleCreate}
                             disabled={saving || products.length === 0}
-                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-40 transition-all shadow-sm shadow-emerald-200"
+                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-success to-chart-9 text-white rounded-xl hover:from-chart-9 hover:to-success disabled:opacity-40 transition-all shadow-sm shadow-success/20"
                         >
                             {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                             Crear Promoción

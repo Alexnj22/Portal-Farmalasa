@@ -30,12 +30,14 @@ const IMMEDIATE_TIPOS = ['tarjeta', 'transferencia', 'cheque', 'bitcoin'];
 const CREDIT_TIPOS    = ['credito'];
 const PAGE_SIZE = 10;
 
+// Categórico puro (T7, paleta cerrada cat-1..9) — 5 métodos de pago sin
+// severidad, solo necesitan distinguirse entre sí en la tabla.
 const TIPO_PAGO_COLORS = {
-    tarjeta:       'bg-blue-50 text-blue-700 border-blue-200',
-    credito:       'bg-purple-50 text-purple-700 border-purple-200',
-    transferencia: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-    bitcoin:       'bg-orange-50 text-orange-700 border-orange-200',
-    cheque:        'bg-teal-50 text-teal-700 border-teal-200',
+    tarjeta:       'bg-chart-1/10 text-chart-1-text border-chart-1/30',
+    credito:       'bg-chart-3/10 text-chart-3-text border-chart-3/30',
+    transferencia: 'bg-chart-5/10 text-chart-5-text border-chart-5/30',
+    bitcoin:       'bg-chart-4/10 text-chart-4-text border-chart-4/30',
+    cheque:        'bg-chart-9/10 text-chart-9-text border-chart-9/30',
 };
 
 
@@ -396,7 +398,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                 ))}
                 {activeVisitedCount > 0 && (
                     <button onClick={clearVisited}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-amber-700 text-[10px] font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-[10px] font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
                         <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
@@ -405,7 +407,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                     <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
                             paused
-                                ? 'bg-warning/10 border-warning/30 text-amber-700 hover:bg-warning/10'
+                                ? 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
                                 : 'bg-surface-card-hover border-slate-200 text-content-3 hover:bg-surface-card-hover'
                         }`}>
                         {paused ? <><Play size={9} /> Reanudar</> : <><Pause size={9} /> Pausar</>}
@@ -435,13 +437,13 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="space-y-3">
                     {isAnuladasFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
-                        <Info size={13} className="text-blue-400 shrink-0" />
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand font-medium">
+                        <Info size={13} className="text-brand shrink-0" />
                         Al resolverse la anulación en sistema, el estado se actualiza automáticamente en el portal.
                     </div>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
@@ -470,8 +472,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                         return (
                                             <div key={fecha} className="px-4 py-3">
                                                 <div className="flex items-center gap-2 mb-2.5">
-                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-danger' : 'text-content-2'}`}>{fecha}</span>
-                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-blue-100 text-blue-600' : hasCCF ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>{dLabel}</span>
+                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-brand/10 text-brand' : hasCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>{dLabel}</span>
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {fechaRows.map(r => {
@@ -490,8 +492,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
                                                                         className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${
                                                                             isCopied  ? 'bg-success/10 text-emerald-700 border-success/30' :
-                                                                            isVisited ? 'bg-warning/10 text-amber-700 border-warning/30' :
-                                                                            isCCF     ? 'bg-danger/10 text-red-700 border-danger/30 hover:bg-danger/10' :
+                                                                            isVisited ? 'bg-warning/10 text-warning-text border-warning/30' :
+                                                                            isCCF     ? 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10' :
                                                                                         'bg-surface-card-hover text-content-2 border-slate-200 hover:bg-surface-card-hover'
                                                                         }`}>
                                                                         {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
@@ -509,7 +511,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3 space-y-2">
                                                                         <div>
                                                                             <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                            <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-red-700' : 'text-content'}`}>{r.correlativo}</p>
+                                                                            <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
                                                                         </div>
                                                                         {r.cliente && <div>
                                                                             <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
@@ -517,7 +519,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         </div>}
                                                                         <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
                                                                             <p className="text-[8px] font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                            <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-content'}`}>{fmt(r.total)}</p>
+                                                                            <p className={`text-[13px] font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                         </div>
                                                                     </div>
                                                                     <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
@@ -532,7 +534,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                     return (
                                                         <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                             <div className="flex items-center gap-2 mb-2.5">
-                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-red-700' : 'text-content-2'}`}>{r.correlativo}</span>
+                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
                                                                 {r.cliente && <span className="text-[11px] text-content-3 truncate">· {r.cliente}</span>}
                                                                 <span className="ml-auto text-[12px] font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
@@ -828,7 +830,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     }, [filtered]);
 
     const daysLeftLabel = daysLeft === 0 ? 'Último día' : daysLeft;
-    const daysLeftText  = daysLeft === 0 ? 'text-red-700' : daysLeft <= 2 ? 'text-red-700' : daysLeft <= 5 ? 'text-amber-700' : 'text-emerald-700';
+    const daysLeftText  = daysLeft === 0 ? 'text-danger-text' : daysLeft <= 2 ? 'text-danger-text' : daysLeft <= 5 ? 'text-warning-text' : 'text-success-text';
     const daysLeftBg    = daysLeft === 0 ? 'bg-danger/10 border-danger/30' : daysLeft <= 2 ? 'bg-danger/10 border-danger/30' : daysLeft <= 5 ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30';
     const daysLeftGrad  = daysLeft === 0 ? 'from-red-600 to-red-400' : daysLeft <= 2 ? 'from-red-500 to-red-400' : daysLeft <= 5 ? 'from-amber-500 to-orange-400' : 'from-emerald-500 to-teal-400';
 
@@ -837,7 +839,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-amber-500 to-orange-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-amber-700' : 'text-content-3', bg: filtered.length > 0 ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-slate-200' },
+                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-amber-500 to-orange-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-warning-text' : 'text-content-3', bg: filtered.length > 0 ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-slate-200' },
                     { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-red-700' : 'text-content-3',           bg: ccfCount > 0 ? 'bg-danger/10 border-danger/30' : 'bg-surface-card-hover border-slate-200' },
                     { label: 'Días restantes', value: daysLeftLabel,  icon: History,        grad: daysLeftGrad, text: daysLeftText, bg: daysLeftBg },
                 ].map(({ label, value, icon: Icon, grad, text, bg }) => (
@@ -851,7 +853,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                 ))}
                 {activeVisitedCount > 0 && (
                     <button onClick={clearVisited}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-amber-700 text-[10px] font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-[10px] font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
                         <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
@@ -860,7 +862,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
                             paused
-                                ? 'bg-warning/10 border-warning/30 text-amber-700 hover:bg-warning/10'
+                                ? 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
                                 : 'bg-surface-card-hover border-slate-200 text-content-3 hover:bg-surface-card-hover'
                         }`}>
                         {paused ? <><Play size={9} /> Reanudar</> : <><Pause size={9} /> Pausar</>}
@@ -891,13 +893,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="space-y-3">
                     {isPendienteFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
-                        <Info size={13} className="text-blue-400 shrink-0" />
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand font-medium">
+                        <Info size={13} className="text-brand shrink-0" />
                         Al corregirse en sistema se confirman automáticamente en el portal.
                     </div>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
@@ -931,10 +933,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                             <div key={fecha} className="px-4 py-3">
                                                 {/* Date label */}
                                                 <div className="flex items-center gap-2 mb-2.5">
-                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-danger' : 'text-content-2'}`}>{fecha}</span>
+                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
                                                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                                                        isToday ? 'bg-blue-100 text-blue-600' :
-                                                        hasCCF  ? 'bg-danger/10 text-danger' :
+                                                        isToday ? 'bg-brand/10 text-brand' :
+                                                        hasCCF  ? 'bg-danger/10 text-danger-text' :
                                                                   'bg-surface-card-hover text-content-3'
                                                     }`}>{dLabel}</span>
                                                 </div>
@@ -953,25 +955,25 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
                                                                     isSolving    ? 'border-emerald-400 shadow-sm shadow-emerald-100' :
                                                                     isVisited    ? 'border-amber-300' :
-                                                                    hasNullCampos ? 'border-purple-300 hover:border-purple-400' :
+                                                                    hasNullCampos ? 'border-chart-3/40 hover:border-chart-3/60' :
                                                                     isCCF        ? 'border-danger/30 hover:border-red-300' :
                                                                                    'border-slate-200 hover:border-slate-300'
                                                                 }`}>
                                                                     {/* Copy zone */}
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
                                                                         className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${
-                                                                            isCopied      ? 'bg-success/10 text-emerald-700 border-success/30' :
-                                                                            isVisited     ? 'bg-warning/10 text-amber-700 border-warning/30' :
-                                                                            hasNullCampos ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' :
-                                                                            isCCF         ? 'bg-danger/10 text-red-700 border-danger/30 hover:bg-danger/10' :
+                                                                            isCopied      ? 'bg-success/10 text-success-text border-success/30' :
+                                                                            isVisited     ? 'bg-warning/10 text-warning-text border-warning/30' :
+                                                                            hasNullCampos ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30 hover:bg-chart-3/20' :
+                                                                            isCCF         ? 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10' :
                                                                                             'bg-surface-card-hover text-content-2 border-slate-200 hover:bg-surface-card-hover'
                                                                         }`}>
                                                                         {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
                                                                     {/* Tipo label (tooltip trigger) */}
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-warning/10' : hasNullCampos ? 'bg-purple-50/40' : isCCF ? 'bg-danger/10' : 'bg-white'}`}>
-                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning' : hasNullCampos ? 'text-purple-600' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-warning/10' : hasNullCampos ? 'bg-chart-3/10' : isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
+                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning-text' : hasNullCampos ? 'text-chart-3-text' : isCCF ? 'text-danger-text' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     {/* Solventar / cancel button */}
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
@@ -990,7 +992,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         <div className="space-y-2">
                                                                             <div>
                                                                                 <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                                <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-red-700' : 'text-content'}`}>{r.correlativo}</p>
+                                                                                <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
                                                                             </div>
                                                                             {r.cliente && <div>
                                                                                 <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
@@ -998,7 +1000,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                             </div>}
                                                                             <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
                                                                                 <p className="text-[8px] font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                                <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-content'}`}>{fmt(r.total)}</p>
+                                                                                <p className={`text-[13px] font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1017,7 +1019,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                     return (
                                                         <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                             <div className="flex items-center gap-2 mb-2.5">
-                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-red-700' : 'text-content-2'}`}>{r.correlativo}</span>
+                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
                                                                 {r.cliente && <span className="text-[11px] text-content-3 truncate">· {r.cliente}</span>}
                                                                 <span className="ml-auto text-[12px] font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
@@ -1276,8 +1278,8 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                         title="Sin saltos detectados" subtitle="Los correlativos están en orden. No hay brechas." />
                 ) : (
                     <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
-                            <Info size={13} className="text-blue-400 shrink-0" />
+                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand font-medium">
+                            <Info size={13} className="text-brand shrink-0" />
                             Cada salto indica correlativos faltantes entre dos documentos consecutivos.
                         </div>
                         {Object.entries(gapsByBranch).map(([branchId, branchGaps]) => {
@@ -1307,7 +1309,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     return (
                                                         <div key={i} className="relative group/tip">
                                                             <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-emerald-400 shadow-emerald-100' : isCCF ? 'border-danger/30 hover:border-red-300' : 'border-orange-200 hover:border-orange-300'}`}>
-                                                                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-[10px] font-black ${isCCF ? 'bg-danger/10 text-red-700 border-danger/30' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
+                                                                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-[10px] font-black ${isCCF ? 'bg-danger/10 text-danger-text border-danger/30' : 'bg-chart-4/10 text-chart-4-text border-chart-4/30'}`}>
                                                                     {pad7(g.gap_from)}–{pad7(g.gap_to)}
                                                                 </div>
                                                                 <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-danger/10' : 'bg-white'}`}>
@@ -1758,7 +1760,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="p-4 md:p-6 space-y-5">
                     {isNoEfectivoFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
@@ -2043,7 +2045,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     {r.confirmed_by_photo ? (
                                                         <img src={r.confirmed_by_photo} alt="" className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0" />
                                                     ) : (
-                                                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-bold shrink-0">
+                                                        <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center text-content-2 text-[10px] font-bold shrink-0">
                                                             {r.confirmed_by?.charAt(0)?.toUpperCase() || '?'}
                                                         </div>
                                                     )}

@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.0';
+export const APP_VERSION = '2.51.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.1 — refactor(theme): T7.1 — Bucket B, segunda tanda (FacturacionView,
+// DashboardView, EncuestaView, EncuestaAdminView).
+//
+// FacturacionView.jsx: métodos de pago → paleta cat-1..9; ~15 usos de
+// text-amber-700/text-red-700 hardcodeados coexistiendo YA con bg-warning/
+// bg-danger tokens (bug de la misma familia que Badge.jsx: bg tokenizado,
+// texto no); banner info → tokens de brand en vez de blue-50 crudo; avatar
+// placeholder (iniciales sin foto) → neutro (Bucket C, no aporta info que
+// el color distinga). DashboardView.jsx: estados de asistencia en tiempo
+// real → categórico (ABSENT pasa a warning: "sin marcar" si necesita
+// seguimiento). Los colores de Recharts/KpiCard con hex crudo NO se
+// tocaron — coinciden exacto con los tokens pero se usan vía concatenación
+// de string para alpha (`color + '18'`), imposible con var() sin refactor
+// de KpiCard; excepción técnica real, no descuido.
+//
+// EncuestaView.jsx/EncuestaAdminView.jsx: el hallazgo más grande de esta
+// tanda — un patrón de 4 niveles (excelente/bueno/regular/crítico,
+// opciones A/B/C/D) repetido ~15 veces en cada archivo con emerald/blue/
+// amber/rose crudos. Mapeado a success/chart-1/warning/danger de forma
+// consistente. Seccións de "Resumen IA" (indigo/purple) migradas a
+// chart-3. ~150 reemplazos entre ambos archivos.
 
 // v2.51.0 — refactor(theme): T7.1 — estandarización de color, primera
 // tanda (tokens + Bucket A de severidad real).

@@ -171,19 +171,23 @@ const REQUEST_TYPE_LABELS = {
   SHIFT_CHANGE: 'Cambio turno', OVERTIME: 'Horas extra',
 };
 
+// Tokenizado T7 — mismo criterio de PERMIT=cat-2 que RequestsView/
+// EmployeeProfileView (mismo enum de tipo de ausencia en toda la app).
 const ABSENCE_COLORS = {
-  VACATION:   { bg: 'bg-warning/10',  text: 'text-amber-700',  border: 'border-warning/30'  },
-  DISABILITY: { bg: 'bg-danger/10',    text: 'text-red-700',    border: 'border-danger/30'    },
-  PERMIT:     { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  VACATION:   { bg: 'bg-warning/10',  text: 'text-warning-text',  border: 'border-warning/30'  },
+  DISABILITY: { bg: 'bg-danger/10',    text: 'text-danger-text',    border: 'border-danger/30'    },
+  PERMIT:     { bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30' },
 };
 
+// Actividad en tiempo real — categórico puro salvo ABSENT (falta de marca,
+// sí necesita leerse como "requiere seguimiento" → warning).
 const STATUS_CONFIG = {
-  WORKING:   { label: 'En labores',    dot: 'bg-green-500',  bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200'  },
-  LUNCH:     { label: 'Almuerzo',      dot: 'bg-orange-400', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
-  LACTATION: { label: 'Lactancia',     dot: 'bg-pink-400',   bg: 'bg-pink-50',   text: 'text-pink-700',   border: 'border-pink-200'   },
-  BUSINESS:  { label: 'Gest. externa', dot: 'bg-blue-400',   bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200'   },
-  OUT:       { label: 'Salida',        dot: 'bg-content-3',  bg: 'bg-surface-card-hover',  text: 'text-content-3',  border: 'border-slate-200'  },
-  ABSENT:    { label: 'Sin marcar',    dot: 'bg-gray-200',   bg: 'bg-gray-50',   text: 'text-gray-400',   border: 'border-gray-100'   },
+  WORKING:   { label: 'En labores',    dot: 'bg-chart-2',  bg: 'bg-chart-2/10',  text: 'text-chart-2-text',  border: 'border-chart-2/30'  },
+  LUNCH:     { label: 'Almuerzo',      dot: 'bg-chart-4', bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30' },
+  LACTATION: { label: 'Lactancia',     dot: 'bg-chart-6',   bg: 'bg-chart-6/10',   text: 'text-chart-6-text',   border: 'border-chart-6/30'   },
+  BUSINESS:  { label: 'Gest. externa', dot: 'bg-chart-1',   bg: 'bg-chart-1/10',   text: 'text-chart-1-text',   border: 'border-chart-1/30'   },
+  OUT:       { label: 'Salida',        dot: 'bg-content-3',  bg: 'bg-surface-card-hover',  text: 'text-content-3',  border: 'border-border-card'  },
+  ABSENT:    { label: 'Sin marcar',    dot: 'bg-warning',   bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30'   },
 };
 
 const CATEGORY_META = {

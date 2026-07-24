@@ -53,30 +53,32 @@ function avgBlockScore(respuestas, indices, invertedSet = new Set()) {
 function scoreColor(s) {
     if (s == null) return 'text-content-3';
     if (s >= 85) return 'text-success';
-    if (s >= 70) return 'text-blue-600';
+    if (s >= 70) return 'text-chart-1-text';
     if (s >= 55) return 'text-warning';
-    return 'text-rose-600';
+    return 'text-danger-text';
 }
 
+// Tokenizado T7 — mismo criterio de EncuestaView.jsx (excelente/bueno/
+// regular/crítico → success/chart-1/warning/danger).
 function scoreBg(s) {
     if (s == null) return 'bg-surface-card-hover text-content-3';
-    if (s >= 85) return 'bg-success/10 text-emerald-700';
-    if (s >= 70) return 'bg-blue-50 text-blue-700';
-    if (s >= 55) return 'bg-warning/10 text-amber-700';
-    return 'bg-rose-50 text-rose-700';
+    if (s >= 85) return 'bg-success/10 text-success-text';
+    if (s >= 70) return 'bg-chart-1/10 text-chart-1-text';
+    if (s >= 55) return 'bg-warning/10 text-warning-text';
+    return 'bg-danger/10 text-danger-text';
 }
 
 const BAR_COLORS = {
-    blue: 'bg-blue-500', emerald: 'bg-emerald-500', amber: 'bg-amber-500',
-    indigo: 'bg-indigo-500', purple: 'bg-purple-500', teal: 'bg-teal-500',
-    rose: 'bg-rose-500', slate: 'bg-content-3',
+    blue: 'bg-chart-1', emerald: 'bg-success', amber: 'bg-warning',
+    indigo: 'bg-chart-3', purple: 'bg-chart-3', teal: 'bg-chart-9',
+    rose: 'bg-danger', slate: 'bg-content-3',
 };
 
 const OPT_COLORS = {
-    A: { on: 'bg-emerald-500 text-white shadow-sm shadow-emerald-200', off: 'bg-success/10 text-success hover:bg-success/10' },
-    B: { on: 'bg-blue-500 text-white shadow-sm shadow-blue-200',       off: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
-    C: { on: 'bg-amber-500 text-white shadow-sm shadow-amber-200',     off: 'bg-warning/10 text-warning hover:bg-warning/10' },
-    D: { on: 'bg-rose-500 text-white shadow-sm shadow-rose-200',       off: 'bg-rose-50 text-rose-600 hover:bg-rose-100' },
+    A: { on: 'bg-success text-white shadow-sm shadow-success/30', off: 'bg-success/10 text-success hover:bg-success/10' },
+    B: { on: 'bg-chart-1 text-white shadow-sm shadow-chart-1/30',       off: 'bg-chart-1/10 text-chart-1-text hover:bg-chart-1/20' },
+    C: { on: 'bg-warning text-white shadow-sm shadow-warning/30',     off: 'bg-warning/10 text-warning hover:bg-warning/10' },
+    D: { on: 'bg-danger text-white shadow-sm shadow-danger/30',       off: 'bg-danger/10 text-danger-text hover:bg-danger/20' },
 };
 
 const NUMERIC_OPTS = [
@@ -115,10 +117,10 @@ const SCOPE_TABS = [
 ];
 
 const TIPO_STYLE = {
-    clima:        'bg-indigo-100 text-indigo-700',
-    satisfaccion: 'bg-teal-100 text-teal-700',
-    desempeno:    'bg-purple-100 text-purple-700',
-    adhoc:        'bg-warning/10 text-amber-700',
+    clima:        'bg-chart-3/10 text-chart-3-text',
+    satisfaccion: 'bg-chart-9/10 text-chart-9-text',
+    desempeno:    'bg-chart-6/10 text-chart-6-text',
+    adhoc:        'bg-warning/10 text-warning-text',
 };
 
 const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Personalizada' };
@@ -504,7 +506,7 @@ export default function EncuestaAdminView() {
 
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-[14px]">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-amber-500' : 'bg-brand'}`}>
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-warning' : 'bg-brand'}`}>
                                         {editingSurvey ? <Edit3 size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-0.5">
@@ -513,14 +515,14 @@ export default function EncuestaAdminView() {
                                 </h3>
                                 {editingSurvey && (
                                     <button onClick={resetSurveyForm}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
                                 )}
                             </div>
 
                             {sfError && (
-                                <div className="mb-3 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
+                                <div className="mb-3 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
                                     <AlertCircle size={14} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                     <span className="leading-tight">{sfError}</span>
                                 </div>
@@ -602,7 +604,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setSfCompartir(v => !v)}
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfCompartir
-                                                    ? 'bg-success/10 border-emerald-300/60 text-emerald-700 shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
+                                                    ? 'bg-success/10 border-success/40 text-success-text shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <Globe size={13} strokeWidth={2.5} />
@@ -716,7 +718,7 @@ export default function EncuestaAdminView() {
                                 <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey || !canManage}
                                     className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingSurvey
-                                            ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'
+                                            ? 'bg-warning hover:bg-warning-hover shadow-warning/30'
                                             : 'bg-brand hover:bg-brand-hover'
                                     }`}>
                                     {savingSurvey
@@ -734,7 +736,7 @@ export default function EncuestaAdminView() {
                         <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-amber-500' : 'bg-brand'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning' : 'bg-brand'}`}>
                                         {editingResponse ? <Edit3 size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-1">
@@ -742,7 +744,7 @@ export default function EncuestaAdminView() {
                                     </span>
                                 </h3>
                                 <button onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}
-                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                     <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                 </button>
                             </div>
@@ -787,7 +789,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setRfIsJefe(true)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
                                                 rfIsJefe
-                                                    ? 'bg-warning/10 border-amber-300/60 text-amber-700 shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
+                                                    ? 'bg-warning/10 border-warning/40 text-warning-text shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <UserCheck size={14} strokeWidth={2.5} /> Jefe/a de sala
@@ -818,7 +820,7 @@ export default function EncuestaAdminView() {
                                         <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
                                             <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-card transition-colors"
                                                 onClick={() => setRfOpenBloques(p => ({ ...p, general: !p.general }))}>
-                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 bg-slate-500">
+                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 bg-content-3">
                                                     G
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -945,7 +947,7 @@ export default function EncuestaAdminView() {
                                 <button type="button" onClick={handleSaveResponse}
                                     disabled={(!editingResponse && !rfEmployeeId) || savingResponse || !canManage}
                                     className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
-                                        editingResponse ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'
+                                        editingResponse ? 'bg-warning hover:bg-warning-hover shadow-warning/30' : 'bg-brand hover:bg-brand-hover'
                                     }`}>
                                     {savingResponse
                                         ? <><Loader2 size={16} className="animate-spin" /> Procesando…</>
@@ -1009,7 +1011,7 @@ export default function EncuestaAdminView() {
                                             )}
                                             {canManage && (
                                             <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
-                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-warning/10 text-warning border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md'}`}
+                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md'}`}
                                                 title="Editar encuesta">
                                                 <Edit3 size={14} strokeWidth={2.5} />
                                             </button>
@@ -1020,14 +1022,14 @@ export default function EncuestaAdminView() {
                                         <div className="flex flex-wrap items-center gap-2 pr-28">
                                             <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
                                                 s.estado === 'activa'    ? 'text-success bg-success/10 border-success/30' :
-                                                s.estado === 'cerrada'   ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
+                                                s.estado === 'cerrada'   ? 'text-chart-1-text bg-chart-1/10 border-chart-1/30' :
                                                 s.estado === 'borrador'  ? 'text-content-3 bg-surface-card-hover border-slate-200/50' :
                                                                            'text-content-3 bg-surface-card-hover border-slate-200/50'
                                             }`}>{s.estado}</span>
                                             <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                                s.tipo === 'clima'        ? 'text-indigo-600 bg-indigo-50 border-indigo-200/50' :
-                                                s.tipo === 'satisfaccion' ? 'text-teal-600 bg-teal-50 border-teal-200/50' :
-                                                s.tipo === 'desempeno'    ? 'text-purple-600 bg-purple-50 border-purple-200/50' :
+                                                s.tipo === 'clima'        ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' :
+                                                s.tipo === 'satisfaccion' ? 'text-chart-9-text bg-chart-9/10 border-chart-9/30' :
+                                                s.tipo === 'desempeno'    ? 'text-chart-6-text bg-chart-6/10 border-chart-6/30' :
                                                                             'text-warning bg-warning/10 border-warning/30'
                                             }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
                                             {s.anonima && (
@@ -1122,7 +1124,7 @@ export default function EncuestaAdminView() {
                                                             return (
                                                                 <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
-                                                                    <span className="text-[10px] font-black text-amber-700">{fn}</span>
+                                                                    <span className="text-[10px] font-black text-warning-text">{fn}</span>
                                                                 </div>
                                                             );
                                                         })}
@@ -1187,7 +1189,7 @@ export default function EncuestaAdminView() {
                                                                                             </button>
                                                                                         </td>
                                                                                         <td className="py-2.5 px-2 text-center">
-                                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-warning/10 text-amber-700' : 'bg-surface-card-hover text-content-3'}`}>
+                                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-warning/10 text-warning-text' : 'bg-surface-card-hover text-content-3'}`}>
                                                                                                 {row.is_jefe ? 'Jefe/a' : 'Colab.'}
                                                                                             </span>
                                                                                         </td>
@@ -1210,7 +1212,7 @@ export default function EncuestaAdminView() {
                                                                                             {confirmDelete === row.id ? (
                                                                                                 <div className="flex items-center gap-1 justify-center">
                                                                                                     <button onClick={() => handleDeleteResponse(row)}
-                                                                                                        className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors">
+                                                                                                        className="w-6 h-6 rounded-full bg-danger text-white flex items-center justify-center hover:bg-danger-hover transition-colors">
                                                                                                         <Check size={10} strokeWidth={3} />
                                                                                                     </button>
                                                                                                     <button onClick={() => setConfirmDelete(null)}
@@ -1245,7 +1247,7 @@ export default function EncuestaAdminView() {
                                                                                                         return (
                                                                                                             <div className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
                                                                                                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-border-card bg-surface-card-hover/40">
-                                                                                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 bg-slate-500">G</div>
+                                                                                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 bg-content-3">G</div>
                                                                                                                     <span className="text-[11px] font-black text-content-2">Datos Generales</span>
                                                                                                                 </div>
                                                                                                                 <div className="divide-y divide-white/40">

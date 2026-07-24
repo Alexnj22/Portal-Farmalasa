@@ -28,8 +28,8 @@ const roleOrder = (emp) => {
 
 const STATUS_META = {
     DRAFT:    { label: 'Borrador',  color: 'bg-surface-card-hover text-content-2 border-slate-200' },
-    APPROVED: { label: 'Aprobada', color: 'bg-success/10 text-emerald-700 border-success/30' },
-    PAID:     { label: 'Pagada',   color: 'bg-blue-50 text-blue-700 border-blue-200' },
+    APPROVED: { label: 'Aprobada', color: 'bg-success/10 text-success-text border-success/30' },
+    PAID:     { label: 'Pagada',   color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' },
 };
 
 // ─── Number to words ──────────────────────────────────────────────────────────
@@ -284,7 +284,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                         {/* Branch header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-border-card bg-surface-card flex-wrap gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-tr from-brand to-[#6929C4] rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.3)]">
+                                <div className="w-8 h-8 bg-gradient-to-tr from-brand to-brand-purple rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.3)]">
                                     <Building2 size={14} className="text-white" strokeWidth={2} />
                                 </div>
                                 <div>
@@ -313,7 +313,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
 
                                 <div className="text-right">
                                     <p className="text-[8px] font-black uppercase tracking-widest text-content-2">Total a pagar</p>
-                                    <p className="text-[15px] font-black text-emerald-700">{fmt(branchNet)}</p>
+                                    <p className="text-[15px] font-black text-success-text">{fmt(branchNet)}</p>
                                 </div>
                             </div>
                         </div>
@@ -337,12 +337,12 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                         </DataCell>
                                         <DataCell align="right" className="font-bold">{round2(e.days_worked)}</DataCell>
                                         <DataCell align="right" className="font-bold">{fmt(e.ordinary_salary)}</DataCell>
-                                        <DataCell align="right" className="font-bold text-blue-600">{fmt(e.subtotal_b)}</DataCell>
+                                        <DataCell align="right" className="font-bold text-chart-1-text">{fmt(e.subtotal_b)}</DataCell>
                                         <DataCell align="right" className="text-content-3">{fmt(e.isss_deduction)}</DataCell>
                                         <DataCell align="right" className="text-content-3">{fmt(e.afp_deduction)}</DataCell>
                                         <DataCell align="right" className="text-content-3">{fmt(e.renta_deduction)}</DataCell>
                                         <DataCell align="right" className="font-bold text-danger">{fmt(e.total_deductions)}</DataCell>
-                                        <DataCell align="right" className="font-black text-emerald-700 whitespace-nowrap">{fmt(e.net_pay)}</DataCell>
+                                        <DataCell align="right" className="font-black text-success-text whitespace-nowrap">{fmt(e.net_pay)}</DataCell>
                                         <DataCell>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => onPrint(e)} title="Imprimir boleta individual"
@@ -513,7 +513,7 @@ const PayrollView = ({ openModal }) => {
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
                     className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
+                    {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
             </div>
         </div>
@@ -572,7 +572,7 @@ const PayrollView = ({ openModal }) => {
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
                         {!activePeriod ? (
                             <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-                                <div className="w-16 h-16 bg-gradient-to-tr from-brand to-[#6929C4] rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,82,204,0.3)] mb-4">
+                                <div className="w-16 h-16 bg-gradient-to-tr from-brand to-brand-purple rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,82,204,0.3)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[15px] font-black text-content-2 uppercase tracking-tight">Selecciona un período</p>
@@ -618,7 +618,7 @@ const PayrollView = ({ openModal }) => {
                                             )}
                                             {isDraft && payrollEntries.length > 0 && (
                                                 <button onClick={() => setConfirming({ action:'APPROVED', label:'aprobar' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(34,197,94,0.35)]">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success hover:bg-success-hover text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(34,197,94,0.35)]">
                                                     <CheckCircle2 size={12} strokeWidth={2.5} /> Aprobar
                                                 </button>
                                             )}
@@ -635,9 +635,9 @@ const PayrollView = ({ openModal }) => {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-border-card">
                                             {[
                                                 { label:'Sal. Ordinario', value:totals.grossA,  color:'text-content' },
-                                                { label:'Extras / Otros', value:totals.extrasB, color:'text-blue-700'  },
+                                                { label:'Extras / Otros', value:totals.extrasB, color:'text-chart-1-text'  },
                                                 { label:'Deducciones',    value:totals.deducts,  color:'text-danger'  },
-                                                { label:'Total a Pagar',  value:totals.net,      color:'text-emerald-700' },
+                                                { label:'Total a Pagar',  value:totals.net,      color:'text-success-text' },
                                             ].map(t => (
                                                 <div key={t.label} className="text-center bg-surface-card rounded-2xl py-3 px-2 border border-border-card">
                                                     <p className="text-[8px] text-content-2 uppercase tracking-widest font-black">{t.label}</p>
@@ -651,7 +651,7 @@ const PayrollView = ({ openModal }) => {
                                     {unapprovedCount > 0 && (
                                         <div className="mt-3 flex items-center gap-3 bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
                                             <AlertTriangle size={14} className="text-warning flex-shrink-0" strokeWidth={2.5} />
-                                            <p className="text-[11px] font-bold text-amber-700 flex-1">
+                                            <p className="text-[11px] font-bold text-warning-text flex-1">
                                                 {unapprovedCount} timesheet{unapprovedCount !== 1 ? 's' : ''} sin aprobar en este período
                                             </p>
                                             <span className="text-[9px] font-black text-warning uppercase tracking-widest">
@@ -705,7 +705,7 @@ const PayrollView = ({ openModal }) => {
                                 ) : (
                                     <>
                                     {isPayrollSearchFuzzy && searchTerm && (
-                                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                                         </div>

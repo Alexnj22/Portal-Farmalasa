@@ -20,19 +20,19 @@ const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a
 
 const STATUS_META = {
     DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-slate-200',   bar: 'bg-content-3'   },
-    PRE_APPROVED:     { label: 'Pre-aprobado',  bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
-    CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-warning/10',   text: 'text-amber-700',   border: 'border-warning/30',   bar: 'bg-amber-400'   },
-    APPROVED:         { label: 'Aprobado',      bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30', bar: 'bg-emerald-400' },
-    PLANNED:          { label: 'Planificado',   bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
-    CONFIRMED:        { label: 'Confirmado',    bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30', bar: 'bg-emerald-400' },
+    PRE_APPROVED:     { label: 'Pre-aprobado',  bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1'    },
+    CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30',   bar: 'bg-warning'   },
+    APPROVED:         { label: 'Aprobado',      bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success' },
+    PLANNED:          { label: 'Planificado',   bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1'    },
+    CONFIRMED:        { label: 'Confirmado',    bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success' },
     TAKEN:            { label: 'Tomado',        bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-slate-200',   bar: 'bg-content-3'   },
-    CANCELLED:        { label: 'Cancelado',     bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',     bar: 'bg-red-300'     },
+    CANCELLED:        { label: 'Cancelado',     bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',     bar: 'bg-danger/60'     },
 };
 
 const HEADER_STATUS_META = {
     DRAFT:        { label: 'Borrador',     color: 'text-content-3',   bg: 'bg-surface-card-hover'   },
-    PRE_APPROVED: { label: 'Pre-aprobado', color: 'text-blue-700',    bg: 'bg-blue-50'     },
-    FINALIZED:    { label: 'Finalizado',   color: 'text-emerald-700', bg: 'bg-success/10'  },
+    PRE_APPROVED: { label: 'Pre-aprobado', color: 'text-chart-1-text',    bg: 'bg-chart-1/10'     },
+    FINALIZED:    { label: 'Finalizado',   color: 'text-success-text', bg: 'bg-success/10'  },
 };
 
 const StatusBadge = ({ status }) => {
@@ -59,34 +59,34 @@ const EligibilityBanner = ({ info }) => {
     if (isEligible && inWindow) {
         cfg = {
             bg: 'bg-success/10 border-success/30',
-            icon: <CheckCircle2 size={10} strokeWidth={2.5} className="text-emerald-700" />,
+            icon: <CheckCircle2 size={10} strokeWidth={2.5} className="text-success-text" />,
             label: 'Dentro de ventana válida',
-            labelColor: 'text-emerald-700',
-            bodyColor: 'text-emerald-800',
+            labelColor: 'text-success-text',
+            bodyColor: 'text-success-text',
         };
     } else if (isEligible && !inWindow) {
         cfg = {
             bg: 'bg-warning/10 border-warning/30',
-            icon: <AlertCircle size={10} strokeWidth={2.5} className="text-amber-700" />,
+            icon: <AlertCircle size={10} strokeWidth={2.5} className="text-warning-text" />,
             label: 'Fuera de ventana óptima',
-            labelColor: 'text-amber-700',
-            bodyColor: 'text-amber-800',
+            labelColor: 'text-warning-text',
+            bodyColor: 'text-warning-text',
         };
     } else if (!isEligible && isNearEligible) {
         cfg = {
-            bg: 'bg-orange-50/80 border-orange-200/60',
-            icon: <Clock size={10} strokeWidth={2.5} className="text-orange-700" />,
+            bg: 'bg-chart-4/10 border-chart-4/30',
+            icon: <Clock size={10} strokeWidth={2.5} className="text-chart-4-text" />,
             label: 'Asignación anticipada',
-            labelColor: 'text-orange-700',
-            bodyColor: 'text-orange-800',
+            labelColor: 'text-chart-4-text',
+            bodyColor: 'text-chart-4-text',
         };
     } else {
         cfg = {
             bg: 'bg-danger/10 border-danger/30',
-            icon: <Ban size={10} strokeWidth={2.5} className="text-red-700" />,
+            icon: <Ban size={10} strokeWidth={2.5} className="text-danger-text" />,
             label: 'No elegible',
-            labelColor: 'text-red-700',
-            bodyColor: 'text-red-800',
+            labelColor: 'text-danger-text',
+            bodyColor: 'text-danger-text',
         };
     }
 
@@ -723,7 +723,7 @@ const VacationPlanView = () => {
                     className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
+                    {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
             </div>
         </div>
@@ -739,12 +739,12 @@ const VacationPlanView = () => {
                     <div ref={panelRef} className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div className={`backdrop-blur-[30px] rounded-[2.5rem] p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative ${
                             editingPlan
-                                ? 'bg-surface-card border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                         }`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-amber-500' : 'bg-brand'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-warning' : 'bg-brand'}`}>
                                         {editingPlan
                                             ? <Edit3 size={16} className="text-white" strokeWidth={2.5} />
                                             : <Plus size={16} className="text-white" strokeWidth={2.5} />
@@ -757,7 +757,7 @@ const VacationPlanView = () => {
                                 {editingPlan && (
                                     <button
                                         onClick={handleCancelEdit}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
                                     >
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
@@ -788,7 +788,7 @@ const VacationPlanView = () => {
                                     const used = usedDaysByEmpId.get(String(selectedEmployee.id)) || 0;
                                     const remaining = 15 - used;
                                     return (
-                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-brand/5 border-brand/15 text-brand' : 'bg-danger/10 border-danger/30 text-red-700'}`}>
+                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-brand/5 border-brand/15 text-brand' : 'bg-danger/10 border-danger/30 text-danger-text'}`}>
                                             <span className="font-black uppercase tracking-widest text-[9px]">Saldo vacacional {year}</span>
                                             <span className="font-black text-[14px]">{Math.max(0, remaining)}<span className="text-[9px] font-bold ml-0.5">/ 15 días</span></span>
                                         </div>
@@ -810,9 +810,9 @@ const VacationPlanView = () => {
 
                                 {/* Días calculados */}
                                 {computedDays > 0 && (
-                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-amber-500/8 border-amber-500/15' : 'bg-brand/8 border-brand/15'}`}>
+                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-warning/10 border-warning/20' : 'bg-brand/8 border-brand/15'}`}>
                                         <Calendar size={13} className={editingPlan ? 'text-warning' : 'text-brand'} strokeWidth={2.5} />
-                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-amber-700' : 'text-brand'}`}>{computedDays} días calendario</span>
+                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-warning-text' : 'text-brand'}`}>{computedDays} días calendario</span>
                                     </div>
                                 )}
 
@@ -832,7 +832,7 @@ const VacationPlanView = () => {
                                 {confirmingEdit && (
                                     <div className="flex items-center gap-3 px-4 py-3 bg-warning/10 border border-warning/30 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
                                         <AlertCircle size={14} className="text-warning shrink-0" strokeWidth={2.5} />
-                                        <span className="text-[11px] font-black text-amber-800 flex-1">¿Confirmar cambios?</span>
+                                        <span className="text-[11px] font-black text-warning-text flex-1">¿Confirmar cambios?</span>
                                         <button type="button" onClick={() => setConfirmingEdit(false)} className="text-[10px] font-black text-content-3 hover:text-content-2 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-surface-card transition-all">No</button>
                                     </div>
                                 )}
@@ -842,9 +842,9 @@ const VacationPlanView = () => {
                                     disabled={!canEdit || isSubmitting || !empId || !startDate || !endDate}
                                     className={`w-full h-[48px] disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-500 active:scale-[0.98] disabled:shadow-none ${
                                         confirmingEdit
-                                            ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_12px_rgba(34,197,94,0.3)]'
+                                            ? 'bg-success hover:bg-success-hover shadow-[0_4px_12px_rgba(34,197,94,0.3)]'
                                             : editingPlan
-                                                ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
+                                                ? 'bg-warning hover:bg-warning-hover shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
                                                 : 'bg-brand hover:bg-brand-hover shadow-[0_4px_12px_rgba(0,82,204,0.3)]'
                                     }`}
                                 >
@@ -868,7 +868,7 @@ const VacationPlanView = () => {
                         <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-[#6929C4] flex items-center justify-center shadow-sm">
+                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-purple flex items-center justify-center shadow-sm">
                                         <Palmtree size={16} className="text-white" strokeWidth={2} />
                                     </div>
                                     <div>
@@ -890,7 +890,7 @@ const VacationPlanView = () => {
                                             <button
                                                 onClick={handleGenerateAI}
                                                 disabled={isGeneratingPlan}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#6929C4] to-brand text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(105,41,196,0.3)] hover:shadow-[0_6px_16px_rgba(105,41,196,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-brand-purple to-brand text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(105,41,196,0.3)] hover:shadow-[0_6px_16px_rgba(105,41,196,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
                                             >
                                                 {isGeneratingPlan
                                                     ? <><Loader2 size={12} className="animate-spin" /> Generando…</>
@@ -902,13 +902,13 @@ const VacationPlanView = () => {
                                         {activeHeader?.status === 'DRAFT' && vacationPlans.filter(vp => vp.status === 'DRAFT').length > 0 && (
                                             <button
                                                 onClick={handlePreApprove}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all"
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1 hover:bg-chart-1/80 text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all"
                                             >
                                                 <ShieldCheck size={12} strokeWidth={2.5} /> Pre-aprobar plan
                                             </button>
                                         )}
                                         {activeHeader?.status === 'PRE_APPROVED' && (
-                                            <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-black uppercase tracking-widest">
+                                            <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-chart-1-text text-[10px] font-black uppercase tracking-widest">
                                                 <CheckCircle2 size={12} strokeWidth={2.5} /> Visible para empleados
                                             </span>
                                         )}
@@ -972,7 +972,7 @@ const VacationPlanView = () => {
                             ) : (
                                 <>
                                 {isVacSearchFuzzy && searchTerm && (
-                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                         Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                                     </div>
@@ -1004,7 +1004,7 @@ const VacationPlanView = () => {
                                                                     </div>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
-                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-warning/10 text-amber-700 border border-warning/30 cursor-default">
+                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
                                                                             <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
                                                                                 <span className="text-content-2 font-black uppercase tracking-widest text-[7px] mb-0.5">Fecha original</span>
@@ -1020,7 +1020,7 @@ const VacationPlanView = () => {
                                                             <td className="py-3 pr-4 text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
                                                             <td className="py-3 pr-4 font-black text-content-2">{p.days}</td>
                                                             <td className="py-3 pr-4">
-                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand bg-brand/5 border-brand/15' : 'text-red-700 bg-danger/10 border-danger/30'}`}>
+                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand bg-brand/5 border-brand/15' : 'text-danger-text bg-danger/10 border-danger/30'}`}>
                                                                     {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
                                                                 </span>
                                                             </td>
@@ -1038,7 +1038,7 @@ const VacationPlanView = () => {
                                                                             title="Editar"
                                                                             onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '', employee: p.employee })}
                                                                             disabled={!canEdit}
-                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-warning/10 border-amber-300 text-warning hover:bg-amber-500 hover:text-white hover:border-amber-500' : 'bg-surface-card-hover border-slate-200 text-content-3 hover:bg-slate-500 hover:text-white hover:border-slate-500'}`}
+                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-warning/10 border-warning/40 text-warning hover:bg-warning hover:text-white hover:border-warning' : 'bg-surface-card-hover border-border-card text-content-3 hover:bg-content-3 hover:text-white hover:border-content-3'}`}
                                                                         >
                                                                             <Edit2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -1048,7 +1048,7 @@ const VacationPlanView = () => {
                                                                             title="Confirmar"
                                                                             onClick={() => handleConfirmPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-success/10 border border-success/30 text-success hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-success/10 border border-success/30 text-success hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Check size={11} strokeWidth={3} />
                                                                         </button>
@@ -1058,7 +1058,7 @@ const VacationPlanView = () => {
                                                                             title="Cancelar"
                                                                             onClick={() => handleCancelPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 border border-danger/30 text-danger hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 border border-danger/30 text-danger hover:bg-danger hover:text-white hover:border-danger transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Trash2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -1111,7 +1111,7 @@ const VacationPlanView = () => {
                                                                 </p>
                                                             )}
                                                             {req.note && (
-                                                                <p className="text-[10px] text-amber-700 mt-1 italic">"{req.note}"</p>
+                                                                <p className="text-[10px] text-warning-text mt-1 italic">"{req.note}"</p>
                                                             )}
                                                         </div>
                                                     </div>
@@ -1120,7 +1120,7 @@ const VacationPlanView = () => {
                                                             <button
                                                                 onClick={() => handleProcessRequest(req, 'APPROVED')}
                                                                 disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-success hover:bg-success-hover text-white text-[10px] font-black transition-all disabled:opacity-50"
                                                             >
                                                                 {isProcessing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
                                                                 Aprobar
@@ -1128,7 +1128,7 @@ const VacationPlanView = () => {
                                                             <button
                                                                 onClick={() => handleProcessRequest(req, 'REJECTED')}
                                                                 disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-red-500 hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-danger hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
                                                             >
                                                                 <X size={11} strokeWidth={3} /> Rechazar
                                                             </button>

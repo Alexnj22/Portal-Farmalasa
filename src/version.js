@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.6';
+export const APP_VERSION = '2.51.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.7 — refactor(theme): T7.1 — PayrollView + AttendanceMonitorView +
+// VacationPlanView (v2.51.7).
+//
+// PayrollView: estados aprobada/pagada → success/chart-1. AttendanceMonitorView:
+// encontrado un `isDarkConcept` — un modo wallboard/kiosco explícitamente
+// siempre-oscuro (variable ya nombrada así por los devs originales, fondo
+// #050E1F fijo) — NO se tocó nada dentro de esa rama, mismo criterio que
+// TimeClockView/sidebar; solo se tokenizaron las stat cards del modo
+// normal (arriba de esa rama). VacationPlanView: 6 estados de solicitud de
+// vacaciones → success/warning/chart-1/danger consistente con el resto
+// de request-status del proyecto.
 
 // v2.51.6 — refactor(theme): T7.1 — TabMinMaxNetwork + Conteo de Inventario
 // (v2.51.6).

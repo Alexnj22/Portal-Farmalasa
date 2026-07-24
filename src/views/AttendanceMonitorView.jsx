@@ -280,10 +280,10 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
   const statCards = [
     { id: "ALL", label: "Total", count: stats.total, color: "text-content", border: "border-border-card", bg: "bg-surface-card" },
-    { id: "WORKING", label: "En Turno", count: stats.working, color: "text-emerald-700", border: "border-success/30", bg: "bg-success/10" },
-    { id: "EXTRA", label: "Horas Extra", count: stats.extra, color: "text-purple-700", border: "border-purple-200/60", bg: "bg-purple-50/40" },
-    { id: "PAUSE", label: "En Pausa", count: stats.pause, color: "text-orange-700", border: "border-orange-200/60", bg: "bg-orange-50/40" },
-    { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-red-700", border: "border-danger/30", bg: "bg-danger/10", icon: AlertTriangle },
+    { id: "WORKING", label: "En Turno", count: stats.working, color: "text-success-text", border: "border-success/30", bg: "bg-success/10" },
+    { id: "EXTRA", label: "Horas Extra", count: stats.extra, color: "text-chart-3-text", border: "border-chart-3/30", bg: "bg-chart-3/10" },
+    { id: "PAUSE", label: "En Pausa", count: stats.pause, color: "text-chart-4-text", border: "border-chart-4/30", bg: "bg-chart-4/10" },
+    { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-danger-text", border: "border-danger/30", bg: "bg-danger/10", icon: AlertTriangle },
     { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-slate-200/60", bg: "bg-surface-card-hover/40" },
   ];
 
@@ -294,9 +294,9 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       case "WORKING":
         return "border-success/30 bg-surface-card shadow-[0_10px_30px_rgba(52,199,89,0.10)]";
       case "EXTRA_WORKING":
-        return "border-purple-200 bg-surface-card shadow-[0_10px_30px_rgba(88,86,214,0.10)]";
+        return "border-chart-3/30 bg-surface-card shadow-[0_10px_30px_rgba(88,86,214,0.10)]";
       case "LUNCH":
-        return "border-orange-200 bg-surface-card shadow-[0_10px_30px_rgba(255,149,0,0.10)]";
+        return "border-chart-4/30 bg-surface-card shadow-[0_10px_30px_rgba(255,149,0,0.10)]";
       case "LACTATION":
         return "border-pink-200 bg-surface-card shadow-[0_10px_30px_rgba(255,45,85,0.10)]";
       case "FINISHED":
@@ -315,7 +315,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const getStatusBadge = (status, isLate, lateText) => {
     if (isLate && status !== "FINISHED") {
       return (
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 text-red-700 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-red-500/20">
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-danger/10 text-danger-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-danger/30">
           <AlertTriangle size={14} /> {lateText}
         </div>
       );
@@ -323,19 +323,19 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     switch (status) {
       case "WORKING":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-emerald-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-success/30">
             <CheckCircle size={14} /> En Turno
           </div>
         );
       case "EXTRA_WORKING":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-purple-500/10 text-purple-700 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-purple-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-3/10 text-chart-3-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-3/30">
             <PlusCircle size={14} /> Turno Extra
           </div>
         );
       case "LUNCH":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-orange-500/10 text-orange-700 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-orange-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-4/10 text-chart-4-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-4/30">
             <Utensils size={14} /> Almorzando
           </div>
         );
@@ -926,7 +926,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                             className={[
                               "flex items-center gap-1 px-2 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider",
                               isLatest
-                                ? "bg-white border-blue-200 text-blue-700 shadow-sm"
+                                ? "bg-surface-card border-chart-1/30 text-chart-1-text shadow-sm"
                                 : "bg-surface-card border-black/5 text-content-3",
                             ].join(" ")}
                           >

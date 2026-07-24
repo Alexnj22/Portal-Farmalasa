@@ -763,20 +763,53 @@ un bug real, corregido:
   cuando no cabe — 5 cards en fila completa a 1024px y a 1440px (los
   filtros quedan debajo en vez de al lado, layout alternativo válido).
 
+El mismo barrido se repitió sobre **iPhone 13 vertical** (viewport de
+Playwright `devices['iPhone 13']`): resultado idéntico, 36/37 rutas
+limpias (misma excepción `/pedidos`, mismo bug preexistente).
+
+**Auditoría de sub-tabs anidadas** (clic real por tab, no solo la ruta
+default): identificadas vía `[data-surface="tab-track"]` en las 3 vistas
+que exponen `ViewTabBar` con tabs internas — `productos` (Catálogo,
+Inventario, Gestión de Stock), `schedules` (Horarios, Catálogo, Feriados),
+`ventas` (Ventas, Vendedores, Productos). `branches`/`roles`/`staff` no
+usan este patrón de tabs. Las 9 tabs clickeadas a 1024×768 con chequeo de
+`scrollWidth` vs `clientWidth`: las 9 limpias.
+
+La revisión visual (no solo mecánica) de "Gestión de Stock" encontró el
+**mismo bug de `TabCatalogo.jsx`** (arriba) copiado en otros archivos.
+Grep del patrón exacto y luego de variantes con distinto `gap`/orden
+encontró **6 ocurrencias más** en total, todas con el mismo fix (quitar
+`flex-1 min-w-0` del wrapper de stat cards):
+`productos/TabSinVenta.jsx` (la vista real detrás de "Gestión de Stock"),
+`productos/TabInventario.jsx`, `pedidos/TabReglas.jsx`,
+`StaffManagementView.jsx`, `VentasView.jsx` (3 ocurrencias, una por cada
+una de sus 3 tabs internas), `purchases/FacturasCompraView.jsx`.
+Verificado con Playwright en las 7 superficies corregidas — filas de
+cards completas, sin columna angosta. Búsqueda final de cierre (grep de
+`flex-wrap` + `flex-1` + `min-w-0` combinados en la misma línea/className
+en todo `src/views` y `src/components`): **cero coincidencias
+restantes** — esta clase de bug se considera cerrada (v2.46.2 → v2.47.1).
+
 ### 10.4 Pendiente de T4
 
-El barrido de arriba cubre el criterio más grave (scroll horizontal) en
-casi toda la superficie real de la app, pero NO sustituye una revisión
-vista-por-vista completa — quedan sin verificar explícitamente:
-- **Sub-tabs/vistas anidadas** no route-level (ej. cada tab dentro de
-  `/pedidos`, `/productos`, `/schedules`; modales; tablas internas) —
-  el barrido solo tocó la vista default de cada ruta.
+Con el barrido de scroll horizontal (desktop + iPhone 13) y la auditoría
+de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
+- **Modales y tablas internas** — el clic-por-tab cubrió las 9 tabs de
+  primer nivel en `productos`/`schedules`/`ventas`, pero no abrió modales
+  individuales (ej. `CrearRutaModal`, `PromoModal`, `RecepcionModal`) ni
+  revisó cada tabla/drawer interno a 1024×768.
 - **Touch targets y tipografía ≥16px en inputs móviles** — no medido
-  sistemáticamente, solo verificado de forma incidental en las 5 vistas
-  de tienda revisadas visualmente.
-- **iPhone 13 (vertical)** — el barrido de arriba fue solo desktop
-  1024×768; T4 pide también verificación móvil por vista.
-- **`/pedidos`** sigue bloqueada para cualquier auditoría (visual o
-  mecánica) hasta que se resuelva el bug preexistente de
-  `@capacitor-community/background-geolocation` — no es parte de T4,
-  pero es un bloqueador transversal a tener en cuenta.
+  sistemáticamente, solo verificado de forma incidental en las vistas de
+  tienda revisadas visualmente.
+- **Revisión visual (no solo mecánica) por vista en iPhone 13** — el
+  barrido móvil hecho fue solo a nivel de scroll horizontal por ruta; no
+  hay revisión de screenshot vista-por-vista en viewport móvil como sí se
+  hizo en desktop.
+- **`/pedidos`** (y sus tabs: `TabPedidos`, `TabReglas`, `TabMetricas`,
+  `TabRutas`) sigue bloqueada para cualquier auditoría (visual o
+  mecánica vía Playwright logueado) hasta que se resuelva el bug
+  preexistente de `@capacitor-community/background-geolocation` — no es
+  parte de T4, pero es un bloqueador transversal a tener en cuenta. La
+  revisión manual de `TabReglas.jsx`/`pedidos/RutaEnCursoCard.jsx` sí
+  recibió el fix de stat-cards de todos modos (código auditado por grep,
+  no por navegación en vivo).

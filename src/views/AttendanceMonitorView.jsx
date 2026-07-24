@@ -298,13 +298,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       case "LUNCH":
         return "border-chart-4/30 bg-surface-card shadow-[0_10px_30px_rgba(255,149,0,0.10)]";
       case "LACTATION":
-        return "border-pink-200 bg-surface-card shadow-[0_10px_30px_rgba(255,45,85,0.10)]";
+        return "border-chart-6/30 bg-surface-card shadow-[0_10px_30px_rgba(255,45,85,0.10)]";
       case "FINISHED":
         return "border-black/[0.08] bg-surface-card opacity-70 hover:opacity-100 transition-opacity";
       case "EARLY_EXIT":
         return "border-brand/20 bg-surface-card shadow-[0_10px_30px_rgba(0,82,204,0.08)]";
       case "BUSINESS_OUT":
-        return "border-sky-200 bg-surface-card shadow-[0_10px_30px_rgba(14,165,233,0.08)]";
+        return "border-chart-7/30 bg-surface-card shadow-[0_10px_30px_rgba(14,165,233,0.08)]";
       case "OFF_DAY":
         return "border-black/[0.08] bg-surface-card border-dashed opacity-60";
       default:
@@ -341,7 +341,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "LACTATION":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-pink-500/10 text-pink-700 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-pink-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-6/10 text-chart-6-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-6/20">
             <Baby size={14} /> Lactancia
           </div>
         );
@@ -359,7 +359,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "BUSINESS_OUT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-7/10 text-chart-7-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-sky-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-7/10 text-chart-7-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-7/20">
             <MapPin size={14} /> Gestión Externa
           </div>
         );

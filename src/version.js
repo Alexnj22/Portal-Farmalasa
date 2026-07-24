@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.16';
+export const APP_VERSION = '2.52.17';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.17 — fix(theme): T7.1c — estandariza colores en
+// AttendanceMonitorView.jsx (fuera de la rama isDarkConcept, que sigue
+// exenta): LACTATION pink→chart-6 y BUSINESS_OUT sky→chart-7 consistentes
+// entre la función de borde de card y el badge de estado (antes mezclaban
+// bg-chart-7 con border-sky, un mismatch real de una migración parcial
+// anterior). BranchesView.jsx revisado: sus indigo/purple/cyan son el
+// shimmer de IA ya documentado, sin cambios.
+
 
 // v2.52.16 — fix(theme): T7.1c — estandariza colores en
 // WidgetInventorySearch.jsx (área de vencidos en Bodega, rose→danger

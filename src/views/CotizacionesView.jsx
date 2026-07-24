@@ -236,7 +236,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     <p className="text-[12px] font-black text-content leading-tight truncate">{item.productName}</p>
                 </div>
                 <button type="button" onClick={() => removeItem(item._id)}
-                    className="w-7 h-7 shrink-0 rounded-xl bg-danger/10 text-danger border border-danger/30 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center">
+                    className="w-7 h-7 shrink-0 rounded-xl bg-danger/10 text-danger border border-danger/30 hover:bg-danger hover:text-white hover:border-danger transition-all flex items-center justify-center">
                     <X size={12} strokeWidth={3} />
                 </button>
             </div>
@@ -283,7 +283,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                         <span className="text-content-3">|</span>
                         <div className="flex items-center gap-1.5">
                             <span className="text-[9px] font-bold text-content-2 uppercase tracking-wider">IVA 13%</span>
-                            <span className="text-[11px] font-black text-blue-600">{fmt(dsg.subtotalIva)}</span>
+                            <span className="text-[11px] font-black text-chart-1-text">{fmt(dsg.subtotalIva)}</span>
                         </div>
                         <span className="text-content-3">|</span>
                     </>
@@ -669,7 +669,7 @@ export default function CotizacionesView() {
                 {/* ── Cabecera ─────────────────────────────────────────────── */}
                 <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm space-y-4">
                     <div className="flex items-center gap-2.5 pb-3 border-b border-border-card">
-                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-xl bg-chart-1/10 text-chart-1-text border border-chart-1/30 flex items-center justify-center">
                             <FileText size={16} strokeWidth={2.5} />
                         </div>
                         <h3 className="text-[12px] font-black uppercase tracking-widest text-content-2">Datos Generales</h3>
@@ -718,8 +718,8 @@ export default function CotizacionesView() {
                         {/* Retención */}
                         <div className="flex flex-col gap-2">
                             <div onClick={() => isCCFMode && setAppliesRetention(p => !p)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer select-none transition-all ${!isCCFMode ? 'opacity-40 cursor-not-allowed' : ''} ${appliesRetention ? 'bg-warning/10 border-amber-300' : 'bg-surface-card border-border-card hover:bg-surface-card'}`}>
-                                <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${appliesRetention ? 'bg-amber-500 border-amber-500' : 'border-slate-300'}`}>
+                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer select-none transition-all ${!isCCFMode ? 'opacity-40 cursor-not-allowed' : ''} ${appliesRetention ? 'bg-warning/10 border-warning/40' : 'bg-surface-card border-border-card hover:bg-surface-card'}`}>
+                                <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${appliesRetention ? 'bg-warning border-warning' : 'border-border-card'}`}>
                                     {appliesRetention && <CheckCircle2 size={12} strokeWidth={3} className="text-white" />}
                                 </div>
                                 <div>
@@ -732,7 +732,7 @@ export default function CotizacionesView() {
                                 <div onClick={() => setAppliesRetention(true)}
                                     className="flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/30 rounded-xl cursor-pointer hover:bg-warning/10 transition-all">
                                     <AlertTriangle size={12} className="text-warning shrink-0" />
-                                    <span className="text-[10px] font-bold text-amber-700">Base &gt; $100 en CCF. ¿Aplicar retención?</span>
+                                    <span className="text-[10px] font-bold text-warning-text">Base &gt; $100 en CCF. ¿Aplicar retención?</span>
                                 </div>
                             )}
                         </div>
@@ -759,7 +759,7 @@ export default function CotizacionesView() {
                                 {items.length > 0 && <span className="ml-2 text-[10px] font-black text-success bg-success/10 px-2 py-0.5 rounded-full border border-success/30">{items.length}</span>}
                             </h3>
                             {isCCFMode && (
-                                <span className="flex items-center gap-1 text-[9px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">
+                                <span className="flex items-center gap-1 text-[9px] font-black text-chart-1-text bg-chart-1/10 border border-chart-1/30 px-2.5 py-1 rounded-full">
                                     <Info size={10} strokeWidth={3} /> Desglose CCF por línea
                                 </span>
                             )}
@@ -794,7 +794,7 @@ export default function CotizacionesView() {
                     <div className="flex justify-end">
                         <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card mb-1">
-                                <Calculator size={14} className="text-blue-600" />
+                                <Calculator size={14} className="text-chart-1-text" />
                                 <h3 className="text-[11px] font-black uppercase tracking-widest text-content-2">Resumen</h3>
                             </div>
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(totals.base)} />
@@ -809,7 +809,7 @@ export default function CotizacionesView() {
                 )}
 
                 {saveError && (
-                    <div className="flex items-center gap-3 bg-danger/10 border border-danger/30 text-red-700 text-[12px] font-bold px-4 py-3 rounded-2xl">
+                    <div className="flex items-center gap-3 bg-danger/10 border border-danger/30 text-danger-text text-[12px] font-bold px-4 py-3 rounded-2xl">
                         <AlertCircle size={16} strokeWidth={2.5} />{saveError}
                     </div>
                 )}
@@ -851,7 +851,7 @@ export default function CotizacionesView() {
                                     <Edit2 size={13} strokeWidth={2.5} /> Editar
                                 </button>
                                 <button onClick={() => setConfirmAnular(cot.id)}
-                                    className="px-4 py-2.5 bg-danger/10 text-danger text-[11px] font-black uppercase tracking-widest rounded-2xl border border-danger/30 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                    className="px-4 py-2.5 bg-danger/10 text-danger text-[11px] font-black uppercase tracking-widest rounded-2xl border border-danger/30 hover:bg-danger hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                     Anular
                                 </button>
                                 <button onClick={() => handlePrint(cot, itemsData)}
@@ -865,7 +865,7 @@ export default function CotizacionesView() {
             >
                 <div className="p-4 lg:p-6 space-y-4">
                     {cot.status === 'ANULADA' && (
-                        <div className="flex items-center gap-3 bg-danger/10 border border-danger/30 text-red-700 text-[12px] font-bold px-5 py-3.5 rounded-2xl">
+                        <div className="flex items-center gap-3 bg-danger/10 border border-danger/30 text-danger-text text-[12px] font-bold px-5 py-3.5 rounded-2xl">
                             <X size={16} strokeWidth={3} /> Esta cotización fue anulada.
                         </div>
                     )}
@@ -939,7 +939,7 @@ export default function CotizacionesView() {
                                                     <>
                                                         <td className="px-4 py-2.5 text-right text-[11px] text-content-2">{fmt(dsg.unitSinIva)}</td>
                                                         <td className="px-4 py-2.5 text-right text-[11px] text-content-2">{fmt(dsg.subtotalSinIva)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-[11px] text-blue-600">{fmt(dsg.subtotalIva)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[11px] text-chart-1-text">{fmt(dsg.subtotalIva)}</td>
                                                         <td className="px-4 py-2.5 text-right text-[13px] font-black text-content">{fmt(dsg.total)}</td>
                                                     </>
                                                 ) : (
@@ -960,7 +960,7 @@ export default function CotizacionesView() {
                     <div className="flex justify-end">
                         <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card">
-                                <Calculator size={14} className="text-blue-600" />
+                                <Calculator size={14} className="text-chart-1-text" />
                                 <h3 className="text-[11px] font-black uppercase tracking-widest text-content-2">Totales</h3>
                             </div>
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(vTotals.base)} />
@@ -976,7 +976,7 @@ export default function CotizacionesView() {
                     {cot.notes && (
                         <div className="bg-warning/10 border border-warning/30 rounded-2xl px-5 py-4">
                             <p className="text-[9px] font-black text-warning uppercase tracking-widest mb-1">Notas</p>
-                            <p className="text-[13px] font-bold text-amber-900">{cot.notes}</p>
+                            <p className="text-[13px] font-bold text-warning-text">{cot.notes}</p>
                         </div>
                     )}
 
@@ -1033,7 +1033,7 @@ export default function CotizacionesView() {
                     { label: 'Total',    val: cotizaciones.length,                                                                                      color: 'text-content-2' },
                     { label: 'Activas',  val: cotizaciones.filter(c => c.status === 'ACTIVA').length,                                                    color: 'text-success' },
                     { label: 'Anuladas', val: cotizaciones.filter(c => c.status === 'ANULADA').length,                                                   color: 'text-danger' },
-                    { label: 'Monto',    val: fmt(cotizaciones.filter(c => c.status === 'ACTIVA').reduce((s, c) => s + parseFloat(c.total || 0), 0)),    color: 'text-blue-600' },
+                    { label: 'Monto',    val: fmt(cotizaciones.filter(c => c.status === 'ACTIVA').reduce((s, c) => s + parseFloat(c.total || 0), 0)),    color: 'text-chart-1-text' },
                 ].map(s => (
                     <div key={s.label} className="flex items-center gap-2 bg-surface-card border border-border-card px-4 py-2.5 rounded-2xl shadow-sm">
                         <span className="text-[9px] font-black uppercase tracking-widest text-content-2">{s.label}</span>
@@ -1080,7 +1080,7 @@ export default function CotizacionesView() {
                                 <p className="text-[12px] text-content-2 truncate max-w-[160px]">{cot.customer_name}</p>
                             </DataCell>
                             <DataCell hideBelow="sm">
-                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-blue-50 text-blue-600' : 'bg-success/10 text-emerald-700'}`}>
+                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-chart-1/10 text-chart-1-text' : 'bg-success/10 text-success-text'}`}>
                                     {cot.document_type}
                                 </span>
                             </DataCell>
@@ -1096,7 +1096,7 @@ export default function CotizacionesView() {
                                 ) : <span className="text-content-3">—</span>}
                             </DataCell>
                             <DataCell hideBelow="sm">
-                                <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-success/10 text-emerald-700 border-success/30' : 'bg-danger/10 text-red-700 border-danger/30'}`}>
+                                <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-success/10 text-success-text border-success/30' : 'bg-danger/10 text-danger-text border-danger/30'}`}>
                                     {cot.status}
                                 </span>
                             </DataCell>
@@ -1117,7 +1117,7 @@ export default function CotizacionesView() {
                                                     if (error) console.error('print cotizacion: fetch items failed:', error.message);
                                                     handlePrint(cot, data || []);
                                                 }}
-                                                className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 hover:text-blue-700 flex items-center justify-center transition-colors">
+                                                className="w-7 h-7 rounded-lg bg-chart-1/10 hover:bg-chart-1/20 text-chart-1-text hover:text-chart-1-text flex items-center justify-center transition-colors">
                                                 <Printer size={12} strokeWidth={2.5} />
                                             </button>
                                             <button title="Anular" onClick={() => setConfirmAnular(cot.id)}

@@ -313,7 +313,7 @@ const RolesView = ({ openModal }) => {
         try {
             setTimeout(async () => {
                 const dataUrl = await toPng(orgChartRef.current, {
-                    backgroundColor: '#F8FAFC',
+                    backgroundColor: 'var(--bg-page)',
                     pixelRatio: 2,
                     cacheBust: true,
                     style: { transform: 'none' }
@@ -571,7 +571,7 @@ const RolesView = ({ openModal }) => {
 
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingRoleId ? 'bg-amber-500' : 'bg-brand'}`}>
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingRoleId ? 'bg-warning' : 'bg-brand'}`}>
                                             {editingRoleId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                                         </div>
                                         <span className="font-black uppercase tracking-tight ml-1">{editingRoleId ? 'Editar Cargo' : 'Nuevo Cargo'}</span>
@@ -579,7 +579,7 @@ const RolesView = ({ openModal }) => {
                                     {editingRoleId && (
                                         <button
                                             onClick={handleCancelEdit}
-                                            className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
+                                            className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
                                         >
                                             <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                         </button>
@@ -587,7 +587,7 @@ const RolesView = ({ openModal }) => {
                                 </div>
 
                                 {error && (
-                                    <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                         <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <span className="leading-tight">{error}</span>
                                     </div>
@@ -599,7 +599,7 @@ const RolesView = ({ openModal }) => {
                                             Nombre del Cargo
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-surface-card rounded-xl flex items-center justify-center text-content-3 shadow-sm transition-colors group-focus-within:text-brand group-focus-within:bg-blue-50">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-surface-card rounded-xl flex items-center justify-center text-content-3 shadow-sm transition-colors group-focus-within:text-brand group-focus-within:bg-brand/10">
                                                 <Award size={16} />
                                             </div>
                                             <input
@@ -687,7 +687,7 @@ const RolesView = ({ openModal }) => {
                                         type="button"
                                         onClick={handleSubmit}
                                         disabled={!canEdit}
-                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 hover:shadow-amber-500/40' : 'bg-brand hover:bg-brand-hover'}`}
+                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
                                     >
                                         {editingRoleId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : <><Plus size={16} strokeWidth={2.5} /> Crear Cargo</>}
                                     </button>
@@ -699,7 +699,7 @@ const RolesView = ({ openModal }) => {
                         <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto relative z-10">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
                                 {isRoleSearchFuzzy && searchQuery && (
-                                    <div className="col-span-full mb-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                                    <div className="col-span-full mb-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                         Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
                                     </div>
@@ -723,7 +723,7 @@ const RolesView = ({ openModal }) => {
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
                                             {role.max_limit < 99 && (
-                                                <div className={`absolute -top-3 right-4 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-indigo-50/90 text-indigo-600 border-indigo-200/80' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                                                <div className={`absolute -top-3 right-4 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
                                                     {isGlobal ? <Globe size={10} strokeWidth={2.5}/> : <Building2 size={10} strokeWidth={2.5}/>}
                                                     <span>{isGlobal ? 'GLOBAL' : 'LOCAL'} MAX: {role.max_limit}</span>
                                                 </div>
@@ -741,7 +741,7 @@ const RolesView = ({ openModal }) => {
                                                                 {role.name}
                                                             </h4>
                                                             {isRoot && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-blue-200 text-[8px] font-black uppercase tracking-widest bg-blue-50 text-brand flex-shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-[8px] font-black uppercase tracking-widest bg-brand/10 text-brand flex-shrink-0">
                                                                     Raíz
                                                                 </span>
                                                             )}
@@ -777,7 +777,7 @@ const RolesView = ({ openModal }) => {
                                                         }}
                                                         disabled={!canEdit}
                                                         className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed ${isEditingThis
-                                                            ? 'bg-warning/10 text-warning border border-amber-300 hover:bg-amber-500 hover:text-white'
+                                                            ? 'bg-warning/10 text-warning border border-warning/40 hover:bg-warning hover:text-white'
                                                             : 'bg-white border border-border-card text-warning hover:bg-warning/10 hover:text-warning'
                                                             }`}
                                                         title={isEditingThis ? "Cancelar edición" : "Editar cargo"}
@@ -811,7 +811,7 @@ const RolesView = ({ openModal }) => {
                                                 <button
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
                                                     className={`w-9 h-9 rounded-xl bg-white border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
-                                                        ? 'border-warning/30 text-warning hover:bg-amber-500 hover:text-white'
+                                                        ? 'border-warning/30 text-warning hover:bg-warning hover:text-white'
                                                         : 'border-slate-100 text-content-3 hover:bg-brand hover:text-white hover:border-brand'
                                                         }`}
                                                     title="Ver Empleados"
@@ -838,7 +838,7 @@ const RolesView = ({ openModal }) => {
                     <div className="animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
-                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-[200] w-screen h-[100dvh] bg-[#E6F0FF] rounded-none m-0 border-none' : 'rounded-[3rem]'}`}
+                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-[200] w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-[3rem]'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
@@ -875,7 +875,7 @@ const RolesView = ({ openModal }) => {
                                     className="w-full h-full flex items-center justify-center transform-origin-center transition-transform duration-75 ease-out will-change-transform"
                                     style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
                                 >
-                                    <div ref={orgChartRef} className={`org-chart-tree-wrapper min-w-max flex flex-col items-center pb-12 ${isExporting ? 'p-12 bg-[#F8FAFC]' : ''}`}>
+                                    <div ref={orgChartRef} className={`org-chart-tree-wrapper min-w-max flex flex-col items-center pb-12 ${isExporting ? 'p-12 bg-surface-page' : ''}`}>
                                         <div className="org-tree">
                                             <ul>
                                                 {roles.filter(r => !r.parent_role_id).map(rootRole => (

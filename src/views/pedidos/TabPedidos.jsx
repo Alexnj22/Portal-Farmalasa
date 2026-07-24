@@ -50,34 +50,39 @@ const PAGE_SIZE = 30;
 const MINI_PAGE = 15;
 const DONE_STATUSES = ['completado', 'parcial', 'anulado'];
 
+// Tokenizado T7 — mismo criterio de color por sucursal en toda la app
+// (paleta cat-N por posición; 6=Bodega queda neutro como ya estaba).
 const SUC_COLORS = {
-    1: 'bg-blue-100 text-blue-700 border-blue-200',
-    2: 'bg-violet-100 text-violet-700 border-violet-200',
-    3: 'bg-success/10 text-emerald-700 border-success/30',
-    4: 'bg-warning/10 text-amber-700 border-warning/30',
-    5: 'bg-rose-100 text-rose-700 border-rose-200',
-    6: 'bg-surface-card-hover text-content-2 border-slate-200',
-    7: 'bg-teal-100 text-teal-700 border-teal-200',
+    1: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
+    2: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
+    3: 'bg-success/10 text-success-text border-success/30',
+    4: 'bg-warning/10 text-warning-text border-warning/30',
+    5: 'bg-chart-6/10 text-chart-6-text border-chart-6/30',
+    6: 'bg-surface-card-hover text-content-2 border-border-card',
+    7: 'bg-chart-9/10 text-chart-9-text border-chart-9/30',
 };
 
+// Mismo lifecycle de despacho por sucursal que TabEnCurso.jsx — mismo
+// criterio: pausado/erp son severidad real (excepción/completado), el
+// resto es categórico puro.
 const STAGE_CONFIG = {
-    sin_iniciar: { label: 'Sin iniciar',     color: 'slate',   icon: Package      },
-    preparando:  { label: 'En preparación',  color: 'blue',    icon: Activity     },
-    pausado:     { label: 'Pausado',         color: 'amber',   icon: Pause        },
-    preparado:   { label: 'Listo p/ envío',  color: 'violet',  icon: CheckCircle2 },
-    transito:    { label: 'En tránsito',     color: 'indigo',  icon: Truck        },
-    contando:    { label: 'Cajas recibidas', color: 'teal',    icon: PackageCheck },
-    erp:         { label: 'Sis. Ventas',      color: 'emerald', icon: Database     },
+    sin_iniciar: { label: 'Sin iniciar',     color: 'neutral', icon: Package      },
+    preparando:  { label: 'En preparación',  color: 'chart-1', icon: Activity     },
+    pausado:     { label: 'Pausado',         color: 'warning', icon: Pause        },
+    preparado:   { label: 'Listo p/ envío',  color: 'chart-3', icon: CheckCircle2 },
+    transito:    { label: 'En tránsito',     color: 'chart-5', icon: Truck        },
+    contando:    { label: 'Cajas recibidas', color: 'chart-7', icon: PackageCheck },
+    erp:         { label: 'Sis. Ventas',      color: 'success', icon: Database     },
 };
 
 const COLOR_CLS = {
-    slate:   { bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-slate-200'   },
-    blue:    { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'    },
-    amber:   { bg: 'bg-warning/10',   text: 'text-amber-700',   border: 'border-warning/30'   },
-    violet:  { bg: 'bg-violet-50',  text: 'text-violet-700',  border: 'border-violet-200'  },
-    indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200'  },
-    teal:    { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200'    },
-    emerald: { bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30' },
+    neutral: { bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-border-card'   },
+    warning: { bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30'   },
+    success: { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' },
+    'chart-1': { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' },
+    'chart-3': { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
+    'chart-5': { bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30' },
+    'chart-7': { bg: 'bg-chart-7/10', text: 'text-chart-7-text', border: 'border-chart-7/30' },
 };
 
 const PEDIDO_PILL  = { confirmado: 'bg-chart-1/10 text-chart-1-text border-chart-1/30', enviado: 'bg-chart-3/10 text-chart-3-text border-chart-3/30', parcial: 'bg-warning/10 text-warning-text border-warning/30', completado: 'bg-success/10 text-success-text border-success/30', anulado: 'bg-danger/10 text-danger-text border-danger/30' };
@@ -191,9 +196,9 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             <AnimatePresence>
                 {newAlert && (
-                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-[12px] font-semibold shadow-sm">
+                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-[12px] font-semibold shadow-sm">
                         <Send size={13} />¡Nuevo pedido #{newAlert.numero} en camino a {branchName}!
-                        <button onClick={() => setNewAlert(null)} className="ml-auto text-indigo-400 hover:text-indigo-600"><X size={13} /></button>
+                        <button onClick={() => setNewAlert(null)} className="ml-auto text-chart-3-text/60 hover:text-chart-3-text"><X size={13} /></button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -211,15 +216,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
                                 className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                                     active
-                                        ? 'bg-indigo-50 border-indigo-300 shadow-md shadow-indigo-100/80 -translate-y-px'
-                                        : 'bg-white border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/40'
+                                        ? 'bg-chart-3/10 border-chart-3/40 shadow-md shadow-chart-3/20 -translate-y-px'
+                                        : 'bg-surface-card border-border-card hover:border-chart-3/30 hover:bg-chart-3/10'
                                 }`}
                             >
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-indigo-50'}`}>
-                                    <Building2 size={15} className="text-indigo-600" />
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-surface-card' : 'bg-chart-3/10'}`}>
+                                    <Building2 size={15} className="text-chart-3-text" />
                                 </div>
                                 <div className="text-left">
-                                    <div className={`text-[22px] font-black leading-none tabular-nums ${active ? 'text-indigo-700' : 'text-content-2'}`}>{total}</div>
+                                    <div className={`text-[22px] font-black leading-none tabular-nums ${active ? 'text-chart-3-text' : 'text-content-2'}`}>{total}</div>
                                     <div className="text-[10px] font-bold text-content-2">{name}</div>
                                     <div className="text-[9px] text-content-3">pedidos este mes</div>
                                 </div>
@@ -232,8 +237,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                         const own = sucursalCounts[0];
                         return (
                             <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-indigo-50">
-                                    <Building2 size={15} className="text-indigo-600" />
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-3/10">
+                                    <Building2 size={15} className="text-chart-3-text" />
                                 </div>
                                 <div className="text-left">
                                     <div className="text-[22px] font-black leading-none tabular-nums text-content-2">{own.total}</div>
@@ -251,8 +256,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                 {filteredRows.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[260px] animate-in fade-in zoom-in-95 duration-700">
                         <div className="relative flex flex-col items-center text-center">
-                            <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-20 bg-blue-400" />
-                            <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-4 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-blue-400">
+                            <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-20 bg-chart-1" />
+                            <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-4 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-chart-1-text">
                                 <Inbox size={34} strokeWidth={1.5} />
                             </div>
                             <h3 className="font-bold text-[18px] text-content-2 tracking-tight">Sin pedidos activos</h3>
@@ -341,7 +346,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Header */}
                                     <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
                                         {stage === 'pausado' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-white shrink-0 shadow-sm animate-pulse">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-warning text-white shrink-0 shadow-sm animate-pulse">
                                                 ⏸ Pausado
                                             </span>
                                         )}
@@ -438,12 +443,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </span>
                                         )}
                                         {(row.cajas_danadas ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/10 text-amber-700 border border-warning/30 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/10 text-warning-text border border-warning/30 shrink-0">
                                                 <AlertTriangle size={8} /> Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
                                             </span>
                                         )}
                                         {(row.falta_cajas ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 shrink-0">
                                                 <Package size={8} /> Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
                                             </span>
                                         )}
@@ -454,11 +459,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         )}
                                         {elapsedPrep  && <span className="text-[10px] text-content-2 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (
-                                            <span className="text-[10px] text-amber-700 font-semibold tabular-nums animate-pulse">
+                                            <span className="text-[10px] text-warning-text font-semibold tabular-nums animate-pulse">
                                                 {elapsedPause} en pausa
                                             </span>
                                         )}
-                                        {elapsedTrans && <span className="text-[10px] text-indigo-600 tabular-nums">{elapsedTrans} en ruta</span>}
+                                        {elapsedTrans && <span className="text-[10px] text-chart-3-text tabular-nums">{elapsedTrans} en ruta</span>}
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
                                             {canApoyo && !isApoyoBodega && (
                                                 <button
@@ -481,7 +486,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canActuar && !isBranch && stage === 'preparado' && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
-                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-[0.97] transition-all ${row.entrega_programada_at ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' : 'bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-slate-200'}`}
+                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-[0.97] transition-all ${row.entrega_programada_at ? 'bg-chart-3/10 text-chart-3-text hover:bg-chart-3/20 border border-chart-3/30' : 'bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-border-card'}`}
                                                 >
                                                     <CalendarClock size={10} />
                                                     {row.entrega_programada_at ? fmtEntrega(row.entrega_programada_at) : 'Programar'}
@@ -494,24 +499,24 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
                                                     <button onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}
-                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.97] transition-all shadow-sm">
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success text-white hover:bg-success-hover active:scale-[0.97] transition-all shadow-sm">
                                                         <CheckCircle2 size={10} />Entregué
                                                     </button>
                                                 );
                                             })()}
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
-                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
-                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-1    text-white hover:bg-chart-1/80    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
+                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-warning   text-white hover:bg-warning-hover   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-6  text-white hover:bg-chart-6/80  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
+                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canAnular && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger/10 text-danger hover:bg-red-500 hover:text-white border border-danger/30 hover:border-red-500 active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white border border-danger/30 hover:border-danger active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Ban size={10} />Anular
                                                 </button>
                                             )}
-                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
@@ -527,7 +532,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
+                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
                                                         {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
                                                     </button>
                                                 );
@@ -538,10 +543,10 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Entrega estimada — visible en sucursal cuando hay programación y el pedido no ha llegado */}
                                     {isBranch && row.entrega_programada_at && stage !== 'erp' && stage !== 'contando' && (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-indigo-100 bg-indigo-50/60">
-                                            <CalendarClock size={11} className="text-indigo-500 shrink-0" />
-                                            <span className="text-[10px] font-semibold text-indigo-700">Entrega estimada:</span>
-                                            <span className="text-[10px] font-bold text-indigo-600">{fmtEntrega(row.entrega_programada_at)}</span>
+                                        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-chart-3/30 bg-chart-3/10">
+                                            <CalendarClock size={11} className="text-chart-3-text shrink-0" />
+                                            <span className="text-[10px] font-semibold text-chart-3-text">Entrega estimada:</span>
+                                            <span className="text-[10px] font-bold text-chart-3-text">{fmtEntrega(row.entrega_programada_at)}</span>
                                         </div>
                                     )}
 
@@ -632,28 +637,28 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const fmtT = (iso) => iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
                             const conductorEmp = ruta.conductor_id ? empMap.get(ruta.conductor_id) : null;
                             return (
-                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-surface-card shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-slate-200/80' : 'border-indigo-200/80'}`}>
+                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-surface-card shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-border-card' : 'border-chart-3/30'}`}>
                                     {/* Header sin color — glass */}
                                     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100/80 bg-surface-card" onClick={e => e.stopPropagation()}>
                                         {/* Foto/icono conductor */}
                                         <div className="relative shrink-0">
                                             {conductorEmp?.photo
                                                 ? <img src={conductorEmp.photo} alt={conductorEmp.name} className="w-7 h-7 rounded-xl object-cover border border-slate-200" />
-                                                : <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-surface-card-hover border-slate-200' : 'bg-indigo-50 border-indigo-100'}`}>
-                                                    <Truck size={13} className={isCompletada ? 'text-content-3' : 'text-indigo-600'} />
+                                                : <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-surface-card-hover border-border-card' : 'bg-chart-3/10 border-chart-3/30'}`}>
+                                                    <Truck size={13} className={isCompletada ? 'text-content-3' : 'text-chart-3-text'} />
                                                   </div>
                                             }
-                                            {dl && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse" />}
+                                            {dl && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-surface-card animate-pulse" />}
                                         </div>
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-[13px] font-black ${isCompletada ? 'text-content-2' : 'text-indigo-800'}`}>Ruta #{ruta.numero}</span>
+                                                <span className={`text-[13px] font-black ${isCompletada ? 'text-content-2' : 'text-chart-3-text'}`}>Ruta #{ruta.numero}</span>
                                                 {isCompletada
-                                                    ? <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-emerald-700 border border-success/30">
+                                                    ? <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">
                                                         ✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}
                                                       </span>
-                                                    : dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-emerald-700 border border-success/30">🟢 En vivo</span>
+                                                    : dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">🟢 En vivo</span>
                                                 }
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
@@ -673,7 +678,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Play size={9} fill="currentColor" />Iniciar
                                                 </button>
@@ -705,7 +710,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {/* Barra de progreso solo cuando activa */}
                                         {!isCompletada && (
                                             <div className="w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden shrink-0">
-                                                <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                                                <div className="h-full bg-chart-3 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                                             </div>
                                         )}
                                     </div>
@@ -878,7 +883,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                         <p className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-1">Pendiente de enviar:</p>
                         {reenviarConfirmModal.cajas.length > 0 && (
                             <div className="flex items-center gap-2 text-[12px] text-content-2">
-                                <Box size={13} className="text-rose-500 shrink-0" />
+                                <Box size={13} className="text-danger shrink-0" />
                                 <span>Caja{reenviarConfirmModal.cajas.length > 1 ? 's' : ''}: {reenviarConfirmModal.cajas.map(n => `#${n}`).join(', ')}</span>
                             </div>
                         )}
@@ -890,7 +895,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                         )}
                         {reenviarConfirmModal.especiales.length > 0 && (
                             <div className="flex items-center gap-2 text-[12px] text-content-2">
-                                <Star size={13} className="text-violet-500 shrink-0" />
+                                <Star size={13} className="text-chart-6-text shrink-0" />
                                 <span>Especial{reenviarConfirmModal.especiales.length > 1 ? 'es' : ''}: {reenviarConfirmModal.especiales.join(', ')}</span>
                             </div>
                         )}
@@ -906,7 +911,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 setReenviarConfirmModal(null);
                                 handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
                             }}
-                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-danger text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                         >
                             {busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}
                         </button>

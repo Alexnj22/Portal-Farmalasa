@@ -66,12 +66,12 @@ function getRoleOrder(role) {
 // ── Nocturnal legal info tooltip ──────────────────────────────────────────────
 const NocturnalLegalInfo = () => (
   <div className="relative group inline-flex items-center">
-    <Info size={10} className="text-indigo-400 cursor-help" strokeWidth={2} />
+    <Info size={10} className="text-chart-3-text cursor-help" strokeWidth={2} />
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-      <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
+      <p className="font-black text-chart-3-text mb-1.5">Art. 168 — Código de Trabajo SV</p>
       <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
-      <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
-      <p className="text-content-3">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
+      <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-chart-3-text font-bold">+25% recargo</span> sobre tarifa diurna</p>
+      <p className="text-content-3">• Hrs. extra nocturnas: <span className="text-chart-3-text font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
       <p className="text-content-3">• Jornada noct. máx: 7h/día, 39h/sem</p>
       <p className="text-content-3">• Si &gt;4h son nocturnas → turno nocturno</p>
     </div>
@@ -345,13 +345,13 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
                       <p className="text-[12px] font-black text-content">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
                       <p className="text-[11px] font-bold text-content-3">{fmtTimeCSTStr(p.timestamp)}</p>
                       {(() => { const bid = p.details?.audit_info?.branchId ?? p.branch_id; return bid && branchNameById.get(String(bid)) && String(bid) !== String(emp.branchId) ? (
-                        <p className="text-[9px] font-black text-blue-500 flex items-center gap-1 mt-0.5">
+                        <p className="text-[9px] font-black text-chart-1-text flex items-center gap-1 mt-0.5">
                           <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(bid))}
                         </p>
                       ) : null; })()}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {isAutoPunch(p)    && <span className="text-[8px] font-black bg-violet-100 text-violet-600 border border-violet-200 px-1.5 py-0.5 rounded-full">Auto</span>}
+                      {isAutoPunch(p)    && <span className="text-[8px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full">Auto</span>}
                       {isPendingPunch(p) && <span className="text-[8px] font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
                       {isEditedPunch(p)  && <span className="text-[8px] font-black bg-success/10 text-success border border-success/30 px-1.5 py-0.5 rounded-full">Editado</span>}
                     </div>
@@ -386,7 +386,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               <button
                 onClick={handleAdd}
                 disabled={saving || !newType || !newTime}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-[#003fa3] transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-brand-hover transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
                 {saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}
               </button>
@@ -484,7 +484,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   const cardBg = isToday
     ? 'bg-brand/[0.09] border-brand/25 shadow-[0_0_0_1px_rgba(0,82,204,0.1),0_2px_8px_rgba(0,82,204,0.08)]'
     : isFuture
-    ? 'bg-white/[0.15] border-black/[0.04]'
+    ? 'bg-surface-card-hover border-black/[0.04]'
     : 'bg-surface-card border-black/[0.07] shadow-[0_1px_6px_rgba(0,0,0,0.05)]';
 
   return (
@@ -513,17 +513,17 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 {inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}
               </span>
             )}
-            {isAutoDay  && <span className="text-[9px] font-black uppercase tracking-widest bg-violet-100 text-violet-600 border border-violet-200 px-2 py-0.5 rounded-full">Auto-marcado</span>}
+            {isAutoDay  && <span className="text-[9px] font-black uppercase tracking-widest bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-2 py-0.5 rounded-full">Auto-marcado</span>}
             {isPendDay  && <span className="text-[9px] font-black uppercase tracking-widest bg-warning/10 text-warning border border-warning/30 px-2 py-0.5 rounded-full">Pend. TH</span>}
             {isEditedDay && <span className="text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} strokeWidth={3}/> Editado</span>}
             {crossBranchName && (
-              <span className="text-[9px] font-black uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[9px] font-black uppercase tracking-widest bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <ArrowRightLeft size={8} strokeWidth={2.5} /> Apoyo {crossBranchName}
               </span>
             )}
-            {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-[9px] font-black uppercase tracking-widest bg-success/10 text-emerald-700 border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
-            {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <span className="text-[9px] font-black uppercase tracking-widest bg-danger/10 text-red-700 border border-danger/30 px-2 py-0.5 rounded-full">Incapacidad</span>}
-            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <span className="text-[9px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">Permiso</span>}
+            {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-[9px] font-black uppercase tracking-widest bg-success/10 text-success-text border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
+            {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <span className="text-[9px] font-black uppercase tracking-widest bg-danger/10 text-danger-text border border-danger/30 px-2 py-0.5 rounded-full">Incapacidad</span>}
+            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <span className="text-[9px] font-black uppercase tracking-widest bg-chart-2/10 text-chart-2-text border border-chart-2/30 px-2 py-0.5 rounded-full">Permiso</span>}
             {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-3 border border-slate-200 px-2 py-0.5 rounded-full">Ausente</span>}
           </div>
           {!isOff && shift && (
@@ -546,7 +546,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {isPendDay && onMarkReviewed && (
               <button
                 onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-amber-700 hover:bg-amber-500 hover:text-white hover:border-amber-500 rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94]"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning hover:text-white hover:border-warning rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94]"
               >
                 <ShieldCheck size={11} strokeWidth={2.5} /> Revisado
               </button>
@@ -568,7 +568,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 {entryPunch ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-black text-content">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
-                    {lateMin > 0 && <span className="text-[9px] font-black text-orange-500 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">+{lateMin} min</span>}
+                    {lateMin > 0 && <span className="text-[9px] font-black text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">+{lateMin} min</span>}
                     {isEditedPunch(entryPunch) && <span className="text-[8px] font-black text-success">✎</span>}
                   </div>
                 ) : (
@@ -585,7 +585,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 {exitPunch ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-black text-content">{fmtTimeCSTStr(exitPunch.timestamp)}</p>
-                    {isAutoPunch(exitPunch)  && <span className="text-[8px] font-black text-violet-500">Auto</span>}
+                    {isAutoPunch(exitPunch)  && <span className="text-[8px] font-black text-chart-3-text">Auto</span>}
                     {isPendingPunch(exitPunch) && <span className="text-[8px] font-black text-warning">Pend.</span>}
                     {isEditedPunch(exitPunch) && <span className="text-[8px] font-black text-success">✎</span>}
                   </div>
@@ -598,7 +598,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {/* Almuerzo */}
             {dayConfig?.hasLunch && (lunchOut || lunchIn) && (
               <div className="flex items-center gap-2">
-                <Coffee size={13} className="text-orange-400" strokeWidth={2.5} />
+                <Coffee size={13} className="text-chart-4-text" strokeWidth={2.5} />
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Almuerzo</p>
                   <p className="text-[12px] font-black text-content-2">
@@ -616,14 +616,14 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                   <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Horas</p>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-[13px] font-black text-content">{(ts.regular_hours||0).toFixed(1)}h</p>
-                    {ts.overtime_hours > 0 && <span className="text-[9px] font-black text-violet-500">+{ts.overtime_hours.toFixed(1)}h OT</span>}
+                    {ts.overtime_hours > 0 && <span className="text-[9px] font-black text-chart-3-text">+{ts.overtime_hours.toFixed(1)}h OT</span>}
                     {(ts.nocturnal_hours > 0) && (
-                      <span className="text-[9px] font-black text-indigo-500 flex items-center gap-0.5">
+                      <span className="text-[9px] font-black text-chart-3-text flex items-center gap-0.5">
                         🌙 {ts.nocturnal_hours.toFixed(1)}h noct. <NocturnalLegalInfo />
                       </span>
                     )}
                     {(ts.nocturnal_overtime_hours > 0) && (
-                      <span className="text-[9px] font-black text-indigo-700 flex items-center gap-0.5">
+                      <span className="text-[9px] font-black text-chart-3-text flex items-center gap-0.5">
                         🌙 +{ts.nocturnal_overtime_hours.toFixed(1)}h OT noct.
                       </span>
                     )}
@@ -655,7 +655,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
           {/* Auto-punch note */}
           {isAutoDay && (
-            <p className="text-[9px] font-bold text-violet-500 flex items-center gap-1">
+            <p className="text-[9px] font-bold text-chart-3-text flex items-center gap-1">
               <Bot size={10} strokeWidth={2.5} />
               Salida generada automáticamente — requiere verificación
             </p>
@@ -731,13 +731,13 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
   const totalNoctOT    = empTimesheets.reduce((s, t) => s + (t.nocturnal_overtime_hours || 0), 0);
 
   const hasCrossBranch = alerts.crossBranch > 0;
-  const alertColor = alerts.inconsistencies > 0 ? 'bg-red-500'
-    : alerts.autoPunched > 0 ? 'bg-violet-500'
-    : alerts.pendingReview > 0 ? 'bg-amber-500'
+  const alertColor = alerts.inconsistencies > 0 ? 'bg-danger'
+    : alerts.autoPunched > 0 ? 'bg-chart-3'
+    : alerts.pendingReview > 0 ? 'bg-warning'
     : null;
 
   return (
-    <div className="bg-white/[0.55] backdrop-blur-xl border border-border-card rounded-[1.75rem] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-200 hover:shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
+    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.75rem] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-200 hover:shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
       {/* Collapsed header row */}
       <button
         type="button"
@@ -756,7 +756,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               {alerts.total}
             </div>
           ) : (
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 flex items-center justify-center shadow-sm">
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success flex items-center justify-center shadow-sm">
               <Check size={8} strokeWidth={3} className="text-white" />
             </div>
           )}
@@ -774,7 +774,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 </span>
               )}
               {alerts.autoPunched > 0 && (
-                <span className="flex items-center gap-0.5 text-[8px] font-black bg-violet-50 text-violet-600 border border-violet-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-[8px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <Bot size={7} strokeWidth={2.5} /> {alerts.autoPunched} auto
                 </span>
               )}
@@ -784,7 +784,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 </span>
               )}
               {hasCrossBranch && (
-                <span className="flex items-center gap-0.5 text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-[8px] font-black bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo
                 </span>
               )}
@@ -812,10 +812,10 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           )}
           {totalLate > 0 && (
             <div className="flex flex-col items-end min-w-[2.5rem]">
-              <span className="text-[15px] font-black text-orange-500 tabular-nums leading-none">
-                {totalLate}<span className="text-[10px] font-bold text-orange-300 ml-0.5">m</span>
+              <span className="text-[15px] font-black text-chart-4-text tabular-nums leading-none">
+                {totalLate}<span className="text-[10px] font-bold text-chart-4-text/70 ml-0.5">m</span>
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-orange-400 mt-0.5">tardanza</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-chart-4-text mt-0.5">tardanza</span>
             </div>
           )}
           {totalAbs > 0 && (
@@ -826,18 +826,18 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           )}
           {(totalNocturnal + totalNoctOT) > 0 && (
             <div className="flex flex-col items-end min-w-[2.5rem]">
-              <span className="text-[13px] font-black text-indigo-500 tabular-nums leading-none flex items-center gap-0.5">
-                🌙 {(totalNocturnal + totalNoctOT).toFixed(1)}<span className="text-[9px] font-bold text-indigo-400 ml-0.5">h</span>
+              <span className="text-[13px] font-black text-chart-3-text tabular-nums leading-none flex items-center gap-0.5">
+                🌙 {(totalNocturnal + totalNoctOT).toFixed(1)}<span className="text-[9px] font-bold text-chart-3-text/70 ml-0.5">h</span>
                 <NocturnalLegalInfo />
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-indigo-400 mt-0.5">noct.</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-chart-3-text mt-0.5">noct.</span>
             </div>
           )}
           {!allApproved && onApproveAll && (
             <button
               type="button"
               onClick={e => { e.stopPropagation(); onApproveAll(); }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.96] shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
             >
               <ShieldCheck size={9} strokeWidth={2.5} /> Aprobar todo
             </button>
@@ -1277,7 +1277,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       {!isDemoMode && isQuincenaPast && (
         quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-success/10 border border-success/30 px-3 py-1.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-[10px] font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full">
               <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
             </span>
             <button type="button" onClick={() => navigate('/payroll')}
@@ -1319,13 +1319,13 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
         {/* SHIFT_EXCEPTION review panel */}
         {shiftExceptions.length > 0 && (
-          <div className="bg-violet-50/60 backdrop-blur-xl border border-violet-200/70 rounded-2xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-violet-200/50 flex items-center gap-2">
-              <ShieldAlert size={14} className="text-violet-600" strokeWidth={2.5} />
-              <span className="text-[11px] font-black text-violet-700 uppercase tracking-widest">
+          <div className="bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-chart-3/30 flex items-center gap-2">
+              <ShieldAlert size={14} className="text-chart-3-text" strokeWidth={2.5} />
+              <span className="text-[11px] font-black text-chart-3-text uppercase tracking-widest">
                 Turnos Extra Sin Autorizar — Revisión TH
               </span>
-              <span className="ml-auto bg-violet-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
+              <span className="ml-auto bg-chart-3 text-white text-[9px] font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
             </div>
             <div className="divide-y divide-violet-200/40">
               {shiftExceptions.map(req => {
@@ -1342,7 +1342,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                       <p className="text-[12px] font-black text-content">{meta.employeeName || emp?.name || `Empleado #${req.employee_id}`}</p>
                       <p className="text-[10px] text-content-3 mt-0.5 capitalize">{fmtDate}</p>
                       {meta.declaredStart && meta.declaredEnd ? (
-                        <p className="text-[11px] font-bold text-violet-700 mt-1">
+                        <p className="text-[11px] font-bold text-chart-3-text mt-1">
                           Declara: {meta.declaredStart} – {meta.declaredEnd}
                           {meta.pinOmitido && <span className="ml-2 text-warning text-[9px] uppercase tracking-wider font-black">sin PIN</span>}
                         </p>
@@ -1353,12 +1353,12 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                     {isEditing ? (
                       <div className="flex items-center gap-2 flex-wrap">
                         <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)}
-                          className="bg-white border border-violet-300 rounded-xl px-3 py-1.5 text-sm font-bold text-violet-700 outline-none focus:border-violet-500" />
+                          className="bg-surface-card border border-chart-3/40 rounded-xl px-3 py-1.5 text-sm font-bold text-chart-3-text outline-none focus:border-chart-3" />
                         <span className="text-content-3 text-xs">–</span>
                         <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)}
-                          className="bg-white border border-violet-300 rounded-xl px-3 py-1.5 text-sm font-bold text-violet-700 outline-none focus:border-violet-500" />
+                          className="bg-surface-card border border-chart-3/40 rounded-xl px-3 py-1.5 text-sm font-bold text-chart-3-text outline-none focus:border-chart-3" />
                         <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
+                          className="bg-success hover:bg-success-hover text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
                           {isBusy ? '…' : 'Aplicar'}
                         </button>
                         <button onClick={() => setEditingExId(null)}
@@ -1371,11 +1371,11 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                         {meta.declaredStart && meta.declaredEnd && (
                           <>
                             <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', meta.declaredStart, meta.declaredEnd)}
-                              className="bg-success/10 hover:bg-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-success/30 disabled:opacity-50 transition-all">
+                              className="bg-success/10 hover:bg-success/20 text-success-text text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-success/30 disabled:opacity-50 transition-all">
                               {isBusy ? '…' : 'Confirmar'}
                             </button>
                             <button disabled={isBusy} onClick={() => { setEditingExId(req.id); setEditStart(meta.declaredStart); setEditEnd(meta.declaredEnd); }}
-                              className="bg-violet-100 hover:bg-violet-200 text-violet-700 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-violet-200 disabled:opacity-50 transition-all">
+                              className="bg-chart-3/10 hover:bg-chart-3/20 text-chart-3-text text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-chart-3/30 disabled:opacity-50 transition-all">
                               Editar
                             </button>
                           </>

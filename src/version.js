@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.7';
+export const APP_VERSION = '2.51.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.8 — refactor(theme): T7.1 — CotizacionesView/RolesView/
+// AttendanceAuditView/PayrollView + cierre real de pedidos/RequestsView
+// (v2.51.8).
+//
+// Re-verificación con un regex más amplio (cualquier tono sólido, no solo
+// el patrón "badge" bg-claro+text-oscuro) encontró que archivos ya dados
+// por cerrados en tandas anteriores tenían secciones enteras sin tocar —
+// TabPedidos.jsx tenía OTRO objeto de color de sucursal (SUC_COLORS) y
+// otro STAGE_CONFIG duplicado de TabEnCurso.jsx que nunca se vieron en el
+// muestreo original; TabRutas/RutaEnCursoCard tenían todo el tema indigo
+// del progreso de ruta sin tocar; RequestsView.jsx tenía las 9 secciones
+// de detalle por tipo de solicitud (una por cada valor de meta.type)
+// coloreadas independientes de TYPE_COLORS, con SUS PROPIOS colores
+// crudos — mapeadas ahora al mismo criterio ya establecido (chart-N por
+// tipo, severidad real para Incapacidad/Anulación).
+//
+// Bug encontrado en el propio proceso de fix: varios scripts de
+// reemplazo por regex fallaban en silencio en líneas con `size={N}` o
+// `strokeWidth={N}` — las llaves `{N}` se interpretan como cuantificador
+// de regex, no texto literal, así que un patrón como `text-indigo-400"
+// />` (con una llave numérica en el medio) no hacía match. Ya corregido
+// en todos los archivos de esta sesión — los ~15 casos que quedaron
+// atrás por este bug ya están cerrados.
 
 // v2.51.7 — refactor(theme): T7.1 — PayrollView + AttendanceMonitorView +
 // VacationPlanView (v2.51.7).

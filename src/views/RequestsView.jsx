@@ -118,7 +118,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
     return (
         <div className={`rounded-[2rem] border bg-surface-card backdrop-blur-2xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
-            ${isUrgent ? 'border-red-300' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
+            ${isUrgent ? 'border-danger' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}
             <button onClick={() => setExpanded(v => !v)}
@@ -163,11 +163,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {req.type === 'SHIFT_CHANGE' && (
                         <div className="space-y-2">
                             {(meta.targetEmployeeName || meta.date) && (
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-cyan-50/60 border border-cyan-200/50">
-                                    <ArrowLeftRight size={12} className="text-cyan-500 flex-shrink-0" strokeWidth={2} />
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-3/10 border border-chart-3/30">
+                                    <ArrowLeftRight size={12} className="text-chart-3-text flex-shrink-0" strokeWidth={2} />
                                     <div className="flex flex-wrap items-center gap-2">
-                                        {meta.targetEmployeeName && <span className="text-[12px] font-bold text-cyan-700">↔ {meta.targetEmployeeName}</span>}
-                                        {meta.date && <span className="text-[11px] text-cyan-600">{new Date(meta.date+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}</span>}
+                                        {meta.targetEmployeeName && <span className="text-[12px] font-bold text-chart-3-text">↔ {meta.targetEmployeeName}</span>}
+                                        {meta.date && <span className="text-[11px] text-chart-3-text">{new Date(meta.date+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}</span>}
                                     </div>
                                 </div>
                             )}
@@ -177,8 +177,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                         <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.myShift || '—'}</p>
                                     </div>
-                                    <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-2.5">
-                                        <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
+                                    <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl p-2.5">
+                                        <p className="text-[8px] font-black text-chart-3-text uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.targetShift || '—'}</p>
                                     </div>
                                 </div>
@@ -194,7 +194,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-danger mb-0.5">Período</p>
-                                        <p className="text-[13px] font-bold text-red-700">
+                                        <p className="text-[13px] font-bold text-danger-text">
                                             {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
                                             {meta.days && <span className="text-danger font-medium ml-1.5">· {meta.days}d</span>}
                                         </p>
@@ -210,7 +210,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             ) : (
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-warning/10 border border-warning/30">
                                     <AlertTriangle size={11} className="text-warning flex-shrink-0" strokeWidth={2} />
-                                    <p className="text-[10px] text-amber-700 font-medium">Sin certificado adjunto.</p>
+                                    <p className="text-[10px] text-warning-text font-medium">Sin certificado adjunto.</p>
                                 </div>
                             )}
                         </div>
@@ -222,7 +222,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             <CalendarDays size={13} className="text-success flex-shrink-0" strokeWidth={2} />
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-success mb-0.5">Período</p>
-                                <p className="text-[12px] font-bold text-emerald-700">
+                                <p className="text-[12px] font-bold text-success-text">
                                     {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
                                 </p>
                             </div>
@@ -231,11 +231,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* PERMIT */}
                     {req.type === 'PERMIT' && (meta.permissionDates || []).length > 0 && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-blue-50/60 border border-blue-200/50">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-2">Días de Permiso</p>
+                        <div className="px-3 py-2.5 rounded-2xl bg-chart-2/10 border border-chart-2/30">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-chart-2-text mb-2">Días de Permiso</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {meta.permissionDates.map(d => (
-                                    <span key={d} className="text-[10px] font-bold text-blue-700 bg-blue-100/80 border border-blue-200/60 px-2 py-0.5 rounded-full">
+                                    <span key={d} className="text-[10px] font-bold text-chart-2-text bg-chart-2/10 border border-chart-2/30 px-2 py-0.5 rounded-full">
                                         {new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}
                                     </span>
                                 ))}
@@ -245,22 +245,22 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* ADVANCE */}
                     {req.type === 'ADVANCE' && meta.amount && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-violet-50/60 border border-violet-200/50">
-                            <Banknote size={13} className="text-violet-500 flex-shrink-0" strokeWidth={2} />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-5/10 border border-chart-5/30">
+                            <Banknote size={13} className="text-chart-5-text flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-0.5">Monto solicitado</p>
-                                <p className="text-[13px] font-black text-violet-700">${Number(meta.amount).toLocaleString('es-SV')}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-chart-5-text mb-0.5">Monto solicitado</p>
+                                <p className="text-[13px] font-black text-chart-5-text">${Number(meta.amount).toLocaleString('es-SV')}</p>
                             </div>
                         </div>
                     )}
 
                     {/* CERTIFICATE */}
                     {req.type === 'CERTIFICATE' && meta.certificateType && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-indigo-50/60 border border-indigo-200/50">
-                            <FileCheck2 size={13} className="text-indigo-500 flex-shrink-0" strokeWidth={2} />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-6/10 border border-chart-6/30">
+                            <FileCheck2 size={13} className="text-chart-6-text flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-0.5">Tipo</p>
-                                <p className="text-[12px] font-bold text-indigo-700">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-chart-6-text mb-0.5">Tipo</p>
+                                <p className="text-[12px] font-bold text-chart-6-text">
                                     {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                                 </p>
                             </div>
@@ -270,15 +270,15 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* ANNULMENT_REQUEST */}
                     {req.type === 'ANNULMENT_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-rose-50/80 border border-rose-200/70">
-                                <Ban size={13} className="text-rose-500 flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
+                                <Ban size={13} className="text-warning-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-0.5">Factura a anular</p>
-                                    <p className="text-[12px] font-bold text-rose-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
-                                    {meta.fecha && <p className="text-[10px] text-rose-500">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-warning-text mb-0.5">Factura a anular</p>
+                                    <p className="text-[12px] font-bold text-warning-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    {meta.fecha && <p className="text-[10px] text-warning-text">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
                                 </div>
                                 {meta.tipo_documento && (
-                                    <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-danger/10 text-red-700 border border-danger/30' : 'bg-surface-card-hover text-content-2 border border-slate-200'}`}>{meta.tipo_documento}</span>
+                                    <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text border border-danger/30' : 'bg-surface-card-hover text-content-2 border border-border-card'}`}>{meta.tipo_documento}</span>
                                 )}
                             </div>
                             {meta.reason && (
@@ -293,11 +293,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* PAYMENT_CHANGE_REQUEST */}
                     {req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-sky-50/80 border border-sky-200/60">
-                                <CreditCard size={13} className="text-sky-500 flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-7/10 border border-chart-7/30">
+                                <CreditCard size={13} className="text-chart-7-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-0.5">Factura</p>
-                                    <p className="text-[12px] font-bold text-sky-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-chart-7-text mb-0.5">Factura</p>
+                                    <p className="text-[12px] font-bold text-chart-7-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -305,8 +305,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
                                     <p className="text-[12px] font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
                                 </div>
-                                <div className="bg-sky-50/80 border border-sky-100 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-sky-500 uppercase tracking-widest mb-0.5">Cambiar a</p>
+                                <div className="bg-chart-7/10 border border-chart-7/30 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-chart-7-text uppercase tracking-widest mb-0.5">Cambiar a</p>
                                     <p className="text-[12px] font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                                 </div>
                             </div>
@@ -316,11 +316,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* VENDOR_CHANGE_REQUEST */}
                     {req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-purple-50/80 border border-purple-200/60">
-                                <Receipt size={13} className="text-purple-500 flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-8/10 border border-chart-8/30">
+                                <Receipt size={13} className="text-chart-8-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-purple-400 mb-0.5">Factura</p>
-                                    <p className="text-[12px] font-bold text-purple-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-chart-8-text mb-0.5">Factura</p>
+                                    <p className="text-[12px] font-bold text-chart-8-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -332,8 +332,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <p className="text-[11px] font-black text-content-2">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
                                     {meta.current_vendor_code && <p className="text-[9px] text-content-3 font-mono">#{meta.current_vendor_code}</p>}
                                 </div>
-                                <div className="bg-purple-50/80 border border-purple-100 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-purple-500 uppercase tracking-widest mb-0.5">Asignar a</p>
+                                <div className="bg-chart-8/10 border border-chart-8/30 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-chart-8-text uppercase tracking-widest mb-0.5">Asignar a</p>
                                     {meta.new_vendor_photo && (
                                         <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
@@ -347,11 +347,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* CLIENT_CHANGE_REQUEST */}
                     {req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-teal-50/80 border border-teal-200/60">
-                                <Receipt size={13} className="text-teal-500 flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-9/10 border border-chart-9/30">
+                                <Receipt size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-teal-400 mb-0.5">Factura</p>
-                                    <p className="text-[12px] font-bold text-teal-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-chart-9-text mb-0.5">Factura</p>
+                                    <p className="text-[12px] font-bold text-chart-9-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -362,10 +362,10 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     </div>
                                     <p className="text-[11px] font-black text-content-2 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
                                 </div>
-                                <div className="bg-teal-50/80 border border-teal-100 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-teal-500 uppercase tracking-widest mb-1">Cambiar a</p>
-                                    <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center mb-1">
-                                        <span className="text-teal-600 font-black text-[10px] leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
+                                <div className="bg-chart-9/10 border border-chart-9/30 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-chart-9-text uppercase tracking-widest mb-1">Cambiar a</p>
+                                    <div className="w-6 h-6 rounded-full bg-chart-9/10 flex items-center justify-center mb-1">
+                                        <span className="text-chart-9-text font-black text-[10px] leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
                                     </div>
                                     <p className="text-[11px] font-black text-content-2 leading-tight">{meta.new_client_name}</p>
                                     {(meta.new_client_nit || meta.new_client_dui) && (
@@ -388,7 +388,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {isRejected && req.approver_note && (
                         <div className="px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
                             <p className="text-[9px] font-black uppercase tracking-widest text-danger mb-1">Motivo de rechazo</p>
-                            <p className="text-[12px] text-red-800 font-medium leading-relaxed">{req.approver_note}</p>
+                            <p className="text-[12px] text-danger-text font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
                     )}
 
@@ -396,7 +396,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {!isRejected && req.approver_note && (
                         <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30">
                             <p className="text-[9px] font-black uppercase tracking-widest text-success mb-1">Nota del aprobador</p>
-                            <p className="text-[12px] text-emerald-800 font-medium leading-relaxed">{req.approver_note}</p>
+                            <p className="text-[12px] text-success-text font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
                     )}
 
@@ -408,7 +408,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <div key={i} className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-2xl p-2.5">
                                     <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black text-emerald-700">{getApproverLabel(ap)}</p>
+                                        <p className="text-[11px] font-black text-success-text">{getApproverLabel(ap)}</p>
                                         <p className="text-[9px] text-content-3 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                                         {ap.approverNote && <p className="text-[10px] text-content-2 mt-0.5 italic">"{ap.approverNote}"</p>}
                                     </div>
@@ -424,11 +424,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {req.status === 'PENDING' && (
                         <div className="flex items-center gap-2 pt-1">
                             <button onClick={() => onApprove(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success hover:bg-success-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Check size={13} strokeWidth={2.5} /> Aprobar
                             </button>
                             <button onClick={() => onReject(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(239,68,68,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger hover:bg-danger-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(239,68,68,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <X size={13} strokeWidth={2.5} /> Rechazar
                             </button>
                         </div>
@@ -613,8 +613,8 @@ const RequestsView = () => {
             {/* Pending dot — outside the overflow-hidden area via outline trick */}
             {pendingCount > 0 && !isSearchMode && (
                 <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 z-50 pointer-events-none">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-60" />
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-danger border-2 border-surface-card items-center justify-center">
                         <span className="text-[8px] font-black text-white leading-none">{pendingCount > 9 ? '9+' : pendingCount}</span>
                     </span>
                 </span>
@@ -656,7 +656,7 @@ const RequestsView = () => {
                 <button onClick={() => setIsSearchMode(true)}
                     className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
             </div>
         </div>
@@ -693,7 +693,7 @@ const RequestsView = () => {
                 ) : baseFiltered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                         <div className="relative group flex flex-col items-center text-center">
-                            <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-emerald-500' : statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-content-3'}`} />
+                            <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-success' : statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'}`} />
                             <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${statusFilter === 'PENDING' ? 'text-brand' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
                                 {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
                             </div>
@@ -708,7 +708,7 @@ const RequestsView = () => {
                 ) : (
                     <>
                     {isReqSearchFuzzy && rawSearch.trim() && (
-                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{rawSearch.trim()}&rdquo; — no se encontraron coincidencias exactas
                         </div>
@@ -781,8 +781,8 @@ const RequestsView = () => {
                                 disabled={!canApprove || isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
                                     actionModal.mode === 'approve'
-                                        ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.3)]'
-                                        : 'bg-red-500 hover:bg-red-600 shadow-[0_4px_16px_rgba(239,68,68,0.3)]'
+                                        ? 'bg-success hover:bg-success-hover shadow-[0_4px_16px_rgba(16,185,129,0.3)]'
+                                        : 'bg-danger hover:bg-danger-hover shadow-[0_4px_16px_rgba(239,68,68,0.3)]'
                                 }`}>
                                 {isActioning ? <Loader2 size={14} className="animate-spin" />
                                     : actionModal.mode === 'approve' ? <><Check size={14} strokeWidth={2.5} /> Aprobar</> : <><X size={14} strokeWidth={2.5} /> Rechazar</>}

@@ -94,12 +94,12 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
       >
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="p-2 bg-indigo-50 rounded-xl border border-indigo-100">
-              <Truck size={15} className="text-indigo-600" />
+            <div className="p-2 bg-chart-3/10 rounded-xl border border-chart-3/30">
+              <Truck size={15} className="text-chart-3-text" />
             </div>
             {/* GPS en vivo dot */}
             {driverOnline && (
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse" />
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-surface-card animate-pulse" />
             )}
           </div>
           <div>
@@ -126,13 +126,13 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
           {/* Barra de progreso */}
           {total > 0 && (
             <div className="w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
-              <div className="h-full rounded-full bg-indigo-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+              <div className="h-full rounded-full bg-chart-3 transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
           )}
           {/* Botón mapa */}
           <button
             onClick={e => { e.stopPropagation(); setMapOpen(true); }}
-            className="p-1.5 rounded-lg hover:bg-indigo-50 text-content-3 hover:text-indigo-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-chart-3/10 text-content-3 hover:text-chart-3-text transition-colors"
             title="Ver mapa"
           >
             <Map size={14} />
@@ -162,7 +162,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                     done ? 'bg-success/10 border-success/30' : 'bg-white border-slate-200'
                   }`}>
                     <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
-                      done ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-700'
+                      done ? 'bg-success text-white' : 'bg-chart-3/10 text-chart-3-text'
                     }`}>{stop.orden_entrega}</span>
 
                     <div className="flex-1 min-w-0">
@@ -188,7 +188,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                       <button
                         onClick={() => handleEntregarStop(stop)}
                         disabled={busy}
-                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
+                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
                       >
                         {busy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
                         Entregué
@@ -206,7 +206,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                     <button
                       onClick={handleIniciarRuta}
                       disabled={busyRuta === 'iniciar'}
-                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                       {busyRuta === 'iniciar' ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
                       Iniciar ruta

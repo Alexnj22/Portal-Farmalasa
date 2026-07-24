@@ -50,7 +50,7 @@ const LiquidToast = () => {
 
             <button
                 onClick={hideToast}
-                className="absolute top-1/2 -translate-y-1/2 right-3 w-8 h-8 flex items-center justify-center rounded-full border border-border-card text-content-3 transition-all duration-300 hover:shadow-sm hover:scale-105 active:scale-[0.97] hover:text-danger hover:bg-danger/10 hover:border-danger/30"
+                className="absolute top-1/2 -translate-y-1/2 right-3 w-8 h-8 flex items-center justify-center rounded-full border border-border-card text-content-3 transition-[transform,box-shadow,background-color,border-color,color] duration-300 hover:shadow-sm hover:scale-105 active:scale-[0.97] hover:text-danger hover:bg-danger/10 hover:border-danger/30"
             >
                 <X size={14} strokeWidth={2.5} />
             </button>

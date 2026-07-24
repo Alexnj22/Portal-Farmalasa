@@ -5,8 +5,45 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.49.0';
+export const APP_VERSION = '2.49.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.49.1 — refactor(theme): T5.3 — transition-all → props específicas en
+// componentes compartidos (Button, LiquidSelect ×3, TablePagination,
+// LiquidToast, SearchInput).
+//
+// A pedido del usuario tras preguntar si el plan contempla sombras/
+// animaciones/hover como riesgo de rendimiento. Auditado en 3 partes:
+//
+// 1) animate-spin/animate-pulse: revisados todos los usos no obviamente
+// gateados por un loading state (grep amplio en src/views y
+// src/components, incluyendo SidebarSyncStatus — siempre montado). Todos
+// están correctamente condicionados (loading/isSaving/branches.length===0
+// etc.) — sin hallazgo, no requirió fix.
+//
+// 2) transition-all: 1,160 usos en total, pero acotado a los 9 casos reales
+// en componentes T3 (el resto son 1,160 usos dispersos en vistas
+// individuales — arreglarlos uno por uno sin poder verificar cada caso no
+// se justifica hoy, el radio de impacto es mucho menor que backdrop-filter
+// porque solo cuesta mientras se hace hover sobre UN elemento, no en cada
+// frame sobre todos los elementos visibles como backdrop-filter/blobs).
+// Cada reemplazo se basó en leer las clases hover:/active:/focus: reales
+// del elemento (no una lista genérica) — confirmado en el CSS compilado
+// (`transition-property` final lista exactamente transform/box-shadow/
+// background-color/color según corresponda a cada uno, nunca "all").
+// 2 casos quedaron sin tocar por ambigüedad real (LiquidToast icon
+// container con clases dinámicas por severidad, LiquidSelect pill wrapper
+// con outline condicional) — no valía el riesgo de adivinar mal.
+//
+// 3) Consolidación de shadows: medidos los shadow-[...] arbitrarios más
+// repetidos (25/19/18/18/17/17×…) — resultaron ser mayormente glows de
+// marca (rgba(0,82,204,…) para botones/badges), NO sombras genéricas de
+// elevación, y ninguno coincide exacto con --card-shadow/--modal-shadow/
+// --elevation-3 existentes. Consolidarlos exige decidir un valor canónico
+// (ej. ¿la sombra de 25 usos gana sobre el token actual, o al revés?) —
+// una decisión de diseño visual, no un fix mecánico seguro. Decisión del
+// usuario: diferir a T7 (ya estaba en el checklist de DESIGN.md v2.0 §8,
+// "elevación tokenizada") en vez de adivinar valores ahora.
 
 // v2.49.0 — feat(theme): Fase T5 (eficiencia de render) + ThemeToggle montado
 // en AppLayout para previsualizar los 4 temas en vivo.

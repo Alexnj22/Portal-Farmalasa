@@ -1012,3 +1012,27 @@ trabajo barato de revertir si Liquid se elimina, y necesario si sobrevive.
 Cualquier fase futura que asuma la eliminación de liquid/dark (borrar
 tokens, simplificar ThemeContext) NO debe ejecutarse sin confirmar esto
 primero.
+
+**T5.3 (2026-07-24, v2.49.1) — motion/shadow, a pedido del usuario**: tras
+preguntar si el plan contempla sombras/animaciones/hover como riesgo de
+rendimiento. Auditoría en 3 partes:
+1. `animate-spin`/`animate-pulse` — todos los usos no evidentemente
+   gateados (incluido `SidebarSyncStatus`, siempre montado) revisados;
+   todos correctamente condicionados a un loading state. Sin hallazgo.
+2. `transition-all` (1,160 usos totales) — acotado a los 9 casos reales en
+   componentes T3 (Button, LiquidSelect ×3, TablePagination, LiquidToast,
+   SearchInput), cada uno reemplazado por la lista de propiedades real
+   según sus propias clases hover:/active:/focus: (no una lista genérica),
+   verificado en el CSS compilado. Los 1,160 usos dispersos en vistas
+   individuales quedan sin tocar — el radio de impacto de un hover
+   (un elemento a la vez) es mucho menor que backdrop-filter/blobs
+   (cada frame, todos los elementos visibles a la vez), no se justifica
+   el riesgo de tocar cientos de archivos sin poder verificar cada uno hoy.
+3. Consolidación de shadows — medidos los `shadow-[...]` más repetidos:
+   resultaron ser glows de marca (`rgba(0,82,204,…)`), no sombras
+   genéricas de elevación, y ninguno coincide exacto con los tokens
+   `--card-shadow`/`--modal-shadow`/`--elevation-3` ya existentes.
+   Consolidar exige decidir un valor canónico — una decisión de diseño
+   visual (mismo tipo de gate que usó T2), no un fix mecánico seguro.
+   **Diferido a T7 por decisión del usuario** — ya estaba en el checklist
+   de DESIGN.md v2.0 §8 ("elevación tokenizada"), no es alcance nuevo.

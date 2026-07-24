@@ -46,7 +46,7 @@ export default function SearchInput({
                 autoFocus={autoFocus}
                 className={`w-full ${s.px} ${s.text} font-semibold
                     text-content placeholder:text-content-3
-                    outline-none transition-all duration-200
+                    outline-none transition-[outline-color,outline-width,outline-offset] duration-200
                     focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-brand/30`}
             />
             {value && (

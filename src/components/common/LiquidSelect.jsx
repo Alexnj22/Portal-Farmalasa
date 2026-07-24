@@ -314,7 +314,7 @@ const LiquidSelect = ({
                                 role="option"
                                 aria-selected={String(value) === String(opt.value)}
                                 onClick={() => !opt.disabled && handleSelect(opt.value)}
-                                className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border border-transparent flex items-center gap-2.5 ${
+                                className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-[background-color,color,border-color,box-shadow] duration-200 border border-transparent flex items-center gap-2.5 ${
                                     opt.disabled
                                         ? 'opacity-40 cursor-not-allowed bg-transparent text-content-3'
                                         : String(value) === String(opt.value)
@@ -367,7 +367,7 @@ const LiquidSelect = ({
                             setIsOpen(false);
                             setSearchTerm('');
                         }}
-                        className="w-full text-left px-3 py-2.5 text-[12px] font-bold rounded-[1.25rem] transition-all flex items-center gap-2 mt-1 text-success hover:bg-success/10"
+                        className="w-full text-left px-3 py-2.5 text-[12px] font-bold rounded-[1.25rem] transition-colors flex items-center gap-2 mt-1 text-success hover:bg-success/10"
                     >
                         <Plus size={12} strokeWidth={3} className="shrink-0" />
                         Agregar: <span className="font-black ml-0.5">{searchTerm.trim()}</span>
@@ -390,7 +390,7 @@ const LiquidSelect = ({
 
     return (
         <div
-            className={`relative group w-full transition-all duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:-translate-y-0.5' : ''}`}
+            className={`relative group w-full transition-transform duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:-translate-y-0.5' : ''}`}
             ref={selectRef}
         >
             {/* ICONO IZQUIERDO — omitido en nano (steppers/grillas densas sin espacio) */}

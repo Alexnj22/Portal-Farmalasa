@@ -167,7 +167,7 @@ export default function TablePagination({
                         whileHover={pageSize !== size ? { scale: 1.05 } : {}}
                         whileTap={pageSize !== size ? { scale: 0.95 } : {}}
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className={`px-3 h-7 rounded-xl text-[10px] font-bold transition-all duration-200 ${
+                        className={`px-3 h-7 rounded-xl text-[10px] font-bold transition-[background-color,color,box-shadow] duration-200 ${
                             pageSize === size
                                 ? 'bg-brand text-white shadow-[0_2px_8px_rgba(0,82,204,0.30)] scale-[1.04]'
                                 : 'text-content-3 hover:text-content hover:bg-surface-card-hover'

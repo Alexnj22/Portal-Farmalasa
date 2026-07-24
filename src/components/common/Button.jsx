@@ -47,7 +47,7 @@ const Button = memo(({
             type={type}
             disabled={isDisabled}
             className={`inline-flex items-center justify-center rounded-btn font-bold tracking-[-0.005em]
-                transition-all duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap
+                transition-[transform,box-shadow,background-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap
                 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
                 ${VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary}
                 ${iconOnly ? ICON_ONLY_SIZE[size] : SIZE_CLASSES[size]}

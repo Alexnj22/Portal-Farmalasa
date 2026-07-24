@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.5';
+export const APP_VERSION = '2.51.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.6 — refactor(theme): T7.1 — TabMinMaxNetwork + Conteo de Inventario
+// (v2.51.6).
+//
+// TabMinMaxNetwork.jsx: el semáforo de 5 estados (out_of_stock/below_min/
+// approaching/ok/overstocked) coincidía EXACTO con los tokens
+// --stock-out/--stock-below-min/--stock-approaching/--stock-ok/
+// --stock-overstocked que ya existen en index.css (T1, semáforo real de
+// riesgo de stock de tabminmax/constants.js) — reusa esos en vez de
+// inventar una paleta categórica nueva, encontrado al reconocer los hex
+// exactos. ConteoInventarioView/ConteoDetailView (mismo lifecycle
+// EN_PROGRESO/FINALIZADO/APROBADO/CERRADO duplicado en ambos): teal como
+// color de identidad del feature de conteo → chart-9, consistente con el
+// resto de vistas de conteo/laboratorios.
 
 // v2.51.5 — refactor(theme): T7.1 — StaffManagementView + TabSinVenta/
 // TabMinMax (v2.51.5).

@@ -10,10 +10,10 @@ import { smartFilter } from '../utils/searchUtils';
 
 const ESTADO_CFG = {
     BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-slate-200',  icon: Clock,       label: 'Borrador' },
-    EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-amber-700',  border: 'border-warning/30',  icon: Clock,       label: 'En Progreso' },
-    FINALIZADO:  { bg: 'bg-blue-50',    text: 'text-blue-700',   border: 'border-blue-200',   icon: FileCheck2,  label: 'Finalizado' },
-    APROBADO:    { bg: 'bg-success/10', text: 'text-emerald-700',border: 'border-success/30',icon: CheckCircle2,label: 'Aprobado' },
-    CERRADO:     { bg: 'bg-success/10', text: 'text-emerald-700',border: 'border-success/30',icon: CheckCircle2,label: 'Cerrado' },
+    EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-warning-text',  border: 'border-warning/30',  icon: Clock,       label: 'En Progreso' },
+    FINALIZADO:  { bg: 'bg-chart-1/10',    text: 'text-chart-1-text',   border: 'border-chart-1/30',   icon: FileCheck2,  label: 'Finalizado' },
+    APROBADO:    { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Aprobado' },
+    CERRADO:     { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Cerrado' },
 };
 
 const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECETA: 'Bajo Receta', MANUAL: 'Manual' };
@@ -93,7 +93,7 @@ export default function ConteoInventarioView() {
                         title="Buscar conteo"
                     >
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                        {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
+                        {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
                     </button>
                 </div>
             </div>
@@ -103,7 +103,7 @@ export default function ConteoInventarioView() {
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
             {isSearchFuzzy && search && (
-                <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{search}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -120,7 +120,7 @@ export default function ConteoInventarioView() {
                             <DataCell align="center" hideBelow="md"><span className="text-[11px] tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span></DataCell>
                             <DataCell align="center">
                                 {c.total_diferencias > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
                                         <AlertTriangle size={10} /> {c.total_diferencias}
                                     </span>
                                 ) : c.total_diferencias === 0 ? (
@@ -128,7 +128,7 @@ export default function ConteoInventarioView() {
                                 ) : <span className="text-content-3">—</span>}
                             </DataCell>
                             <DataCell align="right" hideBelow="lg">
-                                <span className={`text-[11px] font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-blue-600' : 'text-content-3'}`}>{fmtMoney(valorNeto)}</span>
+                                <span className={`text-[11px] font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{fmtMoney(valorNeto)}</span>
                             </DataCell>
                             <DataCell align="center">
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${es.bg} ${es.text} ${es.border}`}>

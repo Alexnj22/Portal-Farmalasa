@@ -8,12 +8,15 @@ import { ERP_NAMES as ERP_NAMES_FULL, ERP_ORDER } from './tabminmax/constants';
 
 const ERP_SHORT = { 1: 'S.1', 2: 'S.2', 3: 'S.3', 4: 'S.4', 5: 'LaP.', 6: 'Bod.', 7: 'S.5' };
 
+// Mismos 5 tokens del semáforo real de riesgo de stock (index.css
+// --stock-*, ya usados en tabminmax/constants.js STAT_CFGS) — coinciden
+// exacto con los hex crudos que traía este archivo, tokenizados en T7.
 const ALERT_DOT = {
-    out_of_stock: 'bg-red-500',
-    below_min:    'bg-orange-500',
-    approaching:  'bg-amber-400',
-    ok:           'bg-emerald-500',
-    overstocked:  'bg-blue-400',
+    out_of_stock: 'bg-stock-out',
+    below_min:    'bg-stock-below-min',
+    approaching:  'bg-stock-approaching',
+    ok:           'bg-stock-ok',
+    overstocked:  'bg-stock-overstocked',
 };
 const ALERT_LABELS = {
     out_of_stock: 'Sin stock',
@@ -39,7 +42,7 @@ function NetCell({ b }) {
             <div className="flex items-center gap-0.5">
                 <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
                 <span className={`text-[11px] font-bold tabular-nums ml-0.5 ${
-                    b.stk === 0 ? 'text-danger' : b.alr === 'below_min' ? 'text-orange-600' : 'text-content-2'
+                    b.stk === 0 ? 'text-danger' : b.alr === 'below_min' ? 'text-stock-below-min' : 'text-content-2'
                 }`}>{b.stk.toLocaleString()}</span>
             </div>
             {pedir !== null && (
@@ -164,13 +167,13 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                                 <span className="font-medium text-content-2 flex-1 truncate min-w-0 leading-tight">{item.product_name}</span>
                                 <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
                                     {item.suppliers.map(s => (
-                                        <span key={s.id} className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-black tabular-nums">
+                                        <span key={s.id} className="px-1.5 py-0.5 bg-chart-1/10 text-chart-1-text rounded text-[9px] font-black tabular-nums">
                                             {ERP_SHORT[s.id]} +{s.excess}
                                         </span>
                                     ))}
                                     <ArrowRight size={10} className="text-content-3 shrink-0" />
                                     {item.needers.map(n => (
-                                        <span key={n.id} className="px-1.5 py-0.5 bg-danger/10 text-red-700 rounded text-[9px] font-black tabular-nums">
+                                        <span key={n.id} className="px-1.5 py-0.5 bg-danger/10 text-danger-text rounded text-[9px] font-black tabular-nums">
                                             {ERP_SHORT[n.id]} -{n.pedir}
                                         </span>
                                     ))}
@@ -218,7 +221,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                         <>
                             <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                             <button onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }}
-                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                 <X size={11} strokeWidth={3} />
                             </button>
                         </>
@@ -265,16 +268,16 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 {pageRows.map((row, i) => {
                     const bs     = row.branches || {};
                     const maxSev = Math.max(...Object.values(bs).map(b => SEVERITY[b.alr] ?? 0), 0);
-                    const rowTint = maxSev >= 4 ? 'bg-danger/10' : maxSev >= 3 ? 'bg-orange-50/30' : '';
+                    const rowTint = maxSev >= 4 ? 'bg-danger/10' : maxSev >= 3 ? 'bg-warning/10' : '';
                     return (
                         <DataRow key={row.erp_product_id} index={i} className={rowTint}>
                             <DataCell align="left" className="!py-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     {row.abc_class && (
                                         <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md border ${
-                                            row.abc_class === 'A' ? 'bg-success/10 text-emerald-700 border-success/30' :
-                                            row.abc_class === 'B' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                            row.abc_class === 'C' ? 'bg-warning/10 text-amber-700 border-warning/30' :
+                                            row.abc_class === 'A' ? 'bg-success/10 text-success-text border-success/30' :
+                                            row.abc_class === 'B' ? 'bg-chart-1/10 text-chart-1-text border-chart-1/30' :
+                                            row.abc_class === 'C' ? 'bg-warning/10 text-warning-text border-warning/30' :
                                                                     'bg-surface-card-hover text-content-3 border-slate-200'
                                         }`}>{row.abc_class}</span>
                                     )}

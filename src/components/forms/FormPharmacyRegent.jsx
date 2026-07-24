@@ -43,7 +43,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     <div className="absolute inset-0 bg-danger/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
                 </div>
-                <h3 className="text-[16px] font-black text-red-900 mb-2 tracking-tight">Ningún Profesional Disponible</h3>
+                <h3 className="text-[16px] font-black text-danger-text mb-2 tracking-tight">Ningún Profesional Disponible</h3>
                 <p className="text-[12px] font-bold text-danger-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Regente Farmacéutico en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>
@@ -148,7 +148,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     <label className="text-[10px] font-black text-chart-3-text/80 uppercase tracking-widest ml-1 mb-2 block">
                         Inscripción de Regencia (PDF)
                     </label>
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10 border-purple-300 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10 hover:border-purple-300/60'}`}>
+                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
                         <input 
                             type="file" 
                             accept=".pdf,image/*" 

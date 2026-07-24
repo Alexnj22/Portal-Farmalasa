@@ -48,7 +48,7 @@ function useTokens() {
     skeletonPulse:     'bg-brand/[0.07]',
     emptyText:         'text-content-3',
     emptyIcon:         'text-content-3',
-    expandBg:          'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30',
+    expandBg:          'bg-gradient-to-br from-chart-1/10 via-white/50 to-slate-50/30',
     expandBorderColor: 'border-chart-1/30',
     expandText:        'text-content-3',
     expandTextStrong:  'text-content',

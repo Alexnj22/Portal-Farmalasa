@@ -590,7 +590,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               <div className="max-h-[42vh] overflow-y-auto pr-1 -mr-1">
               <div className="relative">
                 {/* Línea vertical de fondo */}
-                <div className="absolute left-[13px] top-7 bottom-7 w-px bg-gradient-to-b from-slate-300 via-indigo-200 to-slate-300" />
+                <div className="absolute left-[13px] top-7 bottom-7 w-px bg-gradient-to-b from-slate-300 via-chart-3/30 to-slate-300" />
 
                 {/* Bodega (partida) */}
                 <div className="flex items-center gap-3 mb-1">

@@ -75,7 +75,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                             <label className="text-[10px] font-black uppercase tracking-widest text-success ml-1 mb-2 flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado
                             </label>
-                            <div className="bg-success/10 rounded-[1rem] border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-success focus-within:ring-4 focus-within:ring-emerald-400/20">
+                            <div className="bg-success/10 rounded-[1rem] border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-success focus-within:ring-4 focus-within:ring-success/20">
                                 <LiquidDatePicker
                                     mode="month" 
                                     value={services[srv.id]?.paidThrough || ""} 

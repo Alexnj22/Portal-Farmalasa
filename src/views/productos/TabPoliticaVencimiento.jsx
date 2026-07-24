@@ -293,7 +293,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
 const SUMMARY_COLOR = {
     teal:   { bg: 'from-chart-9/10 to-surface-card',   border: 'border-chart-9/30',   icon: 'bg-chart-9/10 text-chart-9-text',    glow: 'shadow-chart-9/20',   text: 'text-chart-9-text'   },
     indigo: { bg: 'from-chart-3/10 to-surface-card', border: 'border-chart-3/30', icon: 'bg-chart-3/10 text-chart-3-text',glow: 'shadow-chart-3/20', text: 'text-chart-3-text' },
-    amber:  { bg: 'from-amber-50 to-white',  border: 'border-warning/30',  icon: 'bg-warning/10 text-warning',  glow: 'shadow-amber-100',  text: 'text-warning'  },
+    amber:  { bg: 'from-warning/10 to-white',  border: 'border-warning/30',  icon: 'bg-warning/10 text-warning',  glow: 'shadow-warning/20',  text: 'text-warning'  },
 };
 
 function SummaryCard({ icon: Icon, label, value, color, className = '' }) {

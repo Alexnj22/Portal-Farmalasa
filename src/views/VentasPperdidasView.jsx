@@ -141,7 +141,7 @@ export default function VentasPperdidasView() {
                                     className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-danger/10 border border-danger/30"
                                 >
                                     <TrendingDown size={11} className="text-danger-text" strokeWidth={2.5} />
-                                    <span className="text-[11px] font-black text-rose-800 max-w-[180px] truncate">{s.nombre}</span>
+                                    <span className="text-[11px] font-black text-danger-text max-w-[180px] truncate">{s.nombre}</span>
                                     <span className="text-[10px] font-bold text-danger-text tabular-nums">{s.total} uds</span>
                                     <span className="text-[9px] font-semibold text-danger-text">({s.veces}×)</span>
                                 </div>

@@ -110,7 +110,7 @@ export default function SidebarSyncStatus() {
               ? 'bg-success/[0.10] border-success/[0.18] cursor-default'
               : bellDenied
               ? 'bg-white/[0.03] border-white/[0.05] cursor-not-allowed opacity-40'
-              : 'bg-white/[0.06] border-white/[0.09] hover:bg-chart-3/[0.12] hover:border-violet-400/[0.18] hover:scale-[1.02] active:scale-[0.98]'
+              : 'bg-white/[0.06] border-white/[0.09] hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18] hover:scale-[1.02] active:scale-[0.98]'
             }`}
         >
           <div className="flex items-center gap-1 mb-0.5">

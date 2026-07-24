@@ -33,7 +33,7 @@ const IOSTestView = () => {
 
                 {/* Encabezado */}
                 <div className="flex items-center gap-3 mb-1">
-                    <div className="bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-2xl p-2.5 shadow-lg">
+                    <div className="bg-gradient-to-tr from-success to-chart-9 rounded-2xl p-2.5 shadow-lg">
                         <Smartphone size={20} className="text-white" />
                     </div>
                     <div>

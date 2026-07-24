@@ -1144,7 +1144,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                     Invalidación pendiente
                                 </span>
                             ) : row.kind === 'orphan_zip' ? (
-                                <span className="text-[10px] font-bold text-chart-3-text bg-chart-3/10 border border-violet-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-[10px] font-bold text-chart-3-text bg-chart-3/10 border border-chart-3/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     ZIP sin abrir
                                 </span>
                             ) : (

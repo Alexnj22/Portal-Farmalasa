@@ -250,7 +250,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                                     onChange={e => { setSearch(e.target.value); setPage(1); }}
                                     onKeyDown={e => e.key === 'Escape' && closeSearch()}
                                     placeholder="Buscar…"
-                                    className="w-full pl-6 pr-5 py-1 text-[16px] bg-white border border-chart-1/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-chart-1 text-content-2 placeholder:text-content-3 shadow-sm"
+                                    className="w-full pl-6 pr-5 py-1 text-[16px] bg-white border border-chart-1/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-chart-1/30 focus:border-chart-1 text-content-2 placeholder:text-content-3 shadow-sm"
                                 />
                                 <button onClick={closeSearch} className="absolute right-1.5 text-content-3 hover:text-content-2">
                                     <X size={9} />

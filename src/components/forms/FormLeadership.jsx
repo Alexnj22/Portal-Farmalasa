@@ -261,8 +261,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                 </div>
                                             </label>
 
-                                            <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'UNASSIGN' ? 'bg-surface-card border-warning shadow-md ring-1 ring-amber-400/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
-                                                <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-warning accent-amber-500" checked={formData.outgoingAction === 'UNASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'UNASSIGN'})} />
+                                            <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'UNASSIGN' ? 'bg-surface-card border-warning shadow-md ring-1 ring-warning/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
+                                                <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-warning accent-warning" checked={formData.outgoingAction === 'UNASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'UNASSIGN'})} />
                                                 <div className="flex flex-col">
                                                     <span className="text-[11px] font-black text-content uppercase tracking-widest leading-none">Quitar Asignación (Flotante)</span>
                                                     <span className="text-[10px] font-bold text-content-3 mt-1.5 leading-tight">Quedará temporalmente "Sin Asignar" a disposición de RRHH.</span>

@@ -59,7 +59,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                         type="datetime-local"
                         value={value}
                         onChange={e => setValue(e.target.value)}
-                        className="w-full text-[16px] text-content-2 bg-surface-card border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-300"
+                        className="w-full text-[16px] text-content-2 bg-surface-card border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-chart-3/30 focus:border-chart-3"
                     />
                 </div>
 

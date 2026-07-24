@@ -17,7 +17,7 @@ import {
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
 
-const EXPAND_BG     = 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30';
+const EXPAND_BG     = 'bg-gradient-to-br from-chart-1/10 via-white/50 to-slate-50/30';
 const EXPAND_BORDER = 'border-chart-1/30';
 
 const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '', caja_especial: false };

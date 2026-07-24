@@ -147,7 +147,7 @@ const BranchTabInmueble = ({
                             <div className="md:col-span-2 flex items-center gap-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl">
                                 <AlertCircle size={18} className="text-warning shrink-0" />
                                 <p className="text-[11px] font-black uppercase tracking-widest text-warning-text">
-                                    Vencimiento calculado del contrato: <span className="text-amber-900 bg-white px-3 py-1 rounded-lg shadow-sm ml-2">{new Date(rentContract.endDate).toLocaleDateString()}</span>
+                                    Vencimiento calculado del contrato: <span className="text-warning-text bg-white px-3 py-1 rounded-lg shadow-sm ml-2">{new Date(rentContract.endDate).toLocaleDateString()}</span>
                                 </p>
                             </div>
                         )}

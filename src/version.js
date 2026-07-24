@@ -5,8 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.26';
+export const APP_VERSION = '2.52.27';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.27 — fix(theme): T7.1c CIERRA el gate mecánico — últimos 19
+// archivos (EarlyExitForm, NuevoConteoModal, FormPharmacyRegent,
+// FormNursingRegents, FacturasCompraView, ExpandedPanel, ConfigPanel,
+// TabPoliticaVencimiento, TabMinMaxRequests, PauseModal, ItemSections,
+// TabReglas, TabEnCurso, ReenvioLlegadaModal, ProgramarEntregaModal,
+// VentasPperdidasView, IOSTestView, BranchDetailView, AuditView,
+// FormTurnos, FormLeadership, BranchTabServicios, BranchTabInmueble,
+// SidebarSyncStatus, PushPromptBanner, LiquidToast, DataTable,
+// CrearRutaModal). Mismo patrón de media-migración en la enorme mayoría.
+//
+// Re-verificación completa del proyecto (src/views + src/components) con
+// el regex del gate — incluyendo el gap de ring-*/via-* encontrado en esta
+// sesión — da como resultado SOLO 3 tipos de excepción documentada
+// restantes: (1) superficies fijas-oscuras (TabStaff, TabHistory,
+// TimeClockView, AttendanceMonitorView.isDarkConcept — tokens base
+// correctos ahí, ya verificado); (2) el shimmer decorativo de IA
+// indigo/purple/cyan repetido idéntico en 6+ archivos (TabStaff,
+// TabHistory, BranchesView, TabExpediente, FormAiSchedulerPreview) más un
+// variante único no-repetido en FormWfmAnalytics; (3) _StatCardPreview.jsx,
+// archivo temporal marcado explícitamente para borrar, fuera de alcance.
+// T7.1 (gate mecánico de estandarización de color) queda CERRADO.
+
 
 // v2.52.26 — fix(theme): T7.1c — estandariza colores en 12 archivos más
 // (TabBonificaciones, TabLaboratorios, ReceptionActions, FilterPill,

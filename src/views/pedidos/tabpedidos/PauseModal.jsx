@@ -28,7 +28,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-chart-9/10 border border-chart-9/30">
                             <Coffee size={15} className="text-chart-9-text shrink-0" />
                             <div>
-                                <p className="text-[12px] font-semibold text-teal-800">Almuerzo detectado en el kiosko</p>
+                                <p className="text-[12px] font-semibold text-chart-9-text">Almuerzo detectado en el kiosko</p>
                                 <p className="text-[11px] text-chart-9-text">Tu marcaje de salida a almuerzo se registró hoy.</p>
                             </div>
                         </div>

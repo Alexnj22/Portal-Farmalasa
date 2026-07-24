@@ -197,7 +197,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                     <span className="text-[7px] font-black uppercase tracking-wide text-warning leading-none">Borrador</span>
                                                     <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-warning/40 bg-warning/10">
                                                         <span className="text-warning font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
-                                                        <span className="text-amber-300">·</span>
+                                                        <span className="text-warning">·</span>
                                                         <span className="text-warning font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
                                                     </div>
                                                 </div>

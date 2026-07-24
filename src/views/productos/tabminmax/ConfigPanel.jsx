@@ -154,7 +154,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                 {/* Footer */}
                 <div className="px-4 py-3 border-t border-slate-100 flex items-center gap-2">
                     <button onClick={handleSave} disabled={saving}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-bold text-white bg-brand hover:bg-blue-700 transition-colors disabled:opacity-60">
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-bold text-white bg-brand hover:bg-chart-1 transition-colors disabled:opacity-60">
                         {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}
                         {saved ? '¡Guardado!' : 'Guardar configuración'}
                     </button>

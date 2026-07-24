@@ -172,7 +172,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                 </div>
 
                                 {/* ZONA DE ANUALIDAD */}
-                                <div className="bg-gradient-to-br from-amber-50/80 to-amber-100/30 p-4 rounded-2xl border border-warning/30 shadow-inner mt-2 transition-all duration-500 hover:shadow-sm">
+                                <div className="bg-gradient-to-br from-warning/10 to-warning/20 p-4 rounded-2xl border border-warning/30 shadow-inner mt-2 transition-all duration-500 hover:shadow-sm">
                                     <div className="flex items-center gap-2 mb-3">
                                         <Receipt size={14} className="text-warning" strokeWidth={2.5}/>
                                         <h5 className="text-[10px] font-black uppercase tracking-widest text-warning-text">Control de Anualidad</h5>
@@ -187,7 +187,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                                 <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border transition-transform duration-300 group-hover/btn:scale-105 ${nurse.anualidadFile || nurse.anualidadUrl ? 'bg-white text-warning shadow-sm border-warning/30' : 'bg-white text-warning border-warning/30 group-hover/btn:text-warning'}`}>
                                                     {nurse.anualidadFile || nurse.anualidadUrl ? <CheckCircle2 size={14} strokeWidth={2.5}/> : <UploadCloud size={14}/>}
                                                 </div>
-                                                <p className="text-[10px] font-black text-warning-text truncate transition-colors group-hover/btn:text-amber-900">
+                                                <p className="text-[10px] font-black text-warning-text truncate transition-colors group-hover/btn:text-warning-text">
                                                     {nurse.anualidadFile ? nurse.anualidadFile.name : nurse.anualidadUrl ? "Recibo guardado" : "Subir recibo PDF..."}
                                                 </p>
                                             </div>

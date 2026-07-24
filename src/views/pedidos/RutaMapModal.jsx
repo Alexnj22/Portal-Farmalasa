@@ -4,15 +4,23 @@ import { supabase } from '../../supabaseClient';
 import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
 import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
+import { registerPlugin } from '@capacitor/core';
 
 // Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)
 const isNative = !!(window.Capacitor?.isNativePlatform?.());
 let CapGeo = null;
-let BgGeo  = null;
 if (isNative) {
   import(/* @vite-ignore */ '@capacitor/geolocation').then(m => { CapGeo = m.Geolocation; }).catch(() => {});
-  import(/* @vite-ignore */ '@capacitor-community/background-geolocation').then(m => { BgGeo = m.BackgroundGeolocation; }).catch(() => {});
 }
+// @capacitor-community/background-geolocation es un plugin 100% nativo sin
+// entrada JS (sin main/module/exports en su package.json) — importarlo con
+// import() dinámico (como antes) hacía que vite:import-analysis intentara
+// resolverlo como paquete real y tirara "Failed to resolve entry", incluso
+// solo con CARGAR este archivo (no con ejecutar la rama isNative). Fix:
+// registerPlugin (la forma documentada por el propio plugin) — resuelve vía
+// @capacitor/core, que sí es un paquete real, y es seguro de llamar también
+// en navegador (fuera de plataforma nativa devuelve un stub sin operar).
+const BgGeo = registerPlugin('BackgroundGeolocation');
 
 function fmtTime(iso) {
   if (!iso) return null;

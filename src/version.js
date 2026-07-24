@@ -5,8 +5,56 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.47.4';
+export const APP_VERSION = '2.47.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.47.5 — fix(pedidos): /pedidos ya no crashea en dev server — import
+// roto de @capacitor-community/background-geolocation.
+//
+// Cierra el bloqueador transversal documentado en AUDITORIA-TEMA-2026-07.md
+// §10.4 desde el inicio de esta sesión de continuación: `/pedidos` tiraba
+// el error boundary/overlay de Vite en cada carga, impidiendo CUALQUIER
+// auditoría (mecánica o visual) sobre esa ruta y sus 4 tabs internas.
+//
+// Causa raíz: @capacitor-community/background-geolocation es un plugin
+// 100% nativo sin entrada JS (sin main/module/exports en su package.json
+// — solo android/, ios/, definitions.d.ts). Dos sitios lo importaban con
+// `import('@capacitor-community/background-geolocation')` dinámico en vez
+// de la forma documentada por el propio plugin (`registerPlugin` desde
+// @capacitor/core): RutaMapModal.jsx:14 y usePedidosData.js:294/319-320.
+// vite:import-analysis resuelve el specifier de un import() dinámico
+// ESTÁTICO (string literal) en tiempo de transform siempre, sin importar
+// el comentario /* @vite-ignore */ ni el guard isNative en runtime — por
+// eso bastaba con que /pedidos CARGARA estos archivos (no que ejecutara
+// la rama nativa) para que el dev server tirara "Failed to resolve entry
+// for package...". Esto significa que la sintaxis rota tampoco habría
+// resuelto en un build nativo real — es probable que el tracking GPS de
+// rutas nunca haya funcionado correctamente en producción tampoco.
+//
+// Fix: ambos sitios reemplazados por `registerPlugin('BackgroundGeolocation')`
+// desde @capacitor/core (paquete real, con main/module correctos, y
+// seguro de llamar también en navegador — fuera de plataforma nativa
+// devuelve un stub que no opera). El guard isNative se mantiene en el
+// PUNTO DE USO (llamadas a addWatcher/removeWatcher), no en el registro
+// del plugin.
+//
+// Límite de verificación conocido: no hay forma de probar el tracking
+// GPS real en un dispositivo nativo desde este entorno de desarrollo.
+// Verificado solo lo verificable aquí: /pedidos carga sin error boundary
+// ni overlay de Vite (confirmado con Playwright, las 5 tabs — Generar,
+// Pedidos, Historial Rutas, Métricas, Reglas de Despacho — renderizan),
+// `npm run build` pasa, sin errores de consola nuevos. Verificación en
+// dispositivo nativo real queda a cargo del usuario, fuera de esta sesión.
+//
+// Con /pedidos desbloqueada, se completó también la cobertura de
+// modales pendiente de T4: CrearRutaModal (vía el botón "Crear Ruta" de
+// un pedido "Por despachar") y el modal "Nueva Quincena" de /payroll
+// (FormNewPayrollPeriod, disparado por un botón ícono-only sin
+// aria-label — requería un selector estructural, no de texto) — ambos
+// limpios a 1024×768, sin scroll horizontal. LlegadaModal/RecepcionModal/
+// ReenvioLlegadaModal quedan documentados como no-alcanzables con la
+// data actual (cero pedidos en estado "Completados" en este momento) —
+// no es un bug, es un estado de datos del negocio.
 
 // v2.47.4 — refactor(cleanup): elimina ShiftExceptionModal huérfano +
 // fix(responsive): touch targets del widget grid de DashboardView.

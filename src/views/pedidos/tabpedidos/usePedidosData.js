@@ -21,8 +21,18 @@ import {
     fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
 } from '../../../data/pedidos';
+import { registerPlugin } from '@capacitor/core';
 
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
+
+// @capacitor-community/background-geolocation es un plugin 100% nativo sin
+// entrada JS — el import() dinámico que se usaba antes hacía que
+// vite:import-analysis intentara resolverlo como paquete real al cargar
+// este archivo (no al ejecutar la rama isNative) y tiraba "Failed to
+// resolve entry", rompiendo /pedidos en el dev server. registerPlugin (la
+// forma documentada por el plugin, vía @capacitor/core que sí es un
+// paquete real) es seguro de llamar también fuera de plataforma nativa.
+const BackgroundGeolocation = registerPlugin('BackgroundGeolocation');
 
 export function usePedidosData({ searchTerm = '' }) {
     const { user, getScope, hasPermission } = useAuth();
@@ -291,7 +301,6 @@ export function usePedidosData({ searchTerm = '' }) {
         const startBg = async () => {
             try {
                 if (isNative) {
-                    const { BackgroundGeolocation } = await import(/* @vite-ignore */ '@capacitor-community/background-geolocation');
                     bgGpsWatchRef.current = await BackgroundGeolocation.addWatcher(
                         { backgroundTitle: 'Ruta activa', backgroundMessage: 'Rastreando tu posición.', requestPermissions: true, stale: false, distanceFilter: 20 },
                         (loc) => { if (loc) bgGpsPosRef.current = { lat: loc.latitude, lng: loc.longitude }; }
@@ -316,9 +325,7 @@ export function usePedidosData({ searchTerm = '' }) {
         return () => {
             if (bgGpsWatchRef.current !== null) {
                 if (isNative) {
-                    import(/* @vite-ignore */ '@capacitor-community/background-geolocation')
-                        .then(({ BackgroundGeolocation }) => BackgroundGeolocation.removeWatcher({ id: bgGpsWatchRef.current }))
-                        .catch(() => {});
+                    BackgroundGeolocation.removeWatcher({ id: bgGpsWatchRef.current }).catch(() => {});
                 } else {
                     navigator.geolocation?.clearWatch(bgGpsWatchRef.current);
                 }

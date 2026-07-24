@@ -7,18 +7,18 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
     const hasCriticalAlerts = aiCopilotAlerts.some(a => a.type === 'danger');
     const hasWarningAlerts = aiCopilotAlerts.some(a => a.type === 'warning');
 
-    let aiBoxBg = "bg-slate-900/80 border-cyan-500/30";
+    let aiBoxBg = "bg-slate-900/80 border-chart-5/30";
     let aiGlow = "bg-chart-5";
     let aiTitle = "Saly AI";
-    let aiIconColor = "text-cyan-400";
+    let aiIconColor = "text-chart-5";
     
     if (hasCriticalAlerts) {
-        aiBoxBg = "bg-rose-950/60 border-rose-500/30";
+        aiBoxBg = "bg-danger/20 border-danger/30";
         aiGlow = "bg-danger";
         aiTitle = "Saly AI (Crítica)";
         aiIconColor = "text-danger-text";
     } else if (hasWarningAlerts) {
-        aiBoxBg = "bg-amber-950/60 border-warning/30";
+        aiBoxBg = "bg-warning/20 border-warning/30";
         aiGlow = "bg-warning";
         aiTitle = "Saly AI (Atención)";
         aiIconColor = "text-warning";
@@ -68,7 +68,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
             <div className={`absolute top-0 right-0 w-32 h-32 ${aiGlow} rounded-full blur-[60px] opacity-15 pointer-events-none`}></div>
             
             <div className="flex items-center justify-between border-b border-border-card pb-2 mb-2 relative z-10 shrink-0">
-                <div className="flex items-center gap-1.5 text-[9px] font-black text-cyan-400 uppercase tracking-widest">
+                <div className="flex items-center gap-1.5 text-[9px] font-black text-chart-5 uppercase tracking-widest">
                     <Bot size={12} className={aiIconColor} /> {aiTitle}
                 </div>
                 <Sparkles size={12} className={`${aiIconColor} ${hasCriticalAlerts || hasWarningAlerts ? 'animate-pulse' : ''}`} />
@@ -81,7 +81,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                             <HeartPulse size={24} strokeWidth={1.5} className="text-success" />
                             <div className="absolute inset-0 bg-success blur-xl opacity-40 animate-pulse"></div>
                         </div>
-                        <p className="text-[10px] font-black tracking-widest uppercase text-emerald-300">Cobertura Óptima</p>
+                        <p className="text-[10px] font-black tracking-widest uppercase text-success">Cobertura Óptima</p>
                         <p className="text-[8px] text-content-3 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
                     </div>
                 ) : (
@@ -90,9 +90,9 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                         const isDanger = group.highestSeverity === 'danger';
                         const isWarning = group.highestSeverity === 'warning';
                         
-                        const cardBg = isDanger ? 'bg-danger/10 hover:bg-danger/20 border-rose-500/30' : isWarning ? 'bg-warning/10 hover:bg-warning/20 border-warning/30' : 'bg-chart-5/10 hover:bg-chart-5/20 border-cyan-500/30';
-                        const textColor = isDanger ? 'text-rose-300' : isWarning ? 'text-amber-300' : 'text-cyan-300';
-                        const iconColor = isDanger ? 'text-danger-text' : isWarning ? 'text-warning' : 'text-cyan-400';
+                        const cardBg = isDanger ? 'bg-danger/10 hover:bg-danger/20 border-danger/30' : isWarning ? 'bg-warning/10 hover:bg-warning/20 border-warning/30' : 'bg-chart-5/10 hover:bg-chart-5/20 border-chart-5/30';
+                        const textColor = isDanger ? 'text-danger' : isWarning ? 'text-warning' : 'text-chart-5';
+                        const iconColor = isDanger ? 'text-danger-text' : isWarning ? 'text-warning' : 'text-chart-5';
                         const Icon = group.isGeneral ? AlertCircle : User;
 
                         // 🚨 1 AVISO: Tarjeta plana y compacta
@@ -139,7 +139,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                                                     <div className="mt-0.5 shrink-0">
                                                         {alert.type === 'danger' ? <AlertTriangle size={9} className="text-danger-text animate-pulse" strokeWidth={2.5} /> :
                                                          alert.type === 'warning' ? <AlertTriangle size={9} className="text-warning" strokeWidth={2.5} /> :
-                                                         <Sparkles size={9} className="text-cyan-400" strokeWidth={2.5} />}
+                                                         <Sparkles size={9} className="text-chart-5" strokeWidth={2.5} />}
                                                     </div>
                                                     <p className="text-[8.5px] font-medium text-white/80 leading-snug">{alert.msg}</p>
                                                 </div>

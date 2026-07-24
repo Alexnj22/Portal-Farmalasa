@@ -371,7 +371,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
             {canEdit && getEffectiveStatus(emp) === 'En Vacaciones' && (
                 <button onClick={handleVacationRecall} disabled={!canEdit}
-                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
+                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-warning to-chart-4 text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                     <Palmtree size={14} strokeWidth={3}/> <span className="hidden sm:inline">Ingreso en Vacaciones</span>
                 </button>
             )}
@@ -398,7 +398,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Personal"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
+                            <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
                             <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand transition-colors relative z-10" />
                         </button>
                     )}
@@ -436,7 +436,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </div>
                         </div>
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className="p-2.5 bg-pink-50 text-pink-500 rounded-xl shadow-sm border border-pink-100/50"><Cake size={18} strokeWidth={2.5}/></div>
+                            <div className="p-2.5 bg-chart-6/10 text-chart-6 rounded-xl shadow-sm border border-chart-6/30"><Cake size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Edad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-content">{age ? `${age} Años` : 'N/D'}</p>
@@ -831,15 +831,15 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                     let cellBg;
                                                     if (isSelected) {
-                                                        cellBg = 'bg-success shadow-[0_2px_8px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/40';
+                                                        cellBg = 'bg-success shadow-[0_2px_8px_rgba(16,185,129,0.45)] ring-2 ring-success/40';
                                                     } else if (isToday) {
                                                         cellBg = 'bg-brand';
                                                     } else if (isInsurance && hasPermit) {
-                                                        cellBg = 'bg-gradient-to-br from-amber-100 to-violet-100 border border-chart-3/30';
+                                                        cellBg = 'bg-gradient-to-br from-warning/10 to-chart-3/10 border border-chart-3/30';
                                                     } else if (isInsurance) {
-                                                        cellBg = 'bg-chart-3/10 border border-violet-300';
+                                                        cellBg = 'bg-chart-3/10 border border-chart-3/30';
                                                     } else if (hasPermit && hasDisab) {
-                                                        cellBg = 'bg-gradient-to-br from-amber-100 to-red-100 border border-warning/30';
+                                                        cellBg = 'bg-gradient-to-br from-warning/10 to-danger/10 border border-warning/30';
                                                     } else if (hasPermit) {
                                                         cellBg = 'bg-warning/10 border border-warning/30';
                                                     } else if (hasDisab) {
@@ -870,7 +870,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-slate-700' : ''}>
                                                                             <div className="flex items-center justify-between gap-3">
                                                                                 <span className="text-[11px] font-black">{item.label}</span>
-                                                                                {item.hoursStr && <span className="text-[10px] font-bold text-amber-300 whitespace-nowrap">{item.hoursStr}</span>}
+                                                                                {item.hoursStr && <span className="text-[10px] font-bold text-warning whitespace-nowrap">{item.hoursStr}</span>}
                                                                             </div>
                                                                             {item.note && <p className="text-[10px] text-content-3 mt-0.5 leading-snug whitespace-normal">{item.note}</p>}
                                                                         </div>
@@ -893,7 +893,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <span className="text-[9px] font-black text-content-2 uppercase tracking-widest">Incapacidad</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="w-3 h-3 rounded-sm bg-chart-3/10 border border-violet-300 flex-shrink-0"/>
+                                                    <span className="w-3 h-3 rounded-sm bg-chart-3/10 border border-chart-3/30 flex-shrink-0"/>
                                                     <span className="text-[9px] font-black text-content-2 uppercase tracking-widest">Día 4+ Seguro</span>
                                                 </div>
                                                 {ausenciasSelectedDay && (
@@ -998,7 +998,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     </h3>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="p-5 bg-gradient-to-br from-emerald-50 to-white rounded-[1.5rem] border border-success/30 shadow-sm">
+                                                    <div className="p-5 bg-gradient-to-br from-success/10 to-white rounded-[1.5rem] border border-success/30 shadow-sm">
                                                         <p className="text-[10px] font-black uppercase tracking-widest text-success/70 mb-1">Salario Base Contractual</p>
                                                         <p className="text-2xl font-black text-success-text tracking-tight">${emp.salary || emp.base_salary || '0.00'}</p>
                                                     </div>
@@ -1183,7 +1183,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     setTimeout(() => setCopiedPwd(false), 2000);
                                 }}
                                 title="Copiar"
-                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${copiedPwd ? 'bg-success text-white' : 'bg-brand text-white hover:bg-blue-700'}`}>
+                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${copiedPwd ? 'bg-success text-white' : 'bg-brand text-white hover:bg-chart-1'}`}>
                                 {copiedPwd ? <Check size={18} strokeWidth={2.5} /> : <Copy size={17} strokeWidth={2.2} />}
                             </button>
                         </div>

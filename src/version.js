@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.10';
+export const APP_VERSION = '2.52.11';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.11 — fix(theme): T7.1c — estandariza colores en SalyCopilot.jsx
+// (misma tarjeta SALY fija-oscura que TabShifts.jsx, tokens base) y
+// EmployeeDetailView.jsx (botón "Ingreso en Vacaciones" amber→warning,
+// card de cumpleaños pink→chart-6, leyenda de calendario de ausencias
+// violet→chart-3 consistente en 3 lugares, card de salario emerald→success).
+
 
 // v2.52.10 — fix(theme): T7.1c — estandariza colores en
 // TabShifts.jsx (tarjetas SALY fijas-oscuras, mismo criterio de tokens

@@ -153,8 +153,8 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
 
     // Nuevos card
     const nuevosBg = filterNuevos
-        ? 'bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px'
-        : 'bg-white border-slate-100 hover:border-success/30 hover:bg-success/10';
+        ? 'bg-success/10 border-success/50 shadow-md shadow-success/20 -translate-y-px'
+        : 'bg-white border-border-card hover:border-success/30 hover:bg-success/10';
 
     const nuevosIconBg = filterNuevos
         ? 'bg-white'
@@ -550,7 +550,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     const bodegaActiveBtn = 'bg-white text-warning shadow-sm';
 
     const inp = (sala) =>
-        `bg-surface-card-hover text-content-2 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-slate-200 focus:ring-brand/30' : 'border-warning/30 focus:ring-amber-400/30'}`;
+        `bg-surface-card-hover text-content-2 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-slate-200 focus:ring-brand/30' : 'border-warning/30 focus:ring-warning/30'}`;
 
     return (
         <div className="space-y-2">
@@ -934,7 +934,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     // ── Expanded-row theme tokens ────────────────────────────────────────────
     const xk = {
         container: 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-brand/[0.12]',
-        loadingRow: 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-chart-1/30',
+        loadingRow: 'bg-gradient-to-br from-chart-1/10 via-white/60 to-slate-50/30 border-t border-chart-1/30',
         loadingText: 'text-content-3',
         alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
         alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',

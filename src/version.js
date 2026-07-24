@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.23';
+export const APP_VERSION = '2.52.24';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.24 — fix(theme): T7.1c — estandariza colores en 11 archivos más
+// (TabPromos, TabMinMax, TabCatalogo, StageAnims, LifecycleTimeline,
+// DifSection, TabMetricas, NoAccessView, LoginView, AnnouncementsView,
+// AccessDeniedView). Mismo patrón de siempre en la mayoría: border/ring
+// crudos junto a bg/text ya tokenizados, y algunos botones/pills azul
+// genérico (bg-blue-600) → chart-1/brand. LoginView.jsx es el único caso
+// nuevo: el resplandor decorativo detrás del logo (violet→blue) se
+// tokenizó a chart-3→chart-1 en vez de dejarse crudo, preservando el
+// mismo look pero theme-reactive — no calificaba como excepción porque no
+// es una superficie fija-oscura, es simple ambient glow en fondo claro.
+
 
 // v2.52.23 — fix(theme): T7.1c — estandariza colores en RecepcionModal.jsx
 // (ring-amber-400→ring-warning ×4), EncuestaAdminView.jsx (mismo

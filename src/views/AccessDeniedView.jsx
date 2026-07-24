@@ -36,9 +36,9 @@ const AccessDeniedView = () => {
             {/* Pulsing rings + icon */}
             <div className="relative mb-10 animate-in zoom-in-75 duration-700 fill-mode-both">
                 <span className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-chart-3/15 animate-ping" style={{ animationDuration: '2.5s' }} />
-                <span className="absolute -inset-6 rounded-full bg-violet-300/8 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.8s' }} />
-                <div className="relative w-24 h-24 rounded-[2rem] bg-white border border-violet-100 shadow-[0_16px_48px_rgba(139,92,246,0.12)] flex items-center justify-center">
-                    <Lock size={38} className="text-violet-300" strokeWidth={1.2} />
+                <span className="absolute -inset-6 rounded-full bg-chart-3/10 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.8s' }} />
+                <div className="relative w-24 h-24 rounded-[2rem] bg-white border border-chart-3/20 shadow-[0_16px_48px_rgba(139,92,246,0.12)] flex items-center justify-center">
+                    <Lock size={38} className="text-chart-3" strokeWidth={1.2} />
                 </div>
             </div>
 

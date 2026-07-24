@@ -54,7 +54,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
         `}>
             {/* Active glow stripe */}
             {promo.estado === 'active' && (
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400/0 via-emerald-400 to-emerald-400/0" />
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-success/0 via-success to-success/0" />
             )}
 
             <div className="p-4">
@@ -323,7 +323,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                                 onClick={() => setFilterState(pf.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all ${
                                     filterState === pf.key
-                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        ? 'bg-chart-1 text-white shadow-sm'
                                         : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover'
                                 }`}
                             >
@@ -371,7 +371,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                     {canEdit && !searchTerm && (
                         <button
                             onClick={() => setShowModal(true)}
-                            className="mt-3 flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors mx-auto"
+                            className="mt-3 flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold bg-chart-1 text-white rounded-xl hover:bg-brand transition-colors mx-auto"
                         >
                             <Plus size={12} /> Nueva Promoción
                         </button>

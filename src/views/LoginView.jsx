@@ -516,7 +516,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         <div className="flex flex-col items-center justify-between min-h-[100dvh] w-full px-5 py-8 gap-4">
             <div className={`flex flex-col items-center gap-2 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
                 <div className="relative">
-                    <div className="absolute -inset-3 rounded-[2rem] blur-xl opacity-40 bg-gradient-to-tr from-violet-500/60 to-blue-400/40" />
+                    <div className="absolute -inset-3 rounded-[2rem] blur-xl opacity-40 bg-gradient-to-tr from-chart-3/60 to-chart-1/40" />
                     <div className="relative w-16 h-16 rounded-[1.5rem] bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[0_8px_24px_rgba(110,70,220,0.18),inset_0_2px_0_rgba(255,255,255,1)]">
                         <img src="/Logo192.png" alt="FarmaLasa" className="w-10 h-10 object-contain" />
                     </div>
@@ -572,7 +572,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const renderDesktopLayout = () => (
         <div className="relative flex items-center justify-center w-full min-h-[100dvh] px-6 py-10">
             <div className={`relative w-full max-w-[480px] z-10 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
-                <div className="absolute -inset-6 rounded-[3.5rem] blur-2xl opacity-18 bg-gradient-to-b from-violet-400 via-indigo-300 to-blue-400 pointer-events-none" />
+                <div className="absolute -inset-6 rounded-[3.5rem] blur-2xl opacity-18 bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none" />
 
                 <div className="relative rounded-[3rem] px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[0_40px_100px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/26 via-transparent to-transparent pointer-events-none rounded-[3rem]" />
@@ -580,7 +580,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {/* Logo */}
                     <div className="relative flex flex-col items-center gap-3">
                         <div className="relative group/logo">
-                            <div className="absolute -inset-4 rounded-[2.5rem] blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-500 bg-gradient-to-tr from-violet-500/55 to-blue-400/38" />
+                            <div className="absolute -inset-4 rounded-[2.5rem] blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-500 bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
                             <div className="relative w-[88px] h-[88px] rounded-[1.75rem] bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[0_12px_40px_rgba(110,70,220,0.16),inset_0_2px_0_rgba(255,255,255,1)]"
                                 style={{ animation:'lgn-logo 4.5s ease-in-out infinite' }}>
                                 <img src="/Logo192.png" alt="FarmaLasa" className="w-[58px] h-[58px] object-contain" />

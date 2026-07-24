@@ -143,7 +143,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             type="text" placeholder="Nota (opcional)…"
                                             value={notaSel[item.id] ?? ''}
                                             onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
-                                            className="flex-1 text-[16px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-violet-400 bg-white placeholder-slate-300"
+                                            className="flex-1 text-[16px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-chart-3 bg-white placeholder-slate-300"
                                         />
                                         <button
                                             onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}
@@ -164,12 +164,12 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                             {/* ── Estado: propuesta — mostrar propuesta ── */}
                             {res === 'propuesta' && !readOnly && (
                                 <>
-                                    <div className="flex items-start gap-1.5 text-[10px] bg-chart-3/10 rounded-lg px-2.5 py-1.5 border border-violet-100">
+                                    <div className="flex items-start gap-1.5 text-[10px] bg-chart-3/10 rounded-lg px-2.5 py-1.5 border border-chart-3/20">
                                         {resueltoEmp?.photo_url
                                             ? <img src={resueltoEmp.photo_url} className="w-5 h-5 rounded-full object-cover border border-white shadow-sm shrink-0 mt-0.5" alt="" />
                                             : <UserCircle2 size={14} className="text-chart-3-text shrink-0 mt-0.5" />}
                                         <div className="flex-1">
-                                            <span className="font-semibold text-violet-800">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
+                                            <span className="font-semibold text-chart-3-text">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
                                             {resueltoEmp && <span className="text-chart-3-text"> — {resueltoEmp.name?.split(' ')[0]}</span>}
                                             {item.resolucion_nota && <p className="text-chart-3-text italic">{item.resolucion_nota}</p>}
                                         </div>

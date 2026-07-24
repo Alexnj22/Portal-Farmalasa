@@ -1009,7 +1009,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     ) && <span className="shrink-0 text-[8px] font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="Retirado de MIN·MAX en todas las salas">SIN SALAS</span>}
                                                     {limitedData && (
                                                         <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
-                                                            className="shrink-0 text-[8px] font-black text-chart-7-text bg-chart-7/10 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">
+                                                            className="shrink-0 text-[8px] font-black text-chart-7-text bg-chart-7/10 border border-chart-7/20 px-1.5 py-0.5 rounded-full cursor-help">
                                                             {row.draft_data_days}d DATOS
                                                         </span>
                                                     )}
@@ -1029,7 +1029,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     )}
                                                     <span className="text-content-3 text-[10px] select-none mx-0.5">|</span>
                                                     {noHistory && (
-                                                        <span className="text-[10px] text-yellow-600 font-semibold italic">Sin ventas</span>
+                                                        <span className="text-[10px] text-chart-7-text font-semibold italic">Sin ventas</span>
                                                     )}
                                                     {isSparse && (
                                                         <span className="text-[10px] text-warning-text font-semibold flex items-center gap-0.5">
@@ -1151,7 +1151,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover border-border-card'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-warning-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
-                                                    {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
+                                                    {(dead || noHistory) && <div className="text-[8px] text-chart-7-text font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                                 </div>
                                             );
 

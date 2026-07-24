@@ -120,7 +120,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
         </div>
         <div className={`w-full rounded-full h-2.5 overflow-hidden border ${ann.priority === 'URGENT' && !isScheduled ? 'bg-danger/10 border-danger/30' : 'bg-surface-card border-border-card'}`}>
           <div
-            className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'bg-danger' : ann.readPercentage === 100 ? 'bg-success' : isScheduled ? 'bg-indigo-300' : 'bg-brand'}`}
+            className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'bg-danger' : ann.readPercentage === 100 ? 'bg-success' : isScheduled ? 'bg-chart-3' : 'bg-brand'}`}
             style={{ width: `${ann.readPercentage}%` }}
           ></div>
         </div>
@@ -625,12 +625,12 @@ const AnnouncementsView = ({ openModal }) => {
 
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
-                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-warning/40 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
+                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-warning/40 focus:ring-warning/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
-                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-warning/40 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
+                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-warning/40 focus:ring-warning/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div className="pt-3 border-t border-border-card">

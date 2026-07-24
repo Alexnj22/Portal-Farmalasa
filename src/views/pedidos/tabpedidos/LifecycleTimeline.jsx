@@ -13,8 +13,8 @@ function fmtHM(iso) {
 
 // Todos los nodos activos/completados en un solo color indigo
 const tlDot    = () => 'bg-chart-3';
-const tlLine   = () => 'bg-indigo-300';
-const tlBorder = () => 'border-indigo-400';
+const tlLine   = () => 'bg-chart-3/40';
+const tlBorder = () => 'border-chart-3/60';
 const tlGlow   = () => 'rgba(99,102,241';
 
 // ruta_entregado se inserta en índice 4; Llegada→5, Finalizado→6, extras→≥7
@@ -50,7 +50,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
                                     <span className="text-white font-semibold">{fmtHM(pause.reanudado_at)}</span>
                                     {empName(pause.reanudado_por) && <span className="text-content-3"> · {empName(pause.reanudado_por)}</span>}
                                   </>
-                                : <span className="text-amber-300 font-semibold">En curso</span>}
+                                : <span className="text-warning font-semibold">En curso</span>}
                         </div>
                     </div>
                 </div>

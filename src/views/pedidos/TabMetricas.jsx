@@ -36,11 +36,11 @@ function avg(arr) {
 function StatCard({ icon: Icon, label, value, color = 'blue', sub = null }) {
     const colors = {
         blue:    'text-chart-1-text bg-chart-1/10 border-chart-1/30',
-        teal:    'text-chart-9-text bg-chart-9/10 border-teal-100',
+        teal:    'text-chart-9-text bg-chart-9/10 border-chart-9/20',
         indigo:  'text-chart-3-text bg-chart-3/10 border-chart-3/30',
         amber:   'text-warning bg-warning/10 border-warning/30',
         emerald: 'text-success bg-success/10 border-success/30',
-        violet:  'text-chart-3-text bg-chart-3/10 border-violet-100',
+        violet:  'text-chart-3-text bg-chart-3/10 border-chart-3/20',
     };
     return (
         <div className={`${GLASS} px-4 py-3 flex items-center gap-3`}>
@@ -164,7 +164,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                         onClick={() => setRange(r.key)}
                         className={`text-[11px] px-3 py-1.5 rounded-full border font-medium transition-colors ${
                             range === r.key
-                                ? 'bg-blue-600 text-white border-blue-600'
+                                ? 'bg-chart-1 text-white border-chart-1'
                                 : 'bg-white text-content-3 border-slate-200 hover:border-slate-300 hover:text-content-2'
                         }`}
                     >

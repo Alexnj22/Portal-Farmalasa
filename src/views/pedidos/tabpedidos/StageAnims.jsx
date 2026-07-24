@@ -24,10 +24,10 @@ export function MotorcycleAnim() {
 export function BoxStackAnim() {
     return (
         <div className="relative w-10 h-9 shrink-0">
-            <motion.div className="absolute bottom-0 left-0 w-9 h-4 rounded-md bg-blue-200 border border-chart-1/40 shadow-sm" animate={{ y: [0, -1, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.3, ease: 'easeInOut' }} />
-            <motion.div className="absolute bottom-[14px] left-1 w-7 h-3.5 rounded bg-blue-300 border border-chart-1" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.1, ease: 'easeInOut' }} />
+            <motion.div className="absolute bottom-0 left-0 w-9 h-4 rounded-md bg-chart-1/30 border border-chart-1/40 shadow-sm" animate={{ y: [0, -1, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.3, ease: 'easeInOut' }} />
+            <motion.div className="absolute bottom-[14px] left-1 w-7 h-3.5 rounded bg-chart-1/50 border border-chart-1" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.1, ease: 'easeInOut' }} />
             <motion.div className="absolute bottom-[25px] left-2 w-5 h-3 rounded bg-chart-1 border border-chart-1" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.0, ease: 'easeInOut' }} />
-            <motion.div className="absolute bottom-[34px] left-3 w-3 h-2.5 rounded bg-chart-1 border border-blue-600" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: -0.1, ease: 'easeInOut' }} />
+            <motion.div className="absolute bottom-[34px] left-3 w-3 h-2.5 rounded bg-chart-1 border border-brand" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: -0.1, ease: 'easeInOut' }} />
         </div>
     );
 }

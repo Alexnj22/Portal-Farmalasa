@@ -1128,7 +1128,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
                     const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
-                    const expandBg     = 'bg-gradient-to-br from-blue-50/30 via-white/40 to-slate-50/20';
+                    const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-white/40 to-slate-50/20';
                     const expandBorder = 'border-chart-1/30';
                     const cardNormal   = 'bg-surface-card border-border-card';
                     const cardCross    = 'bg-warning/10 border-warning/30';
@@ -1138,7 +1138,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                             <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-chart-1/10' : ''}>
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
-                                        {i === 0 ? <Trophy size={15} className="text-yellow-500" />
+                                        {i === 0 ? <Trophy size={15} className="text-chart-7" />
                                             : i === 1 ? <Trophy size={15} className="text-content-3" />
                                             : i === 2 ? <Trophy size={15} className="text-warning" />
                                             : <span className="text-xs text-content-3 font-bold w-4 text-center">{i + 1}</span>}
@@ -1868,7 +1868,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
                                         className={isExpanded ? 'bg-chart-1/10' : ''}>
                                         <DataCell className="text-[11px] font-bold">
-                                            {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
+                                            {globalIdx === 0 ? <Star size={15} className="text-chart-7 fill-yellow-400" />
                                                 : <span className="text-content-3">{globalIdx + 1}</span>}
                                         </DataCell>
                                         <DataCell className="max-w-[220px]">
@@ -1988,7 +1988,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </DataCell>
                                     </DataRow>
                                     {isExpanded && !privacyMode && (
-                                        <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
+                                        <tr className="bg-gradient-to-b from-chart-1/10 to-slate-50/10">
                                             <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
@@ -2093,7 +2093,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             </div>
                                                                                             <div className="w-full flex flex-col justify-end rounded-t-lg overflow-hidden" style={{ height: 44 }}>
                                                                                                 <div
-                                                                                                    className={`w-full transition-all duration-500 rounded-t-lg ${isLatest ? 'bg-gradient-to-t from-blue-500 to-blue-400' : 'bg-gradient-to-t from-blue-200 to-blue-100'}`}
+                                                                                                    className={`w-full transition-all duration-500 rounded-t-lg ${isLatest ? 'bg-gradient-to-t from-chart-1 to-chart-1/70' : 'bg-gradient-to-t from-chart-1/30 to-chart-1/20'}`}
                                                                                                     style={{ height: `${Math.max(barPct, 5)}%` }}
                                                                                                 />
                                                                                             </div>

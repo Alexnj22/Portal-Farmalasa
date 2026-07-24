@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.20';
+export const APP_VERSION = '2.52.21';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.21 — fix(theme): T7.1c — estandariza colores en VentasView.jsx
+// (trofeo 1er lugar yellow-500→chart-7, exact match dorado; expansiones de
+// fila y bar chart mensual blue→chart-1) y StaffManagementView.jsx
+// (Maternidad y cumpleaños pink→chart-6 consistente con AppLayout/
+// FormPlanificador/ScheduleCalendar).
+
 
 // v2.52.20 — fix(theme): T7.1c — estandariza colores en
 // EmployeeFormModal.jsx. Mismo patrón de siempre: bordes purple-100/

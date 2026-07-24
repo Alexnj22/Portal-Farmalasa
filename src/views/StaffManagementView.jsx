@@ -73,7 +73,7 @@ const getStatusInfo = (rawStatus) => {
   if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-chart-5-text bg-chart-5/10 border-chart-5/30' };
   if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/10 border-warning/30' };
   if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-danger-text bg-danger/10 border-danger/30' };
-  if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-pink-600 bg-pink-50/80 border-pink-200' };
+  if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-chart-6-text bg-chart-6/10 border-chart-6/30' };
   if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-chart-2-text bg-chart-2/10 border-chart-2/30' };
   if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/10 border-danger/30' };
   if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-slate-300' };
@@ -282,7 +282,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
   const rowCelebrationClass = birthdayInfo?.isToday
-    ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-pink-50 via-amber-50/40 to-pink-50 ring-1 ring-pink-200/70 shadow-[0_2px_16px_rgba(236,72,153,0.10)]'
+    ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-chart-6/10 via-warning/10 to-chart-6/10 ring-1 ring-chart-6/30 shadow-[0_2px_16px_rgba(236,72,153,0.10)]'
     : '';
 
   return (
@@ -294,7 +294,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
             {birthdayInfo?.isToday && (
-                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-pink-500 border-2 border-white shadow-sm z-20 flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
+                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-white shadow-sm z-20 flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
                     <span className="text-[9px] leading-none">🎂</span>
                 </span>
             )}
@@ -323,8 +323,8 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 
               {birthdayInfo && (
                 <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.tooltip}>
-                  <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-pink-600 scale-125' : 'text-pink-500'} shrink-0`} />
-                  <span className={`text-[8px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-pink-600 px-1 rounded' : 'text-pink-600 bg-pink-100 px-1 rounded'}`}>
+                  <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-chart-6-text scale-125' : 'text-chart-6'} shrink-0`} />
+                  <span className={`text-[8px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6 px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
                      {birthdayInfo.label}
                   </span>
                 </div>

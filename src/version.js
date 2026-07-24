@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.3';
+export const APP_VERSION = '2.52.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.4 — fix(theme): T7.1c — estandariza colores en FacturacionView.jsx.
+//
+// TIPO_PAGO_THEME (tarjeta/crédito/transferencia/cheque/bitcoin): cada fila
+// ya tenía card/rowHover/expand tokenizados de una migración anterior pero
+// header (gradiente) y btn (botón sólido) seguían crudos — patrón
+// "media migración" repetido varias veces en el proyecto. Además 3 tiras de
+// stat-cards (Pendientes/CCF urgentes/Solventadas en la vista de Ventas,
+// Pendientes MH/CCF urgentes/Días restantes en Pendiente MH, y Saltos/Sin
+// resolver/Solventados/Campos nulos en Saltos) con gradientes de severidad
+// crudos (red/amber/emerald/orange) → danger/warning/success + chart-4/6/9
+// para el segundo color del gradiente. bg-white/border-slate-100 sueltos en
+// esas mismas tarjetas → bg-surface-card/border-border-card.
+
 
 // v2.52.3 — fix(theme): T7.1c — estandariza colores en AppLayout.jsx (sidebar).
 //

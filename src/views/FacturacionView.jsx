@@ -50,11 +50,11 @@ const TIPO_PAGO_LABELS = {
 };
 
 const TIPO_PAGO_THEME = {
-    tarjeta:       { card: 'border-chart-1/30',   header: 'from-blue-600 to-blue-500',     rowHover: 'hover:bg-chart-1/10',   expand: 'bg-chart-1/10 border-chart-1/30',   input: 'border-chart-1/30 focus:ring-blue-300',   btn: 'bg-blue-600 hover:bg-blue-700'   },
-    credito:       { card: 'border-chart-3/30',  header: 'from-indigo-600 to-indigo-500', rowHover: 'hover:bg-chart-3/10', expand: 'bg-chart-3/10 border-chart-3/30', input: 'border-chart-3/30 focus:ring-indigo-300', btn: 'bg-chart-3 hover:bg-indigo-700' },
-    transferencia: { card: 'border-chart-5/30',    header: 'from-cyan-600 to-cyan-500',     rowHover: 'hover:bg-chart-5/10',    expand: 'bg-chart-5/10 border-cyan-100',    input: 'border-chart-5/30 focus:ring-cyan-300',    btn: 'bg-cyan-600 hover:bg-cyan-700'    },
-    cheque:        { card: 'border-chart-9/30',    header: 'from-teal-600 to-teal-500',     rowHover: 'hover:bg-chart-9/10',    expand: 'bg-chart-9/10 border-teal-100',    input: 'border-chart-9/30 focus:ring-teal-300',    btn: 'bg-teal-600 hover:bg-teal-700'    },
-    bitcoin:       { card: 'border-chart-4/30',  header: 'from-orange-500 to-orange-400', rowHover: 'hover:bg-chart-4/10', expand: 'bg-chart-4/10 border-chart-4/30', input: 'border-chart-4/30 focus:ring-orange-300', btn: 'bg-chart-4 hover:bg-orange-600' },
+    tarjeta:       { card: 'border-chart-1/30',   header: 'from-chart-1 to-brand',     rowHover: 'hover:bg-chart-1/10',   expand: 'bg-chart-1/10 border-chart-1/30',   input: 'border-chart-1/30 focus:ring-chart-1/50',   btn: 'bg-chart-1 hover:bg-brand'   },
+    credito:       { card: 'border-chart-3/30',  header: 'from-chart-3 to-chart-6', rowHover: 'hover:bg-chart-3/10', expand: 'bg-chart-3/10 border-chart-3/30', input: 'border-chart-3/30 focus:ring-chart-3/50', btn: 'bg-chart-3 hover:bg-chart-6' },
+    transferencia: { card: 'border-chart-5/30',    header: 'from-chart-5 to-chart-1',     rowHover: 'hover:bg-chart-5/10',    expand: 'bg-chart-5/10 border-chart-5/20',    input: 'border-chart-5/30 focus:ring-chart-5/50',    btn: 'bg-chart-5 hover:bg-chart-1'    },
+    cheque:        { card: 'border-chart-9/30',    header: 'from-chart-9 to-success',     rowHover: 'hover:bg-chart-9/10',    expand: 'bg-chart-9/10 border-chart-9/20',    input: 'border-chart-9/30 focus:ring-chart-9/50',    btn: 'bg-chart-9 hover:bg-success'    },
+    bitcoin:       { card: 'border-chart-4/30',  header: 'from-chart-4 to-warning', rowHover: 'hover:bg-chart-4/10', expand: 'bg-chart-4/10 border-chart-4/30', input: 'border-chart-4/30 focus:ring-chart-4/50', btn: 'bg-chart-4 hover:bg-warning' },
 };
 
 // SV time
@@ -384,9 +384,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes',   value: filtered.length, icon: AlertTriangle, grad: filtered.length > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-danger' : 'text-content-3', bg: 'border-slate-100 bg-white' },
-                    { label: 'CCF urgentes', value: ccfCount,        icon: AlertTriangle, grad: ccfCount > 0 ? 'from-red-600 to-red-400' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',        bg: 'border-slate-100 bg-white' },
-                    { label: 'Solventadas',  value: resolved.length, icon: CheckCircle2,  grad: resolved.length > 0 ? 'from-emerald-500 to-teal-400' : 'from-slate-400 to-slate-300', text: resolved.length > 0 ? 'text-success' : 'text-content-3', bg: 'border-slate-100 bg-white' },
+                    { label: 'Pendientes',   value: filtered.length, icon: AlertTriangle, grad: filtered.length > 0 ? 'from-danger to-chart-4' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-danger' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
+                    { label: 'CCF urgentes', value: ccfCount,        icon: AlertTriangle, grad: ccfCount > 0 ? 'from-danger to-danger/70' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',        bg: 'border-border-card bg-surface-card' },
+                    { label: 'Solventadas',  value: resolved.length, icon: CheckCircle2,  grad: resolved.length > 0 ? 'from-success to-chart-9' : 'from-slate-400 to-slate-300', text: resolved.length > 0 ? 'text-success' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
                 ].map(({ label, value, icon: Icon, grad, text, bg }) => (
                     <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
                         <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
@@ -832,15 +832,15 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const daysLeftLabel = daysLeft === 0 ? 'Último día' : daysLeft;
     const daysLeftText  = daysLeft === 0 ? 'text-danger-text' : daysLeft <= 2 ? 'text-danger-text' : daysLeft <= 5 ? 'text-warning-text' : 'text-success-text';
     const daysLeftBg    = daysLeft === 0 ? 'bg-danger/10 border-danger/30' : daysLeft <= 2 ? 'bg-danger/10 border-danger/30' : daysLeft <= 5 ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30';
-    const daysLeftGrad  = daysLeft === 0 ? 'from-red-600 to-red-400' : daysLeft <= 2 ? 'from-red-500 to-red-400' : daysLeft <= 5 ? 'from-amber-500 to-orange-400' : 'from-emerald-500 to-teal-400';
+    const daysLeftGrad  = daysLeft === 0 ? 'from-danger to-danger/70' : daysLeft <= 2 ? 'from-danger to-danger/70' : daysLeft <= 5 ? 'from-warning to-chart-4' : 'from-success to-chart-9';
 
     return (
         <div className="p-5 md:p-6 space-y-5">
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-amber-500 to-orange-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-warning-text' : 'text-content-3', bg: filtered.length > 0 ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-slate-200' },
-                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',           bg: ccfCount > 0 ? 'bg-danger/10 border-danger/30' : 'bg-surface-card-hover border-slate-200' },
+                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-warning to-chart-4' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-warning-text' : 'text-content-3', bg: filtered.length > 0 ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-border-card' },
+                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-danger to-chart-4' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',           bg: ccfCount > 0 ? 'bg-danger/10 border-danger/30' : 'bg-surface-card-hover border-border-card' },
                     { label: 'Días restantes', value: daysLeftLabel,  icon: History,        grad: daysLeftGrad, text: daysLeftText, bg: daysLeftBg },
                 ].map(({ label, value, icon: Icon, grad, text, bg }) => (
                     <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
@@ -1254,12 +1254,12 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Saltos',       value: gaps.length,         icon: History,       grad: gaps.length > 0 ? 'from-orange-500 to-amber-400' : 'from-slate-400 to-slate-300',           text: gaps.length > 0 ? 'text-chart-4-text' : 'text-content-3' },
-                    { label: 'Sin resolver', value: pendingGaps.length,  icon: AlertTriangle, grad: pendingGaps.length > 0 ? 'from-red-500 to-orange-400' : 'from-emerald-500 to-teal-400',     text: pendingGaps.length > 0 ? 'text-danger' : 'text-success' },
-                    { label: 'Solventados',  value: resolvedGaps.length, icon: CheckCircle2,  grad: resolvedGaps.length > 0 ? 'from-emerald-500 to-teal-400' : 'from-slate-400 to-slate-300',   text: resolvedGaps.length > 0 ? 'text-success' : 'text-content-3' },
-                    { label: 'Campos nulos', value: activeNulls.length,  icon: AlertTriangle, grad: activeNulls.length > 0 ? 'from-red-500 to-rose-400' : 'from-slate-400 to-slate-300',        text: activeNulls.length > 0 ? 'text-danger' : 'text-content-3' },
+                    { label: 'Saltos',       value: gaps.length,         icon: History,       grad: gaps.length > 0 ? 'from-chart-4 to-warning' : 'from-slate-400 to-slate-300',           text: gaps.length > 0 ? 'text-chart-4-text' : 'text-content-3' },
+                    { label: 'Sin resolver', value: pendingGaps.length,  icon: AlertTriangle, grad: pendingGaps.length > 0 ? 'from-danger to-chart-4' : 'from-success to-chart-9',     text: pendingGaps.length > 0 ? 'text-danger' : 'text-success' },
+                    { label: 'Solventados',  value: resolvedGaps.length, icon: CheckCircle2,  grad: resolvedGaps.length > 0 ? 'from-success to-chart-9' : 'from-slate-400 to-slate-300',   text: resolvedGaps.length > 0 ? 'text-success' : 'text-content-3' },
+                    { label: 'Campos nulos', value: activeNulls.length,  icon: AlertTriangle, grad: activeNulls.length > 0 ? 'from-danger to-chart-6' : 'from-slate-400 to-slate-300',        text: activeNulls.length > 0 ? 'text-danger' : 'text-content-3' },
                 ].map(({ label, value, icon: Icon, grad, text }) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
+                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-card bg-surface-card">
                         <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                             <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
@@ -2056,7 +2056,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             <DataCell>
                                                 {r.proof_url ? (
                                                     <button type="button" onClick={() => openStoredFile(r.proof_url)}
-                                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-chart-1-text hover:text-blue-800 transition-colors">
+                                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-chart-1-text hover:text-brand transition-colors">
                                                         <Paperclip size={12} /> Ver <ExternalLink size={10} />
                                                     </button>
                                                 ) : <span className="text-[12px] text-content-3 italic">Sin comprobante</span>}

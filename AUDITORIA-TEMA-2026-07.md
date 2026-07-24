@@ -882,14 +882,38 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   el barrido mecánico de scroll horizontal) en `/monitor`, `/my-requests`,
   `/minmax`, `/ventas`. Las 4 limpias — stat cards en grid responsive de 2
   columnas, tabs con scroll horizontal esperado, estados de carga
-  (skeletons) y vacío (`/minmax` sin sucursal seleccionada) renderizando
-  correctamente. Único hallazgo: en `/monitor`, la foto de un empleado
-  (Alva Gabriela Ayala Tobar) muestra el ícono roto de imagen + texto
-  "Foto" en vez de un placeholder — es un problema de dato (`photo_url`
-  vacío o URL firmada que falló), no de CSS/tema, fuera de alcance de
-  este plan. **No cubierto**: el resto de las ~110 vistas (esta revisión
-  fue deliberadamente acotada a las 4 vistas prioritarias de tienda, no
-  un barrido exhaustivo — `/pedidos` sigue bloqueada, ver nota abajo).
+  (skeletons) renderizando correctamente. Único hallazgo: en `/monitor`,
+  la foto de un empleado (Alva Gabriela Ayala Tobar) muestra el ícono
+  roto de imagen + texto "Foto" en vez de un placeholder — es un
+  problema de dato (`photo_url` vacío o URL firmada que falló), no de
+  CSS/tema, fuera de alcance de este plan.
+- **Revisión dirigida por tamaño de archivo (v2.47.3, a pedido del
+  usuario)**: las capturas anteriores (T4 completo + esta sesión) ya
+  cubrían las vistas más grandes de mayor riesgo — `VentasView.jsx`
+  (2,490 líneas, #1), `FacturacionView.jsx` (2,208, #2),
+  `productos/TabCatalogo.jsx` (1,954, #4, origen del bug de stat-cards),
+  `purchases/FacturasCompraView.jsx` (1,346) — pero quedaban 8 de las 13
+  vistas más grandes del proyecto sin verificación visual: se revisaron
+  a 1024×768 en esta sesión: `AttendanceAuditView.jsx` (1,503, `/audit`),
+  `VacationPlanView.jsx` (1,151, `/vacation-plan`), `CotizacionesView.jsx`
+  (1,137, `/cotizaciones`), `EncuestaView.jsx`/`EncuestaAdminView.jsx`
+  (1,514/1,364, `/encuesta`, `/encuesta-admin`), `PermissionsView.jsx`
+  (1,101, `/permissions`), `productos/TabMinMax.jsx` (1,707 líneas, la
+  vista de mayor tamaño sin cubrir hasta ahora — tab "Sucursal" de
+  `/minmax`) y `productos/TabMinMaxNetwork.jsx` (tab "Red"). Las 8
+  limpias — sin scroll horizontal, stat cards/pills en fila completa,
+  tablas anchas (`TabMinMaxNetwork`, 7 columnas de sucursal) sin desborde.
+  Único hallazgo (no es bug de tema): la tab "Sucursal" de `TabMinMax.jsx`
+  renderiza completamente vacía (0 caracteres de texto, confirmado por
+  DOM) para la cuenta de prueba usada — no es un problema de contraste
+  (se verificó que no hay texto invisible), es más probable un tema de
+  alcance de datos/scope de sucursal para esta cuenta específica;
+  la tab "Red" (misma vista, alcance de red completa) sí muestra datos
+  correctamente. No investigado más a fondo por estar fuera del alcance
+  de este plan de tema/responsive. `EmployeeDetailView.jsx` (1,266
+  líneas, se abre haciendo clic en un empleado desde `/staff`, no es una
+  ruta directa) queda como el único archivo del top-13 por tamaño aún sin
+  revisión visual esta sesión.
 - **`/pedidos`** (y sus tabs: `TabPedidos`, `TabReglas`, `TabMetricas`,
   `TabRutas`) sigue bloqueada para cualquier auditoría (visual o
   mecánica vía Playwright logueado) hasta que se resuelva el bug

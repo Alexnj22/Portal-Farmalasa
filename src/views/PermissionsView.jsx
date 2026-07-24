@@ -22,7 +22,7 @@ import {
 const MODULE_GROUPS = [
     {
         group: 'Autogestión',
-        color: 'text-green-600',
+        color: 'text-chart-2-text',
         modules: [
             { key: 'emp_requests',      label: 'Mis Solicitudes',     desc: 'Crear y seguir solicitudes propias (permiso, vacación, etc.)', icon: ClipboardList, hasApprove: false },
             { key: 'emp_announcements', label: 'Mis Avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icon: Bell,          hasApprove: false },
@@ -195,38 +195,38 @@ const ROLE_META = {
     SUPERADMIN: {
         label: 'Super Admin', locked: true,
         desc: 'Acceso total e irrestricto al sistema. No modificable.',
-        color: 'from-yellow-400 to-amber-500', textColor: 'text-warning-text',
+        color: 'from-warning to-chart-4', textColor: 'text-warning-text',
         bg: 'bg-warning/10', border: 'border-warning/30',
     },
     ADMIN: {
         label: 'Administrador', locked: false,
         desc: 'Gestión completa del sistema y del personal.',
-        color: 'from-violet-500 to-indigo-600', textColor: 'text-chart-3-text',
+        color: 'from-chart-3 to-chart-6', textColor: 'text-chart-3-text',
         bg: 'bg-chart-3/10', border: 'border-chart-3/30',
     },
     JEFE: {
         label: 'Jefe', locked: false,
         desc: 'Aprobaciones, horarios y gestión de su equipo.',
-        color: 'from-blue-400 to-blue-600', textColor: 'text-chart-1-text',
+        color: 'from-chart-1 to-brand', textColor: 'text-chart-1-text',
         bg: 'bg-chart-1/10', border: 'border-chart-1/30',
     },
     SUBJEFE: {
         label: 'Sub-Jefe', locked: false,
         desc: 'Apoyo en aprobaciones y gestión operativa.',
-        color: 'from-cyan-400 to-cyan-600', textColor: 'text-chart-5-text',
+        color: 'from-chart-5 to-chart-1', textColor: 'text-chart-5-text',
         bg: 'bg-chart-5/10', border: 'border-chart-5/30',
     },
     SUPERVISOR: {
         label: 'Supervisor', locked: false,
         desc: 'Supervisión de asistencia y aprobaciones.',
-        color: 'from-emerald-400 to-teal-500', textColor: 'text-chart-9-text',
+        color: 'from-success to-chart-9', textColor: 'text-chart-9-text',
         bg: 'bg-chart-9/10', border: 'border-chart-9/30',
     },
     EMPLEADO: {
         label: 'Empleado', locked: false,
         desc: 'Acceso al portal de autogestión personal solamente.',
         color: 'from-slate-400 to-slate-500', textColor: 'text-content-2',
-        bg: 'bg-surface-card-hover', border: 'border-slate-200',
+        bg: 'bg-surface-card-hover', border: 'border-border-card',
     },
 };
 
@@ -235,13 +235,13 @@ const ROLE_ORDER = ['SUPERADMIN', 'ADMIN', 'JEFE', 'SUBJEFE', 'SUPERVISOR', 'EMP
 
 // Paleta de colores para roles organizacionales (cíclica por índice)
 const ROLE_COLORS = [
-    { color: 'from-violet-500 to-indigo-600', textColor: 'text-chart-3-text', bg: 'bg-chart-3/10', border: 'border-chart-3/30' },
-    { color: 'from-blue-400 to-blue-600',     textColor: 'text-chart-1-text',   bg: 'bg-chart-1/10',   border: 'border-chart-1/30'   },
-    { color: 'from-emerald-400 to-teal-500',  textColor: 'text-chart-9-text',   bg: 'bg-chart-9/10',   border: 'border-chart-9/30'   },
-    { color: 'from-rose-400 to-pink-600',     textColor: 'text-pink-700',   bg: 'bg-pink-50',   border: 'border-pink-200'   },
-    { color: 'from-amber-400 to-orange-500',  textColor: 'text-chart-4-text', bg: 'bg-chart-4/10', border: 'border-chart-4/30' },
-    { color: 'from-cyan-400 to-cyan-600',     textColor: 'text-chart-5-text',   bg: 'bg-chart-5/10',   border: 'border-chart-5/30'   },
-    { color: 'from-slate-400 to-slate-600',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-slate-200'  },
+    { color: 'from-chart-3 to-chart-6', textColor: 'text-chart-3-text', bg: 'bg-chart-3/10', border: 'border-chart-3/30' },
+    { color: 'from-chart-1 to-brand',   textColor: 'text-chart-1-text',   bg: 'bg-chart-1/10',   border: 'border-chart-1/30'   },
+    { color: 'from-success to-chart-9', textColor: 'text-chart-9-text',   bg: 'bg-chart-9/10',   border: 'border-chart-9/30'   },
+    { color: 'from-chart-6 to-chart-3', textColor: 'text-chart-6-text',   bg: 'bg-chart-6/10',   border: 'border-chart-6/30'   },
+    { color: 'from-warning to-chart-4', textColor: 'text-chart-4-text', bg: 'bg-chart-4/10', border: 'border-chart-4/30' },
+    { color: 'from-chart-5 to-chart-1', textColor: 'text-chart-5-text',   bg: 'bg-chart-5/10',   border: 'border-chart-5/30'   },
+    { color: 'from-slate-400 to-slate-600',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-border-card'  },
 ];
 
 const PERMISSION_TYPES = [
@@ -251,8 +251,8 @@ const PERMISSION_TYPES = [
 ];
 
 const SCOPE_OPTIONS = [
-    { value: 'ALL',    label: 'Todos',        color: 'bg-chart-3 text-white', ring: 'ring-indigo-200' },
-    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-chart-9 text-white',   ring: 'ring-teal-200'   },
+    { value: 'ALL',    label: 'Todos',        color: 'bg-chart-3 text-white' },
+    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-chart-9 text-white' },
 ];
 
 // Tooltip descriptivo por tipo de permiso
@@ -831,13 +831,13 @@ const PermissionsView = () => {
                                     className={`w-full text-left rounded-[1.5rem] border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? isSURol
-                                                ? 'bg-gradient-to-br from-amber-50/90 to-orange-50/60 border-warning/30 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
+                                                ? 'bg-gradient-to-br from-warning/10 to-chart-4/10 border-warning/30 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
                                                 : `${cs.bg} ${cs.border} shadow-[0_4px_16px_rgba(0,0,0,0.08)]`
                                             : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`relative w-8 h-8 rounded-xl bg-gradient-to-br ${isSURol ? 'from-amber-400 to-orange-500 shadow-[0_2px_8px_rgba(217,119,6,0.35)]' : cs.color + ' shadow-sm'} flex items-center justify-center flex-shrink-0`}>
+                                        <div className={`relative w-8 h-8 rounded-xl bg-gradient-to-br ${isSURol ? 'from-warning to-chart-4 shadow-[0_2px_8px_rgba(217,119,6,0.35)]' : cs.color + ' shadow-sm'} flex items-center justify-center flex-shrink-0`}>
                                             <ShieldCheck size={13} className="text-white" strokeWidth={2} />
                                             {isSURol && (
                                                 <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
@@ -847,7 +847,7 @@ const PermissionsView = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-amber-900' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
+                                                <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-warning-text' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
                                                 {isSURol && <span className="text-[7px] font-black uppercase tracking-widest bg-warning text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
                                             </div>
                                             <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-warning-text/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
@@ -862,7 +862,7 @@ const PermissionsView = () => {
                         </div>
 
                         {/* Info */}
-                        <div className="mt-4 mb-10 px-4 py-3 rounded-2xl bg-surface-card-hover/80 border border-slate-100">
+                        <div className="mt-4 mb-10 px-4 py-3 rounded-2xl bg-surface-card-hover/80 border border-border-card">
                             <div className="flex items-start gap-2">
                                 <Info size={11} className="text-content-3 flex-shrink-0 mt-0.5" strokeWidth={2} />
                                 <p className="text-[10px] text-content-3 font-medium leading-snug">
@@ -877,7 +877,7 @@ const PermissionsView = () => {
                         {!selectedRoleId ? (
                             /* Empty state */
                             <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 animate-in fade-in duration-500">
-                                <div className="w-16 h-16 rounded-[1.5rem] bg-surface-card border border-slate-100 shadow-sm flex items-center justify-center mb-4">
+                                <div className="w-16 h-16 rounded-[1.5rem] bg-surface-card border border-border-card shadow-sm flex items-center justify-center mb-4">
                                     <MousePointerClick size={28} className="text-content-3" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[15px] font-black text-content-3">Selecciona un cargo</p>
@@ -896,16 +896,16 @@ const PermissionsView = () => {
                                 return (
                                 <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
                                     isRoleSU
-                                        ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-300/5 backdrop-blur-xl border-warning/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
+                                        ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-chart-7/5 backdrop-blur-xl border-warning/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
                                         : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_2px_12px_rgba(0,0,0,0.04)]'
                                 }`}>
-                                    {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-amber-300/30 blur-xl pointer-events-none" />}
+                                    {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-warning/30 blur-xl pointer-events-none" />}
                                     <div className="relative p-3.5 flex flex-col gap-3">
                                         {/* Icon + toggle row */}
                                         <div className="flex items-center justify-between">
                                             <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                                                 isRoleSU
-                                                    ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_3px_12px_rgba(217,119,6,0.45)] scale-100'
+                                                    ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[0_3px_12px_rgba(217,119,6,0.45)] scale-100'
                                                     : 'bg-surface-card border border-border-card scale-90'
                                             }`}>
                                                 <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={1.8} />
@@ -925,7 +925,7 @@ const PermissionsView = () => {
                                         {/* Label */}
                                         <div>
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-amber-900' : 'text-content-2'}`}>
+                                                <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-warning-text' : 'text-content-2'}`}>
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
@@ -952,14 +952,14 @@ const PermissionsView = () => {
                             {(() => {
                                 const currentLevel = rolePriceLevels[selectedRoleId] ?? null;
                                 const PRICE_OPTS = [
-                                    { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock,     grad: 'from-emerald-500 to-teal-600'  },
-                                    { value: 'vineta',      label: 'Viñeta',      sub: 'precio viñeta',     icon: DollarSign, grad: 'from-blue-500 to-indigo-600'   },
-                                    { value: 'descuento_1', label: 'Desc. 1',     sub: 'descuento 1',       icon: DollarSign, grad: 'from-violet-500 to-purple-600' },
-                                    { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-amber-500 to-orange-600'  },
-                                    { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-rose-500 to-pink-600'     },
-                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-cyan-500 to-sky-600'      },
+                                    { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock,     grad: 'from-chart-2 to-chart-9'  },
+                                    { value: 'vineta',      label: 'Viñeta',      sub: 'precio viñeta',     icon: DollarSign, grad: 'from-chart-1 to-chart-3'   },
+                                    { value: 'descuento_1', label: 'Desc. 1',     sub: 'descuento 1',       icon: DollarSign, grad: 'from-chart-3 to-chart-6' },
+                                    { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-warning to-chart-4'  },
+                                    { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-danger to-chart-6'     },
+                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-chart-5 to-chart-1'      },
                                     { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-slate-600 to-slate-800'   },
-                                    { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-orange-500 to-red-600'    },
+                                    { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-chart-4 to-danger'    },
                                 ];
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
@@ -987,7 +987,7 @@ const PermissionsView = () => {
                                                     className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                                         isActive
                                                             ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.2)]`
-                                                            : 'bg-surface-card border-slate-100 text-content-3 hover:border-slate-200 hover:text-content-2'
+                                                            : 'bg-surface-card border-border-card text-content-3 hover:border-content-3 hover:text-content-2'
                                                     } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
                                                     <OptIcon size={9} strokeWidth={2.5} />
                                                     {opt.label}

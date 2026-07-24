@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.1';
+export const APP_VERSION = '2.52.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.2 — fix(theme): T7.1c — cierra TabStaff.jsx y PermissionsView.jsx
+// (los 2 archivos con más ocurrencias sueltas restantes tras el pase global).
+//
+// TabStaff.jsx: getStaffTheme (ring/gradient del theme "purple" y "blue"),
+// gradiente WFM dashboard header (indigo→chart-1), track de progreso del
+// déficit staff (amber-200→warning/20). Confirmados y documentados como
+// excepción los 3 patrones "siempre oscuros" del archivo: panel debug
+// bg-slate-900 (Motor de Sincronización WFM), tooltips flotantes
+// bg-slate-950/80 (fijos oscuros, sus textos claros son intencionales — un
+// token theme-reactive ahí perdería contraste), y el "shimmer" indigo→
+// purple→cyan del botón de IA (idéntico y consistente en 6 archivos del
+// proyecto — una identidad decorativa ya estandarizada, no una duplicación
+// a resolver).
+//
+// PermissionsView.jsx: color de grupo "Autogestión" (green-600→chart-2),
+// ROLE_META + ROLE_COLORS (6 gradientes de rol + el 4to color pink/rose sin
+// tokenizar), tratamiento completo de Super Usuario (amber/orange→warning/
+// chart-4/chart-7 en 5 lugares), 8 gradientes de PRICE_OPTS (nivel de
+// precio máximo por cargo), bordes slate-100/200 sueltos→border-border-card,
+// y un campo `ring` de SCOPE_OPTIONS muerto (nunca leído) eliminado en vez
+// de tokenizado. Build verificado.
 
 // v2.52.1 — fix(theme): T7.1 — corrige clases de opacidad doble generadas
 // por el pase global de v2.52.0 (v2.52.1).

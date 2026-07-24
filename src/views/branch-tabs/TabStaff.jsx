@@ -16,10 +16,10 @@ import { fetchBranchHourlySalesAll } from '../../data/schedules';
 // ============================================================================
 const getStaffTheme = (colorTheme) => {
     const themes = {
-        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-amber-400 to-orange-500' },
-        blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-indigo-500' },
-        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-emerald-400 to-teal-500' },
-        purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-purple-400', badge: 'bg-chart-3', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-purple-400 to-fuchsia-500' },
+        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-warning to-chart-4' },
+        blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-chart-3' },
+        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-success to-chart-9' },
+        purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-chart-3', badge: 'bg-chart-3', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-chart-3 to-chart-6' },
         slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
     };
     return themes[colorTheme] || themes.slate;
@@ -460,7 +460,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <span className="text-[7px] font-black uppercase tracking-widest text-warning leading-none">Déficit Staff</span>
                                     <span className="text-[9px] font-black leading-none text-danger">-{minStaff - coverageStaffCount}</span>
                                 </div>
-                                <div className="w-full h-1.5 bg-amber-200/50 rounded-full overflow-hidden">
+                                <div className="w-full h-1.5 bg-warning/20 rounded-full overflow-hidden">
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
                                 </div>
                             </div>
@@ -665,7 +665,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <div className="pt-2">
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-brand/5 to-indigo-500/5 border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />

@@ -106,7 +106,7 @@ function ChartTooltip({ active, payload, label, goals, isProjected }) {
     <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-border-card px-4 py-3 min-w-[200px]">
       <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border-card">
         <span className="text-[11px] font-black uppercase tracking-widest text-white/60">{label}</span>
-        {isProjected && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-chart-1/20 text-blue-300 border border-chart-1/30">Proyección</span>}
+        {isProjected && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-chart-1/20 text-chart-1 border border-chart-1/30">Proyección</span>}
       </div>
       {payload.filter(p => p.value != null).map(p => {
         const goal = goals[p.name];
@@ -357,8 +357,8 @@ export default function MetasView() {
             ? `Proy. al ${liveData.daysInMonth} may · día ${liveData.day}`
             : (cur ? MONTHS[cur.idx]?.label : '—');
 
-          const borderColor = status === 'green'  ? 'border-green-400/60'
-                            : status === 'orange' ? 'border-orange-400/60'
+          const borderColor = status === 'green'  ? 'border-success/60'
+                            : status === 'orange' ? 'border-warning/60'
                             : status === 'red'    ? 'border-danger/60'
                             : 'border-slate-200';
 
@@ -406,7 +406,7 @@ export default function MetasView() {
                   <div className="h-1.5 rounded-full overflow-hidden bg-surface-card-hover">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        status==='green' ? 'bg-green-500' : status==='orange' ? 'bg-chart-4' : 'bg-danger'
+                        status==='green' ? 'bg-success' : status==='orange' ? 'bg-warning' : 'bg-danger'
                       }`}
                       style={{width:`${Math.min(pct*100,100)}%`}}
                     />
@@ -420,7 +420,7 @@ export default function MetasView() {
 
               {trend != null && (
                 <div className={`flex items-center gap-1 text-[10px] font-semibold ${
-                  trend > 0 ? 'text-green-500' : trend < 0 ? 'text-danger' : 'text-content-3'
+                  trend > 0 ? 'text-success' : trend < 0 ? 'text-danger' : 'text-content-3'
                 }`}>
                   {trend > 0 ? <TrendingUp size={12}/> : trend < 0 ? <TrendingDown size={12}/> : <Minus size={12}/>}
                   {trend !== 0 && <span>{trend > 0 ? '+' : ''}{fmtK(trend)} vs mes anterior</span>}
@@ -605,8 +605,8 @@ export default function MetasView() {
         <div className={`px-5 py-3 border-b ${divider}`}>
           <p className={`text-[13px] font-black ${txt}`}>Detalle Mensual</p>
           <p className={`text-[11px] ${muted}`}>
-            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 inline-block"/>Cumplió ≥ 100%</span>
-            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-chart-4/10 inline-block"/>≥ 95%</span>
+            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-success/10 inline-block"/>Cumplió ≥ 100%</span>
+            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-warning/10 inline-block"/>≥ 95%</span>
             <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-danger/10 border border-danger/40 inline-block"/>No Cumplió &lt; 95%</span>
           </p>
         </div>

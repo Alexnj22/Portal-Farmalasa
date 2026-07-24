@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.18';
+export const APP_VERSION = '2.52.19';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.19 — fix(theme): T7.1c — estandariza colores en MetasView.jsx y
+// FormPlanificador.jsx.
+//
+// MetasView.jsx corrige una inconsistencia real: STATUS_STYLES ya definía
+// 'orange' → warning (bg-warning/10, dot bg-warning) pero la barra de
+// progreso y la leyenda de la tabla seguían usando bg-chart-4 (naranja del
+// gráfico) para el MISMO estado — dos lugares de la misma vista mostraban
+// colores distintos para "en camino a la meta". Unificado a warning.
+// green→success y su borde/leyenda crudos también tokenizados.
+//
+// FormPlanificador.jsx: BeautifulCheckbox (toggle reusable Lactancia/
+// Almuerzo) y el banner de horario real, pink→chart-6 consistente con el
+// resto del proyecto. getConflict() tenía textDark con purple-800/
+// indigo-800 crudos mientras el resto de esos mismos configs ya usaba
+// chart-3-text — completado.
+
 
 // v2.52.18 — fix(theme): T7.1c — estandariza colores en
 // InlineDayEditor.jsx (checkboxes de Almuerzo/Lactancia con ring/text

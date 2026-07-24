@@ -54,7 +54,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
 
 const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
     const isOrange = theme === 'orange';
-    const activeBg = isOrange ? 'bg-chart-4' : 'bg-pink-500';
+    const activeBg = isOrange ? 'bg-chart-4' : 'bg-chart-6';
     const shadowHover = isOrange ? 'hover:shadow-[0_2px_8px_rgba(249,115,22,0.3)]' : 'hover:shadow-[0_2px_8px_rgba(236,72,153,0.3)]';
 
     return (
@@ -222,7 +222,7 @@ const DayRow = memo(({
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
-                                        <Baby size={12} className="text-pink-500"/> Lactancia (+1h)
+                                        <Baby size={12} className="text-chart-6"/> Lactancia (+1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lactationTime} onChange={handleLactationToggle} theme="pink" />
                                 </div>
@@ -254,11 +254,11 @@ const DayRow = memo(({
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-[9.5px] font-black text-content">{formatCompactTime(minsToTime(startMins))}</span>
                                     <ArrowRight size={10} className="text-content-3"/>
-                                    <span className={`text-[9.5px] font-black ${config.lactationTime ? 'text-pink-600' : 'text-content'}`}>
+                                    <span className={`text-[9.5px] font-black ${config.lactationTime ? 'text-chart-6-text' : 'text-content'}`}>
                                         {formatCompactTime(minsToTime(realEndMins))}
                                     </span>
                                     {config.lactationTime && (
-                                        <span className="text-[7.5px] font-bold text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded uppercase tracking-widest border border-pink-100 ml-1">
+                                        <span className="text-[7.5px] font-bold text-chart-6-text bg-chart-6/10 px-1.5 py-0.5 rounded uppercase tracking-widest border border-chart-6/30 ml-1">
                                             Salida extendida (+1h)
                                         </span>
                                     )}
@@ -311,8 +311,8 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         const configs = {
             VACATION: { label: 'Vacaciones', icon: Palmtree, bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning', textDark: 'text-warning-text', iconBg: 'bg-warning/10' },
             DISABILITY: { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-danger/10', border: 'border-danger/30', text: 'text-danger', textDark: 'text-danger-text', iconBg: 'bg-danger/10' },
-            PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-chart-3/10', border: 'border-chart-3/30', text: 'text-chart-3-text', textDark: 'text-purple-800', iconBg: 'bg-chart-3/10' },
-            HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-chart-3/10', border: 'border-chart-3/30', text: 'text-chart-3-text', textDark: 'text-indigo-800', iconBg: 'bg-chart-3/10' }
+            PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-chart-3/10', border: 'border-chart-3/30', text: 'text-chart-3-text', textDark: 'text-chart-3-text', iconBg: 'bg-chart-3/10' },
+            HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-chart-3/10', border: 'border-chart-3/30', text: 'text-chart-3-text', textDark: 'text-chart-3-text', iconBg: 'bg-chart-3/10' }
         };
         return { ...configs[event.type], note: event.note };
     }, [history, getDateOfDay]);

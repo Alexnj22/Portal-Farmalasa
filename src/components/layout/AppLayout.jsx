@@ -533,6 +533,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 type="button"
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!isExpanded ? label : undefined}
+                title={(!isExpanded && !isMobile) ? label : undefined}
                 className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden
                     ${indent ? `px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5${isMobile ? ' min-h-[44px]' : ''}` : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                     ${isActive ? 'text-white' : navItemInactive}
@@ -641,6 +642,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     aria-expanded={isExpanded ? isOpen : (flyout?.type === 'group' && flyout.label === label)}
                     aria-controls={isExpanded ? `nav-group-${key}` : undefined}
                     aria-label={!isExpanded ? label : undefined}
+                    title={(!isExpanded && !isMobile) ? label : undefined}
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-200 group text-left overflow-hidden
                         ${hasActiveChild
                             ? 'text-white'
@@ -807,19 +809,24 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                         {/* ── Nav ── */}
                         <nav ref={navRef} aria-label="Navegación principal" className="relative z-10 flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            {/* Buscador (atajo de teclado en SHORTCUT_LABEL, Mac vs Windows/Linux) — mismo look que un ítem de nav normal, no un bloque aparte */}
+                            {/* Buscador (atajo de teclado en SHORTCUT_LABEL, Mac vs Windows/Linux) — es
+                                una ACCIÓN (abre un modal), no un destino de navegación, así que lleva
+                                fondo/borde permanentes (no solo al hover) + un divisor debajo para que
+                                se lea como un campo separado del resto del menú, no como un ítem más
+                                de la lista (hallazgo de la auditoría UI/UX del menú). */}
                             <button
                                 type="button"
                                 onClick={() => setSearchOpen(true)}
                                 aria-label="Buscar en el menú"
                                 title={`Buscar en el menú (${SHORTCUT_LABEL})`}
-                                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden mb-1
+                                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden
                                     px-3 py-3 xl:px-4 xl:py-3.5
-                                    text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
+                                    bg-white/[0.045] border border-white/[0.07]
+                                    text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
                                     ${focusRing}
                                     active:scale-[0.99] active:translate-y-0`}
                             >
-                                <Search size={20} strokeWidth={1.5} className="flex-shrink-0 text-white/42 group-hover:text-white/80 transition-colors" />
+                                <Search size={20} strokeWidth={1.5} className="flex-shrink-0 text-white/50 group-hover:text-white/80 transition-colors" />
                                 {isExpanded && (
                                     <>
                                         <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap">Buscar</span>
@@ -827,6 +834,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </>
                                 )}
                             </button>
+                            <div className="h-px bg-white/[0.07] mx-1 my-2" />
 
                             <div
                                 className={`absolute left-2 right-2 rounded-[0.875rem] transform-gpu transition-opacity duration-200 pointer-events-none
@@ -915,7 +923,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
                                                 openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                             }}
-                                            onMouseLeave={closeFlyout} aria-label="Mi Perfil"
+                                            onMouseLeave={closeFlyout} aria-label="Mi Perfil" title="Mi Perfil"
                                             className={`w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
                                                 bg-white/[0.08] border border-white/[0.12] text-white/55
                                                 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_12px_rgba(0,0,0,0.4)]
@@ -928,7 +936,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             </span>
                                         )}
                                     </div>
-                                    <button onClick={handleLogout} type="button" aria-label="Cerrar sesión"
+                                    <button onClick={handleLogout} type="button" aria-label="Cerrar sesión" title="Cerrar sesión"
                                         className={`w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
                                             bg-danger/[0.08] border border-danger/[0.12] text-danger/60
                                             hover:text-danger hover:bg-danger/[0.18] hover:border-danger/[0.22]

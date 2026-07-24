@@ -16,7 +16,7 @@ function dotClass(minsAgo, hasError) {
   return 'bg-success shadow-[0_0_4px_rgba(18,183,106,0.8)]';
 }
 
-export default function SidebarSyncStatus({ variant = 'sidebar' }) {
+export default function SidebarSyncStatus() {
   const [branches, setBranches] = useState([]);
   const { permission, subscribed, subscribe, isSupported } = usePushSubscription();
 
@@ -53,17 +53,14 @@ export default function SidebarSyncStatus({ variant = 'sidebar' }) {
   const bellGranted = subscribed && permission === 'granted';
   const bellDenied  = permission === 'denied';
 
-  // 'sidebar' (default): vive sobre el fondo siempre-oscuro del sidebar,
-  // clases bespoke bg-white/N (mismo criterio que AppLayout.jsx/ThemeToggle
-  // variant sidebar — no reaccionan al tema a propósito). 'popover': vive
-  // dentro de un panel data-surface="dropdown" theme-reactive (ej.
-  // SidebarSettingsMenu) — usa tokens reales.
-  const isPopover  = variant === 'popover';
-  const cardCls    = isPopover ? 'bg-surface-card-hover border-border-card' : 'bg-white/[0.06] border-white/[0.09]';
-  const labelCls   = isPopover ? 'text-content-3' : 'text-white/45';
-  const dimIconCls = isPopover ? 'text-content-3' : 'text-white/30';
-  const dotIdleCls = isPopover ? 'bg-content-3/25' : 'bg-white/15';
-  const timeAgoCls = isPopover ? 'text-content-3' : 'text-white/25';
+  // Vive sobre fondo siempre-oscuro (sidebar / SidebarSettingsMenu — ambos
+  // bespoke, no reaccionan al tema a propósito, ver DESIGN.md §2 "Sidebar:
+  // se mantiene oscura e invariante al tema").
+  const cardCls    = 'bg-white/[0.06] border-white/[0.09]';
+  const labelCls   = 'text-white/45';
+  const dimIconCls = 'text-white/30';
+  const dotIdleCls = 'bg-white/15';
+  const timeAgoCls = 'text-white/25';
 
   return (
     <div className="grid grid-cols-2 gap-1.5">
@@ -121,7 +118,7 @@ export default function SidebarSyncStatus({ variant = 'sidebar' }) {
             ${bellGranted
               ? 'bg-success/[0.10] border-success/[0.18] cursor-default'
               : bellDenied
-              ? `${isPopover ? 'bg-surface-card-hover/50' : 'bg-white/[0.03]'} border-white/[0.05] cursor-not-allowed opacity-40`
+              ? 'bg-white/[0.03] border-white/[0.05] cursor-not-allowed opacity-40'
               : `${cardCls} hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18] hover:scale-[1.02] active:scale-[0.98]`
             }`}
         >
@@ -137,7 +134,7 @@ export default function SidebarSyncStatus({ variant = 'sidebar' }) {
             </span>
           </div>
           <span className={`text-[9px] font-black text-center leading-tight ${
-            bellGranted ? 'text-success' : bellDenied ? timeAgoCls : (isPopover ? 'text-content-2' : 'text-white/55')
+            bellGranted ? 'text-success' : bellDenied ? timeAgoCls : 'text-white/55'
           }`}>
             {bellGranted ? 'Activas' : bellDenied ? 'Bloqueadas' : 'Activar'}
           </span>

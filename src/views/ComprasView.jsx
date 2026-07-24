@@ -131,7 +131,11 @@ function ItemsExpand({ receiptId }) {
 
 // ── TabFacturas ───────────────────────────────────────────────────────────────
 
-function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm }) {
+function TabFacturas({
+    dateStart, setDateStart, dateEnd, setDateEnd,
+    suppliers, supplierId, setSupplierId, sinProveedor, setSinProveedor,
+    unlinkedCount, searchTerm,
+}) {
     const [rows,      setRows]      = useState([]);
     const [loading,   setLoading]   = useState(false);
     const [page,      setPage]      = useState(1);
@@ -167,6 +171,67 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
 
     return (
         <div className="flex flex-col gap-4">
+            {/* Aviso global: facturas sin proveedor */}
+            {unlinkedCount > 0 && (
+                <button
+                    onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors w-fit ${
+                        sinProveedor
+                            ? 'bg-warning/10 border-warning/40 text-warning-text'
+                            : 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
+                    }`}
+                >
+                    <AlertTriangle size={12} className="text-warning" />
+                    {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor linkeado — verificar en ERP
+                    <span className="ml-1 text-[10px] font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
+                </button>
+            )}
+
+            {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
+            <div className="flex items-center justify-end gap-3 rounded-2xl bg-surface-card border border-divider px-4 py-2 flex-wrap">
+                {/* Date start */}
+                <div className="flex items-center gap-1.5">
+                    <Calendar size={12} className="text-content-3" />
+                    <input
+                        type="date"
+                        value={dateStart}
+                        onChange={e => setDateStart(e.target.value)}
+                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
+                    />
+                </div>
+
+                <div className="h-5 w-px bg-divider" />
+
+                {/* Date end */}
+                <div className="flex items-center gap-1.5">
+                    <Calendar size={12} className="text-content-3" />
+                    <input
+                        type="date"
+                        value={dateEnd}
+                        onChange={e => setDateEnd(e.target.value)}
+                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
+                    />
+                </div>
+
+                <div className="h-5 w-px bg-divider" />
+
+                {/* Supplier filter */}
+                <div className="flex items-center gap-1.5">
+                    <Users size={12} className="text-content-3" />
+                    <div className="w-[180px]">
+                        <LiquidSelect
+                            value={sinProveedor ? '' : supplierId}
+                            onChange={val => { setSupplierId(val); setSinProveedor(false); }}
+                            disabled={sinProveedor}
+                            options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
+                            placeholder="Todos los proveedores"
+                            compact
+                            bare
+                        />
+                    </div>
+                </div>
+            </div>
+
             {/* Summary line */}
             <div className="text-[11px] text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
@@ -328,98 +393,38 @@ export default function ComprasView() {
             .then(({ count }) => setUnlinkedCount(count || 0));
     }, []);
 
+    // filtersContent es SOLO tabs+búsqueda — una sola fila de header, igual
+    // que FacturasCompraView/LaboratoriosView/PedidosView. El pill de fecha/
+    // proveedor y el aviso de "sin proveedor" viven en el body, junto a la
+    // tabla (regla §17 DESIGN.md — antes vivían aquí, hallazgo de la
+    // auditoría UI/UX del menú, ver TabFacturas).
     const filtersContent = (
-        <div className="flex flex-col gap-2">
-            {/* Aviso global: facturas sin proveedor */}
-            {unlinkedCount > 0 && (
-                <button
-                    onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
-                    className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors w-fit ${
-                        sinProveedor
-                            ? 'bg-warning/10 border-warning/40 text-warning-text'
-                            : 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
-                    }`}
-                >
-                    <AlertTriangle size={12} className="text-warning" />
-                    {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor linkeado — verificar en ERP
-                    <span className="ml-1 text-[10px] font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
-                </button>
-            )}
-
-            <div className="flex items-center gap-3 rounded-2xl bg-surface-card border border-divider px-4 py-2 flex-wrap">
-                {/* Date start */}
-                <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-content-3" />
-                    <input
-                        type="date"
-                        value={dateStart}
-                        onChange={e => setDateStart(e.target.value)}
-                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
-                    />
-                </div>
-
-                <div className="h-5 w-px bg-divider" />
-
-                {/* Date end */}
-                <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-content-3" />
-                    <input
-                        type="date"
-                        value={dateEnd}
-                        onChange={e => setDateEnd(e.target.value)}
-                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
-                    />
-                </div>
-
-                {activeTab === 'facturas' && (
-                    <>
-                        <div className="h-5 w-px bg-divider" />
-                        {/* Supplier filter */}
-                        <div className="flex items-center gap-1.5">
-                            <Users size={12} className="text-content-3" />
-                            <div className="w-[180px]">
-                                <LiquidSelect
-                                    value={sinProveedor ? '' : supplierId}
-                                    onChange={val => { setSupplierId(val); setSinProveedor(false); }}
-                                    disabled={sinProveedor}
-                                    options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
-                                    placeholder="Todos los proveedores"
-                                    compact
-                                    bare
-                                />
-                            </div>
-                        </div>
-                    </>
-                )}
-            </div>
-        </div>
+        <ViewTabBar
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            searchValue={search}
+            onSearchChange={setSearch}
+            showSearch
+        />
     );
 
     return (
-        <>
-            <ViewTabBar
-                tabs={TABS}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                searchValue={search}
-                onSearchChange={setSearch}
-                showSearch
-            />
-
-            <GlassViewLayout icon={ShoppingCart} title="Compras (Bodega)" filtersContent={filtersContent}>
-                {activeTab === 'facturas' && (
-                    <TabFacturas
-                        dateStart={dateStart}
-                        dateEnd={dateEnd}
-                        supplierId={supplierId || null}
-                        sinProveedor={sinProveedor}
-                        searchTerm={search}
-                    />
-                )}
-                {activeTab === 'productos' && (
-                    <TabProductos searchTerm={search} />
-                )}
-            </GlassViewLayout>
-        </>
+        <GlassViewLayout icon={ShoppingCart} title="Compras (Bodega)" filtersContent={filtersContent}>
+            {activeTab === 'facturas' && (
+                <TabFacturas
+                    dateStart={dateStart} setDateStart={setDateStart}
+                    dateEnd={dateEnd} setDateEnd={setDateEnd}
+                    suppliers={suppliers}
+                    supplierId={supplierId || null} setSupplierId={setSupplierId}
+                    sinProveedor={sinProveedor} setSinProveedor={setSinProveedor}
+                    unlinkedCount={unlinkedCount}
+                    searchTerm={search}
+                />
+            )}
+            {activeTab === 'productos' && (
+                <TabProductos searchTerm={search} />
+            )}
+        </GlassViewLayout>
     );
 }

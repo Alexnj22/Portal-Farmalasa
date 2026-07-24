@@ -22,11 +22,21 @@ const combine = (style, mode) => {
 const activeTabCls = 'bg-surface-tab-active text-content shadow-md scale-[1.02]';
 const inactiveTabCls = 'bg-transparent text-content-3 hover:bg-surface-tab-active hover:text-content';
 
-function SegmentedRow({ label, options, activeKey, onPick }) {
+// Variante "dark": para cuando el picker vive dentro de un host siempre-
+// oscuro (SidebarSettingsMenu) en vez de un data-surface="dropdown"
+// reactivo al tema — mismas clases bespoke bg-white/N que el resto del
+// sidebar, no tokens (que resolverían claros y quedarían ilegibles).
+const activeTabClsDark = 'bg-white text-slate-900 shadow-md scale-[1.02]';
+const inactiveTabClsDark = 'bg-transparent text-white/50 hover:bg-white/[0.08] hover:text-white/85';
+
+function SegmentedRow({ label, options, activeKey, onPick, dark }) {
   return (
     <div>
-      <p className="text-[9.5px] font-black uppercase tracking-widest text-content-3 px-0.5 mb-1.5">{label}</p>
-      <div data-surface="tab-track" className="flex items-center gap-1 p-1 rounded-full">
+      <p className={`text-[9.5px] font-black uppercase tracking-widest px-0.5 mb-1.5 ${dark ? 'text-white/40' : 'text-content-3'}`}>{label}</p>
+      <div
+        {...(dark ? {} : { 'data-surface': 'tab-track' })}
+        className={`flex items-center gap-1 p-1 rounded-full ${dark ? 'bg-white/[0.06] border border-white/[0.09]' : ''}`}
+      >
         {Object.entries(options).map(([key, { label: optLabel, Icon }]) => (
           <button
             key={key}
@@ -34,7 +44,7 @@ function SegmentedRow({ label, options, activeKey, onPick }) {
             onClick={() => onPick(key)}
             className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2 rounded-full
               text-[10px] font-black uppercase tracking-wider transition-all duration-200 border border-transparent
-              ${activeKey === key ? activeTabCls : inactiveTabCls}`}
+              ${activeKey === key ? (dark ? activeTabClsDark : activeTabCls) : (dark ? inactiveTabClsDark : inactiveTabCls)}`}
           >
             <Icon size={12} strokeWidth={2.5} />
             {optLabel}
@@ -49,15 +59,17 @@ function SegmentedRow({ label, options, activeKey, onPick }) {
 // para embeber el picker de tema dentro de otro panel (ej. SidebarSettingsMenu)
 // sin anidar un popover dentro de otro. ThemeToggle (default export) sigue
 // siendo el standalone completo, para donde se necesite un selector aparte.
-export function ThemeAxisPicker() {
+// `dark`: usar la paleta bespoke siempre-oscura en vez de tokens reactivos
+// al tema (ver SegmentedRow arriba).
+export function ThemeAxisPicker({ dark = false }) {
   const { isSolid, isDark, setTheme } = useTheme();
   const style = isSolid ? 'solid' : 'liquid';
   const mode = isDark ? 'dark' : 'light';
   return (
     <>
-      <SegmentedRow label="Estilo" options={STYLE_META} activeKey={style}
+      <SegmentedRow label="Estilo" options={STYLE_META} activeKey={style} dark={dark}
         onPick={(key) => setTheme(combine(key, mode))} />
-      <SegmentedRow label="Modo" options={MODE_META} activeKey={mode}
+      <SegmentedRow label="Modo" options={MODE_META} activeKey={mode} dark={dark}
         onPick={(key) => setTheme(combine(style, key))} />
     </>
   );

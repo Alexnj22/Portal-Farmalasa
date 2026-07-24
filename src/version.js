@@ -5,11 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.56.1';
+export const APP_VERSION = '2.57.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
-// v2.56.1 — chore(layout): retira ThemeMigrationRibbon.jsx.
+// v2.57.0 — fix(layout): panel de Ajustes deja de verse "blanco/externo" +
+// aplica los 3 hallazgos de la auditoría UI/UX del menú.
 //
+// Bug real reportado por el usuario con captura: SidebarSettingsMenu usaba
+// data-surface="dropdown" (reactivo al tema — blanco en liquid/solid claro)
+// para un panel anclado al sidebar, que es siempre-oscuro por diseño
+// (DESIGN.md §2). Se veía "como algo externo, no del menú". Fix: el panel
+// pasa a la misma paleta bespoke que ya usan los flyouts de navegación
+// (bg-[#0A1628]/92 + border blanco translúcido), sin reaccionar al tema.
+// De la mano: SidebarSyncStatus pierde el prop `variant` que se le agregó
+// en v2.56.0 (su único consumidor ahora es siempre este panel oscuro, ya
+// no hacía falta la rama reactiva) y ThemeAxisPicker gana un prop `dark`
+// (paleta bg-white/N en vez de tokens) — se sigue usando `data-surface=
+// "dropdown"` reactivo en el ThemeToggle standalone, que sí flota sobre
+// contenido que cambia de tema.
+//
+// Los 3 hallazgos de la auditoría anterior, ahora corregidos:
+// - Flyouts del rail (hover-only): los botones de nav/grupo/perfil/logout
+//   ganan `title=` como fallback nativo (long-press en touch, tooltip en
+//   teclado) — no cambia el click, cero riesgo.
+// - "Buscar ⌘K" se veía idéntico a un ítem de nav: gana fondo/borde
+//   permanentes (antes solo al hover) + un divisor debajo, para leerse
+//   como una acción separada, no un ítem más de la lista.
+// - ComprasView.jsx violaba §17 DESIGN.md (pill de fecha/proveedor en
+//   filtersContent del header en vez del body) — ya documentado en memoria
+//   de sesiones anteriores como deuda conocida. Movido a TabFacturas
+//   (mismo patrón ya aplicado en FacturasCompraView v2.20.5); filtersContent
+//   pasa a ser solo ViewTabBar, que además vivía como sibling suelto FUERA
+//   de GlassViewLayout (bug adicional encontrado al tocar esto — los tabs
+//   no estaban integrados al header sticky como en el resto de la app).
+//
+// Verificado con Playwright: popover oscuro en liquid y solid, sin
+// errores de consola, ComprasView con tabs en el header y pill en el body.
 // Hallazgo de la auditoría UI/UX del menú (a pedido del usuario): el banner
 // "Portal en construcción visual — algunas pantallas se ven distintas
 // mientras avanza la migración de tema" seguía visible en TODA página, para

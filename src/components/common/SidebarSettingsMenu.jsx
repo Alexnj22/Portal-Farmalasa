@@ -10,17 +10,25 @@ import { ThemeAxisPicker } from './ThemeToggle';
 // del usuario ("siento que hay muchos elementos abajo"). Mismo mecanismo de
 // popover portaled que ThemeToggle (rAF tracking + flip + click-outside/
 // Escape) — reusado, no reinventado.
+//
+// El panel NO usa data-surface="dropdown" (reactivo al tema, blanco en
+// liquid/solid claro) — el sidebar es siempre-oscuro por diseño (DESIGN.md
+// §2, "Sidebar: se mantiene oscura e invariante al tema") y este panel es
+// una extensión visual de él, no del contenido de la página. Detectado por
+// el usuario: "se ve blanco, pareciera que es algo externo". Misma paleta
+// bespoke que ya usan los flyouts de navegación (bg-[#0A1628]/.. + border
+// blanco translúcido), no tokens de superficie.
 function CodeCard({ label, value, copied, onCopy }) {
   return (
     <button type="button" onClick={onCopy}
       className="group/code relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2
-        border border-border-card bg-surface-card-hover hover:bg-surface-card transition-all active:scale-[0.97]">
+        border border-white/[0.09] bg-white/[0.06] hover:bg-white/[0.11] hover:border-white/[0.14] transition-all active:scale-[0.97]">
       <div className="flex items-center gap-1 mb-0.5">
-        <span className="text-[8px] font-bold uppercase tracking-wider text-content-3">{label}</span>
+        <span className="text-[8px] font-bold uppercase tracking-wider text-white/45">{label}</span>
       </div>
       <div className="relative h-4 flex items-center justify-center w-full">
-        <span className={`absolute text-[12px] font-black tracking-widest font-mono text-content transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
-        <Copy size={12} className={`absolute text-content-3 transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 group-hover/code:scale-100'}`} />
+        <span className={`absolute text-[12px] font-black tracking-widest font-mono text-white transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
+        <Copy size={12} className={`absolute text-white/50 transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 group-hover/code:scale-100'}`} />
         <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
       </div>
     </button>
@@ -110,17 +118,18 @@ export default function SidebarSettingsMenu({
     <motion.div
       key="settings-popover"
       ref={popoverRef}
-      data-surface="dropdown"
       style={{ top: coords.top, left: coords.left, width: coords.width + 'px' }}
       initial={{ opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 }}
       transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-      className="fixed z-[99999] p-3 flex flex-col gap-3 transform-gpu"
+      className="fixed z-[99999] p-3 flex flex-col gap-3 transform-gpu rounded-[1.4rem]
+        bg-[#0A1628]/92 backdrop-blur-2xl backdrop-saturate-150 border border-white/12
+        shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]"
     >
       {(showPin || showSu) && (
         <div>
-          <p className="text-[9.5px] font-black uppercase tracking-widest text-content-3 px-0.5 mb-1.5">Códigos</p>
+          <p className="text-[9.5px] font-black uppercase tracking-widest text-white/40 px-0.5 mb-1.5">Códigos</p>
           <div className={`grid gap-1.5 ${showPin && showSu ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {showPin && <CodeCard label="PIN" value={authPin} copied={isCopied} onCopy={onCopyPin} />}
             {showSu && <CodeCard label="SU" value={`${authPin}${suSuffix}`} copied={isSuCopied} onCopy={onCopySuPin} />}
@@ -129,13 +138,13 @@ export default function SidebarSettingsMenu({
       )}
 
       <div>
-        <p className="text-[9.5px] font-black uppercase tracking-widest text-content-3 px-0.5 mb-1.5">Sistema</p>
-        <SidebarSyncStatus variant="popover" />
+        <p className="text-[9.5px] font-black uppercase tracking-widest text-white/40 px-0.5 mb-1.5">Sistema</p>
+        <SidebarSyncStatus />
       </div>
 
-      <div className="h-px bg-divider" />
+      <div className="h-px bg-white/[0.08]" />
 
-      <ThemeAxisPicker />
+      <ThemeAxisPicker dark />
     </motion.div>
   );
 

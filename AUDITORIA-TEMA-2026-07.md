@@ -830,8 +830,24 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   primer nivel en `productos`/`schedules`/`ventas`, pero no abrió modales
   individuales (ej. `CrearRutaModal`, `PromoModal`, `RecepcionModal`) ni
   revisó cada tabla/drawer interno a 1024×768.
-- **Touch targets** — no medido sistemáticamente, solo verificado de forma
-  incidental en las vistas de tienda revisadas visualmente.
+- **Touch targets — medido y corregido el hallazgo sistémico (v2.47.3)**:
+  barrido con Playwright en viewport iPhone 13 sobre 9 rutas (`/overview`,
+  `/monitor`, `/my-requests`, `/minmax`, `/ventas`, `/profile`,
+  `/solicitudes`, `/avisos`, `/my-schedule`), midiendo `getBoundingClientRect`
+  de todo `button`/`a[href]`/`[role=button]`/checkbox/radio contra un piso
+  de 40px. Encontrado: 30 elementos de 250×32px, IDÉNTICOS en las 9 rutas
+  — los ítems indentados (hijos de grupo, ej. "Mis Solicitudes" bajo
+  "Solicitudes") del drawer de navegación móvil en `AppLayout.jsx`
+  (`px-2.5 py-2`, ~32px de alto, bien bajo el mínimo de 44px de Apple
+  HIG). Mismo bloque de código sirve al sidebar de escritorio (mouse, sin
+  problema) y al drawer móvil (touch) — fix con `min-h-[44px]` aplicado
+  SOLO cuando `isMobile`. Verificado: 30 → 0 elementos bajo el umbral,
+  captura del drawer confirma que no rompe el layout indentado. **Pendiente,
+  menor prioridad**: los controles de personalizar/redimensionar widgets
+  de `DashboardView.jsx` (20-28px, iconos secundarios de baja frecuencia
+  de uso — "Personalizar", drag-handles de resize) no se tocaron; no son
+  navegación primaria y requerirían rediseño del header del widget, fuera
+  de alcance de un fix mecánico.
 - **Tipografía ≥16px en inputs móviles** — investigado (no solo pendiente):
   `PortalInput.jsx`/`CatalogSelect.jsx` (los `<input>` de texto libre) ya
   usan `text-[16px]` — correcto, sin zoom-on-focus de iOS. El input de

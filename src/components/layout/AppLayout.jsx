@@ -534,7 +534,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!isExpanded ? label : undefined}
                 className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden
-                    ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
+                    ${indent ? `px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5${isMobile ? ' min-h-[44px]' : ''}` : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                     ${isActive ? 'text-white' : navItemInactive}
                     ${focusRing}
                     active:scale-[0.99] active:translate-y-0`}

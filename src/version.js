@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.47.2';
+export const APP_VERSION = '2.47.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.47.3 — fix(responsive): touch targets del drawer móvil bajo 44px
+// (barrido de T4, checklist "touch targets" pendiente desde §10.4).
+//
+// Barrido con Playwright en viewport iPhone 13 sobre 9 rutas (/overview,
+// /monitor, /my-requests, /minmax, /ventas, /profile, /solicitudes,
+// /avisos, /my-schedule): 30 elementos interactivos de 250×32px,
+// consistentes en TODAS las rutas — los ítems indentados (hijos de un
+// grupo, ej. "Mis Solicitudes"/"Gestión de Solicitudes" bajo
+// "Solicitudes") del drawer de navegación móvil en AppLayout.jsx, que
+// usa `px-2.5 py-2` tanto en desktop (mouse, sin problema) como en el
+// drawer móvil (touch, 32px de alto — bien bajo el mínimo de 44px de
+// Apple HIG). Fix: `min-h-[44px]` agregado SOLO cuando `isMobile` es
+// true, sin tocar la densidad del sidebar de escritorio. Verificado con
+// Playwright: 30 → 0 elementos bajo el umbral tras el fix; captura del
+// drawer expandido confirma que "Mis Solicitudes"/"Gestión de
+// Solicitudes" ahora tienen espacio de toque cómodo sin romper el layout
+// indentado. Build + tests (15) verdes.
+//
+// El resto de hallazgos del mismo barrido (controles de personalizar/
+// redimensionar widgets en DashboardView, 20-28px) son iconos secundarios
+// de baja frecuencia de uso, no navegación primaria — quedan
+// documentados como pendiente de menor prioridad en
+// AUDITORIA-TEMA-2026-07.md §10.4, no corregidos en este pase.
 
 // v2.47.2 — refactor(theme): T4 codemod extendido a src/components (49
 // archivos), + fix de un bug real ya en producción desde v2.46.0.

@@ -109,7 +109,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || !password || !confirm}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
+                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
             >
                 {loading
                     ? <><Loader2 size={18} className="animate-spin" /> Guardando...</>

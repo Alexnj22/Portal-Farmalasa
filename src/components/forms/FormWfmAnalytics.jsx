@@ -271,7 +271,7 @@ const FormWfmAnalytics = ({ branches }) => {
     return (
         <div className="w-full flex flex-col gap-6 animate-in fade-in duration-700">
             {/* CONTROLES SUPERIORES (HEATMAP HEADER PILL STYLE) */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-card backdrop-blur-xl p-3.5 sm:p-4 rounded-full border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] transform-gpu hover:-translate-y-0.5 transition-transform duration-500">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-card backdrop-blur-xl p-3.5 sm:p-4 rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] transform-gpu hover:-translate-y-0.5 transition-transform duration-500">
                 <div className="w-full sm:w-auto flex items-center gap-3">
                      <div className="relative group/saly w-11 h-11 flex items-center justify-center rounded-full shrink-0 border-0 shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.6)] transition-shadow duration-500">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-30 group-hover/saly:opacity-100 transition-opacity duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
@@ -403,7 +403,7 @@ const FormWfmAnalytics = ({ branches }) => {
             </div>
 
             {/* LEYENDA DEL HEATMAP (GLASS PILL STYLE) */}
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-surface-card backdrop-blur-xl rounded-full py-3.5 px-6 border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] mt-2 transition-shadow duration-500 hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_30px_rgba(0,0,0,0.1)]">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-surface-card backdrop-blur-xl rounded-full py-3.5 px-6 border border-border-card shadow-[var(--shadow-glass-sm)] mt-2 transition-shadow duration-500 hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#64748b] shadow-sm"></div> Valle / Muerta</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-brand shadow-sm"></div> Tráfico Normal</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#F79009] shadow-sm"></div> Hora Pico (Aviso)</div>

@@ -17,7 +17,7 @@ const FormRoleEmployees = ({ formData }) => {
             <div className="relative p-8 md:p-10 pb-8 overflow-hidden bg-gradient-to-b from-brand/5 to-transparent border-b border-slate-100/50 rounded-t-[2.5rem]">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
                 <div className="relative flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-[1.2rem] bg-brand text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,82,204,0.3)] shrink-0">
+                    <div className="w-16 h-16 rounded-[1.2rem] bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
                         <ShieldCheck size={32} strokeWidth={1.5} />
                     </div>
                     <div>

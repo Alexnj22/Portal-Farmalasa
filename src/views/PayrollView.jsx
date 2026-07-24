@@ -485,7 +485,7 @@ const PayrollView = ({ openModal }) => {
     const isDraft    = !activePeriod?.status || activePeriod?.status === 'DRAFT';
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
             {/* Search mode */}
             <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[700px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[240px] border border-border-card shadow-sm">
@@ -511,7 +511,7 @@ const PayrollView = ({ openModal }) => {
                 </div>
                 <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
+                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
@@ -540,7 +540,7 @@ const PayrollView = ({ openModal }) => {
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-[10px] font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
                                 <button onClick={() => openModal?.('newPayrollPeriod')}
-                                    className="w-8 h-8 bg-brand text-white rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
+                                    className="w-8 h-8 bg-brand text-white rounded-xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
                                     <Plus size={14} strokeWidth={2.5} />
                                 </button>
                             </div>
@@ -624,7 +624,7 @@ const PayrollView = ({ openModal }) => {
                                             )}
                                             {isApproved && (
                                                 <button onClick={() => setConfirming({ action:'PAID', label:'marcar como pagada' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(0,82,204,0.35)]">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-[10px] font-black transition-all shadow-[var(--shadow-glow-brand)]">
                                                     <Banknote size={12} strokeWidth={2.5} /> Marcar Pagada
                                                 </button>
                                             )}

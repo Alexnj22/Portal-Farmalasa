@@ -95,7 +95,7 @@ const BranchTabGeneral = ({
                     <div className="relative z-10">
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Distrito / Municipio
-                            {getTabStatus(1) === 'orange' && !location.municipality && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[0_2px_8px_rgba(245,158,11,0.2)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !location.municipality && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
                         <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
                             <LiquidSelect
@@ -112,7 +112,7 @@ const BranchTabGeneral = ({
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Dirección Exacta
-                            {getTabStatus(1) === 'orange' && !formData.address?.trim() && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[0_2px_8px_rgba(245,158,11,0.2)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !formData.address?.trim() && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
                         <LazyInput
                             placeholder="Barrio El Centro, 1ra Av. Norte..."
@@ -183,7 +183,7 @@ const BranchTabGeneral = ({
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Teléfono Fijo
-                            {getTabStatus(1) === 'orange' && !formData.phone && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[0_2px_8px_rgba(245,158,11,0.2)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !formData.phone && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
                         <LazyInput
                             icon={Phone}
@@ -197,7 +197,7 @@ const BranchTabGeneral = ({
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Celular / WhatsApp
-                            {getTabStatus(1) === 'orange' && !formData.cell && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[0_2px_8px_rgba(245,158,11,0.2)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !formData.cell && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
                         <LazyInput
                             icon={Smartphone}

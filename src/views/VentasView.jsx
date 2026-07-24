@@ -2389,7 +2389,7 @@ export default function VentasView() {
         // Duplicado histórico del pill de ViewTabBar (DESIGN.md §32/§23 ya lo
         // documentaba) — migrado a data-surface="tab-track" en la misma pasada
         // que ViewTabBar.jsx (Fase T2), mismos valores, pixel-igual en liquid.
-        <div data-surface="tab-track" className="relative flex items-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div data-surface="tab-track" className="relative flex items-center shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
@@ -2455,7 +2455,7 @@ export default function VentasView() {
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}
                 </button>
                 <button onClick={openSearch}
-                    className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
+                    className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>

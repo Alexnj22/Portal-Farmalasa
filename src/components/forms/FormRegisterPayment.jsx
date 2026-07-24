@@ -138,7 +138,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
             </div>
 
             {/* 📝 CONTENEDOR DE CAMPOS (GLASSMORPHISM) */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 space-y-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 space-y-5 shadow-[var(--shadow-elevation-xs)]">
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* MONTO EXACTO */}
@@ -182,7 +182,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* ALERTA DE CONFLICTO */}
                 {isConflict && (
-                    <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.1)] animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2">
                         <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
                         <span className="text-[11px] font-black uppercase tracking-widest leading-tight">
                             Ya existe un pago registrado para {currentPaidThrough} o posterior.

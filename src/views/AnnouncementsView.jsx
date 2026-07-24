@@ -35,14 +35,14 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
     <div
       className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
         isEditingThis
-          ? 'bg-surface-card backdrop-blur-xl border border-warning/40 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-subtle-shake z-10'
+          ? 'bg-surface-card backdrop-blur-xl border border-warning/40 shadow-[var(--shadow-elevation-sm)] animate-subtle-shake z-10'
           : ann.isCompleted
             ? 'border-border-card opacity-80 hover:opacity-100 shadow-sm bg-surface-card backdrop-blur-md hover:-translate-y-1 hover:shadow-md'
             : isScheduled
               ? 'border-chart-3/30 shadow-[0_4px_20px_rgba(99,102,241,0.05)] bg-chart-3/10 backdrop-blur-2xl hover:-translate-y-1'
               : ann.priority === 'URGENT'
-                ? 'border-danger/40 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-surface-card backdrop-blur-xl hover:-translate-y-1'
-                : 'border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
+                ? 'border-danger/40 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] bg-surface-card backdrop-blur-xl hover:-translate-y-1'
+                : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
         }`}
     >
       <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
@@ -550,7 +550,7 @@ const AnnouncementsView = ({ openModal }) => {
   }, [processedAnnouncements]);
 
   const renderFiltersContent = () => (
-    <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
+    <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
         <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
@@ -580,7 +580,7 @@ const AnnouncementsView = ({ openModal }) => {
 
         </div>
         <div className="w-px h-6 md:h-8 bg-surface-card-hover/60 mx-1 md:mx-2 shrink-0"></div>
-        <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar avisos">
+        <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar avisos">
           <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
           {announcementSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
         </button>
@@ -618,19 +618,19 @@ const AnnouncementsView = ({ openModal }) => {
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
                   <div className="grid grid-cols-2 gap-3">
-                    <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-surface-card border-brand/30 text-brand shadow-[0_2px_10px_rgba(0,82,204,0.2)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
+                    <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-surface-card border-brand/30 text-brand shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
                     <button type="button" onClick={() => setPriority('URGENT')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'URGENT' ? 'bg-danger/10 border-danger/40 text-danger shadow-[0_2px_10px_rgba(239,68,68,0.2)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Flame size={14} className={priority === 'URGENT' ? 'animate-pulse' : ''} /> Urgente</button>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
-                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-warning/40 focus:ring-warning/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
+                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-warning/40 focus:ring-warning/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
-                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-warning/40 focus:ring-warning/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
+                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-warning/40 focus:ring-warning/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div className="pt-3 border-t border-border-card">
@@ -686,7 +686,7 @@ const AnnouncementsView = ({ openModal }) => {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3" size={16} />
                         <input type="text" placeholder="Buscar persona por nombre..." className="w-full pl-11 pr-4 py-3.5 bg-surface-card border border-border-card focus:bg-white rounded-2xl text-[16px] outline-none font-bold text-content-2" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} disabled={isSubmitting} />
                         {empSearch.trim() && (
-                          <div className="absolute z-20 w-full mt-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.25rem] shadow-[0_12px_40px_rgba(0,0,0,0.12)] max-h-60 overflow-y-auto p-1">
+                          <div className="absolute z-20 w-full mt-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.25rem] shadow-[var(--shadow-elevation-lg)] max-h-60 overflow-y-auto p-1">
                             {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-brand/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand" /></button>)) : <div className="p-3 text-[12px] text-content-3 font-bold text-center">Sin resultados.</div>}
                           </div>
                         )}
@@ -727,7 +727,7 @@ const AnnouncementsView = ({ openModal }) => {
                    )}
                 </div>
 
-                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] ${editingAnnId ? 'bg-warning hover:bg-warning-hover shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'}`}>
+                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] ${editingAnnId ? 'bg-warning hover:bg-warning-hover shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'}`}>
                   {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Procesando...</> : editingAnnId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : publishImmediately ? <><Send size={16} strokeWidth={2.5} /> Publicar Aviso</> : <><CalendarClock size={16} strokeWidth={2.5} /> Programar Aviso</>}
                 </button>
               </form>
@@ -741,7 +741,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <div className="relative group flex flex-col items-center text-center">
                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}></div>
                     
-                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${announcementSearch ? 'text-brand' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
+                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
                       {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                     </div>
                     

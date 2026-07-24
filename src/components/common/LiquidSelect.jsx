@@ -318,7 +318,7 @@ const LiquidSelect = ({
                                     opt.disabled
                                         ? 'opacity-40 cursor-not-allowed bg-transparent text-content-3'
                                         : String(value) === String(opt.value)
-                                            ? 'bg-brand text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)]'
+                                            ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]'
                                             : isHighlighted
                                                 ? 'bg-brand/[0.08] text-content border-brand/20'
                                                 : 'bg-transparent text-content-2 hover:bg-surface-card-hover hover:text-content'

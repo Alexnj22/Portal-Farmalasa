@@ -311,7 +311,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
         <div>
             {/* Filter pill — glassmorphic, right-aligned */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 overflow-visible">
                     <div className="flex items-center px-2 py-2">
                         <Tag size={13} className="text-content-3 flex-shrink-0" />
                     </div>

@@ -41,7 +41,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
 
             {/* 📝 PERMISO DEL ESTABLECIMIENTO (TARJETA PADRE 1) */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 rounded-[2rem] shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
                 <div className="flex items-center gap-2 mb-2">
                     <Award size={16} className="text-brand" strokeWidth={2.5}/>
                     <h4 className="text-[11px] font-black uppercase tracking-widest text-content">
@@ -57,7 +57,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl">
                             <input 
                                 type="text" 
-                                className="w-full px-5 py-3.5 h-[50px] rounded-2xl bg-surface-card border border-slate-200/80 outline-none focus:border-brand focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] hover:border-brand/40 hover:bg-white transition-all text-[16px] font-bold text-content shadow-sm placeholder:text-content-3 placeholder:font-medium" 
+                                className="w-full px-5 py-3.5 h-[50px] rounded-2xl bg-surface-card border border-slate-200/80 outline-none focus:border-brand focus:bg-white focus:shadow-[var(--shadow-ring-brand)] hover:border-brand/40 hover:bg-white transition-all text-[16px] font-bold text-content shadow-sm placeholder:text-content-3 placeholder:font-medium" 
                                 placeholder="Ej: ENF-2026-001"
                                 value={legalData.nursingServicePermit || ""} 
                                 onChange={(e) => updateLegalField('nursingServicePermit', e.target.value)} 
@@ -69,7 +69,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand transition-colors">
                             Vencimiento Permiso
                         </label>
-                        <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] flex items-center border border-slate-200/80 hover:border-brand/40 focus-within:border-brand overflow-hidden">
+                        <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-slate-200/80 hover:border-brand/40 focus-within:border-brand overflow-hidden">
                              <div className="w-full relative -top-0.5">
                                 <LiquidDatePicker 
                                     value={legalData.nursingServicePermitExp || ""} 
@@ -118,7 +118,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                 <div className="space-y-6">
                     {nursingRegents.map((nurse, index) => (
                         /* TARJETA PADRE 2 (DINÁMICA) */
-                        <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-[2rem] relative group shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
+                        <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-[2rem] relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
                             
                             <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-danger/30 text-danger rounded-full shadow-sm hover:bg-danger hover:text-white hover:border-danger transition-all duration-300 opacity-0 group-hover:opacity-100 z-20 active:scale-[0.97] hover:scale-110">
                                 <Trash2 size={14} strokeWidth={2.5}/>
@@ -215,7 +215,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     
                     {nursingRegents.length === 0 && (
                         <div className="py-10 text-center border-2 border-dashed border-slate-300 rounded-[2rem] bg-surface-card backdrop-blur-sm mt-4 transition-all duration-500 hover:bg-surface-card hover:-translate-y-1 hover:shadow-md cursor-pointer transform-gpu" onClick={addNurse}>
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand mx-auto mb-3 shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-chart-1/30">
+                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand mx-auto mb-3 shadow-[var(--shadow-glow-brand)] border border-chart-1/30">
                                 <Plus size={20} strokeWidth={2.5}/>
                             </div>
                             <p className="text-[12px] font-black uppercase tracking-widest text-content-2">Sin profesionales asignados</p>

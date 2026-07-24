@@ -154,6 +154,32 @@
   --txvol-normal:  #0052CC; /* 5-12 tx/hr, = --brand */
   --txvol-pico:    #F79009; /* >12 tx/hr, = --warning */
   --txvol-critica: #FF2D55; /* >18 tx/hr */
+
+  /* ─── T7.3 — Escala canónica de sombras ───────────────────────────────
+     974 usos de shadow-[...] escritos a mano, 556 valores únicos, sin
+     ningún sistema detrás (auditado 2026-07-24). Estos 14 tokens reemplazan
+     esa fragmentación — cada valor calibrado sobre el clúster de blur/
+     opacidad más repetido que ya existía, no un rediseño. Deliberadamente
+     NO usan el namespace --shadow-* de @theme (que Tailwind ya usa para
+     generar shadow-sm/md/lg nativos, 960 usos sanos que no se tocan) —
+     se consumen vía arbitrary value: className="shadow-[var(--shadow-md)]".
+     Mismo valor en los 4 temas: una sombra suave sigue funcionando en dark
+     sin necesitar variante — ver AUDITORIA-TEMA-2026-07.md §4 T7.3. */
+  --shadow-elevation-xs: 0 2px 8px rgba(0,0,0,.04);   /* reposo: fila, chip */
+  --shadow-elevation-sm: 0 4px 16px rgba(0,0,0,.06);  /* tarjeta pequeña */
+  --shadow-elevation-md: 0 8px 28px rgba(0,0,0,.08);  /* tarjeta / hover, el más común */
+  --shadow-elevation-lg: 0 16px 48px rgba(0,0,0,.12); /* panel flotante, dropdown */
+  --shadow-elevation-xl: 0 24px 64px rgba(0,0,0,.16); /* modal, overlay principal */
+
+  --shadow-glass-sm: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 10px rgba(0,0,0,.06);
+  --shadow-glass-md: inset 0 2px 10px rgba(255,255,255,.4), 0 8px 24px rgba(0,0,0,.08);
+  --shadow-glass-lg: inset 0 2px 15px rgba(255,255,255,.7), 0 8px 30px rgba(0,0,0,.04);
+
+  --shadow-glow-brand:   0 6px 20px rgba(0,82,204,.4);
+  --shadow-glow-success: 0 4px 15px rgba(18,183,106,.35);
+  --shadow-glow-warning: 0 4px 15px rgba(247,144,9,.35);
+  --shadow-glow-danger:  0 4px 15px rgba(240,68,56,.35);
+  --shadow-ring-brand:   0 0 0 4px rgba(0,82,204,.15);
 }
 
 /* ─── Dark LiquidGlass ─── */

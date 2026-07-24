@@ -94,4 +94,84 @@ for (const theme of ['liquid', 'solid']) {
 }
 console.log('T2 gate matrix done →', T2_OUT);
 
+// ── Fase T7.2 — matriz completa de QA final ─────────────────────────────
+// {4 temas: liquid/dark/solid/solid-dark} × {login, /overview, /ventas,
+// /pedidos, /minmax, menú abierto, un modal abierto} × {1440×900,
+// 1366×768 zoom 125% (~1093×614 efectivo), 1024×768, iPhone 13}.
+// AUDITORIA-TEMA-2026-07.md §4 Fase T7, T7.2.
+const T7_THEMES = ['liquid', 'dark', 'solid', 'solid-dark'];
+const T7_RESOLUTIONS = [
+  ['1440x900', { width: 1440, height: 900 }, 1.5],
+  ['1366x768-zoom125', { width: 1093, height: 614 }, 1.5],
+  ['1024x768', { width: 1024, height: 768 }, 1.5],
+  ['iphone13', { width: 390, height: 844 }, 3],
+];
+const T7_OUT = new URL('./shots-t7-final/', import.meta.url).pathname;
+fs.mkdirSync(T7_OUT, { recursive: true });
+
+const setTheme = (p, t) => p.evaluate(theme => {
+  if (theme === 'liquid') localStorage.removeItem('portal-theme');
+  else localStorage.setItem('portal-theme', theme);
+}, t);
+
+// Login — contexto nuevo sin sesión por cada combinación tema×resolución.
+for (const theme of T7_THEMES) {
+  for (const [resName, viewport, dsf] of T7_RESOLUTIONS) {
+    const ctx = await browser.newContext({ viewport, deviceScaleFactor: dsf });
+    const p = await ctx.newPage();
+    await p.goto(BASE + '/login', { waitUntil: 'networkidle' }).catch(() => {});
+    await setTheme(p, theme);
+    await p.reload({ waitUntil: 'networkidle' }).catch(() => {});
+    await p.waitForTimeout(1200);
+    await p.screenshot({ path: `${T7_OUT}${theme}-login-${resName}.png` });
+    await ctx.close();
+  }
+}
+console.log('T7.2 login matrix done');
+
+// Vistas autenticadas + menú + modal — un contexto por tema (login una vez),
+// reutilizado a través de las 4 resoluciones.
+const T7_ROUTES = [['/overview', 'overview'], ['/ventas', 'ventas'], ['/pedidos', 'pedidos'], ['/minmax', 'minmax']];
+
+for (const theme of T7_THEMES) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1.5 });
+  const p = await ctx.newPage();
+  await p.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await p.fill('#username', user);
+  await p.fill('#password', pass);
+  await p.click('text=Ingresar al Portal');
+  await p.waitForTimeout(4000);
+  await setTheme(p, theme);
+
+  for (const [resName, viewport] of T7_RESOLUTIONS) {
+    await p.setViewportSize(viewport);
+    for (const [route, routeName] of T7_ROUTES) {
+      await p.goto(BASE + route, { waitUntil: 'networkidle' }).catch(() => {});
+      await p.waitForTimeout(3000);
+      await p.screenshot({ path: `${T7_OUT}${theme}-${routeName}-${resName}.png` });
+    }
+  }
+
+  // Menú abierto (buscador ⌘K) — 1440×900 únicamente, no depende de resolución.
+  await p.setViewportSize({ width: 1440, height: 900 });
+  await p.goto(BASE + '/overview', { waitUntil: 'networkidle' }).catch(() => {});
+  await p.waitForTimeout(2000);
+  await p.keyboard.press('Meta+k').catch(() => {});
+  await p.waitForTimeout(600);
+  await p.screenshot({ path: `${T7_OUT}${theme}-menu-search-1440x900.png` });
+  await p.keyboard.press('Escape').catch(() => {});
+
+  // Un modal abierto (ConfirmModal vía "Activar todo" en Permisos) — 1440×900.
+  await p.goto(BASE + '/permissions', { waitUntil: 'networkidle' }).catch(() => {});
+  await p.waitForTimeout(2500);
+  await p.click('text=Gerente General').catch(() => {});
+  await p.waitForTimeout(1200);
+  await p.click('text=Activar todo').catch(() => {});
+  await p.waitForTimeout(600);
+  await p.screenshot({ path: `${T7_OUT}${theme}-modal-1440x900.png` });
+
+  await ctx.close();
+}
+console.log('T7.2 full matrix done →', T7_OUT);
+
 await browser.close();

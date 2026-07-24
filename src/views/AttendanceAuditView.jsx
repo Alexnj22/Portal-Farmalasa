@@ -1218,7 +1218,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   }, [branchDropOpen]);
 
   // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
-  const pillWrap    = 'flex items-center border border-border-card bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:-translate-y-[2px] transition-all duration-300';
+  const pillWrap    = 'flex items-center border border-border-card bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[var(--shadow-glass-sm)] hover:-translate-y-[2px] transition-all duration-300';
   const pillDivider = 'h-5 w-px bg-surface-card mx-1';
   const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-content-3 hover:bg-white hover:text-content hover:shadow-sm transition-all duration-300 shrink-0';
   const pillLabelText = 'text-content';
@@ -1281,13 +1281,13 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
             </span>
             <button type="button" onClick={() => navigate('/payroll')}
-              className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover px-3 py-1.5 rounded-full shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:shadow-[0_4px_14px_rgba(0,82,204,0.45)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+              className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-brand)] hover:shadow-[0_4px_14px_rgba(0,82,204,0.45)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
               Ver planilla →
             </button>
           </div>
         ) : quincenaTS.length > 0 ? (
           <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}
-            className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+            className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
             {isClosingQuincena
               ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
               : <LockKeyhole size={11} strokeWidth={2.5} />}

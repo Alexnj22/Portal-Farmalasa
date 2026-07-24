@@ -30,7 +30,7 @@ const AlertModal = ({
             icon: Info,
             glow: 'bg-brand/15',
             iconColor: 'text-brand',
-            btn: 'bg-brand hover:bg-brand-hover shadow-[0_4px_15px_rgba(0,82,204,0.3)]'
+            btn: 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]'
         }
     };
 

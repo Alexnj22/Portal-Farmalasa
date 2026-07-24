@@ -286,7 +286,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {/* 🚨 ALERTA ROJA DE HEADCOUNT (Bloqueante) */}
             {headcountWarning && (
-                <div className="bg-danger/10 border border-danger/40 p-4 rounded-[1.5rem] flex gap-3 items-start animate-in zoom-in-95 shadow-[0_4px_15px_rgba(239,68,68,0.15)]">
+                <div className="bg-danger/10 border border-danger/40 p-4 rounded-[1.5rem] flex gap-3 items-start animate-in zoom-in-95 shadow-[var(--shadow-glow-danger)]">
                     <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-danger-text">Límite de Organigrama Excedido</p>
@@ -324,7 +324,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {(isVacation || (isDisability && formData?.disabilityType === 'Maternidad')) && (
-                <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-danger/10 border-danger/40 shadow-[0_4px_15px_rgba(239,68,68,0.15)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_4px_15px_rgba(249,115,22,0.15)]' : 'bg-success/10 border-success/30'}`}>
+                <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-glow-danger)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_4px_15px_rgba(249,115,22,0.15)]' : 'bg-success/10 border-success/30'}`}>
                     {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-chart-4-text shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-success shrink-0 mt-0.5" size={18}/>}
                     <div>
                         <p className={`text-[11px] font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success'}`}>Auditoría Legal</p>
@@ -537,7 +537,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isCodeChange && (
-                    <div className="col-span-1 md:col-span-2 animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+                    <div className="col-span-1 md:col-span-2 animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[var(--shadow-elevation-xs)]">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className={labelClasses}>Código Actual</label>
@@ -634,7 +634,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     const newSalary = parseFloat(formData?.newSalary);
                     const diff = currentSalary && newSalary ? newSalary - parseFloat(currentSalary) : null;
                     return (
-                        <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] space-y-4">
+                        <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[var(--shadow-elevation-xs)] space-y-4">
                             {/* Contexto actual */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-surface-card-hover/80 border border-slate-100 rounded-2xl p-3 text-center">

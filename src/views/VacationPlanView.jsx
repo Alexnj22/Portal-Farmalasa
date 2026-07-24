@@ -636,7 +636,7 @@ const VacationPlanView = () => {
     }, [vacStatusFiltered, searchTerm]);
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
 
             {/* Search mode */}
             <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
@@ -720,7 +720,7 @@ const VacationPlanView = () => {
                 {/* Search button — blue pill standard */}
                 <button
                     onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}
@@ -844,8 +844,8 @@ const VacationPlanView = () => {
                                         confirmingEdit
                                             ? 'bg-success hover:bg-success-hover shadow-[0_4px_12px_rgba(34,197,94,0.3)]'
                                             : editingPlan
-                                                ? 'bg-warning hover:bg-warning-hover shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
-                                                : 'bg-brand hover:bg-brand-hover shadow-[0_4px_12px_rgba(0,82,204,0.3)]'
+                                                ? 'bg-warning hover:bg-warning-hover shadow-[var(--shadow-glow-warning)]'
+                                                : 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]'
                                     }`}
                                 >
                                     {isSubmitting
@@ -918,7 +918,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Gantt */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
                             <div className="flex items-center justify-between mb-5">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
@@ -929,7 +929,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Tabla */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
                             <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>

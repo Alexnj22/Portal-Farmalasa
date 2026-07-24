@@ -412,7 +412,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
                             ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[0_2px_8px_rgba(139,92,246,0.08)]' :
                               conf ? conf.bg + ' border border-dashed ' + conf.border :
-                              hasShift ? 'bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)]' :
+                              hasShift ? 'bg-white border border-slate-200 shadow-[var(--shadow-elevation-xs)]' :
                               'border border-dashed border-slate-300/60 bg-surface-card-hover/30 backdrop-blur-sm'
                             }
                             ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-danger/40 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]' : ''}

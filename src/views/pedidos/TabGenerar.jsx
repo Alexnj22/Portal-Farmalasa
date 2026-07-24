@@ -50,7 +50,7 @@ const SIN_BODEGA_COLS = [
     { key: 'total_ventas_6m', label: 'Ventas 6m',  align: 'center', sortable: true, hideBelow: 'sm' },
 ];
 
-const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
+const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 
 const SUC_ANIM_CSS = `
 @keyframes suc-pop {
@@ -395,10 +395,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                         const stateCls = isOn
                             ? 'suc-pop border-chart-1/80 shadow-[0_0_0_4px_rgba(59,130,246,0.15),0_8px_32px_rgba(0,82,204,0.28),0_2px_8px_rgba(0,82,204,0.14),inset_0_1px_0_rgba(255,255,255,0.85)] ring-2 ring-chart-1/25 ring-offset-0'
                             : urgLevel === 'high'
-                                ? 'hover:border-danger/40 hover:shadow-[0_6px_20px_rgba(239,68,68,0.15)] transition-all duration-200'
+                                ? 'hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)] transition-all duration-200'
                                 : urgLevel === 'mid'
                                     ? 'hover:border-warning/40 hover:shadow-[0_6px_20px_rgba(245,158,11,0.15)] transition-all duration-200'
-                                    : 'hover:border-slate-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)] transition-all duration-200';
+                                    : 'hover:border-slate-300 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200';
 
                         // Urgency badge color
                         const urgBadgeCls = urgLevel === 'high'

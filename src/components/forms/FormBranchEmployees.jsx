@@ -148,7 +148,7 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group relative overflow-hidden cursor-pointer rounded-[1.5rem] bg-surface-card backdrop-blur-md border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04)] h-[100px] active:scale-[0.97] transition-all">
+                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group relative overflow-hidden cursor-pointer rounded-[1.5rem] bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
                                 {/* Frente Normal */}
                                 <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-4 group-hover:opacity-0">
                                     <div className={`w-14 h-14 rounded-[1.2rem] border flex items-center justify-center font-black text-xl shrink-0 overflow-hidden shadow-inner ${!photoUrl ? COLOR_MAP[slot.color] : 'bg-surface-card-hover p-0'}`}>

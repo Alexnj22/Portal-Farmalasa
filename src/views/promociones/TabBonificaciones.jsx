@@ -143,7 +143,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
         <div>
             {/* Summary pill — right-aligned, glassmorphic */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0">
                     <div className="flex items-center gap-1.5 px-3 py-2">
                         <Gift size={12} className="text-content-3" />
                         <span className="text-[11px] text-content-3">Total ganado:</span>

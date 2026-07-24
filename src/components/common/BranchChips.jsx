@@ -185,7 +185,7 @@ const BranchChips = ({
                     "transition-all duration-250 transform-gpu relative z-10",
                     active
                       ? "text-content"
-                      : "text-content-3 hover:text-content hover:bg-surface-card-hover hover:-translate-y-[1px] hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)] active:translate-y-0",
+                      : "text-content-3 hover:text-content hover:bg-surface-card-hover hover:-translate-y-[1px] hover:shadow-[var(--shadow-elevation-md)] active:translate-y-0",
                   ].join(" ")}
                   title={it.label}
                 >
@@ -212,8 +212,8 @@ const BranchChips = ({
                   "flex items-center justify-center gap-2",
                   "transition-all duration-250 transform-gpu relative z-10",
                   moreOpen
-                    ? "text-content bg-surface-card-hover shadow-[0_14px_30px_rgba(0,0,0,0.10)]"
-                    : "text-content-3 hover:text-content hover:bg-surface-card-hover hover:-translate-y-[1px] hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)] active:translate-y-0",
+                    ? "text-content bg-surface-card-hover shadow-[var(--shadow-elevation-md)]"
+                    : "text-content-3 hover:text-content hover:bg-surface-card-hover hover:-translate-y-[1px] hover:shadow-[var(--shadow-elevation-md)] active:translate-y-0",
                   isHiddenSelected ? "ring-2 ring-brand/20" : "",
                 ].join(" ")}
               >

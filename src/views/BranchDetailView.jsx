@@ -245,7 +245,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
     const renderHeaderActions = () => {
         return (
-            <div className={`flex items-center overflow-x-auto hide-scrollbar backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors duration-500 transform-gpu shrink-0 w-max max-w-full hover:-translate-y-[2px] ${showProfile ? 'bg-surface-card' : 'bg-surface-card'}`}>
+            <div className={`flex items-center overflow-x-auto hide-scrollbar backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors duration-500 transform-gpu shrink-0 w-max max-w-full hover:-translate-y-[2px] ${showProfile ? 'bg-surface-card' : 'bg-surface-card'}`}>
 
                 {showProfile ? (
                     <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
@@ -361,14 +361,14 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {/* 🚨 4. EL BOTÓN "VOLVER" AHORA USA EL ROUTER DIRECTO */}
                         <button 
                             onClick={() => navigate('/branches')} 
-                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Sucursales"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
                             <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand transition-colors relative z-10" />
                         </button>
 
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-brand text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,82,204,0.3)] shrink-0">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
                             <Building2 size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
                         </div>
 

@@ -102,7 +102,7 @@ function EmptyState({ icon: Icon, iconClass, glowClass, title, subtitle }) {
         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <div className="relative group flex flex-col items-center text-center">
                 <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${glowClass}`} />
-                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${iconClass}`}>
+                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${iconClass}`}>
                     <Icon size={40} strokeWidth={2} />
                 </div>
                 <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">{title}</h3>
@@ -192,7 +192,7 @@ function Pagination({ page, total, onChange }) {
                 <button key={p} onClick={() => onChange(p)}
                     className={`w-8 h-8 rounded-full text-[12px] font-bold transition-all ${
                         page === p
-                            ? 'bg-brand text-white shadow-[0_2px_8px_rgba(0,82,204,0.4)]'
+                            ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]'
                             : 'text-content-3 hover:bg-black/[0.05]'
                     }`}>
                     {p}
@@ -508,7 +508,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     </button>
                                                                 </div>
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
-                                                                    <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3 space-y-2">
+                                                                    <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                         <div>
                                                                             <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
                                                                             <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
@@ -988,7 +988,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none
                                                                     opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100
                                                                     transition-all duration-150 ease-out w-[210px]">
-                                                                    <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3">
+                                                                    <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3">
                                                                         <div className="space-y-2">
                                                                             <div>
                                                                                 <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
@@ -1321,7 +1321,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 </button>
                                                             </div>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
-                                                                <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3 space-y-2">
+                                                                <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     <div>
                                                                         <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
                                                                         <p className="font-mono text-[11px] font-black text-content">{pad7(g.gap_from)} → {pad7(g.gap_to)}</p>
@@ -1423,7 +1423,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 </button>
                                                             </div>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
-                                                                <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3 space-y-2">
+                                                                <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     {n.correlativo && <div>
                                                                         <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
                                                                         <p className="font-mono text-[12px] font-black text-content">{n.correlativo}</p>
@@ -2127,7 +2127,7 @@ export default function FacturacionView() {
     }[activeTab] || 'Buscar...';
 
     const filtersContent = (
-        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
@@ -2173,7 +2173,7 @@ export default function FacturacionView() {
                     <>
                         <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
                         <button onClick={openSearch}
-                            className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
+                            className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                             {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                         </button>

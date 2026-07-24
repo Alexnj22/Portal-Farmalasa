@@ -318,7 +318,7 @@ const LiquidDatePicker = ({
                                 // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Seleccionado > Rango > Asueto)
                                 let btnClass = "w-8 h-8 mx-auto flex items-center justify-center rounded-full text-[12px] font-bold transition-all relative z-10 ";
                                 if (isSolidDot) {
-                                    btnClass += "bg-brand text-white shadow-[0_4px_12px_rgba(0,82,204,0.4)] scale-110";
+                                    btnClass += "bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110";
                                 } else if (inBetween) {
                                     btnClass += "text-brand hover:bg-surface-card-hover hover:shadow-sm";
                                 } else if (holiday) {

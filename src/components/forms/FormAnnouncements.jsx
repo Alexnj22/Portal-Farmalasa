@@ -77,7 +77,7 @@ const FormAnnouncements = ({ data }) => {
       
       {/* HEADER DEL REPORTE */}
       <div className="mb-5 pr-8 flex items-center gap-4 shrink-0">
-        <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-surface-card text-brand">
+        <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card text-brand">
             <Eye size={22} strokeWidth={2.5} />
         </div>
         
@@ -188,7 +188,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedPending.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-surface-card group"
+                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-border-card shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-surface-card group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">

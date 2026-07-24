@@ -363,7 +363,7 @@ const RolesView = ({ openModal }) => {
                     </div>
                 )}
 
-                <div className={`icon-container w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-border-card ${!role.parent_role_id ? 'bg-brand text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)]' : isExternal ? 'bg-surface-card-hover/50 text-content-3' : 'bg-white text-brand group-hover:bg-brand group-hover:text-white transition-colors'}`}>
+                <div className={`icon-container w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-border-card ${!role.parent_role_id ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isExternal ? 'bg-surface-card-hover/50 text-content-3' : 'bg-white text-brand group-hover:bg-brand group-hover:text-white transition-colors'}`}>
                     <Award size={18} strokeWidth={2} />
                 </div>
 
@@ -433,7 +433,7 @@ const RolesView = ({ openModal }) => {
     // ==========================================================
     const renderFiltersContent = () => (
         <div
-            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
+            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
         >
             {isSearchExpanded ? (
                 <div
@@ -494,7 +494,7 @@ const RolesView = ({ openModal }) => {
                     <div className={`flex items-center transition-all duration-500 ease-in-out origin-right ${activeTab === 'list' ? 'max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-border-card' : 'max-w-0 opacity-0 scale-50 pointer-events-none m-0 p-0 border-transparent overflow-hidden'}`}>
                         <button
                             onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                            className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                            className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                             title="Buscar cargos"
                             tabIndex={activeTab === 'list' ? 0 : -1}
                         >
@@ -605,7 +605,7 @@ const RolesView = ({ openModal }) => {
                                             <input
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
-                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-[1.25rem] text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400"
+                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
                                             />
@@ -641,7 +641,7 @@ const RolesView = ({ openModal }) => {
                                                     type="number"
                                                     min="1"
                                                     max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-[1.25rem] text-[16px] outline-none font-bold text-brand transition-all duration-300 relative z-0"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-brand transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
                                                 />
@@ -687,7 +687,7 @@ const RolesView = ({ openModal }) => {
                                         type="button"
                                         onClick={handleSubmit}
                                         disabled={!canEdit}
-                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
+                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
                                     >
                                         {editingRoleId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : <><Plus size={16} strokeWidth={2.5} /> Crear Cargo</>}
                                     </button>
@@ -716,9 +716,9 @@ const RolesView = ({ openModal }) => {
                                         <div
                                             key={role.id}
                                             className={`p-5 rounded-[2rem] flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
-                                                ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08)] animate-subtle-shake z-10' : isExternal
+                                                ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[var(--shadow-elevation-md)] animate-subtle-shake z-10' : isExternal
                                                     ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-slate-300 shadow-sm hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1'
-                                                    : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-surface-card hover:-translate-y-1'
+                                                    : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:bg-surface-card hover:-translate-y-1'
                                                 }`}
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
@@ -856,7 +856,7 @@ const RolesView = ({ openModal }) => {
                                 <button
                                     onClick={toggleFullScreen}
                                     disabled={isExporting}
-                                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl shadow-[0_4px_12px_rgba(0,82,204,0.3)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
+                                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl shadow-[var(--shadow-glow-brand)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
                                 >
                                     {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
                                     <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span>

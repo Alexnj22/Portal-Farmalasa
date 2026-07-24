@@ -569,7 +569,7 @@ export default function EncuestaView() {
     const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
 
     const filtersContent = (
-        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
                 {TABS.map(({ key, label, Icon }) => (
                     <button key={key} onClick={() => setTab(key)}
@@ -620,7 +620,7 @@ export default function EncuestaView() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate('/encuesta-admin')}
-                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 bg-white"
+                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 bg-white"
                         title="Volver a Gestión de Encuesta">
                         <ArrowLeft size={15} strokeWidth={2.5} className="text-content-3" />
                     </button>

@@ -343,7 +343,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
                 const isCur = new Date().getMonth() === i && new Date().getFullYear() === viewYear;
                 return (
                   <button key={i} onClick={() => { onChange(new Date(viewYear, i, 1)); setOpen(false); }}
-                    className={`text-[11px] font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-brand text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)]' : isCur ? 'text-brand font-black ring-1 ring-brand/30 hover:bg-brand/10' : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
+                    className={`text-[11px] font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isCur ? 'text-brand font-black ring-1 ring-brand/30 hover:bg-brand/10' : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
                     {m}
                   </button>
                 );

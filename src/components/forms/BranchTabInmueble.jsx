@@ -21,7 +21,7 @@ const BranchTabInmueble = ({
         willChange: 'transform'
     };
 
-    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(0,0,0,0.06)] hover:bg-surface-card hover:border-white";
+    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-white";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const extinguisherOptions = useMemo(() => [
@@ -43,7 +43,7 @@ const BranchTabInmueble = ({
         <div className="space-y-6 w-full" style={gpuLockStyle}>
 
             {/* ISLA 1: INMUEBLE Y ARRENDAMIENTO */}
-            <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+            <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-border-card pb-5">
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-brand flex items-center gap-2">
@@ -184,7 +184,7 @@ const BranchTabInmueble = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* ISLA 2: ALCALDÍA */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-brand mb-5 flex items-center gap-2">
                         <Landmark size={16} strokeWidth={2.5} /> Permisos Municipales
                     </h4>
@@ -226,7 +226,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {/* ISLA 3: DESECHOS BIOINFECCIOSOS */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex flex-col mb-5">
                         <div className="flex items-center justify-between">
                             <h4 className="text-[12px] font-black uppercase tracking-widest text-brand flex items-center gap-2">
@@ -293,7 +293,7 @@ const BranchTabInmueble = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* ISLA 4: EXTINTORES */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-chart-4-text mb-5 flex items-center gap-2">
                         <Flame size={16} strokeWidth={2.5} /> Extintores
                     </h4>
@@ -339,7 +339,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {/* ISLA 5: CONTROL DE PLAGAS Y FUMIGACIÓN */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-success mb-5 flex items-center gap-2">
                         <BugOff size={16} strokeWidth={2.5} /> Control de Plagas y Fumigación
                     </h4>

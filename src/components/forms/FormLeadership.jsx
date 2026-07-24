@@ -85,7 +85,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <input 
                             type="text" 
                             placeholder="Buscar candidato..." 
-                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] pl-10 pr-4 py-3 text-[16px] font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[0_8px_30px_rgba(0,82,204,0.15)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
+                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] pl-10 pr-4 py-3 text-[16px] font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
                             value={formData.searchQuery || ''}
                             onChange={(e) => setFormData({...formData, searchQuery: e.target.value})}
                         />
@@ -277,10 +277,10 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-content-2 ml-1">Configuración del Cargo</h3>
                                     
                                     <div className="flex p-1.5 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-white text-content shadow-[0_4px_15px_rgba(0,0,0,0.08)]' : 'text-content-3 hover:bg-surface-card'}`}>
+                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-white text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <ShieldCheck size={14}/> Permanente
                                         </button>
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning text-white shadow-[0_4px_15px_rgba(245,158,11,0.3)]' : 'text-content-3 hover:bg-surface-card'}`}>
+                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning text-white shadow-[var(--shadow-glow-warning)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <Clock size={14}/> Interinato
                                         </button>
                                     </div>
@@ -306,7 +306,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         </label>
                                         <textarea 
                                             placeholder={formData.isPermanent === false ? "Ej. Cubre vacaciones de Mónica Castro..." : "Notas sobre la asignación (Opcional)..."}
-                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 text-[16px] font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[0_8px_30px_rgba(0,82,204,0.15)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
+                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 text-[16px] font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
                                             value={formData.notes || ''}
                                             onChange={(e) => setFormData({...formData, notes: e.target.value})}
                                         ></textarea>

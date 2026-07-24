@@ -343,7 +343,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
                                         className={`px-2 py-2 rounded-[0.875rem] text-[10.5px] font-bold transition-all text-center leading-tight
                                             ${active
-                                                ? 'bg-brand text-white shadow-[0_2px_8px_rgba(0,82,204,0.4)] scale-[1.03]'
+                                                ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-[1.03]'
                                                 : 'bg-surface-card-hover text-content-2 hover:bg-surface-card hover:text-brand hover:shadow-md hover:-translate-y-0.5 border border-border-card'
                                             }`}>
                                         {p.label}

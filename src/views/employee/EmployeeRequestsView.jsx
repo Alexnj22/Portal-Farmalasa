@@ -202,7 +202,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
         'border-border-card bg-surface-card backdrop-blur-md';
 
     return (
-        <div className={`rounded-[2.5rem] border flex flex-col transition-all duration-300 relative transform-gpu shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 ${cardBg}`}>
+        <div className={`rounded-[2.5rem] border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 ${cardBg}`}>
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-[0.875rem] flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
@@ -920,7 +920,7 @@ const EmployeeRequestsView = () => {
                             value={payload.amount || ''}
                             onChange={e => setPayload(prev => ({ ...prev, amount: e.target.value }))}
                             placeholder="0.00"
-                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 transition-all duration-300 placeholder-slate-300"
+                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 transition-all duration-300 placeholder-slate-300"
                         />
                     </div>
                 </div>
@@ -1042,7 +1042,7 @@ const EmployeeRequestsView = () => {
 
     // ── Filtros ──────────────────────────────────────────────────────────────
     const renderFiltersContent = () => (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
             <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
                 {TABS.map(tab => {
                     const isActive = statusFilter === tab.key;
@@ -1181,7 +1181,7 @@ const EmployeeRequestsView = () => {
                                     onChange={e => { setFormNote(e.target.value); if (error) setError(''); }}
                                     rows={4}
                                     placeholder="Describe tu solicitud..."
-                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
+                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
                                     disabled={isSubmitting}
                                 />
                             </div>
@@ -1189,7 +1189,7 @@ const EmployeeRequestsView = () => {
                             <button
                                 type="submit"
                                 disabled={isSubmitting || formDisabilityBlocked}
-                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none bg-brand hover:bg-brand-hover shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
                             >
                                 {isSubmitting
                                     ? <><Loader2 size={16} className="animate-spin" /> Enviando...</>
@@ -1264,7 +1264,7 @@ const EmployeeRequestsView = () => {
                                         statusFilter === 'APPROVED' ? 'bg-success' :
                                         statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'
                                     }`} />
-                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] transform-gpu overflow-hidden ${
+                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-brand' :
                                         statusFilter === 'APPROVED' ? 'text-success' :
                                         statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'

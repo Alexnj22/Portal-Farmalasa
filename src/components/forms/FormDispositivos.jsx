@@ -91,7 +91,7 @@ const FormDispositivos = ({ formData }) => {
                                 const isConfirming = confirmingId === kiosk.id;
 
                                 return (
-                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-[1.5rem] transition-all duration-300 ${isConfirming ? 'bg-surface-card border-2 border-danger/30 shadow-md' : 'bg-surface-card border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md hover:-translate-y-0.5'}`}>
+                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-[1.5rem] transition-all duration-300 ${isConfirming ? 'bg-surface-card border-2 border-danger/30 shadow-md' : 'bg-surface-card border border-slate-100 shadow-[var(--shadow-elevation-xs)] hover:shadow-md hover:-translate-y-0.5'}`}>
                                         
                                         {/* FILA 1: INFORMACIÓN PRINCIPAL (Nunca se desborda gracias al min-w-0 y truncate) */}
                                         <div className="flex items-center justify-between gap-4">

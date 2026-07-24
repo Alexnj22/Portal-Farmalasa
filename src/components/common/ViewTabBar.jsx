@@ -51,7 +51,7 @@ export default function ViewTabBar({
     <div data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
       hover:-translate-y-[2px] transform-gpu
       h-12 md:h-[3.25rem] p-0.5 md:p-1 w-max max-w-full
-      shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)]`}>
+      shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]`}>
 
       {/* Search mode */}
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
@@ -134,7 +134,7 @@ export default function ViewTabBar({
           <button onClick={openSearch}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
               transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative
-              bg-brand text-white shadow-[0_3px_8px_rgba(0,82,204,0.4)] hover:bg-brand-hover">
+              bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchValue && (
               <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />

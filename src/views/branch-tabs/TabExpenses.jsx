@@ -318,7 +318,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* DASHBOARD REAL */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
                     {/* Gráfico de Barras */}
-                    <div className="group lg:col-span-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[0_12px_40px_rgba(0,82,204,0.08)]">
+                    <div className="group lg:col-span-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-[var(--shadow-elevation-xs)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[var(--shadow-glow-brand)]">
                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
                         
                         <div className="flex justify-between items-start mb-6 relative z-10">

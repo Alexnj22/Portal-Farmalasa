@@ -41,7 +41,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
     return (
         <div className={`group relative flex flex-col p-5 rounded-[1.5rem] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-50 ${isMissing
             ? 'bg-surface-card border-2 border-dashed border-slate-300 hover:border-brand/40 hover:bg-surface-card min-h-[160px]'
-            : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.04)] min-h-[160px]'
+            : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] min-h-[160px]'
             }`}>
 
             {/* 🚨 HOVER ACTIONS NORMALES */}
@@ -352,7 +352,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                     <div className="hidden sm:block w-px h-8 bg-content-3/60 shrink-0"></div>
 
-                    <div className="hidden sm:flex items-center gap-3 bg-surface-card backdrop-blur-xl border border-border-card px-4 py-2 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] cursor-default shrink-0">
+                    <div className="hidden sm:flex items-center gap-3 bg-surface-card backdrop-blur-xl border border-border-card px-4 py-2 rounded-full shadow-[var(--shadow-elevation-xs)] cursor-default shrink-0">
                         <FolderOpen size={14} className={progress === 100 ? 'text-success' : 'text-brand'} />
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center w-20">
@@ -391,7 +391,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={handleSearchClick}
-                            className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center shadow-[0_4px_15px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shrink-0"
+                            className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shrink-0"
                             title="Buscar Documento"
                         >
                             <Search size={16} strokeWidth={3} />
@@ -436,7 +436,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <CheckCircle2 size={40} className="text-success mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-success">Expediente impecable</p>
                             <p className="text-[11px] font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand bg-white border border-brand/20 shadow-[0_2px_10px_rgba(0,82,204,0.05)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
+                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand bg-white border border-brand/20 shadow-[var(--shadow-glow-brand)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
                                 Ver Documentos Al Día
                             </button>
                         </>

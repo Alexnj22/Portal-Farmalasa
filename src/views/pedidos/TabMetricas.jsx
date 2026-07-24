@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { ERP_NAMES } from '../../constants/erp';
 
-const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
+const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 
 const RANGES = [
     { key: '7d',  label: 'Últimos 7 días',  days: 7  },

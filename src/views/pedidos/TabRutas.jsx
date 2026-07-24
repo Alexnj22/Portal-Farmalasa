@@ -87,7 +87,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   };
 
   return (
-    <div className="bg-surface-card backdrop-blur-md rounded-2xl border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-surface-card backdrop-blur-md rounded-2xl border border-border-card shadow-[var(--shadow-elevation-xs)] overflow-hidden">
       {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-surface-card transition-colors"

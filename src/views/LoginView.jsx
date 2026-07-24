@@ -535,7 +535,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <>
                             <div className="h-px bg-surface-card mx-2" />
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-3 rounded-[1.5rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)]">
+                                className="group w-full p-3 rounded-[1.5rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-[0.875rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-white transition-colors shadow-sm">
                                         <Clock size={15} className="text-content-3 group-hover:text-brand transition-colors" strokeWidth={2.2} />
@@ -602,9 +602,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {!isMobileOrApp() && (
                         <div className="relative">
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-4 rounded-[1.75rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5">
+                                className="group w-full p-4 rounded-[1.75rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5">
                                 <div className="flex items-center gap-3.5">
-                                    <div className="w-11 h-11 rounded-[1.1rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-white transition-all duration-200 shadow-sm group-hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)]">
+                                    <div className="w-11 h-11 rounded-[1.1rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-white transition-all duration-200 shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]">
                                         <Clock size={19} className="text-content-3 group-hover:text-brand transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">

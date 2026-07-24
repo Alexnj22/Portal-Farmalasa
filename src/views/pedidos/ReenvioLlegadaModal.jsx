@@ -3,9 +3,9 @@ import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package 
 import PedidoModal from './PedidoModal';
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-success/10 hover:text-success hover:border-success/30' },
-    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
-    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-danger text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-danger/10 hover:text-danger-text hover:border-danger/30' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-success/10 hover:text-success hover:border-success/30' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning text-white shadow-[var(--shadow-glow-warning)]',   idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-danger text-white shadow-[var(--shadow-glow-danger)]',    idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-danger/10 hover:text-danger-text hover:border-danger/30' },
 };
 
 const pageHint = (cajaMap, num) => {
@@ -94,9 +94,9 @@ export default function ReenvioLlegadaModal({
                             const rowBg = est === 'ok'     ? 'bg-success/10 border-success/30'
                                         : est === 'danada' ? 'bg-warning/10 border-warning/30'
                                         :                    'bg-danger/10 border-danger/30';
-                            const numBg = est === 'ok'     ? 'bg-success shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
-                                        : est === 'danada' ? 'bg-warning shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
-                                        :                    'bg-danger shadow-[0_2px_8px_rgba(239,68,68,0.4)]';
+                            const numBg = est === 'ok'     ? 'bg-success shadow-[var(--shadow-glow-success)]'
+                                        : est === 'danada' ? 'bg-warning shadow-[var(--shadow-glow-warning)]'
+                                        :                    'bg-danger shadow-[var(--shadow-glow-danger)]';
                             return (
                                 <div key={num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
                                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[14px] tabular-nums text-white transition-all ${numBg}`}>

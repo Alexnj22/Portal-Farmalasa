@@ -473,7 +473,7 @@ export default function EncuestaAdminView() {
 
     // ── Header ────────────────────────────────────────────────────────────────
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
                 <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-white text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
                     <ClipboardList size={12} strokeWidth={2.5} />
@@ -534,7 +534,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
                                     <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
                                         placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
+                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
                                 </div>
 
                                 {/* Año + Estado */}
@@ -542,7 +542,7 @@ export default function EncuestaAdminView() {
                                     <div>
                                         <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
                                         <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
-                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300" />
+                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300" />
                                     </div>
                                     <div>
                                         <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
@@ -562,7 +562,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
                                     <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
                                         rows={2} placeholder="Objetivo específico de esta encuesta…"
-                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
+                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
                                 </div>
 
                                 {/* Fechas */}
@@ -573,13 +573,13 @@ export default function EncuestaAdminView() {
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
@@ -678,11 +678,11 @@ export default function EncuestaAdminView() {
                                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-3" size={13} strokeWidth={2.5} />
                                                     <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
                                                         placeholder="Buscar por nombre…"
-                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
                                                     {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-3 hover:text-danger transition-colors"><X size={12} strokeWidth={2.5} /></button>}
                                                 </div>
                                                 {empResults.length > 0 && (
-                                                    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden">
+                                                    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-elevation-lg)] overflow-hidden">
                                                         {empResults.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
@@ -716,7 +716,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey || !canManage}
-                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingSurvey
                                             ? 'bg-warning hover:bg-warning-hover shadow-warning/30'
                                             : 'bg-brand hover:bg-brand-hover'
@@ -781,7 +781,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setRfIsJefe(false)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
                                                 !rfIsJefe
-                                                    ? 'bg-surface-card border-brand/30 text-brand shadow-[0_2px_10px_rgba(0,82,204,0.2)]'
+                                                    ? 'bg-surface-card border-brand/30 text-brand shadow-[var(--shadow-glow-brand)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <Users size={14} strokeWidth={2.5} /> Empleado/a
@@ -940,13 +940,13 @@ export default function EncuestaAdminView() {
                                     <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
                                     <textarea value={rfComentario} onChange={e => setRfComentario(e.target.value)} rows={3}
                                         placeholder="¿Qué mejorarías del ambiente de trabajo?"
-                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
+                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
                                 </div>
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveResponse}
                                     disabled={(!editingResponse && !rfEmployeeId) || savingResponse || !canManage}
-                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingResponse ? 'bg-warning hover:bg-warning-hover shadow-warning/30' : 'bg-brand hover:bg-brand-hover'
                                     }`}>
                                     {savingResponse
@@ -973,7 +973,7 @@ export default function EncuestaAdminView() {
                             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-brand" />
-                                    <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-brand group-hover:-translate-y-2 transition-all duration-700">
+                                    <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand group-hover:-translate-y-2 transition-all duration-700">
                                         <BarChart2 size={40} strokeWidth={2} />
                                     </div>
                                     <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">Sin encuestas aún</h3>
@@ -993,8 +993,8 @@ export default function EncuestaAdminView() {
                                     isExpanded
                                         ? 'border-brand/20 shadow-[0_12px_50px_rgba(0,0,0,0.10)] bg-surface-card backdrop-blur-2xl z-10'
                                         : isEditing
-                                            ? 'bg-surface-card backdrop-blur-xl border-warning/40 shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
-                                            : 'border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
+                                            ? 'bg-surface-card backdrop-blur-xl border-warning/40 shadow-[var(--shadow-elevation-sm)]'
+                                            : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
                                 }`}>
 
                                     {/* ── Card header ── */}
@@ -1104,7 +1104,7 @@ export default function EncuestaAdminView() {
                                                 <div className="flex items-center gap-2">
                                                     {canManage && (
                                                     <button onClick={() => openResponseForm()}
-                                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]">
+                                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]">
                                                         <Plus size={14} strokeWidth={2.5} /> Agregar
                                                     </button>
                                                     )}

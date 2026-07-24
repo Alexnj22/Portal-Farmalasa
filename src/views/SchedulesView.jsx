@@ -167,8 +167,8 @@ const HolidaysPanel = ({
                                         <div key={h.id}
                                             className="group relative flex items-center overflow-hidden
                                                 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem]
-                                                shadow-[0_2px_12px_rgba(0,0,0,0.04)]
-                                                hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5
+                                                shadow-[var(--shadow-elevation-xs)]
+                                                hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5
                                                 transition-all duration-300">
                                             {/* Color stripe */}
                                             <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-warning to-chart-4' : 'bg-gradient-to-b from-chart-1 to-brand'}`} />
@@ -774,7 +774,7 @@ const SchedulesView = ({ openModal, setView }) => {
                         className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
                             ${weekIsPublished
                                 ? 'bg-success/20 border-success/50 text-success-text cursor-default'
-                                : 'bg-brand border-brand-hover/60 text-white shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:bg-brand-hover hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
+                                : 'bg-brand border-brand-hover/60 text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
                             ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
                         {isPublishing ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
                             : weekIsPublished ? <CheckCircle size={11} strokeWidth={2.5} />
@@ -875,7 +875,7 @@ const SchedulesView = ({ openModal, setView }) => {
                                 <p className="text-[13px] font-medium text-content-3">No hay empleados activos en esta sucursal.</p>
                             </div>
                             <button onClick={goToPersonal}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                 Ir al módulo de Personal <ArrowRight size={14} />
                             </button>
                         </div>

@@ -18,8 +18,8 @@ const BranchTabLegal = ({
     };
 
     // 🚨 ESTILOS LIQUID GLASS
-    const islandClass = "bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col h-full";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(0,0,0,0.06)] hover:bg-surface-card hover:border-white";
+    const islandClass = "bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col h-full";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-white";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const regentOptions = useMemo(() =>

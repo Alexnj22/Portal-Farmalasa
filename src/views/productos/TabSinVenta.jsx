@@ -230,7 +230,7 @@ function UltimaVentaCell({ row, allBranches }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
-const GLASS_CARD = 'bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.12)] hover:bg-surface-card';
+const GLASS_CARD = 'bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.12)] hover:bg-surface-card';
 
 const FILTER_CARD_CSS = `
 @keyframes cardIn {
@@ -257,7 +257,7 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
     const CARDS = [
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
-          activeBg: 'bg-success/10 border-success/40 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          activeBg: 'bg-success/10 border-success/40 shadow-[var(--shadow-glow-success)] -translate-y-1',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
@@ -322,7 +322,7 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 
     const CARDS = [
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
-          activeBg: 'bg-success/10 border-success/40 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          activeBg: 'bg-success/10 border-success/40 shadow-[var(--shadow-glow-success)] -translate-y-1',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
@@ -562,7 +562,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 <div className="flex items-center gap-3 flex-wrap">
 
                     {/* Total count card */}
-                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]">
+                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-brand/[0.08]">
                             <Package size={15} className="text-brand/60" />
                         </div>
@@ -579,7 +579,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Costo retenido */}
                     {mode === 'stock_ret' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-4/10">
                                 <DollarSign size={15} className="text-chart-4-text" />
                             </div>
@@ -598,7 +598,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-warning/10">
                                 <TrendingUp size={15} className="text-warning" />
                             </div>

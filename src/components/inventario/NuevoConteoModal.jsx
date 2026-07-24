@@ -100,7 +100,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     };
 
     if (!isOpen) return null;
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-surface-card backdrop-blur-md";
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card backdrop-blur-md";
 
     return (
         <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-2xl" className="max-h-[90vh] h-fit" ariaLabel="Nuevo Conteo de Inventario">

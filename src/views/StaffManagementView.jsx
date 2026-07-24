@@ -410,7 +410,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[var(--shadow-glow-brand)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
             <ChevronRight size={16} strokeWidth={3} />
@@ -847,7 +847,7 @@ const StaffManagementView = ({
   };
 
   const filtersContent = (
-    <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+    <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
@@ -870,7 +870,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewEmployee}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
@@ -889,7 +889,7 @@ const StaffManagementView = ({
         <div className="flex items-center shrink-0 border-l border-border-card pl-2 ml-1">
           <button
             onClick={() => setIsSearchActive(true)}
-            className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+            className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
             title="Buscar empleado"
           >
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

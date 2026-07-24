@@ -5,8 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.53.0';
+export const APP_VERSION = '2.53.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.53.1 — feat(theme): T7.3 — primera pasada de consolidación de sombras.
+//
+// Auditoría: 974 usos de shadow-[...] a mano, 556 valores únicos (mockup
+// aprobado por el usuario, ver artifact publicado). Se agregaron 14 tokens
+// canónicos a index.css (--shadow-elevation-xs/sm/md/lg/xl, --shadow-glass-
+// sm/md/lg, --shadow-glow-brand/success/warning/danger, --shadow-ring-brand)
+// consumidos vía arbitrary value shadow-[var(--token)] — deliberadamente
+// fuera del namespace --shadow-* de Tailwind para no pisar los 960 usos
+// sanos de shadow-sm/md/lg nativos.
+//
+// Primera pasada (mecánica, sin riesgo): de los 556 valores únicos, 136
+// se repetían ≥2 veces (duplicación real); de esos, 76 mapean limpio a un
+// solo token neutro/glass/brand/severidad por proximidad de blur+opacidad
+// — 345 usos reemplazados en 79 archivos, mismo valor exacto, solo
+// tokenizado. Build verificado + matriz de QA (T7.2, 88 capturas × 4 temas)
+// confirma sin regresiones visuales.
+//
+// Pendiente (~600 usos): valores compuestos multi-capa (inset+outer+glow
+// combinados, p.ej. anillos de foco con 3-4 capas) que forzar a un solo
+// token los aplanaría con pérdida real, y glows de color fuera de los 4
+// aprobados (violeta/naranja/azul-500/dorado — variantes de la misma idea
+// pero para acentos chart-N, no cubiertas por el mockup original). Fuera
+// de alcance de esta pasada — requiere decisión: ¿extender el set de
+// tokens o dejarlos como creación puntual documentada?
+
 
 // v2.53.0 — feat(metas): retira el módulo Metas (dashboard de metas de
 // ventas) del frontend — la vista MetasView.jsx se elimina, se cerrará y

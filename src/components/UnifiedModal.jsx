@@ -792,7 +792,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                                 onClick={() => setEmpActiveTab(step.key)}
                                                 className="flex flex-col items-center gap-1.5 group"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[0_4px_14px_rgba(0,82,204,0.35)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand'}`}>
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
                                                 <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand' : isComplete ? 'text-success' : 'text-content-2'}`}>
@@ -931,7 +931,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 type="submit"
                                 form="unified-modal-form"
                                 disabled={isSaving || !isFormValid}
-                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-surface-card-hover text-content-3 shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-surface-card-hover text-content-3 shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                             >
                                 {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                             </button>

@@ -11,7 +11,7 @@ const LiquidToast = () => {
     const config = {
         success: {
             icon: <PartyPopper size={20} strokeWidth={2.5} className="text-white animate-[bounce_2s_infinite]" />,
-            iconContainer: 'bg-brand shadow-[0_4px_12px_rgba(0,82,204,0.4)]'
+            iconContainer: 'bg-brand shadow-[var(--shadow-glow-brand)]'
         },
         error: {
             icon: <AlertCircle size={20} strokeWidth={2.5} className="text-white" />,

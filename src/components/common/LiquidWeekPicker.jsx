@@ -149,7 +149,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                         return (
                             <div key={wi}
                                 className={`grid grid-cols-7 rounded-xl cursor-pointer transition-all duration-150 ${
-                                    isSel ? 'bg-brand shadow-[0_4px_12px_rgba(0,82,204,0.3)]' :
+                                    isSel ? 'bg-brand shadow-[var(--shadow-glow-brand)]' :
                                     isHov ? 'bg-surface-card-hover' :
                                     isNow ? 'ring-1 ring-inset ring-border-card' : ''
                                 }`}

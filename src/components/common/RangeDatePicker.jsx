@@ -111,7 +111,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                     if (holiday) {
                         btnClass += 'text-danger bg-danger/10 cursor-not-allowed opacity-70';
                     } else if (isStart || isEnd) {
-                        btnClass += 'bg-brand text-white shadow-[0_4px_12px_rgba(0,82,204,0.4)] scale-110 cursor-pointer';
+                        btnClass += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110 cursor-pointer';
                     } else if (isAnyRangeStart || isAnyRangeEnd) {
                         btnClass += 'bg-success text-white shadow-[0_4px_12px_rgba(18,183,106,0.4)] scale-105 cursor-pointer';
                     } else if (inRange) {
@@ -428,7 +428,7 @@ const RangeDatePicker = ({
                         type="button"
                         onClick={handleConfirm}
                         disabled={!multiRange && (!draftStart || !draftEnd)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[0_4px_12px_rgba(0,82,204,0.3)]">
+                        className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[var(--shadow-glow-brand)]">
                         <Check size={14} strokeWidth={3} /> {multiRange ? 'Listo' : 'Confirmar rango'}
                     </button>
                 </div>

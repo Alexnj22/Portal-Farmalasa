@@ -439,7 +439,7 @@ const BranchCard = memo(({
                         </button>
                     </div>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-[1.25rem] px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.1)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-[1.25rem] px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
                         <div className="flex items-center gap-2">
                             <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand'}`} strokeWidth={2.5} />
                             <span className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
@@ -688,7 +688,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
     }, []);
 
     const renderFiltersContent = () => (
-        <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+        <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
                 <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
                 <input type="text" placeholder="Buscar sucursal o dirección..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} ref={(input) => { if (input && isSearchActive) setTimeout(() => input.focus(), 100) }} />
@@ -719,13 +719,13 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                     {filterStatus !== "ALL" && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-11 h-11 rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
                     )}
-                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.15)] border border-white hover:border-brand/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
+                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[var(--shadow-elevation-sm)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.15)] border border-white hover:border-brand/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
                         <Plus size={16} strokeWidth={2.5} />
                         <span className="hidden sm:inline">Nueva Sucursal</span>
                     </button>}
                 </div>
                 <div className={`flex items-center shrink-0 border-l border-border-card transform-gpu transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isFilterPickerOpen ? "max-w-0 opacity-0 pointer-events-none ml-0 pl-0 border-transparent" : "pl-2 ml-1"}`}>
-                    <button onClick={() => setIsSearchActive(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar sucursal">
+                    <button onClick={() => setIsSearchActive(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar sucursal">
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                         {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
                     </button>
@@ -747,7 +747,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         </div>
                     ) : filteredBranches.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-                            <div className={`bg-surface-card backdrop-blur-xl p-6 rounded-[2rem] mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-border-card transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
+                            <div className={`bg-surface-card backdrop-blur-xl p-6 rounded-[2rem] mb-5 shadow-[var(--shadow-elevation-md)] border border-border-card transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>
                             <h3 className="text-[20px] font-black text-content tracking-tight">

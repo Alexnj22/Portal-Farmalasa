@@ -69,7 +69,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             </DataCell>
             <DataCell>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] flex items-center justify-center text-content-2 font-black text-[10px] md:text-[11px] uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
+                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[var(--shadow-elevation-xs)] flex items-center justify-center text-content-2 font-black text-[10px] md:text-[11px] uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
                         {userPhoto ? (
                             <img src={userPhoto} alt={log.user_name} className="w-full h-full object-cover" />
                         ) : (
@@ -272,7 +272,7 @@ const AuditView = ({ openModal }) => {
 const filtersContent = (
         <div
             // 🚨 CONTENEDOR DINÁMICO: "w-max" abraza el contenido y "max-w-full" evita que se rompa en móviles.
-            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
+            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
         >
             {/* =========================================================
                 ESTADO 1: MODO BÚSQUEDA (Animación Reparada)
@@ -423,7 +423,7 @@ const filtersContent = (
 
                     <button
                         onClick={() => setIsSearchMode(true)}
-                        className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                        className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                         title="Buscar por texto"
                     >
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

@@ -183,7 +183,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
     if (!isOpen) return null;
 
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-surface-card backdrop-blur-md";
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card backdrop-blur-md";
 
     return (
         <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}>
@@ -354,7 +354,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                     type="button"
                     onClick={handleSave}
                     disabled={saving || !isValid}
-                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                 >
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Check size={16} strokeWidth={3} /> {isEditMode ? 'Guardar Cambios' : 'Registrar Practicante'}</>}
                 </button>

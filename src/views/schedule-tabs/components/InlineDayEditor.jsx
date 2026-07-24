@@ -471,7 +471,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         className={`w-full py-3.5 text-[12px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
                         ${isSaveDisabled 
                             ? 'bg-surface-card-hover text-content-3 border border-slate-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-brand to-brand-hover text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
+                            : 'bg-gradient-to-r from-brand to-brand-hover text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
                     >
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}
                     </button>

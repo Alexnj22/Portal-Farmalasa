@@ -46,7 +46,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="px-8 py-3.5 bg-white text-warning font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-warning hover:text-white border border-warning/30 hover:border-warning transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="px-8 py-3.5 bg-white text-warning font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-warning hover:text-white border border-warning/30 hover:border-warning transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 active:scale-[0.97]"
                 >
                     Entendido, Cerrar
                 </button>
@@ -61,7 +61,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
             
             {/* TARJETA CONTENEDOR PADRE */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(147,51,234,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-[2rem] shadow-[var(--shadow-elevation-xs)] hover:shadow-[0_12px_40px_rgba(147,51,234,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">

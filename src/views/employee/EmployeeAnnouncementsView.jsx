@@ -42,12 +42,12 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         <div
             className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1 ${
                 isUrgent && !isRead
-                    ? 'border-danger/40 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-surface-card backdrop-blur-xl'
+                    ? 'border-danger/40 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] bg-surface-card backdrop-blur-xl'
                     : isUrgent && isRead
                     ? 'border-danger/30 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
                     : isRead
                     ? 'border-slate-200/70 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
-                    : 'border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] bg-surface-card backdrop-blur-2xl'
+                    : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl'
             }`}
             onClick={() => { if (!isRead) onRead(ann.id); }}
         >
@@ -686,7 +686,7 @@ const EmployeeAnnouncementsView = () => {
     };
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
                 <Search size={16} className="text-brand shrink-0" strokeWidth={2.5} />
@@ -754,7 +754,7 @@ const EmployeeAnnouncementsView = () => {
 
                 <div className="w-px h-6 bg-surface-card-hover/60 mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                    className={`relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
+                    className={`relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
                     <Search size={15} strokeWidth={2.5} />
                     {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
@@ -800,7 +800,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                             <div className="relative flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-success" />
-                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-success">
+                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
                                     <CheckCircle2 size={40} strokeWidth={1.5} />
                                 </div>
                                 <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">Todo al día</h3>
@@ -831,7 +831,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-content-3" />
-                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] text-content-3 transform-gpu overflow-hidden">
+                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 transform-gpu overflow-hidden">
                                     {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
                                 </div>
                                 <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">

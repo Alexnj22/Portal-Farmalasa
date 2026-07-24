@@ -27,13 +27,13 @@ const formatDate = (d) => d
 // son severidad real (positivo/negativo), el resto es categórico puro,
 // mapeado a los MISMOS chart-N que RequestsView para el tipo compartido.
 const EVENT_THEMES = {
-    VACATION:    { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]' },
-    PERMIT:      { bg: 'bg-chart-2/10',  text: 'text-chart-2-text', border: 'border-chart-2/30', dot: 'border-chart-2',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]'  },
-    DISABILITY:  { bg: 'bg-danger/10',   text: 'text-danger-text',  border: 'border-danger/30',  dot: 'border-danger',   glow: 'hover:shadow-[0_8px_24px_rgba(239,68,68,0.12)]'   },
+    VACATION:    { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]' },
+    PERMIT:      { bg: 'bg-chart-2/10',  text: 'text-chart-2-text', border: 'border-chart-2/30', dot: 'border-chart-2',  glow: 'hover:shadow-[var(--shadow-glow-success)]'  },
+    DISABILITY:  { bg: 'bg-danger/10',   text: 'text-danger-text',  border: 'border-danger/30',  dot: 'border-danger',   glow: 'hover:shadow-[var(--shadow-glow-danger)]'   },
     SHIFT_CHANGE:{ bg: 'bg-chart-3/10',  text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'border-chart-3',  glow: 'hover:shadow-[0_8px_24px_rgba(139,92,246,0.12)]'   },
     SALARY:      { bg: 'bg-chart-6/10',  text: 'text-chart-6-text', border: 'border-chart-6/30', dot: 'border-chart-6',  glow: 'hover:shadow-[0_8px_24px_rgba(236,72,153,0.12)]'  },
     TRANSFER:    { bg: 'bg-chart-1/10',  text: 'text-chart-1-text', border: 'border-chart-1/30', dot: 'border-chart-1',  glow: 'hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]'  },
-    HIRING:      { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]' },
+    HIRING:      { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]' },
 };
 const DEFAULT_THEME = { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-border-card', dot: 'border-brand', glow: 'hover:shadow-[0_8px_24px_rgba(0,82,204,0.10)]' };
 
@@ -44,7 +44,7 @@ const WEEK_DAYS = [
 ];
 
 const SectionCard = ({ children, className = '' }) => (
-    <div className={`bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 transition-all duration-300 ${className}`}>
+    <div className={`bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] p-5 shadow-[var(--shadow-elevation-xs)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 transition-all duration-300 ${className}`}>
         {children}
     </div>
 );
@@ -56,7 +56,7 @@ const SectionLabel = ({ icon: Icon, label, color = 'text-content-3' }) => (
 );
 
 const Field = ({ label, value, icon: Icon }) => (
-    <div className="p-3.5 rounded-2xl bg-surface-card backdrop-blur-sm border border-border-card hover:bg-surface-card hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default">
+    <div className="p-3.5 rounded-2xl bg-surface-card backdrop-blur-sm border border-border-card hover:bg-surface-card hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default">
         <div className="flex items-center gap-1.5 mb-0.5">
             {Icon && <Icon size={9} className="text-content-3 flex-shrink-0" />}
             <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em]">{label}</p>
@@ -240,7 +240,7 @@ const EmployeeProfileView = ({ openModal }) => {
     );
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
             {/* Info chips */}
             {emp.phone && (
                 <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-surface-card border border-border-card rounded-2xl">
@@ -258,7 +258,7 @@ const EmployeeProfileView = ({ openModal }) => {
             {/* Edit button */}
             <button
                 onClick={() => openModal('editContact', emp)}
-                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-brand text-white text-[11px] font-black uppercase tracking-widest shadow-[0_3px_8px_rgba(0,82,204,0.4)] hover:bg-brand-hover hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
+                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-brand text-white text-[11px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
             >
                 <Edit3 size={13} strokeWidth={2.5} />
                 <span className="hidden sm:inline">Editar</span>
@@ -287,7 +287,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-chart-1-text',  bg: 'bg-chart-1/10'  },
                             { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-warning', bg: 'bg-warning/10' },
                         ].map(({ label, value, icon: Icon, color, bg }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
+                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
                                 <p className="text-[15px] font-black text-content-2 leading-tight">{value}</p>
                                 <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
@@ -303,7 +303,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10' },
                             { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
+                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">{label}</p>
                                 <p className="text-[13px] font-black text-content-2 leading-tight">{value}</p>
@@ -367,7 +367,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
                                     const isUpcoming = vp.end_date >= new Date().toISOString().split('T')[0];
                                     return (
-                                        <div key={vp.id} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : 'bg-surface-card border-border-card'}`}>
+                                        <div key={vp.id} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : 'bg-surface-card border-border-card'}`}>
                                             <div className={`p-2 rounded-xl flex-shrink-0 ${isUpcoming ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
                                                 <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={1.8} />
                                             </div>

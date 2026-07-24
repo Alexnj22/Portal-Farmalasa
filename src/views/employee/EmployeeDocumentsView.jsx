@@ -17,7 +17,7 @@ const DOC_CFG = {
         label: 'Incapacidad', Icon: Stethoscope,
         bg: 'bg-danger/10', text: 'text-danger-text', border: 'border-danger/30',
         iconBg: 'bg-danger/10', accent: 'bg-danger',
-        glow: 'hover:shadow-[0_8px_24px_rgba(239,68,68,0.12)]',
+        glow: 'hover:shadow-[var(--shadow-glow-danger)]',
     },
     CERTIFICATE: {
         label: 'Constancia', Icon: FileCheck,
@@ -29,13 +29,13 @@ const DOC_CFG = {
         label: 'Vacaciones', Icon: Palmtree,
         bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30',
         iconBg: 'bg-success/10', accent: 'bg-success',
-        glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]',
+        glow: 'hover:shadow-[var(--shadow-glow-success)]',
     },
     PERMIT: {
         label: 'Permiso', Icon: FileText,
         bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30',
         iconBg: 'bg-warning/10', accent: 'bg-warning',
-        glow: 'hover:shadow-[0_8px_24px_rgba(245,158,11,0.12)]',
+        glow: 'hover:shadow-[var(--shadow-glow-warning)]',
     },
     SHIFT_CHANGE: {
         label: 'Cambio Turno', Icon: RefreshCw,
@@ -48,7 +48,7 @@ const DEFAULT_CFG = {
     label: 'Documento', Icon: FileText,
     bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-slate-200',
     iconBg: 'bg-surface-card-hover', accent: 'bg-content-3',
-    glow: 'hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]',
+    glow: 'hover:shadow-[var(--shadow-elevation-md)]',
 };
 
 const STATUS_CFG = {
@@ -97,7 +97,7 @@ const DocCard = ({ doc }) => {
             : null;
 
     return (
-        <div className={`group relative bg-surface-card backdrop-blur-xl border rounded-[1.75rem] p-5 transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_12px_rgba(0,0,0,0.04)] ${cfg.glow} ${cfg.border} overflow-hidden`}>
+        <div className={`group relative bg-surface-card backdrop-blur-xl border rounded-[1.75rem] p-5 transition-all duration-300 hover:-translate-y-1 shadow-[var(--shadow-elevation-xs)] ${cfg.glow} ${cfg.border} overflow-hidden`}>
 
             {/* Accent bar izquierda */}
             <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${cfg.accent} opacity-60`} />
@@ -236,7 +236,7 @@ const EmployeeDocumentsView = () => {
 
     // ── Filter bar ────────────────────────────────────────────────────────
     const renderFilters = () => (
-        <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+        <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             {/* MODO BÚSQUEDA */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${searchOpen ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
@@ -277,7 +277,7 @@ const EmployeeDocumentsView = () => {
                 </button>
                 <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
                 <button onClick={() => setSearchOpen(true)}
-                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar documentos">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
@@ -298,7 +298,7 @@ const EmployeeDocumentsView = () => {
 
                 {/* Panel filtros avanzados */}
                 {filterOpen && (
-                    <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+                    <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] p-5 shadow-[var(--shadow-elevation-xs)] animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
                         <div className="flex items-center justify-between">
                             <p className="text-[10px] font-black text-content-3 uppercase tracking-widest flex items-center gap-1.5">
                                 <Filter size={10} /> Filtros avanzados
@@ -351,7 +351,7 @@ const EmployeeDocumentsView = () => {
                             { label: 'Constancias',   value: allDocs.filter(d => d.type === 'CERTIFICATE').length,          color: 'text-chart-1-text',     bg: 'bg-chart-1/10'     },
                             { label: 'Con Archivo',   value: allDocs.filter(d => d.meta?.docUrl).length,                   color: 'text-success',  bg: 'bg-success/10'  },
                         ].map(s => (
-                            <div key={s.label} className={`${s.bg} backdrop-blur-sm border border-border-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.03)]`}>
+                            <div key={s.label} className={`${s.bg} backdrop-blur-sm border border-border-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[var(--shadow-elevation-xs)]`}>
                                 <div className="flex-1 min-w-0">
                                     <p className={`text-[22px] font-black leading-none ${s.color}`}>{s.value}</p>
                                     <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mt-0.5">{s.label}</p>

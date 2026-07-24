@@ -38,7 +38,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     // ==========================================
     if (possibleRegents.length === 0) {
         return (
-            <div className="bg-danger/10 backdrop-blur-xl border border-danger/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[0_8px_30px_rgba(239,68,68,0.12)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
+            <div className="bg-danger/10 backdrop-blur-xl border border-danger/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
                 <div className="w-16 h-16 bg-white rounded-[1.5rem] shadow-sm border border-danger/30 flex items-center justify-center text-danger mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-danger/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
@@ -65,7 +65,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
             
             {/* TARJETA CONTENEDOR PADRE (Efecto Hover Liquid Glass aplicado) */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,82,204,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-[2rem] shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">
@@ -106,7 +106,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand transition-colors">
                             Vencimiento Credencial JVQF
                         </label>
-                        <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] flex items-center border border-slate-200/80 hover:border-brand/40 focus-within:border-brand overflow-hidden">
+                        <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-slate-200/80 hover:border-brand/40 focus-within:border-brand overflow-hidden">
                              <div className="w-full relative -top-0.5">
                                 <LiquidDatePicker 
                                     value={legalData.regentCredentialExp || ""} 

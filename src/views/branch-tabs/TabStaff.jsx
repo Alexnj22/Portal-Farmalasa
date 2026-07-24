@@ -17,7 +17,7 @@ import { fetchBranchHourlySalesAll } from '../../data/schedules';
 const getStaffTheme = (colorTheme) => {
     const themes = {
         amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-warning to-chart-4' },
-        blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-chart-3' },
+        blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[var(--shadow-glow-brand)]', icon: Award, gradient: 'from-brand to-chart-3' },
         emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-success to-chart-9' },
         purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-chart-3', badge: 'bg-chart-3', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-chart-3 to-chart-6' },
         slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
@@ -154,7 +154,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="absolute bottom-3 right-3 z-20">
                 <button
                     onClick={(e) => { e.stopPropagation(); onClick(employee); }}
-                    className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-brand hover:border-brand hover:shadow-[0_4px_15px_rgba(0,82,204,0.3)] text-content-3 hover:text-white group/btn"
+                    className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-brand hover:border-brand hover:shadow-[var(--shadow-glow-brand)] text-content-3 hover:text-white group/btn"
                     title="Ver Expediente de Personal"
                 >
                     <CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" />
@@ -256,7 +256,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <button
                     onClick={startHistoricalSync}
                     disabled={isSyncing}
-                    className="px-5 py-2.5 bg-brand hover:bg-chart-1 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,82,204,0.3)] active:scale-[0.97]"
+                    className="px-5 py-2.5 bg-brand hover:bg-chart-1 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97]"
                 >
                     {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
                 </button>
@@ -464,7 +464,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
                                 </div>
                             </div>
-                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-[1.2rem] shadow-[0_15px_60px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
+                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
                                 {wfmApplied ? (
                                     <>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-content-3 mb-3 border-b border-slate-700/50 pb-1">Desglose de Horas Hombre (WFM)</p>
@@ -516,7 +516,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className={`h-full transition-all duration-1000 ease-out ${scoreTheme}`} style={{ width: `${complianceScore}%` }}></div>
                             </div>
                         </div>
-                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-[1.2rem] shadow-[0_15px_60px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
+                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
                             <p className="text-[10px] font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1">Auditoría Regulatoria</p>
                             {complianceIssues.length > 0 ? (
                                 <ul className="space-y-2">
@@ -678,12 +678,12 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                     {wfmApplied ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                            <div className="bg-surface-card backdrop-blur-md rounded-xl p-3 border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                                            <div className="bg-surface-card backdrop-blur-md rounded-xl p-3 border border-white shadow-[var(--shadow-elevation-xs)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Registros Históricos</p>
                                                 <p className="text-[18px] font-black text-content mt-1">{historicalSales.length}</p>
                                                 <p className="text-[9px] font-bold text-content-3">Horas de venta analizadas</p>
                                             </div>
-                                            <div className="bg-chart-1/10 backdrop-blur-md rounded-xl p-3 border border-chart-1/30 shadow-[0_2px_10px_rgba(0,82,204,0.05)]">
+                                            <div className="bg-chart-1/10 backdrop-blur-md rounded-xl p-3 border border-chart-1/30 shadow-[var(--shadow-glow-brand)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-chart-1-text">Pico Máximo Detectado</p>
                                                 <p className="text-[15px] font-black text-chart-1-text mt-1 flex items-center gap-1.5">
                                                     {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-chart-1-text" />

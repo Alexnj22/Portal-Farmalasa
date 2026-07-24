@@ -820,7 +820,7 @@ export default function CotizacionesView() {
                         Cancelar
                     </button>
                     <button onClick={isEdit ? handleUpdate : handleSave} disabled={saving || items.length === 0}
-                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-content-3 cursor-not-allowed' : 'bg-brand hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97]'}`}>
+                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-content-3 cursor-not-allowed' : 'bg-brand hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] active:scale-[0.97]'}`}>
                         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2.5} />}
                         {saving ? 'Guardando...' : isEdit ? 'Actualizar Cotización' : 'Guardar Cotización'}
                     </button>
@@ -855,7 +855,7 @@ export default function CotizacionesView() {
                                     Anular
                                 </button>
                                 <button onClick={() => handlePrint(cot, itemsData)}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] active:scale-[0.97] transition-all">
                                     <Printer size={14} strokeWidth={2.5} /> Imprimir / PDF
                                 </button>
                             </>
@@ -983,7 +983,7 @@ export default function CotizacionesView() {
                     {cot.status === 'ACTIVA' && (
                         <div className="flex justify-end pb-4">
                             <button onClick={() => handlePrint(cot, itemsData)}
-                                className="flex items-center gap-2 px-7 py-3.5 bg-brand text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
+                                className="flex items-center gap-2 px-7 py-3.5 bg-brand text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] active:scale-[0.97] transition-all">
                                 <Printer size={16} strokeWidth={2.5} /> Imprimir / Guardar PDF
                             </button>
                         </div>
@@ -1022,7 +1022,7 @@ export default function CotizacionesView() {
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={canEdit ? (
                 <button onClick={() => { resetForm(); setMode('new'); }}
-                    className="flex items-center gap-2 px-5 py-3.5 bg-brand text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,82,204,0.35)] hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                    className="flex items-center gap-2 px-5 py-3.5 bg-brand text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                     <Plus size={15} strokeWidth={3} /> Nueva Cotización
                 </button>
             ) : undefined}

@@ -285,7 +285,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                 {/* CONTENEDOR PRINCIPAL TIPO PÍLDORA */}
                 <div
-                    className={`flex items-center bg-surface-card backdrop-blur-[40px] backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
+                    className={`flex items-center bg-surface-card backdrop-blur-[40px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
                 >
                     {isSearchOpen ? (
                         <div className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}>
@@ -358,7 +358,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             </div>
 
                             <div className={`flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-slate-300/30 shrink-0`}>
-                                <button onClick={() => setIsSearchOpen(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
+                                <button onClick={() => setIsSearchOpen(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
                                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                                 </button>
                             </div>
@@ -502,7 +502,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                         <div key={monthGroup.id} className="w-full mt-2 mb-2">
 
                                                             <div className="relative flex justify-center items-center w-full mb-4 group">
-                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-white text-brand border-white shadow-[0_8px_20px_rgba(0,82,204,0.15)]' : 'bg-surface-card backdrop-blur-md text-content-3 border-border-card hover:text-content-2 shadow-sm'}`}>
+                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-white text-brand border-white shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card backdrop-blur-md text-content-3 border-border-card hover:text-content-2 shadow-sm'}`}>
                                                                     {monthGroup.name}
                                                                     <ChevronRight size={12} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isMonthOpen ? 'rotate-90 text-brand' : 'text-content-3'}`} />
                                                                 </button>
@@ -564,7 +564,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 mb-3 md:mb-0 z-20 ${isLeftDesktop ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'}`}>
                                                                                         <div className="inline-flex items-center gap-2">
                                                                                             <span className="text-[14px] font-black text-content-2 drop-shadow-sm">{dateStr}</span>
-                                                                                            {timeStr !== '12:00 a. m.' && <span className="text-[10px] font-bold text-content-3 bg-surface-card backdrop-blur-sm px-2.5 py-1 rounded-full border border-white shadow-[0_2px_8px_rgba(0,0,0,0.05)]">{timeStr}</span>}
+                                                                                            {timeStr !== '12:00 a. m.' && <span className="text-[10px] font-bold text-content-3 bg-surface-card backdrop-blur-sm px-2.5 py-1 rounded-full border border-white shadow-[var(--shadow-elevation-sm)]">{timeStr}</span>}
                                                                                         </div>
                                                                                     </div>
 
@@ -580,7 +580,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                                             <div className="relative z-10">
                                                                                                 <div className="mb-3">
-                                                                                                    <span className={`px-2.5 py-1 rounded-[6px] text-[8px] font-black uppercase tracking-widest border shadow-[0_2px_10px_rgba(0,0,0,0.05)] ${theme.bg} ${theme.text} ${theme.border}`}>
+                                                                                                    <span className={`px-2.5 py-1 rounded-[6px] text-[8px] font-black uppercase tracking-widest border shadow-[var(--shadow-elevation-sm)] ${theme.bg} ${theme.text} ${theme.border}`}>
                                                                                                         {actionLabel}
                                                                                                     </span>
                                                                                                 </div>
@@ -640,7 +640,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                     {!showAllHistory && syntheticHistory.length > filteredHistory.length && !dateFilter.start && !dateFilter.end && searchQuery === '' && typeFilter === 'ALL' && (
                         <div className="pt-8 text-center animate-in fade-in duration-500 relative z-10">
-                            <button onClick={() => setShowAllHistory(true)} className="px-6 h-10 bg-surface-card backdrop-blur-md border border-white hover:border-brand/30 text-content-2 font-black text-[10px] uppercase tracking-widest hover:text-brand hover:shadow-[0_8px_20px_rgba(0,82,204,0.15)] hover:-translate-y-1 transition-all rounded-full active:scale-[0.97] shadow-sm inline-flex items-center justify-center gap-2">
+                            <button onClick={() => setShowAllHistory(true)} className="px-6 h-10 bg-surface-card backdrop-blur-md border border-white hover:border-brand/30 text-content-2 font-black text-[10px] uppercase tracking-widest hover:text-brand hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-1 transition-all rounded-full active:scale-[0.97] shadow-sm inline-flex items-center justify-center gap-2">
                                 Cargar historial completo
                             </button>
                         </div>

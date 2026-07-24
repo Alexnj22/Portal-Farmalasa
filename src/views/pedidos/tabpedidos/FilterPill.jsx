@@ -16,7 +16,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
             className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
                 filterStatus === key
                     ? activeClass
-                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                    : 'bg-white text-content-3 border-slate-200 hover:border-slate-300 hover:text-content-2'
             }`}
         >
             {label}{filterStatus === key && <X size={9} strokeWidth={3} className="ml-0.5" />}
@@ -24,7 +24,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     );
 
     return (
-        <div className="group flex items-center gap-0 h-14 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
+        <div className="group flex items-center gap-0 h-14 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
 
             {/* Sucursal (solo bodega) */}
             {!isBranch && (
@@ -34,12 +34,12 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                             <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
                         </div>
                         {filterSuc !== '' && (
-                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
                     </div>
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                 </>
             )}
 
@@ -49,27 +49,27 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                     <PeriodPicker value={filterDate} onChange={setFilterDate} />
                 </div>
                 {dateDirty && (
-                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
             </div>
 
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
+            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
 
             {/* Estado */}
             <div className="flex items-center gap-1 px-2 py-1.5">
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado',    'En ruta')}
-                <div className="h-3.5 w-px bg-slate-100 mx-0.5 shrink-0" />
+                <div className="h-3.5 w-px bg-surface-card-hover mx-0.5 shrink-0" />
                 {statusBtn('observacion','Con observación', 'bg-amber-500 text-white border-amber-500')}
                 {statusBtn('completado', 'Completados',     'bg-emerald-600 text-white border-emerald-600')}
             </div>
 
             {hasActive && (
                 <>
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-                    <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0">
+                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                    <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>

@@ -3,8 +3,8 @@ import { useRef, useEffect } from 'react';
 import { UserCircle2, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const LLEGADA_TIPO_INFO = {
-    completa:   { cls: 'bg-emerald-50 border-emerald-200 text-emerald-700', icon: '✓', label: 'Recibido sin novedad' },
-    caja_danada:{ cls: 'bg-amber-50 border-amber-200 text-amber-700',       icon: '⚠', label: 'Caja dañada' },
+    completa:   { cls: 'bg-success/10 border-success/30 text-emerald-700', icon: '✓', label: 'Recibido sin novedad' },
+    caja_danada:{ cls: 'bg-warning/10 border-warning/30 text-amber-700',       icon: '⚠', label: 'Caja dañada' },
     falta_caja: { cls: 'bg-rose-50 border-rose-200 text-rose-700',          icon: '!', label: 'Caja faltante' },
     mixto:      { cls: 'bg-orange-50 border-orange-200 text-orange-700',    icon: '!', label: 'Daños + faltantes' },
 };
@@ -29,12 +29,12 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Resumen de recepción</p>
+                <p className="text-[10px] font-bold text-content-2 uppercase tracking-wide">Resumen de recepción</p>
                 {llegadaEmp && (
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <span className="flex items-center gap-1 text-[10px] text-content-3">
                         {llegadaEmp.photo_url
                             ? <img src={llegadaEmp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
-                            : <UserCircle2 size={12} className="text-slate-500" />}
+                            : <UserCircle2 size={12} className="text-content-3" />}
                         {llegadaEmp.name?.split(' ')[0]}
                     </span>
                 )}
@@ -46,7 +46,7 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                     </span>
                 )}
                 {hasCajasDanadas && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-amber-700">
                         ⚠ Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}
                     </span>
                 )}
@@ -56,12 +56,12 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                     </span>
                 )}
                 {difResueltas > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-success/10 border-success/30 text-emerald-700">
                         <CheckCircle2 size={9} />{difResueltas} dif. resuelta{difResueltas > 1 ? 's' : ''}
                     </span>
                 )}
                 {difPendientes > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-amber-700">
                         <AlertCircle size={9} />{difPendientes} dif. pendiente{difPendientes > 1 ? 's' : ''}
                     </span>
                 )}

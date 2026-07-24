@@ -28,7 +28,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
         <div className="group/pb relative">
             <motion.span
                 className={`inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
-                    isActive ? 'bg-amber-400 text-white' : 'bg-white text-amber-600 border border-amber-300'
+                    isActive ? 'bg-amber-400 text-white' : 'bg-white text-warning border border-amber-300'
                 }`}
                 animate={isActive ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
                 transition={isActive ? { duration: 1.2, repeat: Infinity } : undefined}
@@ -39,16 +39,16 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-[200] hidden group-hover/pb:block pointer-events-none">
                     <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
                         <div className="text-[9px] font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
-                        <div className="text-[8px] text-slate-500">
+                        <div className="text-[8px] text-content-3">
                             Pausó: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span>
-                            {empName(pause.pausado_por) && <span className="text-slate-500"> · {empName(pause.pausado_por)}</span>}
+                            {empName(pause.pausado_por) && <span className="text-content-3"> · {empName(pause.pausado_por)}</span>}
                         </div>
-                        <div className="text-[8px] text-slate-500">
+                        <div className="text-[8px] text-content-3">
                             Reanudó:{' '}
                             {pause.reanudado_at
                                 ? <>
                                     <span className="text-white font-semibold">{fmtHM(pause.reanudado_at)}</span>
-                                    {empName(pause.reanudado_por) && <span className="text-slate-500"> · {empName(pause.reanudado_por)}</span>}
+                                    {empName(pause.reanudado_por) && <span className="text-content-3"> · {empName(pause.reanudado_por)}</span>}
                                   </>
                                 : <span className="text-amber-300 font-semibold">En curso</span>}
                         </div>
@@ -154,7 +154,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         isDone      ? `${tlDot(idx)} shadow-sm` :
                                         isPausedDot ? 'bg-amber-400 shadow-md' :
                                         isActive    ? `bg-white border-2 ${tlBorder(idx)}` :
-                                                      'bg-slate-100 border border-slate-200'
+                                                      'bg-surface-card-hover border border-slate-200'
                                     }`}
                                     initial={{ scale: 0.5, opacity: 0 }}
                                     animate={activeAnimate}
@@ -186,7 +186,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             </div>
 
                             {/* Label */}
-                            <span className={`text-[9px] font-semibold text-center leading-tight ${isFuture ? 'text-slate-500' : 'text-slate-700'}`}>
+                            <span className={`text-[9px] font-semibold text-center leading-tight ${isFuture ? 'text-content-3' : 'text-content-2'}`}>
                                 {isPausedDot ? 'Pausado' : node.label}
                             </span>
 
@@ -199,8 +199,8 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     : null;
                                 return (
                                     <span className="tabular-nums leading-tight text-center mt-px flex flex-col items-center">
-                                        {dateLabel && <span className="text-[9px] text-slate-900 font-bold leading-none mb-0.5">{dateLabel}</span>}
-                                        <span className="text-[10px] text-slate-600 whitespace-nowrap">{fmtHM(node.time) || <span className="text-slate-200">——</span>}</span>
+                                        {dateLabel && <span className="text-[9px] text-content font-bold leading-none mb-0.5">{dateLabel}</span>}
+                                        <span className="text-[10px] text-content-2 whitespace-nowrap">{fmtHM(node.time) || <span className="text-content-3">——</span>}</span>
                                     </span>
                                 );
                             })()}
@@ -210,9 +210,9 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                 <div className="flex flex-col items-center gap-0.5 mt-1">
                                     {node.emp.photo
                                         ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-md shrink-0" alt="" />
-                                        : <span className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-slate-500" /></span>
+                                        : <span className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-content-3" /></span>
                                     }
-                                    <span className="text-[9px] text-slate-600 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
+                                    <span className="text-[9px] text-content-2 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
                                 </div>
                             )}
                             {/* Apoyo avatar stack */}
@@ -221,7 +221,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     {node.apoyo.slice(0, 3).map((a, i) => (
                                         a.photo_url
                                             ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-white shadow-sm shrink-0 relative" alt="" />
-                                            : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-slate-500" /></span>
+                                            : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-white flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
                                     ))}
                                 </div>
                             )}
@@ -231,7 +231,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                         {idx < nodes.length - 1 && (
                             <div className="relative flex-1 min-w-[8px] self-start" style={{ marginTop: 15 }}>
                                 {/* Track */}
-                                <div className="h-0.5 w-full bg-slate-200 rounded-full" />
+                                <div className="h-0.5 w-full bg-surface-card-hover rounded-full" />
                                 {/* Fill */}
                                 {(isDone || (isActive && node.time)) && (
                                     <motion.div
@@ -259,7 +259,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     const show = isBranch ? !isBodegaSrc : !isSucursalSrc;
                                     return show ? (
                                         <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
-                                            <span className="text-[9px] font-semibold text-slate-600 tabular-nums">{segElapsed}</span>
+                                            <span className="text-[9px] font-semibold text-content-2 tabular-nums">{segElapsed}</span>
                                         </div>
                                     ) : null;
                                 })()}

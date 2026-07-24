@@ -75,10 +75,10 @@ const fmtDateTime = (d) => {
 // reemplaza los botones de texto+ícono en línea que quedaban apretados). ──
 
 const ACTION_COLORS = {
-    slate:   'text-slate-500 hover:text-[#0052CC] hover:bg-blue-50',
-    blue:    'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
-    emerald: 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50',
-    red:     'text-red-500 hover:text-red-600 hover:bg-red-50',
+    slate:   'text-content-3 hover:text-brand hover:bg-blue-50',
+    blue:    'text-brand hover:text-brand-hover hover:bg-blue-50',
+    emerald: 'text-success hover:text-emerald-700 hover:bg-success/10',
+    red:     'text-danger hover:text-danger hover:bg-danger/10',
 };
 
 function ActionButton({ icon: Icon, label, onClick, title, color = 'slate', disabled = false }) {
@@ -141,9 +141,9 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
     if (row.proveedor_id) {
         return (
             <div className="min-w-0">
-                <span className="text-slate-800 font-medium text-[12px] block truncate">{row.proveedor_nombre}</span>
+                <span className="text-content font-medium text-[12px] block truncate">{row.proveedor_nombre}</span>
                 {row.supplier_id && row.supplier_nombre !== row.proveedor_nombre && (
-                    <span className="text-[10px] text-slate-400 truncate block">ERP: {row.supplier_nombre}</span>
+                    <span className="text-[10px] text-content-3 truncate block">ERP: {row.supplier_nombre}</span>
                 )}
                 {/* Fase 4 §5: cuando el match viene del contenido del ítem
                     (ej. "claro" no aparece en proveedor/número pero sí en
@@ -161,17 +161,17 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
         // ambos casos hace falta ofrecer "Emparejar" al maestro.
         return (
             <div className="flex items-center gap-1.5">
-                <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin proveedor emparejado en el maestro" />
-                <span className="text-slate-600 text-[12px]">{row.supplier_nombre || row.emisor_nombre || '—'}</span>
+                <AlertTriangle size={12} className="text-warning shrink-0" title="Sin proveedor emparejado en el maestro" />
+                <span className="text-content-2 text-[12px]">{row.supplier_nombre || row.emisor_nombre || '—'}</span>
                 {canEdit && (
                     <button
                         onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
-                        className="text-[10px] font-bold text-[#0052CC] underline shrink-0"
+                        className="text-[10px] font-bold text-brand underline shrink-0"
                     >
                         Emparejar
                     </button>
                 )}
-                {error && <span className="text-[10px] text-red-500">{error}</span>}
+                {error && <span className="text-[10px] text-danger">{error}</span>}
             </div>
         );
     }
@@ -208,7 +208,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                 onClick={() => setEditing(false)}
                 disabled={saving}
                 title="Cancelar"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
             >
                 <X size={14} />
             </button>
@@ -279,18 +279,18 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         // chico subrayado, no la caja ícono+subtítulo (esa es para la
         // columna de acciones dedicada de Revisión).
         if (state === 'idle') {
-            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] font-black text-slate-500 hover:text-[#0052CC] underline whitespace-nowrap">Detectar código</button>;
+            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] font-black text-content-3 hover:text-brand underline whitespace-nowrap">Detectar código</button>;
         }
-        if (state === 'loading') return <span className="text-[9px] text-slate-400 whitespace-nowrap">Analizando…</span>;
-        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] text-slate-400 hover:text-[#0052CC] underline whitespace-nowrap">Sin código, reintentar</button>;
-        if (state === 'error') return <span className="text-[9px] text-red-500 whitespace-nowrap" title={result.error}>Error al detectar</span>;
-        if (state === 'not_found') return <span className="text-[9px] text-slate-400 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
+        if (state === 'loading') return <span className="text-[9px] text-content-3 whitespace-nowrap">Analizando…</span>;
+        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] text-content-3 hover:text-brand underline whitespace-nowrap">Sin código, reintentar</button>;
+        if (state === 'error') return <span className="text-[9px] text-danger whitespace-nowrap" title={result.error}>Error al detectar</span>;
+        if (state === 'not_found') return <span className="text-[9px] text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
         return (
             <button
                 onClick={(e) => { e.stopPropagation(); apply(); }}
                 disabled={applying}
                 title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
-                className="text-[9px] font-black text-emerald-600 hover:text-emerald-700 underline whitespace-nowrap disabled:opacity-50"
+                className="text-[9px] font-black text-success hover:text-emerald-700 underline whitespace-nowrap disabled:opacity-50"
             >
                 {applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}
             </button>
@@ -309,7 +309,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
     }
     if (state === 'loading') {
         return (
-            <div className="flex flex-col items-center justify-center w-14 h-12 text-slate-400">
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3">
                 <ScanSearch size={15} className="animate-pulse" />
                 <span className="text-[8px] font-bold uppercase tracking-wide leading-none mt-0.5">Analizando</span>
             </div>
@@ -327,7 +327,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
     }
     if (state === 'error') {
         return (
-            <div className="flex flex-col items-center justify-center w-14 h-12 text-red-500" title={result.error}>
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-danger" title={result.error}>
                 <AlertTriangle size={15} />
                 <span className="text-[8px] font-bold uppercase tracking-wide leading-none mt-0.5">Error</span>
             </div>
@@ -335,7 +335,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
     }
     if (state === 'not_found') {
         return (
-            <div className="flex flex-col items-center justify-center w-14 h-12 text-slate-400" title={`Código completo: ${result.code} — sin sincronizar aún`}>
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" title={`Código completo: ${result.code} — sin sincronizar aún`}>
                 <ScanSearch size={15} />
                 <span className="text-[8px] font-bold uppercase tracking-wide leading-none mt-0.5">Sin match</span>
             </div>
@@ -369,7 +369,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                     color="blue"
                     onClick={() => { onOpen(); setError(''); }}
                 />
-                {error && <span className="text-[10px] text-red-500">{error}</span>}
+                {error && <span className="text-[10px] text-danger">{error}</span>}
             </div>
         );
     }
@@ -408,7 +408,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                 onClick={onClose}
                 disabled={saving}
                 title="Cancelar"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
             >
                 <X size={14} />
             </button>
@@ -439,7 +439,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     color="slate"
                     onClick={() => { onOpen(); setError(''); setTipo('anulacion'); setDocumentId(''); }}
                 />
-                {error && <span className="text-[10px] text-red-500">{error}</span>}
+                {error && <span className="text-[10px] text-danger">{error}</span>}
             </div>
         );
     }
@@ -485,12 +485,12 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     clearable={false}
                 />
             </div>
-            {error && <span className="text-[10px] text-red-500 shrink-0">{error}</span>}
+            {error && <span className="text-[10px] text-danger shrink-0">{error}</span>}
             <button
                 onClick={confirm}
                 disabled={saving || !documentId}
                 title="Confirmar clasificación"
-                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40 shrink-0"
+                className="p-1.5 rounded-lg text-success hover:bg-success/10 transition-colors disabled:opacity-40 shrink-0"
             >
                 <CheckCircle2 size={16} />
             </button>
@@ -498,7 +498,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                 onClick={onClose}
                 disabled={saving}
                 title="Cancelar"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
             >
                 <X size={14} />
             </button>
@@ -539,11 +539,11 @@ function AttachJsonAction({ row, candidates, onMerged }) {
             <div className="flex items-center gap-1.5">
                 <button
                     onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}
-                    className="text-[9px] font-black text-[#0052CC] hover:text-[#003D99] underline whitespace-nowrap"
+                    className="text-[9px] font-black text-brand hover:text-brand-hover underline whitespace-nowrap"
                 >
                     Adjuntar JSON
                 </button>
-                {error && <span className="text-[10px] text-red-500">{error}</span>}
+                {error && <span className="text-[10px] text-danger">{error}</span>}
             </div>
         );
     }
@@ -583,7 +583,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
                 onClick={() => setOpen(false)}
                 disabled={saving}
                 title="Cancelar"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
             >
                 <X size={14} />
             </button>
@@ -788,19 +788,19 @@ function TabDocumentos({
                     <StatCard
                         icon={Receipt} label="Crédito Fiscal IVA" value={fmt$(cardStats.creditoFiscal)}
                         sub="excluye invalidados"
-                        iconBg="bg-emerald-50" iconCls="text-emerald-500" valueCls="text-emerald-700"
+                        iconBg="bg-success/10" iconCls="text-success" valueCls="text-emerald-700"
                         loading={loading}
                     />
                     <StatCard
                         icon={TrendingUp} label="Compras Netas" value={fmt$(cardStats.comprasNetas)}
                         sub="tras Notas de Crédito"
-                        iconBg="bg-slate-100" iconCls="text-slate-500" valueCls="text-slate-700"
+                        iconBg="bg-surface-card-hover" iconCls="text-content-3" valueCls="text-content-2"
                         loading={loading}
                     />
                     <StatCard
                         icon={XCircle} label="Invalidados" value={cardStats.invalidadosCount}
                         sub={cardStats.invalidadosCount > 0 ? fmt$(cardStats.invalidadosMonto) : 'sin invalidados'}
-                        iconBg="bg-red-50" iconCls="text-red-500" valueCls="text-red-600"
+                        iconBg="bg-danger/10" iconCls="text-danger" valueCls="text-danger"
                         activeBg="bg-red-500/10 border-red-300 shadow-md"
                         onClick={cardStats.invalidadosCount > 0 ? () => setFilterInvalidados(v => !v) : undefined}
                         active={filterInvalidados}
@@ -809,7 +809,7 @@ function TabDocumentos({
                     <StatCard
                         icon={UserX} label="Sin Proveedor" value={cardStats.sinProveedorCount}
                         sub="pendiente de emparejar"
-                        iconBg="bg-amber-50" iconCls="text-amber-500" valueCls="text-amber-700"
+                        iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-amber-700"
                         activeBg="bg-amber-500/10 border-amber-300 shadow-md"
                         onClick={cardStats.sinProveedorCount > 0 ? () => setFilterSinProveedor(v => !v) : undefined}
                         active={filterSinProveedor}
@@ -820,7 +820,7 @@ function TabDocumentos({
 
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex items-start justify-end gap-3 flex-wrap shrink-0">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible flex-wrap">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible flex-wrap">
 
                     {/* Período + clear individual */}
                     <div className="flex items-center">
@@ -829,7 +829,7 @@ function TabDocumentos({
                         </div>
                         {dateDirty && (
                             <button onClick={() => setDateRange(defaultDateRange())} title="Quitar fecha"
-                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
@@ -838,12 +838,12 @@ function TabDocumentos({
                     {/* Descargar (ZIP de filtrados) — incorporado al pill */}
                     {filtered.length > 0 && (
                         <>
-                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={downloadBulk}
                                     disabled={bulkDownloading}
                                     title="Descargar todos los filtrados en un ZIP"
-                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
+                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
                                     <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
                                     {bulkProgress?.total > 0
                                         ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
@@ -856,13 +856,13 @@ function TabDocumentos({
                     {/* Sincronizar ahora — incorporado al pill (antes vivía suelto a la izquierda) */}
                     {canEdit && (
                         <>
-                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={runSyncNow} disabled={syncing}
                                     className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                                         syncing
                                             ? 'bg-blue-50 border-blue-200 text-blue-600'
-                                            : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
                                     } disabled:opacity-60`}>
                                     <RefreshCw size={11} strokeWidth={2.5} className={syncing ? 'animate-spin' : ''} />
                                     {syncing ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando') : 'Sincronizar'}
@@ -874,13 +874,13 @@ function TabDocumentos({
             </div>
             </div>
 
-            {bulkError && <div className="text-[10px] text-red-500 px-1">{bulkError}</div>}
+            {bulkError && <div className="text-[10px] text-danger px-1">{bulkError}</div>}
 
             <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
                 {pageRows.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={() => viewDetail(row)}>
                         <DataCell>
-                            <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha_emision)}</span>
+                            <span className="font-semibold text-content-2 tabular-nums">{fmtDate(row.fecha_emision)}</span>
                         </DataCell>
                         <DataCell>
                             <SupplierMatchCell
@@ -897,7 +897,7 @@ function TabDocumentos({
                         </DataCell>
                         <DataCell>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] font-bold text-slate-700 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
+                                <span className="text-[10px] font-bold text-content-2 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
                                     {dteTypeLabel(row.tipo_dte)}
                                 </span>
                                 {row.invalidado && (
@@ -947,7 +947,7 @@ function TabDocumentos({
                                     <>
                                         <span
                                             title="Este documento se confirmó manualmente desde Revisión sin JSON asociado — no cumple conservación del DTE (Art. 147 CT)"
-                                            className="text-[9px] font-black text-slate-500 bg-slate-500/10 border border-slate-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                            className="text-[9px] font-black text-content-3 bg-slate-500/10 border border-slate-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
                                         >
                                             Sin JSON
                                         </span>
@@ -970,16 +970,16 @@ function TabDocumentos({
                             </div>
                         </DataCell>
                         <DataCell hideBelow="lg">
-                            <span className="font-mono text-[10px] text-slate-500">{row.numero_control || '—'}</span>
+                            <span className="font-mono text-[10px] text-content-3">{row.numero_control || '—'}</span>
                         </DataCell>
                         <DataCell align="right">
-                            <span className="tabular-nums font-bold text-slate-800">{fmt$(row.monto_total)}</span>
+                            <span className="tabular-nums font-bold text-content">{fmt$(row.monto_total)}</span>
                         </DataCell>
                         <DataCell align="center">
                             <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
                                 <button
                                     onClick={() => viewDetail(row)}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors"
                                     title="Ver detalle"
                                 >
                                     <Eye size={14} />
@@ -987,7 +987,7 @@ function TabDocumentos({
                                 <button
                                     onClick={() => download(row.json_path, 'json', row)}
                                     disabled={!row.json_path}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                     title={row.json_path ? 'Descargar JSON' : 'Sin JSON'}
                                 >
                                     <FileJson size={14} />
@@ -995,14 +995,14 @@ function TabDocumentos({
                                 <button
                                     onClick={() => download(row.pdf_path, 'pdf', row)}
                                     disabled={!row.pdf_path}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                     title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'}
                                 >
                                     <Download size={14} />
                                 </button>
                                 <button
                                     onClick={() => downloadPackage(row)}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors"
                                     title="Descargar paquete (JSON+PDF)"
                                 >
                                     <Archive size={14} />
@@ -1125,16 +1125,16 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            <div className="text-[11px] text-slate-500 font-medium px-1">
+            <div className="text-[11px] text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
             </div>
-            {rowError && <div className="text-[10px] text-red-500 px-1">{rowError}</div>}
+            {rowError && <div className="text-[10px] text-danger px-1">{rowError}</div>}
 
             <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Nada pendiente de revisión.' }}>
                 {filtered.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={() => openFile(row)}>
                         <DataCell>
-                            <span className="font-semibold text-slate-700 tabular-nums text-[11px]">{fmtDateTime(row.received_at)}</span>
+                            <span className="font-semibold text-content-2 tabular-nums text-[11px]">{fmtDateTime(row.received_at)}</span>
                         </DataCell>
                         <DataCell>
                             {row.kind === 'orphan_pdf' ? (
@@ -1154,12 +1154,12 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                             )}
                         </DataCell>
                         <DataCell hideBelow="md">
-                            <span className="text-slate-600 text-[11px]">{row.from_email || '—'}</span>
+                            <span className="text-content-2 text-[11px]">{row.from_email || '—'}</span>
                         </DataCell>
                         <DataCell>
                             <button
                                 onClick={() => openFile(row)}
-                                className="text-[11px] font-medium text-[#0052CC] hover:underline truncate max-w-[220px] text-left"
+                                className="text-[11px] font-medium text-brand hover:underline truncate max-w-[220px] text-left"
                                 title={row.filename}
                             >
                                 {row.filename}

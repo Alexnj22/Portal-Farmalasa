@@ -43,14 +43,14 @@ function ruleTypeLabel(rule) {
     if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-blue-100',   txt: 'text-blue-700'   };
     if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     bg: 'bg-indigo-100', txt: 'text-indigo-700' };
     if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-violet-100', txt: 'text-violet-700' };
-    return { text: 'Solo cajas', bg: 'bg-slate-100', txt: 'text-slate-600' };
+    return { text: 'Solo cajas', bg: 'bg-surface-card-hover', txt: 'text-content-2' };
 }
 
 // Icono + colores según tipo de presentación
 const presStyle = (tipo) => {
     const t = (tipo || '').toUpperCase();
     if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
-        return { Icon: Box,     bg: 'bg-slate-800', text: 'text-white', iconInactive: 'text-slate-500' };
+        return { Icon: Box,     bg: 'bg-slate-800', text: 'text-white', iconInactive: 'text-content-3' };
     if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
         return { Icon: Layers,  bg: 'bg-indigo-600', text: 'text-white', iconInactive: 'text-indigo-400' };
     if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
@@ -65,16 +65,16 @@ function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, 
         <Tag onClick={onClick} disabled={loading}
             className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${active ? activeBg : inactiveBg}`}>
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
-                {loading ? <Loader2 size={14} className="animate-spin text-slate-500" /> : <Icon size={15} className={iconCls} />}
+                {loading ? <Loader2 size={14} className="animate-spin text-content-3" /> : <Icon size={15} className={iconCls} />}
             </div>
             <div className="text-left min-w-0">
                 <div className={`text-[22px] font-black leading-none tabular-nums ${countCls}`}>
-                    {loading ? <span className="text-slate-200">–</span> : (value ?? 0).toLocaleString()}
+                    {loading ? <span className="text-content-3">–</span> : (value ?? 0).toLocaleString()}
                 </div>
-                <div className="text-[10px] font-bold leading-tight text-slate-600">{label}</div>
-                {sub && <div className="text-[9px] text-slate-500">{sub}</div>}
+                <div className="text-[10px] font-bold leading-tight text-content-2">{label}</div>
+                {sub && <div className="text-[9px] text-content-3">{sub}</div>}
             </div>
-            {active && onClick && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+            {active && onClick && <X size={11} className="text-content-3 ml-auto shrink-0" />}
         </Tag>
     );
 }
@@ -164,29 +164,29 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <p className="font-semibold text-slate-800 text-[14px] leading-tight">{product.nombre}</p>
+                    <p className="font-semibold text-content text-[14px] leading-tight">{product.nombre}</p>
                     {product.laboratorio_nombre && (
-                        <p className="text-[11px] text-slate-500 mt-0.5">{product.laboratorio_nombre}</p>
+                        <p className="text-[11px] text-content-3 mt-0.5">{product.laboratorio_nombre}</p>
                     )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {saving && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                        <span className="flex items-center gap-1 text-[11px] text-content-3">
                             <Loader2 size={11} className="animate-spin" /> Guardando…
                         </span>
                     )}
                     {!saving && justSaved && (
-                        <span className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
+                        <span className="flex items-center gap-1 text-[11px] text-success font-semibold">
                             <Check size={11} /> Guardado
                         </span>
                     )}
                     {!saving && !justSaved && saveError && (
-                        <span className="text-[11px] text-red-600 flex items-center gap-1 max-w-[260px]">
+                        <span className="text-[11px] text-danger flex items-center gap-1 max-w-[260px]">
                             <AlertTriangle size={10} className="shrink-0" /> {saveError}
                         </span>
                     )}
                     <button onClick={onCancel}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-600 hover:bg-white/80 transition-colors flex-shrink-0">
+                        className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card transition-colors flex-shrink-0">
                         <X size={14} />
                     </button>
                 </div>
@@ -194,16 +194,16 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Presentaciones del producto */}
             <div>
-                <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-2 font-bold">
+                <p className="text-[9px] text-content-2 uppercase tracking-widest mb-2 font-bold">
                     Presentación de despacho
-                    <span className="normal-case tracking-normal font-medium text-slate-500"> · se aplica automáticamente</span>
+                    <span className="normal-case tracking-normal font-medium text-content-3"> · se aplica automáticamente</span>
                 </p>
                 {loadingPres ? (
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-2 text-[11px] text-content-3">
                         <Loader2 size={12} className="animate-spin" /> Cargando presentaciones…
                     </div>
                 ) : dedupedPres.length === 0 ? (
-                    <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700">
+                    <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700">
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.
                     </div>
                 ) : (
@@ -219,13 +219,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-150 select-none text-left ${
                                         isActive
                                             ? `${style.bg} border-transparent ${style.text} shadow-lg`
-                                            : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                                            : 'bg-surface-card border-slate-200 text-content-2 hover:border-slate-300 hover:bg-white'
                                     }`}
                                 >
                                     <Icon size={15} className={isActive ? 'text-white' : style.iconInactive} />
                                     <div>
                                         <p className="text-[12px] font-semibold leading-tight">{tipo}</p>
-                                        <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-slate-500'}`}>
+                                        <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-content-3'}`}>
                                             {pres.factor > 1 ? `×${pres.factor} unidades` : 'unidad base'}
                                         </p>
                                     </div>
@@ -247,12 +247,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     >
                         {/* Etiqueta en PDF — pills preset, junto a la presentación */}
                         <div>
-                            <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-1 font-bold">
+                            <p className="text-[9px] text-content-2 uppercase tracking-widest mb-1 font-bold">
                                 Mostrar en PDF como
-                                <span className="normal-case tracking-normal font-medium text-slate-500"> · opcional</span>
+                                <span className="normal-case tracking-normal font-medium text-content-3"> · opcional</span>
                             </p>
-                            <p className="text-[10px] text-slate-500 mb-2 leading-snug">
-                                Activa solo para productos en <strong className="text-slate-500">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
+                            <p className="text-[10px] text-content-3 mb-2 leading-snug">
+                                Activa solo para productos en <strong className="text-content-3">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
                             </p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {['CAJA', 'ESTUCHE', 'BOLSA'].map(label => (
@@ -261,16 +261,16 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             vals.dispatch_label === label
                                                 ? 'bg-slate-800 border-slate-700 text-white shadow-md'
-                                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'
+                                                : 'bg-white border-slate-200 text-content-3 hover:border-slate-400 hover:text-content-2'
                                         }`}
                                     >
-                                        <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-slate-500'} />
+                                        <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-content-3'} />
                                         {label}
                                     </button>
                                 ))}
                                 {vals.dispatch_label && (
                                     <button type="button" onClick={() => selectLabel(vals.dispatch_label)}
-                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-slate-500 hover:text-rose-500 hover:border-rose-200 transition-all bg-white">
+                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-content-3 hover:text-rose-500 hover:border-rose-200 transition-all bg-white">
                                         <X size={10} /> quitar
                                     </button>
                                 )}
@@ -279,7 +279,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
                         {/* Por lote */}
                         <div className="space-y-2">
-                            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Por lote</p>
+                            <p className="text-[9px] text-content-3 uppercase tracking-widest font-bold">Por lote</p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {MULTIPLO_PILLS.map(n => (
                                     <button key={n} type="button"
@@ -287,7 +287,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             multiplo === n
                                                 ? 'bg-blue-600 border-blue-500 text-white shadow-md'
-                                                : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                                                : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
                                         }`}
                                     >×{n}</button>
                                 ))}
@@ -297,7 +297,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         const n = parseInt(e.target.value);
                                         if (n > 0) selectMultiplo(n);
                                     }}
-                                    className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[16px] focus:outline-none focus:border-blue-400 bg-white/80"
+                                    className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[16px] focus:outline-none focus:border-blue-400 bg-surface-card"
                                 />
                             </div>
 
@@ -319,9 +319,9 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             {/* Caja especial — aplica siempre que haya presentación */}
             {vals.dispatch_id_presentacion && (
                 <div>
-                    <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-2 font-bold">
+                    <p className="text-[9px] text-content-2 uppercase tracking-widest mb-2 font-bold">
                         Caja especial
-                        <span className="normal-case tracking-normal font-medium text-slate-500"> · producto va fuera de cajas normales</span>
+                        <span className="normal-case tracking-normal font-medium text-content-3"> · producto va fuera de cajas normales</span>
                     </p>
                     <button type="button"
                         onClick={() => {
@@ -331,7 +331,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all text-[12px] font-semibold ${
                             vals.caja_especial
                                 ? 'bg-violet-600 border-violet-500 text-white shadow-md'
-                                : 'bg-white border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
+                                : 'bg-white border-slate-200 text-content-3 hover:border-violet-300 hover:text-violet-600'
                         }`}>
                         <Package size={13} />
                         {vals.caja_especial ? 'Caja especial activa — E1, E2…' : 'Activar caja especial'}
@@ -354,9 +354,9 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Notas */}
             <div>
-                <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">
+                <p className="text-[9px] text-content-3 uppercase tracking-widest mb-1.5 font-bold">
                     Notas internas
-                    <span className="normal-case tracking-normal font-medium text-slate-500"> · se guardan al salir del campo</span>
+                    <span className="normal-case tracking-normal font-medium text-content-3"> · se guardan al salir del campo</span>
                 </p>
                 <input type="text"
                     placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación para agregar notas' : 'Observación opcional…'}
@@ -365,7 +365,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
                     onBlur={commitNotes}
                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:border-blue-400 bg-white/80 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:border-blue-400 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
             </div>
         </div>
@@ -597,44 +597,44 @@ export default function TabReglas({ searchTerm = '' }) {
             <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
 
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
+                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-border-card backdrop-blur-sm shadow-sm">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                            {statsLoading ? <Loader2 size={14} className="animate-spin text-slate-500" /> : <Package size={15} className="text-[#0052CC]" />}
+                            {statsLoading ? <Loader2 size={14} className="animate-spin text-content-3" /> : <Package size={15} className="text-brand" />}
                         </div>
                         <div>
-                            <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
-                                {statsLoading ? <span className="text-slate-200">–</span> : allCount.toLocaleString()}
+                            <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
+                                {statsLoading ? <span className="text-content-3">–</span> : allCount.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-600">Productos activos</div>
+                            <div className="text-[10px] font-bold leading-tight text-content-2">Productos activos</div>
                         </div>
                     </div>
 
                     <StatCard label="Con regla" value={rulesCount}
-                        Icon={Check} iconBg={filterRule === 'con' ? 'bg-white' : 'bg-emerald-50'} iconCls="text-emerald-500"
-                        countCls={rulesCount > 0 ? 'text-emerald-600' : 'text-slate-500'}
+                        Icon={Check} iconBg={filterRule === 'con' ? 'bg-white' : 'bg-success/10'} iconCls="text-success"
+                        countCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'con'}
-                        activeBg="bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40"
+                        activeBg="bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
+                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/40"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'con' ? '' : 'con')}
                     />
 
                     <StatCard label="Sin regla" value={sinRegla}
-                        Icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-white' : 'bg-red-50'} iconCls="text-red-400"
-                        countCls={sinRegla > 0 ? 'text-red-500' : 'text-slate-500'}
+                        Icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-white' : 'bg-danger/10'} iconCls="text-danger"
+                        countCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
                         active={filterRule === 'sin'}
-                        activeBg="bg-red-50 border-red-300 shadow-md shadow-red-100/80 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-red-200 hover:bg-red-50/40"
+                        activeBg="bg-danger/10 border-red-300 shadow-md shadow-red-100/80 -translate-y-px"
+                        inactiveBg="bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/40"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
                     />
 
                     <StatCard label="Nuevos este mes" sub={`agregados en ${mesActual}`} value={thisMonthCount}
-                        Icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-white' : 'bg-emerald-50'} iconCls="text-emerald-500"
-                        countCls={thisMonthCount > 0 ? 'text-emerald-600' : 'text-slate-500'}
+                        Icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-white' : 'bg-success/10'} iconCls="text-success"
+                        countCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'nuevo'}
-                        activeBg="bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
-                        inactiveBg="bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40"
+                        activeBg="bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
+                        inactiveBg="bg-white border-slate-100 hover:border-success/30 hover:bg-success/40"
                         loading={statsLoading}
                         onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
                     />
@@ -643,7 +643,7 @@ export default function TabReglas({ searchTerm = '' }) {
                 {/* Botón limpiar filtro regla */}
                 {filterRule && (
                     <button onClick={() => setFilterRule('')}
-                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-sm text-[11px] text-slate-500 hover:text-red-500 hover:border-red-200 transition-colors whitespace-nowrap">
+                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-sm text-[11px] text-content-3 hover:text-danger hover:border-danger/30 transition-colors whitespace-nowrap">
                         <X size={11} /> Limpiar filtro
                     </button>
                 )}
@@ -677,15 +677,15 @@ export default function TabReglas({ searchTerm = '' }) {
                             <DataRow index={i} onClick={() => toggleEdit(prod.id)}
                                 className={isEditing ? 'bg-blue-50/60' : ''}>
 
-                                <DataCell className="text-slate-500 text-[12px]">
+                                <DataCell className="text-content-3 text-[12px]">
                                     <span className="block">{prod.laboratorio_nombre ?? '—'}</span>
                                 </DataCell>
 
                                 <DataCell>
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-medium text-slate-700 text-[13px]">{prod.nombre}</span>
+                                        <span className="font-medium text-content-2 text-[13px]">{prod.nombre}</span>
                                         {isNew && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold uppercase tracking-wide flex-shrink-0">
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-success/10 text-emerald-700 border border-success/30 font-bold uppercase tracking-wide flex-shrink-0">
                                                 <Sparkles size={8} /> Nuevo
                                             </span>
                                         )}
@@ -699,11 +699,11 @@ export default function TabReglas({ searchTerm = '' }) {
 
                                 <DataCell align="center">
                                     {hasRule ? (
-                                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium">
+                                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-emerald-700 border border-success/30 font-medium">
                                             <Check size={9} /> Con regla
                                         </span>
                                     ) : (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 font-medium">
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-card-hover text-content-3 border border-slate-200 font-medium">
                                             Sin regla
                                         </span>
                                     )}
@@ -712,14 +712,14 @@ export default function TabReglas({ searchTerm = '' }) {
                                 <DataCell align="center">
                                     {typeTag
                                         ? <span className={`inline-block text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${typeTag.bg} ${typeTag.txt}`}>{typeTag.text}</span>
-                                        : <span className="text-slate-200 text-[13px]">—</span>
+                                        : <span className="text-content-3 text-[13px]">—</span>
                                     }
                                 </DataCell>
 
-                                <DataCell className="text-slate-500 italic text-[12px] max-w-[140px]">
+                                <DataCell className="text-content-3 italic text-[12px] max-w-[140px]">
                                     {hasRule
-                                        ? <span className="block truncate">{rule.notes || <span className="not-italic text-slate-200">—</span>}</span>
-                                        : <span className="text-slate-200">—</span>
+                                        ? <span className="block truncate">{rule.notes || <span className="not-italic text-content-3">—</span>}</span>
+                                        : <span className="text-content-3">—</span>
                                     }
                                 </DataCell>
                             </DataRow>

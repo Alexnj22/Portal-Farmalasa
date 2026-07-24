@@ -72,17 +72,17 @@ const HolidaysPanel = ({
         <div className="p-4 md:p-6 space-y-6 animate-view-enter">
             {/* Year toggle + Add button */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-1 bg-white/60 backdrop-blur-md border border-white/70 rounded-[1.5rem] p-1 shadow-sm">
+                <div className="flex items-center gap-1 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-1 shadow-sm">
                     {[currentYear - 1, currentYear, currentYear + 1].map(y => (
                         <button key={y} onClick={() => setHolidayYear(y)}
-                            className={`px-4 py-1.5 rounded-[1.2rem] text-[11px] font-black transition-all ${holidayYear === y ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-600 hover:bg-white/50'}`}>
+                            className={`px-4 py-1.5 rounded-[1.2rem] text-[11px] font-black transition-all ${holidayYear === y ? 'bg-white text-warning shadow-sm' : 'text-content-3 hover:text-warning hover:bg-surface-card'}`}>
                             {y}
                         </button>
                     ))}
                 </div>
                 {canEdit && (
                     <button onClick={() => setShowForm(v => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-amber-500 hover:bg-amber-600 border-amber-500 text-white shadow-[0_4px_12px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_18px_rgba(234,179,8,0.4)] hover:-translate-y-0.5'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-slate-200 text-content-2' : 'bg-amber-500 hover:bg-amber-600 border-amber-500 text-white shadow-[0_4px_12px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_18px_rgba(234,179,8,0.4)] hover:-translate-y-0.5'}`}>
                         {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
                         {showForm ? 'Cancelar' : 'Agregar feriado'}
                     </button>
@@ -91,37 +91,37 @@ const HolidaysPanel = ({
 
             {/* Add form */}
             {showForm && canEdit && (
-                <div className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-[1.5rem] p-5 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
-                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Nuevo Feriado</p>
+                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.5rem] p-5 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    <p className="text-[10px] font-black text-warning uppercase tracking-widest">Nuevo Feriado</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-1">Nombre</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-1">Fecha</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
                             <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
-                        <div className="flex items-center gap-1.5 bg-slate-100 rounded-full p-1 border border-slate-200">
+                        <div className="flex items-center gap-1.5 bg-surface-card-hover rounded-full p-1 border border-slate-200">
                             <button onClick={() => setHType('NATIONAL')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'NATIONAL' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-600'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'NATIONAL' ? 'bg-white text-warning shadow-sm' : 'text-content-3 hover:text-warning'}`}>
                                 <Globe size={11} strokeWidth={2} /> Nacional
                             </button>
                             <button onClick={() => setHType('MUNICIPAL')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-white text-blue-600 shadow-sm' : 'text-content-3 hover:text-blue-600'}`}>
                                 <MapPin size={11} strokeWidth={2} /> Municipal
                             </button>
                         </div>
                         {hType === 'MUNICIPAL' && (
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
-                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[16px] font-bold text-slate-800 outline-none focus:border-blue-400 transition-all" />
+                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[16px] font-bold text-content outline-none focus:border-blue-400 transition-all" />
                         )}
                         <button onClick={() => setHRecurring(v => !v)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600'}`}>
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-emerald-300 text-emerald-700' : 'bg-white border-slate-200 text-content-3 hover:border-emerald-300 hover:text-success'}`}>
                             <RefreshCw size={11} strokeWidth={2} /> Recurrente
                         </button>
                     </div>
@@ -136,10 +136,10 @@ const HolidaysPanel = ({
             {/* Holiday list */}
             {byMonth.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
-                    <div className="p-5 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm">
+                    <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
                         <Star size={32} className="text-amber-200" strokeWidth={1.5} />
                     </div>
-                    <p className="text-[13px] font-bold text-slate-500">
+                    <p className="text-[13px] font-bold text-content-3">
                         {searchTerm ? `Sin resultados para "${searchTerm}"` : `No hay feriados registrados para ${holidayYear}`}
                     </p>
                 </div>
@@ -150,10 +150,10 @@ const HolidaysPanel = ({
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-2 h-7 bg-gradient-to-b from-amber-400 to-orange-400 rounded-full shrink-0" />
-                                    <span className="text-[16px] font-black text-slate-700 tracking-tight">{month}</span>
+                                    <span className="text-[16px] font-black text-content-2 tracking-tight">{month}</span>
                                 </div>
                                 <div className="h-px flex-1 bg-gradient-to-r from-amber-100 to-transparent" />
-                                <span className="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full shrink-0">
+                                <span className="text-[9px] font-black text-warning bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-full shrink-0">
                                     {items.length} {items.length === 1 ? 'feriado' : 'feriados'}
                                 </span>
                             </div>
@@ -166,7 +166,7 @@ const HolidaysPanel = ({
                                     return (
                                         <div key={h.id}
                                             className="group relative flex items-center overflow-hidden
-                                                bg-white/70 backdrop-blur-md border border-white/80 rounded-[1.5rem]
+                                                bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem]
                                                 shadow-[0_2px_12px_rgba(0,0,0,0.04)]
                                                 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5
                                                 transition-all duration-300">
@@ -174,16 +174,16 @@ const HolidaysPanel = ({
                                             <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-amber-400 to-orange-400' : 'bg-gradient-to-b from-blue-400 to-indigo-400'}`} />
                                             <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
                                                 {/* Date badge */}
-                                                <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-amber-50 border border-amber-100' : 'bg-blue-50 border border-blue-100'}`}>
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-amber-400' : 'text-blue-400'}`}>{dayName}</span>
+                                                <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-blue-50 border border-blue-100'}`}>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-blue-400'}`}>{dayName}</span>
                                                     <span className={`text-[17px] font-black leading-tight ${isNat ? 'text-amber-700' : 'text-blue-700'}`}>{dayNum}</span>
                                                 </div>
                                                 {/* Info */}
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[13px] font-black text-slate-800 truncate">{h.name}</p>
+                                                    <p className="text-[13px] font-black text-content truncate">{h.name}</p>
                                                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                                         {isNat ? (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">
                                                                 <Globe size={8} strokeWidth={2} /> Nacional
                                                             </span>
                                                         ) : (
@@ -192,7 +192,7 @@ const HolidaysPanel = ({
                                                             </span>
                                                         )}
                                                         {h.is_recurring && (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
                                                                 <RefreshCw size={8} strokeWidth={2} /> Recurrente
                                                             </span>
                                                         )}
@@ -201,8 +201,8 @@ const HolidaysPanel = ({
                                                 {/* Delete */}
                                                 {canEdit && (
                                                     <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
-                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0 disabled:opacity-50">
-                                                        {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-red-400" /> : <Trash2 size={14} strokeWidth={2} />}
+                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all flex-shrink-0 disabled:opacity-50">
+                                                        {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-danger" /> : <Trash2 size={14} strokeWidth={2} />}
                                                     </button>
                                                 )}
                                             </div>
@@ -708,7 +708,7 @@ const SchedulesView = ({ openModal, setView }) => {
     const filterPill = (
         <div className="relative flex items-center gap-0 rounded-2xl overflow-hidden
             bg-white/[0.14] backdrop-blur-2xl
-            border border-white/60
+            border border-border-card
             shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)]
             transition-all duration-300
             hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.95)]
@@ -727,27 +727,27 @@ const SchedulesView = ({ openModal, setView }) => {
                     compact clearable={false} icon={Building2} bare />
             </div>
 
-            <div className="h-5 w-px bg-white/30 shrink-0" />
+            <div className="h-5 w-px bg-surface-card shrink-0" />
 
             {/* Week navigator — hover-reveal arrows */}
             <div className="group/week flex items-center overflow-visible cursor-default relative z-10">
                 <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
                     <button onClick={() => changeWeek(-7)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-slate-600 hover:bg-white/50 active:scale-[0.97] transition-all shadow-sm">
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-content-2 hover:bg-surface-card active:scale-[0.97] transition-all shadow-sm">
                         <ChevronLeft size={15} strokeWidth={2.5} />
                     </button>
                 </div>
                 <div className="flex flex-col justify-center items-center px-4 py-2 whitespace-nowrap">
-                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-500' : 'text-slate-500'}`}>
+                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-warning' : 'text-content-3'}`}>
                         {!isDefaultWeek ? 'Semana filtrada' : 'Semana actual'}
                     </span>
-                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-800'}`}>
+                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-warning' : 'text-content'}`}>
                         {formatWeekRange(startDate)}
                     </span>
                 </div>
                 <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500">
                     <button onClick={() => changeWeek(7)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-slate-600 hover:bg-white/50 active:scale-[0.97] transition-all shadow-sm">
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-content-2 hover:bg-surface-card active:scale-[0.97] transition-all shadow-sm">
                         <ArrowRight size={15} strokeWidth={2.5} />
                     </button>
                 </div>
@@ -756,9 +756,9 @@ const SchedulesView = ({ openModal, setView }) => {
             {/* Reset X */}
             {!isDefaultWeek && (
                 <>
-                    <div className="h-5 w-px bg-white/30 shrink-0" />
+                    <div className="h-5 w-px bg-surface-card shrink-0" />
                     <button onClick={handleResetFilters} title="Volver a semana actual"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-10">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-10">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -767,14 +767,14 @@ const SchedulesView = ({ openModal, setView }) => {
             {/* Publish */}
             {canEdit && getScope('schedules') !== 'BRANCH' && (
                 <>
-                    <div className="h-5 w-px bg-white/30 shrink-0" />
+                    <div className="h-5 w-px bg-surface-card shrink-0" />
                     <button
                         onClick={weekIsPublished ? undefined : triggerPublishAudit}
                         disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
                         className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
                             ${weekIsPublished
                                 ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-700 cursor-default'
-                                : 'bg-[#0052CC] border-[#003D99]/60 text-white shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
+                                : 'bg-brand border-brand-hover/60 text-white shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:bg-brand-hover hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
                             ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
                         {isPublishing ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
                             : weekIsPublished ? <CheckCircle size={11} strokeWidth={2.5} />
@@ -867,15 +867,15 @@ const SchedulesView = ({ openModal, setView }) => {
 
                     {employeesInView.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5">
-                            <div className="p-6 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm">
-                                <CalendarDays size={36} className="text-[#0052CC]/30" strokeWidth={1.5} />
+                            <div className="p-6 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
+                                <CalendarDays size={36} className="text-brand/30" strokeWidth={1.5} />
                             </div>
                             <div className="text-center">
-                                <p className="text-[16px] font-black text-slate-600 mb-1">Sin empleados</p>
-                                <p className="text-[13px] font-medium text-slate-500">No hay empleados activos en esta sucursal.</p>
+                                <p className="text-[16px] font-black text-content-2 mb-1">Sin empleados</p>
+                                <p className="text-[13px] font-medium text-content-3">No hay empleados activos en esta sucursal.</p>
                             </div>
                             <button onClick={goToPersonal}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-[#0052CC] text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                 Ir al módulo de Personal <ArrowRight size={14} />
                             </button>
                         </div>

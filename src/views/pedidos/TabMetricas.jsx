@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { ERP_NAMES } from '../../constants/erp';
 
-const GLASS = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
+const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
 
 const RANGES = [
     { key: '7d',  label: 'Últimos 7 días',  days: 7  },
@@ -38,8 +38,8 @@ function StatCard({ icon: Icon, label, value, color = 'blue', sub = null }) {
         blue:    'text-blue-600 bg-blue-50 border-blue-100',
         teal:    'text-teal-600 bg-teal-50 border-teal-100',
         indigo:  'text-indigo-600 bg-indigo-50 border-indigo-100',
-        amber:   'text-amber-600 bg-amber-50 border-amber-100',
-        emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+        amber:   'text-warning bg-warning/10 border-warning/30',
+        emerald: 'text-success bg-success/10 border-success/30',
         violet:  'text-violet-600 bg-violet-50 border-violet-100',
     };
     return (
@@ -48,9 +48,9 @@ function StatCard({ icon: Icon, label, value, color = 'blue', sub = null }) {
                 <Icon size={16} />
             </span>
             <div>
-                <p className="text-[11px] text-slate-500">{label}</p>
-                <p className="text-[18px] font-bold text-slate-700 leading-tight">{value}</p>
-                {sub && <p className="text-[10px] text-slate-500">{sub}</p>}
+                <p className="text-[11px] text-content-3">{label}</p>
+                <p className="text-[18px] font-bold text-content-2 leading-tight">{value}</p>
+                {sub && <p className="text-[10px] text-content-3">{sub}</p>}
             </div>
         </div>
     );
@@ -130,7 +130,7 @@ export default function TabMetricas({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-16 gap-2 text-slate-500">
+            <div className="flex items-center justify-center py-16 gap-2 text-content-3">
                 <Loader2 size={20} className="animate-spin" />
                 <span className="text-[14px]">Calculando métricas…</span>
             </div>
@@ -144,12 +144,12 @@ export default function TabMetricas({ searchTerm = '' }) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <BarChart2 size={14} className="text-blue-500" />
-                    <span className="text-[12px] font-semibold text-slate-600">Métricas de eficiencia</span>
+                    <span className="text-[12px] font-semibold text-content-2">Métricas de eficiencia</span>
                 </div>
                 <button
                     onClick={() => load(RANGES.find(r => r.key === range)?.days ?? 30)}
                     disabled={refreshing}
-                    className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-blue-600 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 text-[11px] text-content-3 hover:text-blue-600 transition-colors disabled:opacity-50"
                 >
                     <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
                     Refrescar
@@ -165,7 +165,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                         className={`text-[11px] px-3 py-1.5 rounded-full border font-medium transition-colors ${
                             range === r.key
                                 ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                : 'bg-white text-content-3 border-slate-200 hover:border-slate-300 hover:text-content-2'
                         }`}
                     >
                         {r.label}
@@ -174,10 +174,10 @@ export default function TabMetricas({ searchTerm = '' }) {
             </div>
 
             {kpis.length === 0 ? (
-                <div className={`${GLASS} flex flex-col items-center justify-center py-12 gap-2 text-slate-500`}>
+                <div className={`${GLASS} flex flex-col items-center justify-center py-12 gap-2 text-content-3`}>
                     <BarChart2 size={32} className="opacity-40" />
                     <p className="text-[13px]">Sin datos para el período seleccionado.</p>
-                    <p className="text-[11px] text-slate-500">Los tiempos se registran al despachar y recibir pedidos.</p>
+                    <p className="text-[11px] text-content-3">Los tiempos se registran al despachar y recibir pedidos.</p>
                 </div>
             ) : (
                 <>
@@ -193,8 +193,8 @@ export default function TabMetricas({ searchTerm = '' }) {
                     {/* Tabla por sucursal */}
                     <div className={GLASS}>
                         <div className="px-4 py-3 border-b border-slate-100">
-                            <p className="text-[12px] font-semibold text-slate-600 flex items-center gap-2">
-                                <Building2 size={13} className="text-slate-400" />
+                            <p className="text-[12px] font-semibold text-content-2 flex items-center gap-2">
+                                <Building2 size={13} className="text-content-3" />
                                 Por sucursal
                             </p>
                         </div>
@@ -202,32 +202,32 @@ export default function TabMetricas({ searchTerm = '' }) {
                             <table className="w-full text-[11px]">
                                 <thead>
                                     <tr className="border-b border-slate-100">
-                                        <th className="text-left px-4 py-2.5 font-semibold text-slate-500">Sucursal</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-slate-500">Pedidos</th>
+                                        <th className="text-left px-4 py-2.5 font-semibold text-content-3">Sucursal</th>
+                                        <th className="text-center px-3 py-2.5 font-semibold text-content-3">Pedidos</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-violet-600">Prep. neto</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-amber-600">Pausa</th>
+                                        <th className="text-center px-3 py-2.5 font-semibold text-warning">Pausa</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-indigo-600">Tránsito</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-teal-600">Recuento</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-slate-500">Pausas</th>
+                                        <th className="text-center px-3 py-2.5 font-semibold text-content-3">Pausas</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredSucs.map(s => (
-                                        <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-4 py-2.5 font-semibold text-slate-700">{s.nombre}</td>
-                                            <td className="px-3 py-2.5 text-center text-slate-600 tabular-nums">{s.pedidos}</td>
+                                        <tr key={s.id} className="border-b border-slate-50 hover:bg-surface-card-hover/50 transition-colors">
+                                            <td className="px-4 py-2.5 font-semibold text-content-2">{s.nombre}</td>
+                                            <td className="px-3 py-2.5 text-center text-content-2 tabular-nums">{s.pedidos}</td>
                                             <td className="px-3 py-2.5 text-center font-medium text-violet-700 tabular-nums">{fmtMin(s.avgPrep)}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-amber-600 tabular-nums">{fmtMin(s.avgPausado)}</td>
+                                            <td className="px-3 py-2.5 text-center font-medium text-warning tabular-nums">{fmtMin(s.avgPausado)}</td>
                                             <td className="px-3 py-2.5 text-center font-medium text-indigo-700 tabular-nums">{fmtMin(s.avgTransito)}</td>
                                             <td className="px-3 py-2.5 text-center font-medium text-teal-700 tabular-nums">{fmtMin(s.avgRecuento)}</td>
                                             <td className="px-3 py-2.5 text-center tabular-nums">
                                                 {s.numPausas > 0 ? (
-                                                    <span className="inline-flex items-center gap-0.5 text-amber-600 font-semibold">
+                                                    <span className="inline-flex items-center gap-0.5 text-warning font-semibold">
                                                         <Pause size={9} />
                                                         {s.numPausas}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-slate-500">—</span>
+                                                    <span className="text-content-3">—</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -241,25 +241,25 @@ export default function TabMetricas({ searchTerm = '' }) {
                     {razones.length > 0 && (
                         <div className={GLASS}>
                             <div className="px-4 py-3 border-b border-slate-100">
-                                <p className="text-[12px] font-semibold text-slate-600 flex items-center gap-2">
-                                    <Pause size={13} className="text-amber-500" />
+                                <p className="text-[12px] font-semibold text-content-2 flex items-center gap-2">
+                                    <Pause size={13} className="text-warning" />
                                     Razones de pausa
                                 </p>
                             </div>
                             <div className="px-4 py-3 space-y-2">
                                 {razones.map(r => (
                                     <div key={r.razon} className="flex items-center gap-3">
-                                        <span className="text-[12px] text-slate-600 font-medium flex-1">{r.razon}</span>
+                                        <span className="text-[12px] text-content-2 font-medium flex-1">{r.razon}</span>
                                         <div className="flex items-center gap-2 shrink-0">
-                                            <span className="text-[11px] font-bold text-amber-600 tabular-nums w-6 text-right">{r.conteo}</span>
-                                            <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <span className="text-[11px] font-bold text-warning tabular-nums w-6 text-right">{r.conteo}</span>
+                                            <div className="w-24 h-2 bg-surface-card-hover rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-amber-400 rounded-full"
                                                     style={{ width: `${Math.min(100, (r.conteo / razones[0].conteo) * 100)}%` }}
                                                 />
                                             </div>
                                             {r.min_promedio != null && (
-                                                <span className="text-[10px] text-slate-500 w-14 text-right tabular-nums">
+                                                <span className="text-[10px] text-content-3 w-14 text-right tabular-nums">
                                                     ~{fmtMin(r.min_promedio)}
                                                 </span>
                                             )}

@@ -40,17 +40,17 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
 
     if (loading || data.length === 0) {
         return (
-            <div className="rounded-2xl border border-white/70 p-2.5 flex flex-col gap-1.5" style={glassBox}>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">ABC × XYZ</span>
+            <div className="rounded-2xl border border-border-card p-2.5 flex flex-col gap-1.5" style={glassBox}>
+                <span className="text-[9px] font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
                 {loading ? (
                     <div className="grid gap-[3px] animate-pulse" style={{ gridTemplateColumns: '20px repeat(3, 1fr)' }}>
                         {Array.from({ length: 16 }).map((_, i) => (
-                            <div key={i} className="h-8 rounded-lg bg-slate-100/70" />
+                            <div key={i} className="h-8 rounded-lg bg-surface-card-hover/70" />
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-4 gap-1.5 text-slate-500">
-                        <BarChart2 size={22} className="text-slate-400" />
+                    <div className="flex flex-col items-center justify-center py-4 gap-1.5 text-content-3">
+                        <BarChart2 size={22} className="text-content-3" />
                         <span className="text-[9px] font-semibold">Sin datos — presioná Calcular</span>
                     </div>
                 )}
@@ -62,18 +62,18 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
         `py-1 px-2 rounded-md text-[10px] font-black text-center
          transition-[background-color,box-shadow,color] duration-75
          ${active
-             ? 'text-[#0052CC] bg-[rgba(0,82,204,0.11)] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-             : 'text-slate-500 hover:text-slate-600 hover:bg-white/60'}`;
+             ? 'text-brand bg-[rgba(0,82,204,0.11)] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
+             : 'text-content-3 hover:text-content-2 hover:bg-surface-card'}`;
 
     return (
-        <div className="rounded-2xl border border-white/70 p-2 flex flex-col gap-1" style={glassBox}>
+        <div className="rounded-2xl border border-border-card p-2 flex flex-col gap-1" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[8px] font-black uppercase tracking-widest text-slate-600">ABC × XYZ</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
                     <motion.button
                         whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                         onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-[9px] font-bold text-slate-500 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-rose-50/70">
+                        className="text-[9px] font-bold text-content-3 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-rose-50/70">
                         <X size={8} strokeWidth={2.5} /> limpiar
                     </motion.button>
                 )}
@@ -125,8 +125,8 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                                         outlineOffset: isActive ? '1.5px' : undefined,
                                     }}
                                     disabled={count === 0}>
-                                    <span className="text-[11px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
-                                    {count > 0 && <span className="text-[8px] font-semibold text-slate-500 block">{abc}{xyz}</span>}
+                                    <span className="text-[11px] font-black text-content-2 tabular-nums leading-none">{count || '—'}</span>
+                                    {count > 0 && <span className="text-[8px] font-semibold text-content-3 block">{abc}{xyz}</span>}
                                 </motion.button>
                             );
                         })}
@@ -135,13 +135,13 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
             </div>
 
             {/* Legend — one line */}
-            <div className="flex items-center gap-2.5 border-t border-white/50 pt-1">
+            <div className="flex items-center gap-2.5 border-t border-border-card pt-1">
                 {XYZ_KEYS.map((xyz, i) => {
                     const descs = ['Estable', 'Mod.', 'Errática'];
                     return (
                         <span key={xyz} className="flex items-center gap-0.5 text-[8px]">
-                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-[#0052CC]' : 'text-slate-500'}`}>{xyz}</span>
-                            <span className="text-slate-500">{descs[i]}</span>
+                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-brand' : 'text-content-3'}`}>{xyz}</span>
+                            <span className="text-content-3">{descs[i]}</span>
                         </span>
                     );
                 })}

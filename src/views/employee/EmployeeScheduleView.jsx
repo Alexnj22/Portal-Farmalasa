@@ -22,17 +22,17 @@ const DAYS = [
 ];
 
 const EVENT_BADGE = {
-    VACATION:   { label: 'Vacaciones',  color: 'bg-amber-100 text-amber-700 border-amber-200' },
-    DISABILITY: { label: 'Incapacidad', color: 'bg-red-100 text-red-700 border-red-200' },
+    VACATION:   { label: 'Vacaciones',  color: 'bg-warning/10 text-amber-700 border-warning/30' },
+    DISABILITY: { label: 'Incapacidad', color: 'bg-danger/10 text-red-700 border-danger/30' },
     PERMIT:     { label: 'Permiso',     color: 'bg-purple-100 text-purple-700 border-purple-200' },
 };
 
 const VACATION_STATUS = {
-    DRAFT:            { label: 'Borrador',      color: 'bg-slate-100 text-slate-500 border-slate-200' },
+    DRAFT:            { label: 'Borrador',      color: 'bg-surface-card-hover text-content-3 border-slate-200' },
     PRE_APPROVED:     { label: 'Pre-aprobado',  color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    CHANGE_REQUESTED: { label: 'Cambio solicitado', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-    APPROVED:         { label: 'Aprobado',      color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    CONFIRMED:        { label: 'Confirmado',    color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    CHANGE_REQUESTED: { label: 'Cambio solicitado', color: 'bg-warning/10 text-amber-700 border-warning/30' },
+    APPROVED:         { label: 'Aprobado',      color: 'bg-success/10 text-emerald-700 border-success/30' },
+    CONFIRMED:        { label: 'Confirmado',    color: 'bg-success/10 text-emerald-700 border-success/30' },
 };
 
 const fmtDate = (d) => d
@@ -222,22 +222,22 @@ const EmployeeScheduleView = () => {
     return (
         <div className="px-4 pt-4 pb-6 space-y-4">
             {/* Navegación de semana */}
-            <div className="flex items-center justify-between bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.75rem] px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.75rem] px-4 py-3 shadow-sm">
                 <button
                     onClick={() => setWeekOffset(v => v - 1)}
-                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-[0.97]"
+                    className="p-2 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all active:scale-[0.97]"
                 >
                     <ChevronLeft size={18} strokeWidth={2.5} />
                 </button>
                 <div className="text-center">
-                    <p className="text-[13px] font-black text-slate-800">{weekLabel}</p>
+                    <p className="text-[13px] font-black text-content">{weekLabel}</p>
                     {isCurrentWeek && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#0052CC]">Semana actual</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-brand">Semana actual</span>
                     )}
                 </div>
                 <button
                     onClick={() => setWeekOffset(v => v + 1)}
-                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-[0.97]"
+                    className="p-2 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all active:scale-[0.97]"
                 >
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
@@ -246,7 +246,7 @@ const EmployeeScheduleView = () => {
             {isLoading ? (
                 <div className="space-y-2 animate-in fade-in duration-300">
                     {Array.from({ length: 7 }).map((_, i) => (
-                        <div key={i} className="rounded-[1.75rem] border border-white/60 bg-white/60 backdrop-blur-md p-4">
+                        <div key={i} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-md p-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-[1rem] skeleton flex-shrink-0" />
                                 <div className="flex-1 space-y-2">
@@ -264,43 +264,43 @@ const EmployeeScheduleView = () => {
                             key={d.id}
                             className={`rounded-[1.75rem] border p-4 transition-all ${
                                 d.isToday
-                                    ? 'bg-[#0052CC]/5 border-[#0052CC]/30 shadow-[0_0_0_1px_rgba(0,82,204,0.15)]'
-                                    : 'bg-white/60 backdrop-blur-md border-white/60'
+                                    ? 'bg-brand/5 border-brand/30 shadow-[0_0_0_1px_rgba(0,82,204,0.15)]'
+                                    : 'bg-surface-card backdrop-blur-md border-border-card'
                             }`}
                         >
                             <div className="flex items-center gap-3">
                                 <div className={`w-12 h-12 rounded-[1rem] flex flex-col items-center justify-center flex-shrink-0 ${
-                                    d.isToday ? 'bg-[#0052CC] text-white' : 'bg-slate-100 text-slate-600'
+                                    d.isToday ? 'bg-brand text-white' : 'bg-surface-card-hover text-content-2'
                                 }`}>
                                     <span className="text-[8px] font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
                                     <span className="text-[16px] font-black leading-tight">{d.date.getDate()}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     {d.event ? (
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${EVENT_BADGE[d.event.type]?.color || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${EVENT_BADGE[d.event.type]?.color || 'bg-surface-card-hover text-content-2 border-slate-200'}`}>
                                             {EVENT_BADGE[d.event.type]?.label || d.event.type}
                                         </span>
                                     ) : d.shift ? (
                                         <div className="flex items-center gap-3">
                                             <div>
-                                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Entrada</p>
-                                                <p className="text-[15px] font-black text-slate-800">{formatTime12h(d.shift.start)}</p>
+                                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Entrada</p>
+                                                <p className="text-[15px] font-black text-content">{formatTime12h(d.shift.start)}</p>
                                             </div>
                                             <Coffee size={12} className="text-orange-400 flex-shrink-0" />
                                             <div>
-                                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Salida</p>
-                                                <p className="text-[15px] font-black text-slate-800">{formatTime12h(d.shift.end)}</p>
+                                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Salida</p>
+                                                <p className="text-[15px] font-black text-content">{formatTime12h(d.shift.end)}</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 text-slate-500">
+                                        <div className="flex items-center gap-2 text-content-3">
                                             <Palmtree size={15} strokeWidth={1.5} />
                                             <span className="text-[13px] font-bold">Día libre</span>
                                         </div>
                                     )}
                                 </div>
                                 {d.isToday && (
-                                    <span className="flex-shrink-0 text-[9px] font-black uppercase tracking-widest bg-[#0052CC] text-white px-2 py-0.5 rounded-full animate-pulse">
+                                    <span className="flex-shrink-0 text-[9px] font-black uppercase tracking-widest bg-brand text-white px-2 py-0.5 rounded-full animate-pulse">
                                         Hoy
                                     </span>
                                 )}
@@ -311,8 +311,8 @@ const EmployeeScheduleView = () => {
             )}
 
             {/* ── Mis Vacaciones ── */}
-            <div className="rounded-[1.75rem] border border-white/60 bg-white/60 backdrop-blur-xl p-5 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+            <div className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl p-5 space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                     <Palmtree size={10} /> Mis Vacaciones
                 </p>
 
@@ -321,7 +321,7 @@ const EmployeeScheduleView = () => {
                         <div className="skeleton rounded-2xl h-16 w-full" />
                     </div>
                 ) : myVacations.length === 0 ? (
-                    <p className="text-[12px] text-slate-500 font-medium text-center py-3">
+                    <p className="text-[12px] text-content-3 font-medium text-center py-3">
                         No hay vacaciones programadas aún.
                     </p>
                 ) : (
@@ -330,17 +330,17 @@ const EmployeeScheduleView = () => {
                             const meta = VACATION_STATUS[vp.status] || VACATION_STATUS.PRE_APPROVED;
                             const canRequest = vp.status === 'PRE_APPROVED' && !pendingRequest;
                             return (
-                                <div key={vp.id} className="bg-white/70 border border-white/60 rounded-2xl p-4 space-y-2">
+                                <div key={vp.id} className="bg-surface-card border border-border-card rounded-2xl p-4 space-y-2">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
                                         <div className="flex items-center gap-2">
-                                            <Calendar size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2.5} />
+                                            <Calendar size={13} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                             <div>
-                                                <p className="text-[11px] font-black text-slate-700">
+                                                <p className="text-[11px] font-black text-content-2">
                                                     {fmtDate(vp.start_date)}
-                                                    <ArrowRight size={9} className="inline mx-1 text-slate-400" strokeWidth={2.5} />
+                                                    <ArrowRight size={9} className="inline mx-1 text-content-3" strokeWidth={2.5} />
                                                     {fmtDate(vp.end_date)}
                                                 </p>
-                                                <p className="text-[9px] text-slate-500 font-medium">{vp.days} días · {vp.year}</p>
+                                                <p className="text-[9px] text-content-3 font-medium">{vp.days} días · {vp.year}</p>
                                             </div>
                                         </div>
                                         <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${meta.color}`}>
@@ -350,8 +350,8 @@ const EmployeeScheduleView = () => {
 
                                     {/* Requested change info */}
                                     {vp.status === 'CHANGE_REQUESTED' && vp.change_requested_start && (
-                                        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200/60 rounded-xl px-3 py-2">
-                                            <MessageSquare size={11} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
+                                        <div className="flex items-center gap-2 bg-warning/10 border border-warning/60 rounded-xl px-3 py-2">
+                                            <MessageSquare size={11} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                             <p className="text-[10px] text-amber-700 font-bold">
                                                 Cambio solicitado: {fmtDate(vp.change_requested_start)} → {fmtDate(vp.change_requested_end)}
                                             </p>
@@ -362,13 +362,13 @@ const EmployeeScheduleView = () => {
                                     {canRequest && (
                                         <button
                                             onClick={() => handleOpenChangeForm(vp)}
-                                            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-[#0052CC]/20 bg-[#0052CC]/5 text-[#0052CC] text-[10px] font-black uppercase tracking-widest hover:bg-[#0052CC]/10 transition-all"
+                                            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-brand/20 bg-brand/5 text-brand text-[10px] font-black uppercase tracking-widest hover:bg-brand/10 transition-all"
                                         >
                                             <MessageSquare size={11} strokeWidth={2.5} /> Solicitar cambio de fechas
                                         </button>
                                     )}
                                     {pendingRequest && vp.status === 'CHANGE_REQUESTED' && (
-                                        <p className="text-[10px] text-amber-600 font-bold text-center">Solicitud enviada — pendiente de aprobación</p>
+                                        <p className="text-[10px] text-warning font-bold text-center">Solicitud enviada — pendiente de aprobación</p>
                                     )}
                                 </div>
                             );
@@ -380,23 +380,23 @@ const EmployeeScheduleView = () => {
             {/* Change request form modal */}
             {showChangeForm && changeTarget && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-white/60 rounded-[2rem] p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="w-full max-w-md bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center justify-between">
-                            <p className="text-[14px] font-black text-slate-800">Solicitar cambio de vacaciones</p>
-                            <button onClick={() => setShowChangeForm(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all">
+                            <p className="text-[14px] font-black text-content">Solicitar cambio de vacaciones</p>
+                            <button onClick={() => setShowChangeForm(false)} className="p-1.5 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all">
                                 <X size={16} strokeWidth={2.5} />
                             </button>
                         </div>
 
-                        <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3">
-                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Fechas actuales</p>
-                            <p className="text-[12px] font-bold text-slate-700">
+                        <div className="bg-surface-card-hover border border-slate-100 rounded-2xl px-4 py-3">
+                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Fechas actuales</p>
+                            <p className="text-[12px] font-bold text-content-2">
                                 {fmtDate(changeTarget.start_date)} → {fmtDate(changeTarget.end_date)}
                             </p>
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 ml-1">Nuevas fechas solicitadas</p>
+                            <p className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">Nuevas fechas solicitadas</p>
                             <RangeDatePicker
                                 startDate={reqStart}
                                 endDate={reqEnd}
@@ -408,27 +408,27 @@ const EmployeeScheduleView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 ml-1">Motivo (opcional)</p>
+                            <p className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">Motivo (opcional)</p>
                             <textarea
                                 value={reqNote}
                                 onChange={e => setReqNote(e.target.value)}
                                 placeholder="Explica el motivo del cambio…"
                                 rows={2}
-                                className="w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all placeholder-slate-400 placeholder:font-normal resize-none"
+                                className="w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all placeholder-slate-400 placeholder:font-normal resize-none"
                             />
                         </div>
 
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowChangeForm(false)}
-                                className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-500 text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                                className="flex-1 py-3 rounded-2xl border border-slate-200 text-content-3 text-[11px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleSubmitChange}
                                 disabled={!reqStart || !reqEnd || submittingReq}
-                                className="flex-1 py-3 rounded-2xl bg-[#0052CC] text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-[#003D99] transition-all"
+                                className="flex-1 py-3 rounded-2xl bg-brand text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-brand-hover transition-all"
                             >
                                 {submittingReq
                                     ? <><Loader2 size={13} className="animate-spin" /> Enviando…</>

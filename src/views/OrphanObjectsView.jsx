@@ -18,10 +18,10 @@ const STATUS_LABELS = {
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 const STATUS_BADGE = {
-    candidate: { icon: HelpCircle, cls: 'bg-amber-50 text-amber-600 border-amber-100' },
-    confirmed_orphan: { icon: XCircle, cls: 'bg-red-50 text-red-600 border-red-100' },
-    false_positive: { icon: XCircle, cls: 'bg-slate-50 text-slate-500 border-slate-200' },
-    resolved: { icon: CheckCircle2, cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    candidate: { icon: HelpCircle, cls: 'bg-warning/10 text-warning border-warning/30' },
+    confirmed_orphan: { icon: XCircle, cls: 'bg-danger/10 text-danger border-danger/30' },
+    false_positive: { icon: XCircle, cls: 'bg-surface-card-hover text-content-3 border-slate-200' },
+    resolved: { icon: CheckCircle2, cls: 'bg-success/10 text-success border-success/30' },
 };
 
 const TABS = [
@@ -78,7 +78,7 @@ const OrphanObjectsView = () => {
         <GlassViewLayout icon={Ghost} title="Objetos Huérfanos" filtersContent={filtersContent}>
             <div className="p-4 md:p-6">
                 <div className="mb-4 px-3 py-2 rounded-xl bg-slate-800/6 border border-slate-200/60">
-                    <p className="text-[11px] text-slate-600 font-medium leading-snug">
+                    <p className="text-[11px] text-content-2 font-medium leading-snug">
                         Tablero de seguimiento de candidatos a código muerto (componentes/funciones/edge
                         functions sin caller real). No es detección automática — cada fila se agrega vía
                         migración cuando se confirma un caso real; acá solo se marca su estado.
@@ -100,17 +100,17 @@ const OrphanObjectsView = () => {
                         return (
                             <DataRow key={row.id} index={i}>
                                 <DataCell>
-                                    <div className="text-[12px] font-black text-slate-800">{row.title}</div>
-                                    <div className="text-[10px] text-slate-500 mt-0.5 font-mono truncate max-w-[280px]" title={row.ref}>{row.ref}</div>
+                                    <div className="text-[12px] font-black text-content">{row.title}</div>
+                                    <div className="text-[10px] text-content-3 mt-0.5 font-mono truncate max-w-[280px]" title={row.ref}>{row.ref}</div>
                                     {row.notes && (
-                                        <div className="text-[10px] text-slate-500 mt-1 leading-snug max-w-[360px]">{row.notes}</div>
+                                        <div className="text-[10px] text-content-3 mt-1 leading-snug max-w-[360px]">{row.notes}</div>
                                     )}
                                 </DataCell>
                                 <DataCell hideBelow="md">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{row.kind}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-content-3">{row.kind}</span>
                                 </DataCell>
                                 <DataCell hideBelow="md">
-                                    <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-content-3">
                                         <Clock size={9} /> {new Date(row.detected_at).toLocaleDateString('es-SV')}
                                     </span>
                                 </DataCell>

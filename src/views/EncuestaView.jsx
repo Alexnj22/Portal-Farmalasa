@@ -29,20 +29,20 @@ const SUPERVISOR_DE_JEFE = {
 
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
 const OPT_COLORS = {
-    A: { on: 'bg-emerald-500 text-white', off: 'bg-slate-100 text-slate-500' },
-    B: { on: 'bg-blue-500 text-white',    off: 'bg-slate-100 text-slate-500' },
-    C: { on: 'bg-amber-500 text-white',   off: 'bg-slate-100 text-slate-500' },
-    D: { on: 'bg-rose-500 text-white',    off: 'bg-slate-100 text-slate-500' },
+    A: { on: 'bg-emerald-500 text-white', off: 'bg-surface-card-hover text-content-3' },
+    B: { on: 'bg-blue-500 text-white',    off: 'bg-surface-card-hover text-content-3' },
+    C: { on: 'bg-amber-500 text-white',   off: 'bg-surface-card-hover text-content-3' },
+    D: { on: 'bg-rose-500 text-white',    off: 'bg-surface-card-hover text-content-3' },
 };
 const PCT_COLORS = {
     blue:    { bar: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200',    badge: 'bg-blue-100 text-blue-700' },
-    emerald: { bar: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', badge: 'bg-emerald-100 text-emerald-700' },
-    amber:   { bar: 'bg-amber-500',   text: 'text-amber-700',   bg: 'bg-amber-50',   border: 'border-amber-200',   badge: 'bg-amber-100 text-amber-700' },
+    emerald: { bar: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-success/10', border: 'border-success/30', badge: 'bg-success/10 text-emerald-700' },
+    amber:   { bar: 'bg-amber-500',   text: 'text-amber-700',   bg: 'bg-warning/10',   border: 'border-warning/30',   badge: 'bg-warning/10 text-amber-700' },
     indigo:  { bar: 'bg-indigo-500',  text: 'text-indigo-700',  bg: 'bg-indigo-50',  border: 'border-indigo-200',  badge: 'bg-indigo-100 text-indigo-700' },
     purple:  { bar: 'bg-purple-500',  text: 'text-purple-700',  bg: 'bg-purple-50',  border: 'border-purple-200',  badge: 'bg-purple-100 text-purple-700' },
     teal:    { bar: 'bg-teal-500',    text: 'text-teal-700',    bg: 'bg-teal-50',    border: 'border-teal-200',    badge: 'bg-teal-100 text-teal-700' },
     rose:    { bar: 'bg-rose-500',    text: 'text-rose-700',    bg: 'bg-rose-50',    border: 'border-rose-200',    badge: 'bg-rose-100 text-rose-700' },
-    slate:   { bar: 'bg-slate-500',   text: 'text-slate-700',   bg: 'bg-slate-50',   border: 'border-slate-200',   badge: 'bg-slate-100 text-slate-700' },
+    slate:   { bar: 'bg-slate-500',   text: 'text-content-2',   bg: 'bg-surface-card-hover',   border: 'border-slate-200',   badge: 'bg-surface-card-hover text-content-2' },
 };
 
 function scoreVal(v) {
@@ -78,9 +78,9 @@ function questionDist(rows, idx) {
 }
 
 function scoreLabel(pct) {
-    if (pct >= 85) return { label: 'Excelente', color: 'text-emerald-600', Icon: Smile };
+    if (pct >= 85) return { label: 'Excelente', color: 'text-success', Icon: Smile };
     if (pct >= 70) return { label: 'Bueno',     color: 'text-blue-600',    Icon: ThumbsUp };
-    if (pct >= 55) return { label: 'Regular',   color: 'text-amber-600',   Icon: Meh };
+    if (pct >= 55) return { label: 'Regular',   color: 'text-warning',   Icon: Meh };
     return               { label: 'Crítico',    color: 'text-rose-600',    Icon: Frown };
 }
 
@@ -114,7 +114,7 @@ function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
 // ─── Mini bar chart for A/B/C/D distribution ─────────────────────────────────
 function DistBar({ dist, invertida = false }) {
     const { A, B, C, D, total } = dist;
-    if (!total) return <span className="text-[10px] text-slate-500">Sin datos</span>;
+    if (!total) return <span className="text-[10px] text-content-3">Sin datos</span>;
     const pct = (n) => Math.round((n / total) * 100);
     const positives = pct(A) + pct(B);
     const bars = [
@@ -125,14 +125,14 @@ function DistBar({ dist, invertida = false }) {
     ];
     return (
         <div className="flex items-center gap-1.5 w-full">
-            <div className="flex-1 flex h-2.5 rounded-full overflow-hidden gap-px bg-slate-100">
+            <div className="flex-1 flex h-2.5 rounded-full overflow-hidden gap-px bg-surface-card-hover">
                 {bars.map(({ key, n, cls }) => n > 0 && (
                     <div key={key} className={`${cls} transition-all duration-500`}
                         style={{ width: `${(n / total) * 100}%` }}
                         title={`${key}: ${n} (${pct(n)}%)`} />
                 ))}
             </div>
-            <span className={`text-[10px] font-black w-8 text-right ${positives >= 70 ? 'text-emerald-600' : positives >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+            <span className={`text-[10px] font-black w-8 text-right ${positives >= 70 ? 'text-success' : positives >= 50 ? 'text-warning' : 'text-rose-600'}`}>
                 {positives}%
             </span>
         </div>
@@ -157,17 +157,17 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
 
     return (
         <div className="border-b border-slate-50 last:border-0">
-            <button className="w-full text-left px-4 py-3 hover:bg-slate-50/60 transition-colors flex items-start gap-3"
+            <button className="w-full text-left px-4 py-3 hover:bg-surface-card-hover/60 transition-colors flex items-start gap-3"
                 onClick={onToggle}>
-                <span className="shrink-0 w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 mt-0.5">
+                <span className="shrink-0 w-7 h-7 rounded-lg bg-surface-card-hover flex items-center justify-center text-[10px] font-black text-content-3 mt-0.5">
                     P{pregunta.id}
                 </span>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-slate-700 leading-snug mb-1.5">{pregunta.texto}</p>
+                    <p className="text-[11px] font-semibold text-content-2 leading-snug mb-1.5">{pregunta.texto}</p>
                     <DistBar dist={dist} invertida={pregunta.invertida} />
                 </div>
                 <div className="shrink-0 pt-0.5">
-                    {showDetail ? <ChevronUp size={13} className="text-slate-500" /> : <ChevronDown size={13} className="text-slate-500" />}
+                    {showDetail ? <ChevronUp size={13} className="text-content-3" /> : <ChevronDown size={13} className="text-content-3" />}
                 </div>
             </button>
 
@@ -175,9 +175,9 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                 <div className="px-4 pb-3 pt-0">
                     <div className="ml-10 grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {[
-                            { k: 'A', label: pregunta.opciones?.[0] || 'Siempre / Totalmente de acuerdo',  cls: 'bg-emerald-50 border-emerald-200 text-emerald-700', chip: 'bg-emerald-100 text-emerald-700' },
+                            { k: 'A', label: pregunta.opciones?.[0] || 'Siempre / Totalmente de acuerdo',  cls: 'bg-success/10 border-success/30 text-emerald-700', chip: 'bg-success/10 text-emerald-700' },
                             { k: 'B', label: pregunta.opciones?.[1] || 'Frecuentemente / De acuerdo',       cls: 'bg-blue-50 border-blue-200 text-blue-700',           chip: 'bg-blue-100 text-blue-700' },
-                            { k: 'C', label: pregunta.opciones?.[2] || 'A veces / En desacuerdo',           cls: 'bg-amber-50 border-amber-200 text-amber-700',         chip: 'bg-amber-100 text-amber-700' },
+                            { k: 'C', label: pregunta.opciones?.[2] || 'A veces / En desacuerdo',           cls: 'bg-warning/10 border-warning/30 text-amber-700',         chip: 'bg-warning/10 text-amber-700' },
                             { k: 'D', label: pregunta.opciones?.[3] || 'Nunca / Totalmente en desacuerdo',  cls: 'bg-rose-50 border-rose-200 text-rose-700',            chip: 'bg-rose-100 text-rose-700' },
                         ].map(({ k, label, cls }) => (
                             <div key={k} className={`border rounded-xl p-2.5 ${cls}`}>
@@ -187,14 +187,14 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                                 {namesByOption[k].length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1 border-t border-current/10 pt-1.5">
                                         {namesByOption[k].map(({ nombre, isJefe, sucursal, photo }) => (
-                                            <div key={nombre} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white/70 border border-black/10">
+                                            <div key={nombre} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-surface-card border border-black/10">
                                                 <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={24} />
                                                 <div className="flex flex-col leading-tight">
-                                                    <span className="text-[10px] font-black leading-none text-slate-800">
+                                                    <span className="text-[10px] font-black leading-none text-content">
                                                         {nombre.split(' ').map((w, i) => i === 0 ? w : w.charAt(0) + '.').join(' ')}
                                                         {isJefe && <span className="ml-1 opacity-60">·J</span>}
                                                     </span>
-                                                    <span className="text-[9px] opacity-55 leading-none mt-0.5 text-slate-600">{sucursal}</span>
+                                                    <span className="text-[9px] opacity-55 leading-none mt-0.5 text-content-2">{sucursal}</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -216,17 +216,17 @@ function ScoreCard({ pct, label, color, desc }) {
     return (
         <div className={`flex flex-col gap-1 px-3 py-2.5 rounded-xl border ${c.border} ${c.bg}`}>
             <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">{label}</span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-content-3">{label}</span>
                 <span className={`text-[9px] font-black ${sl.color}`}>{sl.label}</span>
             </div>
             <div className="text-[22px] font-black leading-none" style={{ color: '' }}>
                 <span className={c.text}>{pct.toFixed(0)}<span className="text-[13px]">%</span></span>
             </div>
-            <div className="h-1.5 rounded-full bg-white/60 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-surface-card overflow-hidden">
                 <div className={`h-full rounded-full transition-all duration-700 ${c.bar}`}
                     style={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[9px] text-slate-500 leading-tight mt-0.5">{desc}</p>
+            <p className="text-[9px] text-content-3 leading-tight mt-0.5">{desc}</p>
         </div>
     );
 }
@@ -276,8 +276,8 @@ function getSectionStyle(title) {
     if (!title) return { Icon: Sparkles, color: 'text-indigo-400', dot: 'bg-indigo-400' };
     const t = title.toLowerCase();
     if (t.includes('recurrente') || t.includes('tema') || t.includes('idea')) return { Icon: TrendingUp, color: 'text-blue-400', dot: 'bg-blue-400' };
-    if (t.includes('valor') || t.includes('positiv') || t.includes('aspecto')) return { Icon: ThumbsUp, color: 'text-emerald-400', dot: 'bg-emerald-400' };
-    if (t.includes('friccion') || t.includes('problema') || t.includes('identif') || t.includes('riesgo')) return { Icon: AlertTriangle, color: 'text-amber-400', dot: 'bg-amber-400' };
+    if (t.includes('valor') || t.includes('positiv') || t.includes('aspecto')) return { Icon: ThumbsUp, color: 'text-success', dot: 'bg-emerald-400' };
+    if (t.includes('friccion') || t.includes('problema') || t.includes('identif') || t.includes('riesgo')) return { Icon: AlertTriangle, color: 'text-warning', dot: 'bg-amber-400' };
     if (t.includes('accion') || t.includes('acción') || t.includes('recomend')) return { Icon: Zap, color: 'text-purple-400', dot: 'bg-purple-400' };
     return { Icon: Sparkles, color: 'text-indigo-400', dot: 'bg-indigo-400' };
 }
@@ -286,7 +286,7 @@ function renderInlineBold(text) {
     const parts = text.split(/(\*\*[^*]+?\*\*)/);
     return parts.map((part, i) => {
         const m = part.match(/^\*\*(.+)\*\*$/);
-        if (m) return <strong key={i} className="text-slate-800 font-black">{m[1]}</strong>;
+        if (m) return <strong key={i} className="text-content font-black">{m[1]}</strong>;
         return part || null;
     });
 }
@@ -305,7 +305,7 @@ function renderContentItems(content) {
         if (numMatch) return (
             <div key={i} className="flex gap-2.5 items-start">
                 <span className="shrink-0 w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[9px] font-black flex items-center justify-center mt-0.5">{numMatch[1]}</span>
-                <span className="text-[11px] text-slate-600 leading-relaxed">{renderInlineBold(numMatch[2])}</span>
+                <span className="text-[11px] text-content-2 leading-relaxed">{renderInlineBold(numMatch[2])}</span>
             </div>
         );
         if (bulletMatch) {
@@ -316,7 +316,7 @@ function renderContentItems(content) {
                 return (
                     <div key={i} className="flex gap-2.5 items-start">
                         <span className="shrink-0 text-indigo-500 mt-1 leading-none text-[10px]">›</span>
-                        <span className="text-[11px] text-slate-600 leading-relaxed">
+                        <span className="text-[11px] text-content-2 leading-relaxed">
                             {renderInlineBold(main)}
                             <span className="text-indigo-400/60 text-[10px]"> → {meta}</span>
                         </span>
@@ -326,11 +326,11 @@ function renderContentItems(content) {
             return (
                 <div key={i} className="flex gap-2.5 items-start">
                     <span className="shrink-0 text-indigo-500 mt-1 leading-none text-[10px]">›</span>
-                    <span className="text-[11px] text-slate-600 leading-relaxed">{renderInlineBold(bulletMatch[1])}</span>
+                    <span className="text-[11px] text-content-2 leading-relaxed">{renderInlineBold(bulletMatch[1])}</span>
                 </div>
             );
         }
-        return <p key={i} className="text-[11px] text-slate-600 leading-relaxed">{renderInlineBold(line)}</p>;
+        return <p key={i} className="text-[11px] text-content-2 leading-relaxed">{renderInlineBold(line)}</p>;
     });
 }
 
@@ -566,20 +566,20 @@ export default function EncuestaView() {
     const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
 
     const filtersContent = (
-        <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
                 {TABS.map(({ key, label, Icon }) => (
                     <button key={key} onClick={() => setTab(key)}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
                             tab === key
-                                ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                                ? 'bg-white text-content border-white shadow-md scale-[1.02]'
+                                : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                         }`}>
                         <Icon size={12} strokeWidth={2.5} />
                         <span className="hidden sm:inline">{label}</span>
                     </button>
                 ))}
-                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
                 <div className="py-1.5 overflow-visible" style={{ width: filterSucursal ? Math.max(130, 80 + filterSucursal.length * 7) + 'px' : '175px' }}>
                     <LiquidSelect
                         value={filterSucursal}
@@ -593,7 +593,7 @@ export default function EncuestaView() {
                 </div>
                 {surveys.length > 1 && (
                     <>
-                        <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                        <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
                         <div className="py-1.5 overflow-visible w-[200px]">
                             <LiquidSelect
                                 value={selectedSurveyId ?? ''}
@@ -619,7 +619,7 @@ export default function EncuestaView() {
                         onClick={() => navigate('/encuesta-admin')}
                         className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 bg-white"
                         title="Volver a Gestión de Encuesta">
-                        <ArrowLeft size={15} strokeWidth={2.5} className="text-slate-500" />
+                        <ArrowLeft size={15} strokeWidth={2.5} className="text-content-3" />
                     </button>
                     <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima Organizacional'}</span>
                 </div>
@@ -669,9 +669,9 @@ export default function EncuestaView() {
                                         <Icon size={14} className="text-white" />
                                     </div>
                                     <div>
-                                        <div className="text-[22px] font-black text-slate-800 leading-none">{value}</div>
-                                        <div className="text-[9px] font-bold uppercase tracking-wider text-slate-600">{label}</div>
-                                        <div className="text-[9px] text-slate-500">{sub}</div>
+                                        <div className="text-[22px] font-black text-content leading-none">{value}</div>
+                                        <div className="text-[9px] font-bold uppercase tracking-wider text-content-2">{label}</div>
+                                        <div className="text-[9px] text-content-3">{sub}</div>
                                     </div>
                                 </div>
                             ))}
@@ -681,7 +681,7 @@ export default function EncuestaView() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Score global */}
                             <div className="flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm p-6 gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">Score Global</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-content-2">Score Global</span>
                                 <div className="relative w-28 h-28">
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                                         <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" strokeWidth="10" />
@@ -692,19 +692,19 @@ export default function EncuestaView() {
                                             strokeLinecap="round" />
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-[26px] font-black text-slate-800 leading-none">{globalScore?.toFixed(0)}</span>
-                                        <span className="text-[11px] font-bold text-slate-500">/ 100</span>
+                                        <span className="text-[26px] font-black text-content leading-none">{globalScore?.toFixed(0)}</span>
+                                        <span className="text-[11px] font-bold text-content-3">/ 100</span>
                                     </div>
                                 </div>
                                 {(() => { const sl = scoreLabel(globalScore); return (
                                     <span className={`text-[11px] font-black ${sl.color}`}>{sl.label}</span>
                                 ); })()}
-                                <p className="text-[9px] text-slate-500 text-center">Promedio ponderado de todos los bloques (escala A–D)</p>
+                                <p className="text-[9px] text-content-3 text-center">Promedio ponderado de todos los bloques (escala A–D)</p>
                             </div>
 
                             {/* Scores por bloque */}
                             <div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3">Puntaje por Bloque</h3>
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3">Puntaje por Bloque</h3>
                                 <div className="space-y-2.5">
                                     {bloquesScores.map(b => {
                                         if (!b.score) return null;
@@ -713,12 +713,12 @@ export default function EncuestaView() {
                                         return (
                                             <div key={b.id} className="flex items-center gap-3">
                                                 <div className={`w-36 text-[9px] font-black uppercase tracking-wider ${c.text} leading-tight shrink-0`}>{b.nombre}</div>
-                                                <div className="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                                                <div className="flex-1 h-2.5 rounded-full bg-surface-card-hover overflow-hidden">
                                                     <div className={`h-full rounded-full ${c.bar} transition-all duration-700`}
                                                         style={{ width: `${b.score}%` }} />
                                                 </div>
                                                 <div className="flex items-center gap-1 shrink-0">
-                                                    <span className="text-[12px] font-black text-slate-700 w-8 text-right">{b.score.toFixed(0)}%</span>
+                                                    <span className="text-[12px] font-black text-content-2 w-8 text-right">{b.score.toFixed(0)}%</span>
                                                     <span className={`text-[9px] font-black ${sl.color} w-14`}>{sl.label}</span>
                                                 </div>
                                             </div>
@@ -731,7 +731,7 @@ export default function EncuestaView() {
                         {/* Razones de permanencia */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3 flex items-center gap-1.5">
                                     <Heart size={12} className="text-rose-400" /> ¿Por qué siguen en la empresa?
                                 </h3>
                                 {[
@@ -744,13 +744,13 @@ export default function EncuestaView() {
                                     const pct = Math.round((n / filteredRows.length) * 100);
                                     return (
                                         <div key={k} className="flex items-center gap-3 mb-2">
-                                            <span className="w-5 h-5 rounded-lg text-white text-[10px] font-black flex items-center justify-center shrink-0 bg-slate-400">{k}</span>
+                                            <span className="w-5 h-5 rounded-lg text-white text-[10px] font-black flex items-center justify-center shrink-0 bg-content-3">{k}</span>
                                             <div className="flex-1">
                                                 <div className="flex justify-between mb-0.5">
-                                                    <span className="text-[10px] text-slate-600">{label}</span>
-                                                    <span className="text-[10px] font-black text-slate-700">{n} ({pct}%)</span>
+                                                    <span className="text-[10px] text-content-2">{label}</span>
+                                                    <span className="text-[10px] font-black text-content-2">{n} ({pct}%)</span>
                                                 </div>
-                                                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                                <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
                                                     <div className={`h-full rounded-full ${cls}`} style={{ width: `${pct}%` }} />
                                                 </div>
                                             </div>
@@ -761,17 +761,17 @@ export default function EncuestaView() {
 
                             {/* Autocalificación */}
                             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-3">
-                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                                    <Star size={12} className="text-amber-400" /> Autocalificación como trabajador/a
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
+                                    <Star size={12} className="text-warning" /> Autocalificación como trabajador/a
                                 </h3>
                                 {Object.values(selfRatings.dist).every(n => n === 0) ? (
-                                    <p className="text-[11px] text-slate-500 text-center py-6">Sin datos</p>
+                                    <p className="text-[11px] text-content-3 text-center py-6">Sin datos</p>
                                 ) : (() => {
                                     const total = Object.values(selfRatings.dist).reduce((a, b) => a + b, 0);
                                     const ranges = [
-                                        { k: 'A', label: '9 – 10', from: 9, bar: 'bg-emerald-400', text: 'text-emerald-700', bg: 'bg-emerald-50' },
+                                        { k: 'A', label: '9 – 10', from: 9, bar: 'bg-emerald-400', text: 'text-emerald-700', bg: 'bg-success/10' },
                                         { k: 'B', label: '7 – 8',  from: 7, bar: 'bg-blue-400',    text: 'text-blue-700',    bg: 'bg-blue-50'    },
-                                        { k: 'C', label: '5 – 6',  from: 5, bar: 'bg-amber-400',   text: 'text-amber-700',   bg: 'bg-amber-50'   },
+                                        { k: 'C', label: '5 – 6',  from: 5, bar: 'bg-amber-400',   text: 'text-amber-700',   bg: 'bg-warning/10'   },
                                         { k: 'D', label: '1 – 4',  from: 1, bar: 'bg-rose-400',    text: 'text-rose-700',    bg: 'bg-rose-50'    },
                                     ];
                                     const avg = selfRatings.numericAvg;
@@ -780,9 +780,9 @@ export default function EncuestaView() {
                                         <>
                                         {/* Average score prominent display */}
                                         <div className="flex items-center gap-4">
-                                            <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 shrink-0">
-                                                <span className="text-[28px] font-black text-amber-600 leading-none">{avg != null ? avg.toFixed(1) : '–'}</span>
-                                                <span className="text-[10px] font-bold text-amber-400">/ 10</span>
+                                            <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-warning/30 shrink-0">
+                                                <span className="text-[28px] font-black text-warning leading-none">{avg != null ? avg.toFixed(1) : '–'}</span>
+                                                <span className="text-[10px] font-bold text-warning">/ 10</span>
                                             </div>
                                             <div className="flex-1 space-y-2">
                                                 {/* Gradient track */}
@@ -792,10 +792,10 @@ export default function EncuestaView() {
                                                             style={{ left: `calc(${avgPct}% - 7px)` }} />
                                                     )}
                                                 </div>
-                                                <div className="flex justify-between text-[9px] font-bold text-slate-500">
+                                                <div className="flex justify-between text-[9px] font-bold text-content-3">
                                                     <span>1</span><span>5</span><span>10</span>
                                                 </div>
-                                                <p className="text-[10px] text-slate-500">{total} respuestas · {avg != null ? (avg >= 8 ? 'Muy alta autopercepción' : avg >= 6 ? 'Buena autopercepción' : 'Autopercepción moderada') : ''}</p>
+                                                <p className="text-[10px] text-content-3">{total} respuestas · {avg != null ? (avg >= 8 ? 'Muy alta autopercepción' : avg >= 6 ? 'Buena autopercepción' : 'Autopercepción moderada') : ''}</p>
                                             </div>
                                         </div>
                                         {/* Distribution rows */}
@@ -806,10 +806,10 @@ export default function EncuestaView() {
                                                 return (
                                                     <div key={k} className="flex items-center gap-2">
                                                         <span className={`w-10 text-[9px] font-black shrink-0 ${text}`}>{label}</span>
-                                                        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                        <div className="flex-1 h-2 rounded-full bg-surface-card-hover overflow-hidden">
                                                             <div className={`h-full rounded-full ${bar} transition-all duration-700`} style={{ width: `${pct}%` }} />
                                                         </div>
-                                                        <span className="text-[10px] font-black text-slate-500 w-14 text-right shrink-0">{n} <span className="font-normal text-slate-500">({pct}%)</span></span>
+                                                        <span className="text-[10px] font-black text-content-3 w-14 text-right shrink-0">{n} <span className="font-normal text-content-3">({pct}%)</span></span>
                                                     </div>
                                                 );
                                             })}
@@ -822,14 +822,14 @@ export default function EncuestaView() {
 
                         {/* Comunicación de inconformidades */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                            <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                            <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3 flex items-center gap-1.5">
                                 <Info size={12} className="text-blue-400" /> ¿Con quién comunican las inconformidades?
                             </h3>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {[
                                     { k: 'A', label: 'Jefe inmediato',          icon: '👤', cls: 'bg-blue-50 border-blue-200 text-blue-700'     },
                                     { k: 'B', label: 'Supervisión / Admin',      icon: '🏢', cls: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
-                                    { k: 'C', label: 'Compañeros',              icon: '👥', cls: 'bg-amber-50 border-amber-200 text-amber-700'   },
+                                    { k: 'C', label: 'Compañeros',              icon: '👥', cls: 'bg-warning/10 border-warning/30 text-amber-700'   },
                                     { k: 'D', label: 'Nadie (se lo guardan)',   icon: '🔒', cls: 'bg-rose-50 border-rose-200 text-rose-700'     },
                                 ].map(({ k, label, icon, cls }) => {
                                     const n = comunicacion[k];
@@ -878,30 +878,30 @@ export default function EncuestaView() {
                             return (
                                 <div key={bloque.id} className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
                                     {/* Header */}
-                                    <button className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-slate-50/50 transition-colors"
+                                    <button className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-surface-card-hover/50 transition-colors"
                                         onClick={() => setExpandedBloque(isOpen ? null : bloque.id)}>
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-white ${c.bar}`}>
                                             B{bloque.id}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="text-[13px] font-black text-slate-800">{bloque.nombre}</span>
+                                                <span className="text-[13px] font-black text-content">{bloque.nombre}</span>
                                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${c.badge}`}>{pqs.length} preguntas</span>
                                                 {ctx && <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${ctx.badge}`}>→ {ctx.dirigido}</span>}
                                                 {score && <span className={`text-[9px] font-black ${sl.color}`}>{sl.label}</span>}
                                             </div>
-                                            <p className="text-[10px] text-slate-500 mt-0.5">{bloque.desc}</p>
+                                            <p className="text-[10px] text-content-3 mt-0.5">{bloque.desc}</p>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
                                             {score && (
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-24 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                                    <div className="w-24 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
                                                         <div className={`h-full rounded-full ${c.bar}`} style={{ width: `${score}%` }} />
                                                     </div>
                                                     <span className={`text-[14px] font-black ${c.text} w-10 text-right`}>{score.toFixed(0)}%</span>
                                                 </div>
                                             )}
-                                            {isOpen ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+                                            {isOpen ? <ChevronUp size={14} className="text-content-3" /> : <ChevronDown size={14} className="text-content-3" />}
                                         </div>
                                     </button>
 
@@ -909,7 +909,7 @@ export default function EncuestaView() {
                                         <div className="border-t border-slate-50">
                                             {/* Nota contextual */}
                                             {ctx && (
-                                                <div className={`mx-4 mt-3 mb-1 px-3 py-2.5 rounded-xl border text-[10px] text-slate-600 leading-relaxed flex gap-2 items-start ${ctx.badge.replace('text-', 'border-').replace('bg-', 'bg-')} bg-opacity-30`}
+                                                <div className={`mx-4 mt-3 mb-1 px-3 py-2.5 rounded-xl border text-[10px] text-content-2 leading-relaxed flex gap-2 items-start ${ctx.badge.replace('text-', 'border-').replace('bg-', 'bg-')} bg-opacity-30`}
                                                     style={{ background: 'none' }}>
                                                     <Info size={12} className="shrink-0 mt-0.5 opacity-60" />
                                                     <span><strong>¿A quién va dirigido?</strong> {ctx.nota}</span>
@@ -934,31 +934,31 @@ export default function EncuestaView() {
                                                                 return (
                                                                     <div key={suc} className="group relative flex items-center gap-3">
                                                                         <div className="w-20 shrink-0">
-                                                                            <div className="text-[10px] font-black text-slate-700">{suc}</div>
-                                                                            <div className="text-[9px] text-slate-500">{jefeDisplay} · {colabRows.length} eval.</div>
+                                                                            <div className="text-[10px] font-black text-content-2">{suc}</div>
+                                                                            <div className="text-[9px] text-content-3">{jefeDisplay} · {colabRows.length} eval.</div>
                                                                         </div>
                                                                         <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
                                                                             <div className={`h-full rounded-full ${sColabs >= 70 ? 'bg-emerald-500' : sColabs >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
                                                                                 style={{ width: `${sColabs}%` }} />
                                                                         </div>
                                                                         <div className="flex items-center gap-1.5 shrink-0">
-                                                                            <span className="text-[13px] font-black text-slate-700 w-8 text-right">{sColabs.toFixed(0)}%</span>
+                                                                            <span className="text-[13px] font-black text-content-2 w-8 text-right">{sColabs.toFixed(0)}%</span>
                                                                             <span className={`text-[9px] font-black w-14 ${sl2.color}`}>{sl2.label}</span>
                                                                             {sColabs < 55 && <AlertTriangle size={11} className="text-rose-500 shrink-0" />}
                                                                         </div>
                                                                         {/* Tooltip: individual colab scores */}
                                                                         <div className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 min-w-[190px] pointer-events-none">
-                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-600 mb-1.5">Respuestas individuales</p>
+                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-content-2 mb-1.5">Respuestas individuales</p>
                                                                             {colabRows.map(r => {
                                                                                 const s = blockScore([r], bloque.indices, invertedIndices);
-                                                                                const sc = s == null ? 'text-slate-500'
-                                                                                    : s >= 85 ? 'text-emerald-600'
+                                                                                const sc = s == null ? 'text-content-3'
+                                                                                    : s >= 85 ? 'text-success'
                                                                                     : s >= 70 ? 'text-blue-600'
-                                                                                    : s >= 55 ? 'text-amber-600'
+                                                                                    : s >= 55 ? 'text-warning'
                                                                                     : 'text-rose-500';
                                                                                 return (
                                                                                     <div key={r.nombre} className="flex items-center justify-between gap-3 py-0.5">
-                                                                                        <span className="text-[10px] font-bold text-slate-700 capitalize">{r.nombre.charAt(0).toUpperCase() + r.nombre.slice(1).toLowerCase()}</span>
+                                                                                        <span className="text-[10px] font-bold text-content-2 capitalize">{r.nombre.charAt(0).toUpperCase() + r.nombre.slice(1).toLowerCase()}</span>
                                                                                         <span className={`text-[10px] font-black ${sc}`}>{s ? `${s.toFixed(0)}%` : '–'}</span>
                                                                                     </div>
                                                                                 );
@@ -975,7 +975,7 @@ export default function EncuestaView() {
                                                         <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider mb-1">
                                                             Jefes evaluando a su Jefe Inmediato
                                                         </p>
-                                                        <p className="text-[9px] text-slate-500 mb-3">
+                                                        <p className="text-[9px] text-content-3 mb-3">
                                                             Cada jefe evalúa a quien reporta directamente. Bodega reporta a Administración; las salas al Supervisor/a de Ventas.
                                                         </p>
                                                         {(() => {
@@ -1003,20 +1003,20 @@ export default function EncuestaView() {
                                                                         <div className="space-y-1.5">
                                                                             {jefes.map(jefe => {
                                                                                 const s = blockScore([jefe], bloque.indices, invertedIndices);
-                                                                                const sc = s == null ? 'text-slate-500'
-                                                                                    : s >= 85 ? 'text-emerald-600'
+                                                                                const sc = s == null ? 'text-content-3'
+                                                                                    : s >= 85 ? 'text-success'
                                                                                     : s >= 70 ? 'text-blue-600'
-                                                                                    : s >= 55 ? 'text-amber-600'
+                                                                                    : s >= 55 ? 'text-warning'
                                                                                     : 'text-rose-500';
                                                                                 return (
                                                                                     <div key={jefe.nombre} className="flex items-center gap-3">
                                                                                         <div className="flex items-center gap-2 w-32 shrink-0">
                                                                                             <PersonAvatar nombre={jefe.nombre} photo={jefe.photo} isJefe size={22} />
                                                                                             <div>
-                                                                                                <div className="text-[10px] font-black text-slate-700 leading-tight">
+                                                                                                <div className="text-[10px] font-black text-content-2 leading-tight">
                                                                                                     {jefe.nombre.split(' ').slice(0, 2).join(' ')}
                                                                                                 </div>
-                                                                                                <div className="text-[9px] text-slate-500">{jefe.sucursal}</div>
+                                                                                                <div className="text-[9px] text-content-3">{jefe.sucursal}</div>
                                                                                             </div>
                                                                                         </div>
                                                                                         <div className="flex-1 h-1.5 rounded-full bg-white overflow-hidden">
@@ -1033,7 +1033,7 @@ export default function EncuestaView() {
                                                             });
                                                         })()}
                                                         <div className="mt-2 pt-2 border-t border-purple-200/60 flex items-center justify-between">
-                                                            <span className="text-[9px] text-slate-500">Score global jefes</span>
+                                                            <span className="text-[9px] text-content-3">Score global jefes</span>
                                                             <span className="text-[14px] font-black text-purple-700">{jefesEvalSupervisor?.toFixed(0)}%</span>
                                                         </div>
                                                     </div>
@@ -1059,17 +1059,17 @@ export default function EncuestaView() {
                     <div className="space-y-5">
                         {/* Jefes vs Empleados */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                            <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-1.5">
+                            <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-4 flex items-center gap-1.5">
                                 <Award size={12} className="text-purple-400" /> Jefes vs Empleados
                             </h3>
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[480px] text-sm">
                                     <thead>
-                                        <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
-                                            <th className="text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Bloque</th>
+                                        <tr className="bg-brand/5 border-b border-brand/10">
+                                            <th className="text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-content-3">Bloque</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-purple-600">Jefes ({RESPUESTAS.filter(r => r.isJefe).length})</th>
-                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
-                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-content-2">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-content-2" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1081,7 +1081,7 @@ export default function EncuestaView() {
                                             const delta = sJ && sC ? sJ - sC : null;
                                             const c = PCT_COLORS[b.color];
                                             return (
-                                                <tr key={b.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/40">
+                                                <tr key={b.id} className="border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40">
                                                     <td className="px-3 py-2.5">
                                                         <span className={`text-[10px] font-black ${c.text}`}>{b.nombre}</span>
                                                     </td>
@@ -1089,11 +1089,11 @@ export default function EncuestaView() {
                                                         <span className="text-[13px] font-black text-purple-700">{sJ?.toFixed(0)}%</span>
                                                     </td>
                                                     <td className="px-3 py-2.5 text-center">
-                                                        <span className="text-[13px] font-black text-slate-700">{sC?.toFixed(0)}%</span>
+                                                        <span className="text-[13px] font-black text-content-2">{sC?.toFixed(0)}%</span>
                                                     </td>
                                                     <td className="px-3 py-2.5 text-center" title={delta !== null ? (delta >= 0 ? `Jefes ${Math.abs(delta).toFixed(0)}pp por encima` : `Jefes ${Math.abs(delta).toFixed(0)}pp por debajo`) : ''}>
                                                         {delta !== null && (
-                                                            <span className={`text-[11px] font-black flex items-center justify-center gap-0.5 ${delta > 5 ? 'text-emerald-600' : delta < -5 ? 'text-rose-600' : 'text-slate-500'}`}>
+                                                            <span className={`text-[11px] font-black flex items-center justify-center gap-0.5 ${delta > 5 ? 'text-success' : delta < -5 ? 'text-rose-600' : 'text-content-3'}`}>
                                                                 {delta >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                                                                 {delta >= 0 ? '+' : ''}{delta.toFixed(0)}pp
                                                             </span>
@@ -1109,7 +1109,7 @@ export default function EncuestaView() {
 
                         {/* Por sucursal */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                            <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-1.5">
+                            <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-4 flex items-center gap-1.5">
                                 <Building2 size={12} className="text-teal-400" /> Score Global por Sucursal
                             </h3>
                             <div className="space-y-2.5">
@@ -1123,15 +1123,15 @@ export default function EncuestaView() {
                                     return (
                                         <div key={suc} className="flex items-center gap-3">
                                             <div className="w-20 shrink-0">
-                                                <div className="text-[11px] font-black text-slate-700 truncate">{suc}</div>
-                                                <div className="text-[9px] text-slate-500">{rows.length} personas · {jCount} jefe{jCount !== 1 ? 's' : ''}</div>
+                                                <div className="text-[11px] font-black text-content-2 truncate">{suc}</div>
+                                                <div className="text-[9px] text-content-3">{rows.length} personas · {jCount} jefe{jCount !== 1 ? 's' : ''}</div>
                                             </div>
-                                            <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
+                                            <div className="flex-1 h-3 rounded-full bg-surface-card-hover overflow-hidden">
                                                 <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700"
                                                     style={{ width: `${score}%` }} />
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <span className="text-[14px] font-black text-slate-700 w-10 text-right">{score.toFixed(0)}%</span>
+                                                <span className="text-[14px] font-black text-content-2 w-10 text-right">{score.toFixed(0)}%</span>
                                                 <span className={`text-[9px] font-black w-14 ${sl.color}`}>{sl.label}</span>
                                             </div>
                                         </div>
@@ -1142,13 +1142,13 @@ export default function EncuestaView() {
 
                         {/* Detalle por sucursal y bloque */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 overflow-x-auto">
-                            <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3">Desglose por Sucursal × Bloque</h3>
+                            <h3 className="text-[11px] font-black uppercase tracking-wider text-content-3 mb-3">Desglose por Sucursal × Bloque</h3>
                             <table className="w-full text-xs min-w-[600px]">
                                 <thead>
-                                    <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
-                                        <th className="text-left px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">Sucursal</th>
+                                    <tr className="bg-brand/5 border-b border-brand/10">
+                                        <th className="text-left px-2 py-2 text-[9px] font-black uppercase tracking-wider text-content-2 whitespace-nowrap">Sucursal</th>
                                         {BLOQUES.map(b => (
-                                            <th key={b.id} className="text-center px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">
+                                            <th key={b.id} className="text-center px-2 py-2 text-[9px] font-black uppercase tracking-wider text-content-2 whitespace-nowrap">
                                                 B{b.id}
                                             </th>
                                         ))}
@@ -1158,14 +1158,14 @@ export default function EncuestaView() {
                                     {sucursales.map(suc => {
                                         const rows = RESPUESTAS.filter(r => r.sucursal === suc);
                                         return (
-                                            <tr key={suc} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/40">
-                                                <td className="px-2 py-2 font-black text-[11px] text-slate-700 whitespace-nowrap">{suc}</td>
+                                            <tr key={suc} className="border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40">
+                                                <td className="px-2 py-2 font-black text-[11px] text-content-2 whitespace-nowrap">{suc}</td>
                                                 {BLOQUES.map(b => {
                                                     const s = blockScore(rows, b.indices, invertedIndices);
-                                                    const cls = s == null ? 'text-slate-500'
-                                                        : s >= 85 ? 'text-emerald-600 font-black'
+                                                    const cls = s == null ? 'text-content-3'
+                                                        : s >= 85 ? 'text-success font-black'
                                                         : s >= 70 ? 'text-blue-600 font-bold'
-                                                        : s >= 55 ? 'text-amber-600 font-bold'
+                                                        : s >= 55 ? 'text-warning font-bold'
                                                         : 'text-rose-600 font-black';
                                                     return (
                                                         <td key={b.id} className={`text-center px-2 py-2 text-[11px] ${cls}`}>
@@ -1178,7 +1178,7 @@ export default function EncuestaView() {
                                     })}
                                 </tbody>
                             </table>
-                            <div className="mt-2 flex items-center gap-4 text-[9px] text-slate-500 flex-wrap">
+                            <div className="mt-2 flex items-center gap-4 text-[9px] text-content-3 flex-wrap">
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> ≥85% Excelente</span>
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> 70–84% Bueno</span>
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> 55–69% Regular</span>
@@ -1207,27 +1207,27 @@ export default function EncuestaView() {
                                     clearable={true}
                                 />
                             </div>
-                            <span className="text-[11px] text-slate-500">{filteredRows.length} personas</span>
+                            <span className="text-[11px] text-content-3">{filteredRows.length} personas</span>
                         </div>
 
                         {personasBySucursal.map(([branchName, branchRows]) => (
-                            <div key={branchName} className="rounded-[1.75rem] border border-white/80 bg-white/60 backdrop-blur-xl overflow-hidden shadow-sm">
-                                <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100/60 bg-white/30">
-                                    <Building2 size={13} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[12px] font-black text-slate-700">{branchName}</span>
-                                    <span className="text-[11px] text-slate-500">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
+                            <div key={branchName} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden shadow-sm">
+                                <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100/60 bg-surface-card">
+                                    <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
+                                    <span className="text-[12px] font-black text-content-2">{branchName}</span>
+                                    <span className="text-[11px] text-content-3">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[560px] text-sm">
                                         <thead>
-                                            <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
-                                                <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Empleado</th>
-                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 w-16">Rol</th>
+                                            <tr className="bg-brand/5 border-b border-brand/10">
+                                                <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-content-3">Empleado</th>
+                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-content-3 w-16">Rol</th>
                                                 {BLOQUES.map(b => (
-                                                    <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-600 cursor-help">B{b.id}</th>
+                                                    <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-wider text-content-2 cursor-help">B{b.id}</th>
                                                 ))}
-                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Auto</th>
-                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Global</th>
+                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-content-3">Auto</th>
+                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-content-3">Global</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1237,30 +1237,30 @@ export default function EncuestaView() {
                                                 const global = blockScore([row], allIdx, invertedIndices);
                                                 const self = row.r[selfRatingIdx];
                                                 const selfLabel = { A: '9-10', B: '7-8', C: '5-6', D: '1-4' };
-                                                const selfCls   = { A: 'text-emerald-600', B: 'text-blue-600', C: 'text-amber-600', D: 'text-rose-600' };
+                                                const selfCls   = { A: 'text-success', B: 'text-blue-600', C: 'text-warning', D: 'text-rose-600' };
                                                 const isExpanded = expandedPersonIdx === i;
                                                 return (
                                                     <React.Fragment key={i}>
                                                     <tr
-                                                        className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/40 cursor-pointer ${isExpanded ? 'bg-blue-50/30' : ''}`}
+                                                        className={`border-b border-slate-50 last:border-0 hover:bg-surface-card-hover/40 cursor-pointer ${isExpanded ? 'bg-blue-50/30' : ''}`}
                                                         onClick={() => setExpandedPersonIdx(isExpanded ? null : i)}>
                                                         <td className="px-4 py-2.5">
                                                             <div className="flex items-center gap-2.5">
                                                                 <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={30} />
-                                                                <div className="font-black text-[12px] text-slate-800 leading-tight">{row.nombre}</div>
+                                                                <div className="font-black text-[12px] text-content leading-tight">{row.nombre}</div>
                                                             </div>
                                                         </td>
                                                         <td className="px-3 py-2.5 text-center w-16 whitespace-nowrap">
-                                                            <span className={`inline-flex items-center justify-center min-w-[44px] text-[9px] font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                            <span className={`inline-flex items-center justify-center min-w-[44px] text-[9px] font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-warning/10 text-amber-700' : 'bg-surface-card-hover text-content-3'}`}>
                                                                 {row.isJefe ? 'Jefe/a' : 'Colab.'}
                                                             </span>
                                                         </td>
                                                         {BLOQUES.map(b => {
                                                             const s = blockScore([row], b.indices, invertedIndices);
-                                                            const cls = s == null ? 'text-slate-500'
-                                                                : s >= 85 ? 'text-emerald-600'
+                                                            const cls = s == null ? 'text-content-3'
+                                                                : s >= 85 ? 'text-success'
                                                                 : s >= 70 ? 'text-blue-600'
-                                                                : s >= 55 ? 'text-amber-600'
+                                                                : s >= 55 ? 'text-warning'
                                                                 : 'text-rose-600 font-black';
                                                             return (
                                                                 <td key={b.id} title={b.nombre} className={`px-2 py-2.5 text-center text-[11px] font-bold cursor-help ${cls}`}>
@@ -1270,7 +1270,7 @@ export default function EncuestaView() {
                                                         })}
                                                         <td className="px-3 py-2.5 text-center">
                                                             {self ? (
-                                                                <span className={`text-[12px] font-black ${selfCls[self] || 'text-slate-500'}`}>
+                                                                <span className={`text-[12px] font-black ${selfCls[self] || 'text-content-3'}`}>
                                                                     {selfLabel[self] || self}
                                                                 </span>
                                                             ) : '–'}
@@ -1278,18 +1278,18 @@ export default function EncuestaView() {
                                                         <td className="px-3 py-2.5 text-center">
                                                             <div className="flex items-center justify-center gap-1">
                                                             {global ? (
-                                                                <span className={`text-[12px] font-black ${global >= 85 ? 'text-emerald-600' : global >= 70 ? 'text-blue-600' : global >= 55 ? 'text-amber-600' : 'text-rose-600'}`}>
+                                                                <span className={`text-[12px] font-black ${global >= 85 ? 'text-success' : global >= 70 ? 'text-blue-600' : global >= 55 ? 'text-warning' : 'text-rose-600'}`}>
                                                                     {global.toFixed(0)}%
                                                                 </span>
                                                             ) : '–'}
-                                                            {isExpanded ? <ChevronUp size={10} className="text-slate-500" /> : <ChevronDown size={10} className="text-slate-500" />}
+                                                            {isExpanded ? <ChevronUp size={10} className="text-content-3" /> : <ChevronDown size={10} className="text-content-3" />}
                                                             </div>
                                                         </td>
                                                     </tr>
                                                     {isExpanded && (
                                                         <tr className="bg-blue-50/20">
                                                             <td colSpan={BLOQUES.length + 4} className="px-4 pb-4 pt-0">
-                                                                <div className="bg-white/80 rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-1">
+                                                                <div className="bg-surface-card rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-1">
                                                                     {BLOQUES.map(bloque => {
                                                                         const bqs = PREGUNTAS.filter(p => p.bloque === bloque.id && p.tipo !== 'sucursal');
                                                                         if (!bqs.length) return null;
@@ -1311,12 +1311,12 @@ export default function EncuestaView() {
                                                                                         ];
                                                                                         return (
                                                                                             <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-slate-50 last:border-0">
-                                                                                                <span className="shrink-0 w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-[8px] font-black text-slate-500 mt-0.5">{p.id}</span>
+                                                                                                <span className="shrink-0 w-5 h-5 rounded bg-surface-card-hover flex items-center justify-center text-[8px] font-black text-content-3 mt-0.5">{p.id}</span>
                                                                                                 <div className="flex-1 min-w-0 space-y-1">
-                                                                                                    <p className="text-[10px] text-slate-500 leading-snug">{p.texto}</p>
+                                                                                                    <p className="text-[10px] text-content-3 leading-snug">{p.texto}</p>
                                                                                                     {p.tipo === 'numerica' ? (
                                                                                                         (() => {
-                                                                                                            if (!ans) return <span className="text-[10px] text-slate-500">Sin respuesta</span>;
+                                                                                                            if (!ans) return <span className="text-[10px] text-content-3">Sin respuesta</span>;
                                                                                                             const n = parseInt(ans, 10);
                                                                                                             const oc = !isNaN(n) ? (n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D) : OPT_COLORS[ans] || OPT_COLORS.D;
                                                                                                             const display = !isNaN(n) ? `${n} / 10` : ({ A: '9–10', B: '7–8', C: '5–6', D: '1–4' }[ans] || ans);
@@ -1325,12 +1325,12 @@ export default function EncuestaView() {
                                                                                                     ) : (
                                                                                                         ans ? (
                                                                                                             <div className="flex items-center gap-1.5">
-                                                                                                                <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${OPT_COLORS[ans]?.on || 'bg-slate-100 text-slate-500'}`}>{ans}</span>
-                                                                                                                <span className={`text-[11px] font-semibold leading-snug ${{ A:'text-emerald-700', B:'text-blue-700', C:'text-amber-700', D:'text-rose-700' }[ans] || 'text-slate-600'}`}>
+                                                                                                                <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${OPT_COLORS[ans]?.on || 'bg-surface-card-hover text-content-3'}`}>{ans}</span>
+                                                                                                                <span className={`text-[11px] font-semibold leading-snug ${{ A:'text-emerald-700', B:'text-blue-700', C:'text-amber-700', D:'text-rose-700' }[ans] || 'text-content-2'}`}>
                                                                                                                     {p.opciones?.[ABCD.indexOf(ans)] || DEFAULT_OPTS[ABCD.indexOf(ans)] || ans}
                                                                                                                 </span>
                                                                                                             </div>
-                                                                                                        ) : <span className="text-[10px] text-slate-500">Sin respuesta</span>
+                                                                                                        ) : <span className="text-[10px] text-content-3">Sin respuesta</span>
                                                                                                     )}
                                                                                                 </div>
                                                                                             </div>
@@ -1341,11 +1341,11 @@ export default function EncuestaView() {
                                                                         );
                                                                     })}
                                                                     {row.comentario && row.comentario.trim() && row.comentario !== 'null' && (
-                                                                        <div className="px-4 py-3 bg-amber-50/40 border-t border-amber-100/60">
-                                                                            <p className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                                        <div className="px-4 py-3 bg-warning/40 border-t border-warning/60">
+                                                                            <p className="text-[9px] font-black text-warning uppercase tracking-wider mb-1 flex items-center gap-1">
                                                                                 <MessageSquare size={10} /> Comentario
                                                                             </p>
-                                                                            <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line">{row.comentario}</p>
+                                                                            <p className="text-[11px] text-content-2 leading-relaxed whitespace-pre-line">{row.comentario}</p>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -1395,10 +1395,10 @@ export default function EncuestaView() {
                                         <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_8px_rgba(139,92,246,0.35)]">
                                             <Sparkles size={10} className="text-white" />
                                         </div>
-                                        <span className="text-[12px] font-black text-slate-700 tracking-tight">
-                                            Resumen IA <span className="text-slate-500 font-normal">·</span> <span className="text-indigo-600">{seg.label}</span>
+                                        <span className="text-[12px] font-black text-content-2 tracking-tight">
+                                            Resumen IA <span className="text-content-3 font-normal">·</span> <span className="text-indigo-600">{seg.label}</span>
                                         </span>
-                                        <span className="text-[10px] text-slate-500 font-medium">{seg.comments.length} comentarios</span>
+                                        <span className="text-[10px] text-content-3 font-medium">{seg.comments.length} comentarios</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         {summary && !isLoading && (
@@ -1411,7 +1411,7 @@ export default function EncuestaView() {
                                                     generateAiSummary(seg.comments, seg.key);
                                                 }}
                                                 title="Regenerar"
-                                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
+                                                className="p-1.5 rounded-lg text-content-3 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
                                                 <RotateCcw size={11} strokeWidth={2.5} />
                                             </button>
                                         )}
@@ -1419,7 +1419,7 @@ export default function EncuestaView() {
                                             <button
                                                 onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}
                                                 title={isCollapsed ? 'Expandir' : 'Minimizar'}
-                                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
+                                                className="p-1.5 rounded-lg text-content-3 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
                                                 {isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}
                                             </button>
                                         )}
@@ -1464,7 +1464,7 @@ export default function EncuestaView() {
                                     </div>
                                 ) : summary && isCollapsed ? (
                                     <div className="px-5 py-3">
-                                        <p className="text-[10px] text-slate-500 truncate">
+                                        <p className="text-[10px] text-content-3 truncate">
                                             {sections[0]?.title
                                                 ? <><span className="text-indigo-500 font-black uppercase text-[9px]">{sections[0].title}</span> — {sections[0].content.replace(/\*\*/g, '').slice(0, 120)}…</>
                                                 : summary.replace(/\*\*/g, '').slice(0, 140) + '…'
@@ -1473,11 +1473,11 @@ export default function EncuestaView() {
                                     </div>
                                 ) : seg.comments.length === 0 ? (
                                     <div className="px-5 py-4">
-                                        <p className="text-[11px] text-slate-500 italic">Sin comentarios en este segmento.</p>
+                                        <p className="text-[11px] text-content-3 italic">Sin comentarios en este segmento.</p>
                                     </div>
                                 ) : (
                                     <div className="px-5 py-4">
-                                        <p className="text-[11px] text-slate-500 italic">Cargando resumen guardado…</p>
+                                        <p className="text-[11px] text-content-3 italic">Cargando resumen guardado…</p>
                                     </div>
                                 )}
                             </div>
@@ -1485,22 +1485,22 @@ export default function EncuestaView() {
                         })}
 
                         {/* Individual comments */}
-                        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-600 px-1">{withComment.length} comentarios individuales</h3>
+                        <h3 className="text-[11px] font-black uppercase tracking-wider text-content-2 px-1">{withComment.length} comentarios individuales</h3>
                         {withComment.map((row, i) => (
                             <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                                 <div className="flex items-center gap-2.5 mb-2">
                                     <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={34} />
                                     <div>
                                         <div className="flex items-center gap-1.5">
-                                            <span className="text-[12px] font-black text-slate-700">{row.nombre}</span>
+                                            <span className="text-[12px] font-black text-content-2">{row.nombre}</span>
                                             {row.isJefe && (
-                                                <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Jefe/a</span>
+                                                <span className="text-[9px] font-black bg-warning/10 text-amber-700 px-1.5 py-0.5 rounded-full">Jefe/a</span>
                                             )}
                                         </div>
-                                        <span className="text-[9px] text-slate-500">{row.sucursal}</span>
+                                        <span className="text-[9px] text-content-3">{row.sucursal}</span>
                                     </div>
                                 </div>
-                                <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line pl-[46px]">{row.comentario}</p>
+                                <p className="text-[11px] text-content-2 leading-relaxed whitespace-pre-line pl-[46px]">{row.comentario}</p>
                             </div>
                         ))}
                     </div>

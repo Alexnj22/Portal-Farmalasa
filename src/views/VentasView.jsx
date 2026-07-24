@@ -155,7 +155,7 @@ function FilterControls({
     const dateDirty = monthRange !== defaultRange;
 
     return (
-        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
+        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
 
             {/* Branch select + individual clear */}
             {!branchLocked && <div className="flex items-center">
@@ -165,14 +165,14 @@ function FilterControls({
                 </div>
                 {filterBranch && (
                     <button onClick={() => setFilterBranch('')} title="Quitar sucursal"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
             </div>}
 
             {showLab && <>
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
+            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
 
             {/* Laboratorio select + individual clear */}
             <div className="flex items-center">
@@ -182,14 +182,14 @@ function FilterControls({
                 </div>
                 {filterLab && (
                     <button onClick={() => setFilterLab('')} title="Quitar laboratorio"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
             </div>
             </>}
 
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
+            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
 
             {/* Period picker + individual clear */}
             <div className="flex items-center">
@@ -198,21 +198,21 @@ function FilterControls({
                 </div>
                 {dateDirty && (
                     <button onClick={() => setMonthRange(defaultRange)} title="Quitar fecha"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
             </div>
 
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
+            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
 
             {/* Toggle filters */}
             <div className="flex items-center gap-1 px-2">
                 <button onClick={() => setFilterAnuladas(v => !v)}
                     className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                         filterAnuladas
-                            ? 'bg-red-100 border-red-200 text-red-700 shadow-sm'
-                            : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                            ? 'bg-danger/10 border-danger/30 text-red-700 shadow-sm'
+                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
                     }`}>
                     Anuladas
                     {filterAnuladas && <X size={9} strokeWidth={3} />}
@@ -223,7 +223,7 @@ function FilterControls({
                         className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                             filterAntibiotico
                                 ? 'bg-rose-100 border-rose-200 text-rose-700 shadow-sm'
-                                : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
                         }`}>
                         Receta Médica
                         {filterAntibiotico && <X size={9} strokeWidth={3} />}
@@ -234,9 +234,9 @@ function FilterControls({
             {/* Clear all */}
             {hasActiveFilters && (
                 <>
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                     <button onClick={resetAll} title="Limpiar todos los filtros"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-colors duration-200 shrink-0">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -255,9 +255,9 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
                 ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-white' : 'cursor-default bg-white'}
                 ${active
-                    ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-amber-50'
+                    ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-warning/10'
                     : isFilter
-                        ? 'border-amber-200 bg-amber-50/40 hover:bg-amber-50'
+                        ? 'border-warning/30 bg-warning/40 hover:bg-warning/10'
                         : 'border-slate-100 bg-white'
                 }`}
         >
@@ -265,28 +265,28 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                 <Icon size={11} className="text-white" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col min-w-0">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600 leading-none mb-0.5">{label}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-content-2 leading-none mb-0.5">{label}</span>
                 <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
                     <span className={`text-[15px] font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
                     {!blurred && pct !== null && pct !== undefined && (
-                        <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-success' : 'text-danger'}`}>
                             {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
                             {Math.abs(pct).toFixed(1)}%
                         </span>
                     )}
                 </div>
-                {sub && <span className={`text-[9px] text-slate-500 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
+                {sub && <span className={`text-[9px] text-content-3 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
             </div>
-            {isFilter && !active && <ChevronDown size={11} className="text-amber-400 ml-0.5 shrink-0" />}
-            {active && <X size={11} className="text-amber-500 ml-0.5 shrink-0" />}
+            {isFilter && !active && <ChevronDown size={11} className="text-warning ml-0.5 shrink-0" />}
+            {active && <X size={11} className="text-warning ml-0.5 shrink-0" />}
         </div>
     );
     if (conIva == null || blurred) return card;
     return (
         <LiquidTooltip content={
             <div className="whitespace-nowrap">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Total con IVA</p>
-                <p className="text-[13px] font-black text-slate-800">{fmt(conIva)}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
+                <p className="text-[13px] font-black text-content">{fmt(conIva)}</p>
             </div>
         }>
             {card}
@@ -302,8 +302,8 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
             <button onClick={() => onSort(col)}
                 className={`group flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
                     active
-                        ? 'text-[#0052CC] bg-blue-50'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/70'
+                        ? 'text-brand bg-blue-50'
+                        : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover/70'
                 }`}>
                 {label}
                 <span className={`transition-opacity duration-150 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
@@ -638,7 +638,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     return [
                         { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
-                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
+                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-content-2',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
                         { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
@@ -682,56 +682,56 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const changes     = changelogCache[r.id] ?? [];
                     const relevantChanges = changes.filter(c => RELEVANT_CAMPOS.has(c.campo));
                     const tipoBadgeColor = r.tipo_documento === 'CCF'
-                        ? 'bg-red-50 text-red-600'
+                        ? 'bg-danger/10 text-danger'
                         : r.tipo_documento === 'FCF'
                         ? 'bg-blue-50 text-blue-600'
-                        : 'bg-slate-100 text-slate-500';
+                        : 'bg-surface-card-hover text-content-3';
                     return (
                         <React.Fragment key={r.id}>
                             <DataRow
                                 index={i}
                                 onClick={() => toggleRow(r.id)}
-                                className={isCancelled ? 'opacity-50 bg-red-50/30' : isExpanded ? 'bg-blue-50/50' : ''}
+                                className={isCancelled ? 'opacity-50 bg-danger/30' : isExpanded ? 'bg-blue-50/50' : ''}
                             >
                                 <DataCell>
-                                    <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
-                                    {r.hora && <p className="text-[10px] text-slate-500">{r.hora?.slice(0, 5)}</p>}
+                                    <p className={`text-[12px] font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
+                                    {r.hora && <p className="text-[10px] text-content-3">{r.hora?.slice(0, 5)}</p>}
                                     {isCancelled
-                                        ? <span className="text-[8px] font-black uppercase tracking-widest text-red-400">ANULADA</span>
+                                        ? <span className="text-[8px] font-black uppercase tracking-widest text-danger">ANULADA</span>
                                         : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-orange-400">Pdte. MH</span>}
                                 </DataCell>
                                 <DataCell hideBelow="md">
-                                    {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-slate-500 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
-                                    <p className="font-mono text-[10px] text-slate-500">{r.correlativo}</p>
+                                    {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-content-3 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
+                                    <p className="font-mono text-[10px] text-content-3">{r.correlativo}</p>
                                 </DataCell>
                                 <DataCell hideBelow="sm">
                                     {r.tipo_documento
                                         ? <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
-                                        : <span className="text-slate-500">—</span>}
+                                        : <span className="text-content-3">—</span>}
                                 </DataCell>
                                 <DataCell hideBelow="lg">
-                                    <span className="text-[11px] text-slate-600">{getBranch(r.branch_id)}</span>
+                                    <span className="text-[11px] text-content-2">{getBranch(r.branch_id)}</span>
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     <div className="flex items-center gap-2">
                                         {emp ? (
                                             <LiquidAvatar src={emp.photo || emp.photo_url} fallbackText={emp.first_names} className="w-6 h-6 rounded-full shrink-0" />
                                         ) : (
-                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                                <Users size={11} className="text-slate-400" />
+                                            <div className="w-6 h-6 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
+                                                <Users size={11} className="text-content-3" />
                                             </div>
                                         )}
-                                        <span className="text-[11px] text-slate-600 truncate max-w-[100px]">
+                                        <span className="text-[11px] text-content-2 truncate max-w-[100px]">
                                             {emp ? emp.first_names : (r.cod_vendedor || '—')}
                                         </span>
                                     </div>
                                 </DataCell>
                                 <DataCell>
-                                    <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{r.cliente || '—'}</p>
+                                    <p className="text-[12px] text-content-2 truncate max-w-[160px]">{r.cliente || '—'}</p>
                                     {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
                                         <div className="flex gap-1 flex-wrap mt-0.5">
                                             {(r.has_puntos || filterPuntos) && (
-                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700">Puntos</span>
+                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-amber-700">Puntos</span>
                                             )}
                                             {abInvoicesSet.has(r.id) && (
                                                 <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>
@@ -741,33 +741,33 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 </DataCell>
                                 <DataCell hideBelow="sm">
                                     {r.tipo_pago
-                                        ? <span className="text-[11px] text-slate-600 font-medium">{r.tipo_pago}</span>
-                                        : <span className="text-slate-500">—</span>}
+                                        ? <span className="text-[11px] text-content-2 font-medium">{r.tipo_pago}</span>
+                                        : <span className="text-content-3">—</span>}
                                 </DataCell>
                                 <DataCell align="right">
                                     <div className="flex items-center justify-end gap-2">
                                         {relevantChanges.length > 0 && (
                                             <LiquidTooltip content={
                                                 <div className="space-y-0.5">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2">Cambios registrados</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-warning mb-2">Cambios registrados</p>
                                                     {relevantChanges.map((c, ci) => (
                                                         <div key={ci} className="flex items-baseline gap-2 py-1 border-b border-slate-100 last:border-0">
-                                                            <span className="text-[11px] font-bold text-slate-600 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
-                                                            <span className="text-[11px] text-slate-500 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
-                                                            <span className="text-[11px] font-semibold text-slate-700">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
+                                                            <span className="text-[11px] font-bold text-content-2 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
+                                                            <span className="text-[11px] text-content-3 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
+                                                            <span className="text-[11px] font-semibold text-content-2">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             } className="shrink-0">
                                                 <div onClick={e => e.stopPropagation()}
-                                                    className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
-                                                    <span className="text-[9px] font-black text-amber-600 leading-none">!</span>
+                                                    className="w-4 h-4 rounded-full bg-warning/10 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
+                                                    <span className="text-[9px] font-black text-warning leading-none">!</span>
                                                 </div>
                                             </LiquidTooltip>
                                         )}
-                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-500' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-content-3' : 'text-content'}`}>{fmt(r.total)}</p>
                                         <ChevronDown size={12}
-                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-500'}`} />
+                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-content-3' : 'text-content-3'}`} />
                                     </div>
                                 </DataCell>
                             </DataRow>
@@ -776,12 +776,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     <td colSpan={8}
                                         className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20">
                                         {loadingItems && !cachedItems ? (
-                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-500">
+                                            <div className="flex items-center gap-2 text-[11px] py-1 text-content-3">
                                                 <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
                                             </div>
                                         ) : noData ? (
-                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-500">
-                                                <Info size={12} className="shrink-0 text-slate-300" />
+                                            <div className="flex items-center gap-2 text-[11px] py-1 text-content-3">
+                                                <Info size={12} className="shrink-0 text-content-3" />
                                                 Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
                                             </div>
                                         ) : (
@@ -799,11 +799,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
                                                 const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
                                                 const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
-                                                const hdrTxt = 'text-slate-500';
-                                                const nameTxt = 'text-slate-700';
-                                                const numTxt = 'text-slate-500';
+                                                const hdrTxt = 'text-content-3';
+                                                const nameTxt = 'text-content-2';
+                                                const numTxt = 'text-content-3';
                                                 const dividerCls = 'border-slate-100/80';
-                                                const rowHoverCls = 'hover:bg-white/70';
+                                                const rowHoverCls = 'hover:bg-surface-card';
                                                 return (
                                                     <table className="w-full border-collapse">
                                                         <thead>
@@ -841,14 +841,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                                                     {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
-                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">{it.presentacion}</span>}
+                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
                                                                                     {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
-                                                                                    {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-slate-100 text-slate-500">Vence {it.fecha_vencimiento}</span>}
+                                                                                    {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}
                                                                                 </div>
                                                                             )}
                                                                         </td>
                                                                         <td className={`py-1 text-right text-[10px] font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</td>
-                                                                        <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-slate-500">{fmt(it.precio_unitario)}</td>
+                                                                        <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-content-3">{fmt(it.precio_unitario)}</td>
                                                                         <td className="py-1 text-right whitespace-nowrap">
                                                                             {tier ? (
                                                                                 <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
@@ -856,7 +856,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                                     {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
                                                                                 </span>
                                                                             ) : noPrice ? (
-                                                                                <span className="text-[9px] text-slate-500">—</span>
+                                                                                <span className="text-[9px] text-content-3">—</span>
                                                                             ) : null}
                                                                         </td>
                                                                         <td className={`py-1 text-right text-[11px] font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</td>
@@ -864,7 +864,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 );
                                                             })}
                                                             {finalDiscount > 0 && (
-                                                                <tr className="border-t border-amber-100">
+                                                                <tr className="border-t border-warning/30">
                                                                     <td className="pt-1.5 pb-1 pl-2 pr-2" colSpan={3}>
                                                                         <div className="flex items-center gap-1.5">
                                                                             <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
@@ -872,7 +872,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                         </div>
                                                                     </td>
                                                                     <td />
-                                                                    <td className="pt-1.5 pb-1 text-right text-[11px] font-black text-amber-600">-{fmt(finalDiscount)}</td>
+                                                                    <td className="pt-1.5 pb-1 text-right text-[11px] font-black text-warning">-{fmt(finalDiscount)}</td>
                                                                 </tr>
                                                             )}
                                                         </tbody>
@@ -883,15 +883,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
                                             <div className="mt-3 pt-3 border-t flex justify-end border-slate-100">
                                                 <div className="flex flex-col gap-0.5 min-w-[180px]">
-                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                    <div className="flex justify-between gap-6 text-[11px] text-content-3">
                                                         <span>Subtotal (sin IVA)</span>
-                                                        <span className="font-semibold text-slate-700">{fmt(r.subtotal)}</span>
+                                                        <span className="font-semibold text-content-2">{fmt(r.subtotal)}</span>
                                                     </div>
-                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                    <div className="flex justify-between gap-6 text-[11px] text-content-3">
                                                         <span>IVA (13%)</span>
-                                                        <span className="font-semibold text-slate-700">{fmt(r.iva)}</span>
+                                                        <span className="font-semibold text-content-2">{fmt(r.iva)}</span>
                                                     </div>
-                                                    <div className="flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 text-slate-800 border-slate-200">
+                                                    <div className="flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 text-content border-slate-200">
                                                         <span>Total</span>
                                                         <span>{fmt(r.total)}</span>
                                                     </div>
@@ -1065,14 +1065,14 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         const prev = prevRankMap.get(cod);
         if (prev == null) return null;
         const diff = prev - currentRank;
-        if (diff === 0) return <Minus size={12} className="text-slate-400" />;
+        if (diff === 0) return <Minus size={12} className="text-content-3" />;
         if (diff > 0) return (
-            <span className="flex items-center gap-0.5 text-emerald-600 text-[10px] font-black">
+            <span className="flex items-center gap-0.5 text-success text-[10px] font-black">
                 <ArrowUp size={10} />{diff}
             </span>
         );
         return (
-            <span className="flex items-center gap-0.5 text-red-500 text-[10px] font-black">
+            <span className="flex items-center gap-0.5 text-danger text-[10px] font-black">
                 <ArrowDown size={10} />{Math.abs(diff)}
             </span>
         );
@@ -1093,7 +1093,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     return [
                         { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    pct: null,     sub: undefined },
                         { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
-                        { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
+                        { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
@@ -1101,7 +1101,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
             </div>
 
             {isVendSearchFuzzy && searchTerm && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -1139,9 +1139,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
                                         {i === 0 ? <Trophy size={15} className="text-yellow-500" />
-                                            : i === 1 ? <Trophy size={15} className="text-slate-500" />
-                                            : i === 2 ? <Trophy size={15} className="text-amber-600" />
-                                            : <span className="text-xs text-slate-500 font-bold w-4 text-center">{i + 1}</span>}
+                                            : i === 1 ? <Trophy size={15} className="text-content-3" />
+                                            : i === 2 ? <Trophy size={15} className="text-warning" />
+                                            : <span className="text-xs text-content-3 font-bold w-4 text-center">{i + 1}</span>}
                                         <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
                                     </div>
                                 </DataCell>
@@ -1152,13 +1152,13 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                                 fallbackText={r.emp.first_names}
                                                 className="w-8 h-8 rounded-full shrink-0" />
                                         ) : (
-                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                                <Users size={14} className="text-slate-400" />
+                                            <div className="w-8 h-8 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
+                                                <Users size={14} className="text-content-3" />
                                             </div>
                                         )}
                                         <div>
                                             <p className="font-semibold text-[13px]">{displayName}</p>
-                                            <p className="text-[10px] text-slate-500">Cód. {r.cod_vendedor}</p>
+                                            <p className="text-[10px] text-content-3">Cód. {r.cod_vendedor}</p>
                                         </div>
                                     </div>
                                 </DataCell>
@@ -1172,14 +1172,14 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <DataCell align="right">
                                     <div className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                         <p className="font-black text-[13px]">{privacyMode ? '••••••' : fmt(r.total)}</p>
-                                        <div className="mt-1 h-1 rounded-full bg-slate-100">
+                                        <div className="mt-1 h-1 rounded-full bg-surface-card-hover">
                                             <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: privacyMode ? '0%' : `${pct}%` }} />
                                         </div>
                                     </div>
                                 </DataCell>
                                 <DataCell align="right" hideBelow="md" className="text-[12px]">{fmt(ticket)}</DataCell>
                                 <DataCell>
-                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-400' : 'text-slate-400'}`} />
+                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-400' : 'text-content-3'}`} />
                                 </DataCell>
                             </DataRow>
                             {isOpen && !privacyMode && (
@@ -1187,18 +1187,18 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                     <td colSpan={7}
                                         className={`px-4 py-3 ${expandBg}`}>
                                         {loadingExpand ? (
-                                            <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-500" /></div>
+                                            <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-content-3" /></div>
                                         ) : (
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-600">Ventas diarias</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-content-2">Ventas diarias</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {expandedData.map(d => {
                                                         const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
                                                         return (
                                                             <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
-                                                                <p className="mb-0.5 text-slate-500">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
-                                                                <p className="font-black text-slate-800">{fmt(d.total)}</p>
-                                                                <p className="text-slate-500">{d.count} fact.</p>
+                                                                <p className="mb-0.5 text-content-3">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
+                                                                <p className="font-black text-content">{fmt(d.total)}</p>
+                                                                <p className="text-content-3">{d.count} fact.</p>
                                                                 {cross.map(b => (
                                                                     <p key={b.branch_id} className="text-orange-500 font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
                                                                 ))}
@@ -1243,16 +1243,16 @@ const DRILL_TIERS = [
     { key: 'vip',         label: 'VIP',     color: 'bg-violet-100 text-violet-700',   num: 3 },
     { key: 'clinica',     label: 'Clínica', color: 'bg-sky-100 text-sky-700',         num: 4 },
     { key: 'mayoreo',     label: 'Mayoreo', color: 'bg-orange-100 text-orange-700',   num: 5 },
-    { key: 'premium',     label: 'Premium', color: 'bg-amber-100 text-amber-700',     num: 6 },
-    { key: 'descuento_1', label: 'Desc.',   color: 'bg-emerald-100 text-emerald-700', num: 2 },
+    { key: 'premium',     label: 'Premium', color: 'bg-warning/10 text-amber-700',     num: 6 },
+    { key: 'descuento_1', label: 'Desc.',   color: 'bg-success/10 text-emerald-700', num: 2 },
     { key: 'precio_7',    label: 'P7',      color: 'bg-teal-100 text-teal-700',       num: 7 },
-    { key: 'vineta',      label: 'Viñeta',  color: 'bg-slate-100 text-slate-600',     num: 1 },
+    { key: 'vineta',      label: 'Viñeta',  color: 'bg-surface-card-hover text-content-2',     num: 1 },
 ];
 const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PAGO_STYLE = {
-    efectivo:      'bg-emerald-50 text-emerald-700',
+    efectivo:      'bg-success/10 text-emerald-700',
     tarjeta:       'bg-blue-50 text-blue-700',
-    credito:       'bg-amber-50 text-amber-700',
+    credito:       'bg-warning/10 text-amber-700',
     transferencia: 'bg-purple-50 text-purple-700',
     cheque:        'bg-zinc-100 text-zinc-600',
     bitcoin:       'bg-orange-50 text-orange-600',
@@ -1312,18 +1312,18 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     const porSuc = row.ultima_venta_por_suc || [];
 
     if (!fecha) {
-        return <span className="text-[10px] text-slate-500 italic">Sin ventas</span>;
+        return <span className="text-[10px] text-content-3 italic">Sin ventas</span>;
     }
 
     const days  = Math.floor((now - new Date(fecha + 'T12:00:00')) / 86_400_000);
-    const color = days > 365 ? 'text-red-500' : days > 180 ? 'text-orange-500' : 'text-slate-600';
+    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-orange-500' : 'text-content-2';
     const label = fmtDate(fecha);
 
     if (filterBranch) {
         return (
             <div>
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-500">hace {days}d</span>
+                <span className="block text-[9px] text-content-3">hace {days}d</span>
             </div>
         );
     }
@@ -1337,21 +1337,21 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
         return (
             <div>
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                {name && <span className="block text-[9px] text-slate-500">{name}</span>}
+                {name && <span className="block text-[9px] text-content-3">{name}</span>}
             </div>
         );
     }
 
     const tipContent = (
         <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Última venta por suc.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
                 const d = Math.floor((now - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
-                const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
+                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-orange-500' : 'text-brand';
                 return (
                     <div key={s.branch_id} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                        <span className="text-[12px] font-semibold text-slate-700">{name}</span>
+                        <span className="text-[12px] font-semibold text-content-2">{name}</span>
                         <span className={`text-[12px] font-black tabular-nums ${c}`}>{fmtDate(s.fecha)}</span>
                     </div>
                 );
@@ -1362,7 +1362,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
         <LiquidTooltip content={tipContent}>
             <div className="cursor-help">
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-500">{byBranch.length} suc. ⓘ</span>
+                <span className="block text-[9px] text-content-3">{byBranch.length} suc. ⓘ</span>
             </div>
         </LiquidTooltip>
     );
@@ -1810,7 +1810,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
                         { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
                         ...(hiddenCount > 0 || showHidden ? [
-                            { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-slate-500 to-slate-400', text: 'text-slate-700', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
+                            { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-slate-500 to-slate-400', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
                         ] : []),
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
@@ -1819,14 +1819,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             </div>
 
             {error && (
-                <div className="text-center py-16 text-red-400">
+                <div className="text-center py-16 text-danger">
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
                     <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-blue-500 hover:underline">Reintentar</button>
                 </div>
             )}
             {isProdFuzzy && searchTerm && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -1859,42 +1859,42 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 const isExpanded = expandedKey === rowKey;
                                 const pct        = (r.neto / maxNeto) * 100;
                                 const margin     = r.margen;
-                                const marginColor = margin == null ? 'text-slate-500'
-                                    : margin >= 25 ? 'text-emerald-600'
-                                    : margin >= 10 ? 'text-amber-600'
-                                    : 'text-red-600';
+                                const marginColor = margin == null ? 'text-content-3'
+                                    : margin >= 25 ? 'text-success'
+                                    : margin >= 10 ? 'text-warning'
+                                    : 'text-danger';
                                 return (
                                     <React.Fragment key={rowKey}>
                                     <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
                                         className={isExpanded ? 'bg-blue-50/40' : ''}>
                                         <DataCell className="text-[11px] font-bold">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
-                                                : <span className="text-slate-500">{globalIdx + 1}</span>}
+                                                : <span className="text-content-3">{globalIdx + 1}</span>}
                                         </DataCell>
                                         <DataCell className="max-w-[220px]">
                                             <div className="flex items-start gap-1.5">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`font-semibold text-[12px] leading-tight ${r.neto === 0 ? 'text-slate-500' : ''}`}>{r.descripcion}</p>
+                                                    <p className={`font-semibold text-[12px] leading-tight ${r.neto === 0 ? 'text-content-3' : ''}`}>{r.descripcion}</p>
                                                     {r.presentaciones?.length > 0 && (
-                                                        <p className="text-[10px] text-slate-500 mt-0.5">
+                                                        <p className="text-[10px] text-content-3 mt-0.5">
                                                             {r.presentaciones.length === 1
                                                                 ? r.presentaciones[0].presentacion || 'sin presentación'
                                                                 : `${r.presentaciones.length} presentaciones`}
                                                         </p>
                                                     )}
                                                     {r.neto === 0 && (
-                                                        <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
+                                                        <span className="text-[9px] font-semibold text-content-3 bg-surface-card-hover px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
                                                     )}
                                                     {r.neto > 0 && (
-                                                    <div className="mt-1.5 h-1 rounded-full bg-slate-100">
+                                                    <div className="mt-1.5 h-1 rounded-full bg-surface-card-hover">
                                                         <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
                                                     </div>
                                                     )}
                                                 </div>
-                                                <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-slate-300'}`} />
+                                                <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-content-3'}`} />
                                             </div>
                                         </DataCell>
-                                        <DataCell hideBelow="md" className="text-[11px] text-slate-500 font-semibold truncate max-w-[140px]">
+                                        <DataCell hideBelow="md" className="text-[11px] text-content-3 font-semibold truncate max-w-[140px]">
                                             {r.laboratorio_nombre || <span className="opacity-30">—</span>}
                                         </DataCell>
                                         <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">
@@ -1904,19 +1904,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 return (
                                                     <LiquidTooltip content={
                                                         <div className="space-y-1 whitespace-nowrap">
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Desglose por presentación</p>
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Desglose por presentación</p>
                                                             {pres.map((p, i) => {
                                                                 const f = p.factor || 1;
                                                                 const sub = p.cantidad * f;
                                                                 return (
                                                                     <div key={`${p.presentacion}-${i}`} className="flex items-center justify-between gap-4 text-[11px]">
-                                                                        <span className="font-semibold text-slate-600">{fmtQty(p.cantidad)} {p.presentacion || 'u'}</span>
-                                                                        <span className="text-slate-500 tabular-nums">{f > 1 ? `× ${f} = ${fmtNum(sub)} u` : `= ${fmtNum(sub)} u`}</span>
+                                                                        <span className="font-semibold text-content-2">{fmtQty(p.cantidad)} {p.presentacion || 'u'}</span>
+                                                                        <span className="text-content-3 tabular-nums">{f > 1 ? `× ${f} = ${fmtNum(sub)} u` : `= ${fmtNum(sub)} u`}</span>
                                                                     </div>
                                                                 );
                                                             })}
                                                             {pres.length > 1 && (
-                                                                <div className="flex items-center justify-between gap-4 text-[11px] font-black text-slate-800 border-t border-slate-100 pt-1 mt-1.5">
+                                                                <div className="flex items-center justify-between gap-4 text-[11px] font-black text-content border-t border-slate-100 pt-1 mt-1.5">
                                                                     <span>Total</span>
                                                                     <span className="tabular-nums">{fmtNum(r.cantidad_base)} u</span>
                                                                 </div>
@@ -1934,8 +1934,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             ) : (
                                                 <LiquidTooltip content={
                                                     <div className="whitespace-nowrap">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Total con IVA</p>
-                                                        <p className="text-[13px] font-black text-slate-800">{fmt(r.neto * 1.13)}</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
+                                                        <p className="text-[13px] font-black text-content">{fmt(r.neto * 1.13)}</p>
                                                     </div>
                                                 }>
                                                     <span className="cursor-help">{fmt(r.neto)}</span>
@@ -1950,7 +1950,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         <DataCell align="right" hideBelow="sm" className="text-[12px] font-bold">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                                 {privacyMode ? '••••••' : r.utilidad != null
-                                                    ? <span className={r.utilidad >= 0 ? 'text-emerald-600' : 'text-red-600'}>{fmt(r.utilidad)}</span>
+                                                    ? <span className={r.utilidad >= 0 ? 'text-success' : 'text-danger'}>{fmt(r.utilidad)}</span>
                                                     : <span className="opacity-30">—</span>}
                                             </span>
                                         </DataCell>
@@ -1966,9 +1966,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <LiquidTooltip content={
                                                 showHidden
                                                     ? <div className="whitespace-nowrap">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Mostrar de nuevo</p>
-                                                        <p className="text-[11px] text-slate-600">
-                                                            Oculto por <span className="font-bold text-slate-800">{shortEmployeeName(r.oculto_por)}</span>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Mostrar de nuevo</p>
+                                                        <p className="text-[11px] text-content-2">
+                                                            Oculto por <span className="font-bold text-content">{shortEmployeeName(r.oculto_por)}</span>
                                                             {r.oculto_at && ` el ${new Date(r.oculto_at).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                                                         </p>
                                                       </div>
@@ -1978,8 +1978,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     onClick={(e) => { e.stopPropagation(); toggleOculto(r); }}
                                                     className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
                                                         showHidden
-                                                            ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
-                                                            : 'text-slate-500 hover:text-red-500 hover:bg-red-50'
+                                                            ? 'text-content-3 hover:text-success hover:bg-success/10'
+                                                            : 'text-content-3 hover:text-danger hover:bg-danger/10'
                                                     }`}
                                                 >
                                                     {showHidden ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -1992,7 +1992,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
-                                                    <div className="flex items-center gap-2 text-[12px] text-slate-500 py-3">
+                                                    <div className="flex items-center gap-2 text-[12px] text-content-3 py-3">
                                                         <Loader2 size={14} className="animate-spin" /> Cargando detalle...
                                                     </div>
                                                 ) : (
@@ -2000,16 +2000,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         {/* Presentaciones breakdown */}
                                                         {r.presentaciones?.length > 1 && (
                                                             <div>
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Por presentación</p>
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {r.presentaciones.map(p => (
                                                                         <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm">
-                                                                            <span className="text-[11px] font-semibold text-slate-600">{p.presentacion || '(sin pres.)'}</span>
-                                                                            <span className="text-[11px] font-black text-slate-800">{fmtQty(p.cantidad)} u</span>
+                                                                            <span className="text-[11px] font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
+                                                                            <span className="text-[11px] font-black text-content">{fmtQty(p.cantidad)} u</span>
                                                                             {p.factor > 1 && (
                                                                                 <span className="text-[10px] font-semibold text-blue-500">= {fmtQty(p.cantidad * p.factor)} base</span>
                                                                             )}
-                                                                            <span className="text-[10px] text-slate-500">{fmt(p.neto)}</span>
+                                                                            <span className="text-[10px] text-content-3">{fmt(p.neto)}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -2045,7 +2045,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     {/* Branch rotation */}
                                                                     {showBranch && (
                                                                         <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Ventas por sucursal</p>
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
                                                                             <div className="space-y-2.5">
                                                                                 {branchAgg.entries.map(([bid, neto], ci) => {
                                                                                     const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
@@ -2055,14 +2055,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     return (
                                                                                         <div key={bid}>
                                                                                             <div className="flex justify-between items-center mb-1">
-                                                                                                <span className="text-[10px] text-slate-600 font-semibold truncate max-w-[150px]">{name}</span>
+                                                                                                <span className="text-[10px] text-content-2 font-semibold truncate max-w-[150px]">{name}</span>
                                                                                                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                                                    <span className="text-[9px] text-slate-500 font-semibold tabular-nums">{fmtQty(cant)} und</span>
-                                                                                                    <span className="text-[10px] font-black text-slate-700">{fmt(neto)}</span>
+                                                                                                    <span className="text-[9px] text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
+                                                                                                    <span className="text-[10px] font-black text-content-2">{fmt(neto)}</span>
                                                                                                     <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-indigo-500">{pct.toFixed(0)}%</span>
                                                                                                 </div>
                                                                                             </div>
-                                                                                            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                                                            <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
                                                                                                 <div className={`h-2 rounded-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
                                                                                             </div>
                                                                                         </div>
@@ -2075,7 +2075,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     {/* Trend */}
                                                                     {showTrend && (
                                                                         <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Tendencia mensual</p>
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
                                                                             <div className="flex items-end gap-1.5" style={{ height: 80 }}>
                                                                                 {drillMonthly.map((m, i) => {
                                                                                     const barPct = (m.neto / maxTrend) * 100;
@@ -2088,7 +2088,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                         <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full group/bar cursor-default">
                                                                                             <div className="text-[8px] font-black h-3.5 flex items-center">
                                                                                                 {change !== null
-                                                                                                    ? <span className={isUp ? 'text-emerald-500' : 'text-red-400'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
+                                                                                                    ? <span className={isUp ? 'text-success' : 'text-danger'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
                                                                                                     : <span />}
                                                                                             </div>
                                                                                             <div className="w-full flex flex-col justify-end rounded-t-lg overflow-hidden" style={{ height: 44 }}>
@@ -2097,8 +2097,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                     style={{ height: `${Math.max(barPct, 5)}%` }}
                                                                                                 />
                                                                                             </div>
-                                                                                            <span className="text-[9px] text-slate-500 capitalize leading-none mt-1">{monthLabel}</span>
-                                                                                            <span className="text-[8px] font-black text-slate-600 leading-none">{fmt(m.neto)}</span>
+                                                                                            <span className="text-[9px] text-content-3 capitalize leading-none mt-1">{monthLabel}</span>
+                                                                                            <span className="text-[8px] font-black text-content-2 leading-none">{fmt(m.neto)}</span>
                                                                                         </div>
                                                                                     );
                                                                                 })}
@@ -2121,7 +2121,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillSortCol === col;
                                                                 return (
                                                                     <th onClick={() => handleDrillSort(col)}
-                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-blue-600' : 'text-slate-600'} hover:text-slate-700`}>
+                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-blue-600' : 'text-content-2'} hover:text-content-2`}>
                                                                         <span className="inline-flex items-center gap-0.5">
                                                                             {label}
                                                                             {active
@@ -2135,7 +2135,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillFilters[field] === val;
                                                                 return (
                                                                     <button key={val} onClick={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}
-                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] ${active ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'}`}>
+                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] ${active ? 'bg-brand text-white border-brand' : 'bg-white text-content-3 border-slate-200 hover:border-blue-300 hover:text-blue-600'}`}>
                                                                         {label ?? val}
                                                                     </button>
                                                                 );
@@ -2151,16 +2151,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                 {docOpts.length > 1 && docOpts.map(v => pill(v, 'tipodoc'))}
                                                                                 {changedCount > 0 && (
                                                                                     <>
-                                                                                        {docOpts.length > 1 && <span className="text-slate-200">|</span>}
+                                                                                        {docOpts.length > 1 && <span className="text-content-3">|</span>}
                                                                                         <button onClick={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}
-                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-600 border-amber-300 hover:border-amber-500'}`}>
+                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-warning border-amber-300 hover:border-amber-500'}`}>
                                                                                             ⚠ precio cambió ({changedCount})
                                                                                         </button>
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
                                                                                     <button onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}
-                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-200 transition-colors">
+                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-danger/10 text-danger hover:bg-red-500 hover:text-white border border-danger/30 transition-colors">
                                                                                         ✕ limpiar
                                                                                     </button>
                                                                                 )}
@@ -2170,19 +2170,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                                     {/* Totals summary */}
                                                                     <div className="flex items-center gap-3 mb-2">
-                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-2">
                                                                             {filteredDrill.length} venta{filteredDrill.length !== 1 ? 's' : ''}{drillData.length >= 300 ? '+' : ''}
                                                                         </p>
-                                                                        <span className="text-slate-200">·</span>
-                                                                        <p className="text-[10px] font-black text-slate-600">{fmtQty(totCant)} <span className="font-medium text-slate-500">unidades</span></p>
-                                                                        <span className="text-slate-200">·</span>
-                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-slate-500">total</span></p>
+                                                                        <span className="text-content-3">·</span>
+                                                                        <p className="text-[10px] font-black text-content-2">{fmtQty(totCant)} <span className="font-medium text-content-3">unidades</span></p>
+                                                                        <span className="text-content-3">·</span>
+                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-content-3">total</span></p>
                                                                     </div>
 
                                                                     {/* Table */}
                                                                     <div className="rounded-xl border border-slate-200/80 overflow-hidden bg-white shadow-sm overflow-x-auto">
                                                                         <table className="min-w-full text-[11px]">
-                                                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                                                            <thead className="bg-surface-card-hover border-b border-slate-200">
                                                                                 <tr>
                                                                                     <DH col="fecha"          label="Fecha" />
                                                                                     <DH col="correlativo"    label="Correlativo" />
@@ -2192,8 +2192,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <DH col="cliente"        label="Cliente" />
                                                                                     {!filterBranch && <DH col="branch_id" label="Suc." />}
                                                                                     <DH col="presentacion"     label="Presentación" />
-                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-600 text-left whitespace-nowrap">Lote</th>
-                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-600 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
+                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-content-2 text-left whitespace-nowrap">Lote</th>
+                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-content-2 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
                                                                                     <DH col="precio_display"   label="P. Unit." right />
                                                                                     <DH col="cantidad"         label="Cant." right />
                                                                                     <DH col="neto_display"     label="Total" right />
@@ -2205,16 +2205,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
                                                                                     const empShort   = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
                                                                                     const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
-                                                                                    const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-slate-100 text-slate-500';
-                                                                                    const docStyle   = line.tipo_documento === 'CCF' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600';
+                                                                                    const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-surface-card-hover text-content-3';
+                                                                                    const docStyle   = line.tipo_documento === 'CCF' ? 'bg-blue-100 text-blue-700' : 'bg-surface-card-hover text-content-2';
                                                                                     return (
                                                                                         <tr key={li} className="hover:bg-blue-50/30 transition-colors">
-                                                                                            <td className="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">{fmtShort(line.fecha)}</td>
+                                                                                            <td className="px-3 py-2 font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 <div className="flex flex-col leading-tight">
-                                                                                                    <span className="font-mono text-slate-700 text-[11px]">{line.correlativo || '—'}</span>
+                                                                                                    <span className="font-mono text-content-2 text-[11px]">{line.correlativo || '—'}</span>
                                                                                                     {line.erp_invoice_id && (
-                                                                                                        <span className="font-mono text-[9px] text-slate-500">#{line.erp_invoice_id}</span>
+                                                                                                        <span className="font-mono text-[9px] text-content-3">#{line.erp_invoice_id}</span>
                                                                                                     )}
                                                                                                 </div>
                                                                                             </td>
@@ -2227,25 +2227,25 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 <div className="flex items-center gap-1.5">
                                                                                                     <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
-                                                                                                    <span className="text-slate-600 text-[11px]">{empShort}</span>
+                                                                                                    <span className="text-content-2 text-[11px]">{empShort}</span>
                                                                                                 </div>
                                                                                             </td>
-                                                                                            <td className="px-3 py-2 text-slate-600 max-w-[160px] truncate">{line.cliente || '—'}</td>
-                                                                                            {!filterBranch && <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{branchName}</td>}
-                                                                                            <td className="px-3 py-2 text-slate-500 max-w-[120px] truncate">{line.presentacion || '—'}</td>
+                                                                                            <td className="px-3 py-2 text-content-2 max-w-[160px] truncate">{line.cliente || '—'}</td>
+                                                                                            {!filterBranch && <td className="px-3 py-2 text-content-3 whitespace-nowrap">{branchName}</td>}
+                                                                                            <td className="px-3 py-2 text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 {line.lote
                                                                                                     ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500">{line.lote}</span>
-                                                                                                    : <span className="text-slate-500">—</span>}
+                                                                                                    : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap hidden lg:table-cell">
                                                                                                 {line.fecha_vencimiento
                                                                                                     ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-600">{line.fecha_vencimiento}</span>
-                                                                                                    : <span className="text-slate-500">—</span>}
+                                                                                                    : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-right whitespace-nowrap">
                                                                                                 <div className="flex flex-col items-end gap-0.5">
-                                                                                                    <span className="text-[11px] font-semibold text-slate-700">{fmt(line.precio_display)}</span>
+                                                                                                    <span className="text-[11px] font-semibold text-content-2">{fmt(line.precio_display)}</span>
                                                                                                     {line.tier && (
                                                                                                         <div className="relative group/tier inline-flex items-center gap-1">
                                                                                                             <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md inline-flex items-center gap-1 ${line.tier.color}`}>
@@ -2254,11 +2254,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                             </span>
                                                                                                             {line.tierChanged && (
                                                                                                                 <>
-                                                                                                                    <span className="text-amber-500 text-[11px] cursor-help leading-none">⚠</span>
+                                                                                                                    <span className="text-warning text-[11px] cursor-help leading-none">⚠</span>
                                                                                                                     <div className="absolute bottom-full right-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
                                                                                                                         <p className="font-black text-amber-300 mb-0.5">Precio cambió</p>
                                                                                                                         {line.tierChangedAt && (
-                                                                                                                            <p className="text-slate-500">
+                                                                                                                            <p className="text-content-3">
                                                                                                                                 {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                                                                                             </p>
                                                                                                                         )}
@@ -2271,18 +2271,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                     )}
                                                                                                 </div>
                                                                                             </td>
-                                                                                            <td className="px-3 py-2 text-right font-semibold text-slate-700 whitespace-nowrap">{fmtQty(line.cantidad)}</td>
-                                                                                            <td className="px-3 py-2 text-right font-black text-slate-800 whitespace-nowrap">{fmt(line.neto_display)}</td>
+                                                                                            <td className="px-3 py-2 text-right font-semibold text-content-2 whitespace-nowrap">{fmtQty(line.cantidad)}</td>
+                                                                                            <td className="px-3 py-2 text-right font-black text-content whitespace-nowrap">{fmt(line.neto_display)}</td>
                                                                                         </tr>
                                                                                     );
                                                                                 })}
                                                                             </tbody>
-                                                                            <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                                                                            <tfoot className="bg-surface-card-hover border-t-2 border-slate-200">
                                                                                 <tr>
-                                                                                    <td colSpan={!filterBranch ? 11 : 10} className="px-3 py-2 text-[10px] font-black text-slate-500 uppercase tracking-wide">
+                                                                                    <td colSpan={!filterBranch ? 11 : 10} className="px-3 py-2 text-[10px] font-black text-content-3 uppercase tracking-wide">
                                                                                         Total {filteredDrill.length < drillData.length ? `(filtrado)` : ''}
                                                                                     </td>
-                                                                                    <td className="px-3 py-2 text-right font-black text-slate-700">{fmtQty(totCant)}</td>
+                                                                                    <td className="px-3 py-2 text-right font-black text-content-2">{fmtQty(totCant)}</td>
                                                                                     <td className="px-3 py-2 text-right font-black text-emerald-700">{fmt(totNeto)}</td>
                                                                                 </tr>
                                                                             </tfoot>
@@ -2445,12 +2445,12 @@ export default function VentasView() {
                     </div>
                 )}
 
-                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
                 <button onClick={() => setPrivacyMode(v => !v)}
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode
                             ? 'bg-slate-700 text-white border-slate-700 shadow-[0_3px_8px_rgba(0,0,0,0.25)]'
-                            : 'bg-white/50 text-slate-500 border-white/80 hover:bg-white hover:shadow-md hover:text-slate-700'
+                            : 'bg-surface-card text-content-3 border-border-card hover:bg-white hover:shadow-md hover:text-content-2'
                     }`}>
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}
                 </button>

@@ -35,7 +35,7 @@ const COLS = [
 const REGIMEN_LABELS = { contribuyente: 'Contribuyente IVA', sujeto_excluido: 'Sujeto Excluido' };
 
 function RegimenCell({ row }) {
-    if (!row.regimen_fiscal) return <span className="text-slate-400 text-[11px]">—</span>;
+    if (!row.regimen_fiscal) return <span className="text-content-3 text-[11px]">—</span>;
     const isExcluido = row.regimen_fiscal === 'sujeto_excluido';
     return (
         <span
@@ -60,18 +60,18 @@ const fmtDate = (d) => {
 
 function CategoriaCell({ row }) {
     return row.categoria_nombre
-        ? <span className="text-slate-700 text-[12px] font-medium truncate max-w-[160px] block" title={row.categoria_nombre}>{row.categoria_nombre}</span>
-        : <span className="text-amber-600 text-[11px] font-bold whitespace-nowrap">Sin categoría</span>;
+        ? <span className="text-content-2 text-[12px] font-medium truncate max-w-[160px] block" title={row.categoria_nombre}>{row.categoria_nombre}</span>
+        : <span className="text-warning text-[11px] font-bold whitespace-nowrap">Sin categoría</span>;
 }
 
 function MatchErpCell({ row }) {
     if (row.supplier_id) {
-        return <span className="text-slate-800 font-medium text-[12px] truncate max-w-[180px] block" title={row.supplier_nombre}>{row.supplier_nombre}</span>;
+        return <span className="text-content font-medium text-[12px] truncate max-w-[180px] block" title={row.supplier_nombre}>{row.supplier_nombre}</span>;
     }
     return (
         <div className="flex items-center gap-1.5">
-            <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin match con proveedor del ERP" />
-            <span className="text-slate-500 text-[11px] whitespace-nowrap">Sin match ERP</span>
+            <AlertTriangle size={12} className="text-warning shrink-0" title="Sin match con proveedor del ERP" />
+            <span className="text-content-3 text-[11px] whitespace-nowrap">Sin match ERP</span>
         </div>
     );
 }
@@ -174,7 +174,7 @@ export default function ProveedoresView({ openModal }) {
             <div className="p-5 md:p-6 space-y-5">
                 {/* Filter pill — vive en el body (regla §17 DESIGN.md) */}
                 <div className="flex items-start justify-end gap-3 flex-wrap">
-                    <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible flex-wrap">
+                    <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible flex-wrap">
                         <div className="flex items-center">
                             <div className="px-2 py-2 overflow-visible" style={{ width: '190px' }}>
                                 <LiquidSelect value={categoriaId} onChange={setCategoriaId}
@@ -182,13 +182,13 @@ export default function ProveedoresView({ openModal }) {
                             </div>
                             {categoriaId && (
                                 <button onClick={() => setCategoriaId('')} title="Quitar categoría"
-                                    className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                                    className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
                                     <X size={9} strokeWidth={3} />
                                 </button>
                             )}
                         </div>
 
-                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                        <div className="h-5 w-px bg-surface-card-hover shrink-0" />
 
                         <div className="flex items-center">
                             <div className="px-2 py-2 overflow-visible" style={{ width: '160px' }}>
@@ -197,13 +197,13 @@ export default function ProveedoresView({ openModal }) {
                             </div>
                             {claseFilter && (
                                 <button onClick={() => setClaseFilter('')} title="Quitar clase"
-                                    className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                                    className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
                                     <X size={9} strokeWidth={3} />
                                 </button>
                             )}
                         </div>
 
-                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                        <div className="h-5 w-px bg-surface-card-hover shrink-0" />
 
                         <div className="flex items-center">
                             <div className="px-2 py-2 overflow-visible" style={{ width: '130px' }}>
@@ -220,23 +220,23 @@ export default function ProveedoresView({ openModal }) {
                         <DataRow key={row.id} index={i} onClick={() => openDetail(row)}>
                             <DataCell>
                                 <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-8 h-8 rounded-xl bg-slate-100/80 border border-slate-200/60 flex items-center justify-center shrink-0">
-                                        <Building2 size={14} className="text-slate-500" strokeWidth={1.8} />
+                                    <div className="w-8 h-8 rounded-xl bg-surface-card-hover/80 border border-slate-200/60 flex items-center justify-center shrink-0">
+                                        <Building2 size={14} className="text-content-3" strokeWidth={1.8} />
                                     </div>
                                     <div className="min-w-0 max-w-[200px]">
-                                        <p className="text-[12px] font-bold text-slate-700 truncate" title={row.nombre}>{row.nombre}</p>
+                                        <p className="text-[12px] font-bold text-content-2 truncate" title={row.nombre}>{row.nombre}</p>
                                         {row.alias && (
-                                            <p className="text-[10px] text-slate-500 truncate italic">&ldquo;{row.alias}&rdquo;</p>
+                                            <p className="text-[10px] text-content-3 truncate italic">&ldquo;{row.alias}&rdquo;</p>
                                         )}
                                         {!row.alias && row.nombre_comercial && row.nombre_comercial !== row.nombre && (
-                                            <p className="text-[10px] text-slate-500 truncate">{row.nombre_comercial}</p>
+                                            <p className="text-[10px] text-content-3 truncate">{row.nombre_comercial}</p>
                                         )}
                                     </div>
                                 </div>
                             </DataCell>
                             <DataCell hideBelow="md">
-                                <p className="font-mono text-[10px] text-slate-600">{row.nit || row.dui || '—'}</p>
-                                {row.nrc && <p className="font-mono text-[10px] text-slate-400">NRC {row.nrc}</p>}
+                                <p className="font-mono text-[10px] text-content-2">{row.nit || row.dui || '—'}</p>
+                                {row.nrc && <p className="font-mono text-[10px] text-content-3">NRC {row.nrc}</p>}
                             </DataCell>
                             <DataCell hideBelow="lg">
                                 <RegimenCell row={row} />
@@ -248,10 +248,10 @@ export default function ProveedoresView({ openModal }) {
                                 <MatchErpCell row={row} />
                             </DataCell>
                             <DataCell align="right" hideBelow="md">
-                                <span className="tabular-nums font-bold text-slate-700">{row.docs_count}</span>
+                                <span className="tabular-nums font-bold text-content-2">{row.docs_count}</span>
                             </DataCell>
                             <DataCell hideBelow="lg">
-                                <span className="text-slate-600 text-[11px] tabular-nums">{fmtDate(row.ultima_vez_visto)}</span>
+                                <span className="text-content-2 text-[11px] tabular-nums">{fmtDate(row.ultima_vez_visto)}</span>
                             </DataCell>
                         </DataRow>
                     ))}

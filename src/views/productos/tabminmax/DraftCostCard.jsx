@@ -16,23 +16,23 @@ export default function DraftCostCard({ draftCost, isBodega }) {
         ? 'Costo de la suma de sucursales al MIN → al MAX (efectivo: usa el borrador si hay uno pendiente).'
         : 'Costo de tener el catálogo COMPLETO al nivel MIN → al nivel MAX (usa el borrador si hay uno pendiente). No resta el stock actual — no es "lo que falta comprar", es el rango de inversión total del catálogo configurado.';
     return (
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-border-card backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}
             title={tooltip}>
-            <Target size={13} className={`shrink-0 ${isBodega ? 'text-amber-400' : 'text-violet-400'}`} />
+            <Target size={13} className={`shrink-0 ${isBodega ? 'text-warning' : 'text-violet-400'}`} />
             <div className="flex flex-col leading-snug gap-0.5">
-                <span className="text-[10px] font-semibold text-slate-500">
+                <span className="text-[10px] font-semibold text-content-3">
                     {label}
                     {hasAnyDelta && (
-                        <span className={`ml-1.5 tabular-nums font-bold ${deltaMax >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        <span className={`ml-1.5 tabular-nums font-bold ${deltaMax >= 0 ? 'text-success' : 'text-danger'}`}>
                             {deltaMax >= 0 ? '+' : ''}{fmtMoney(deltaMax)}
                         </span>
                     )}
                 </span>
                 <div className="flex items-baseline gap-1">
-                    <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
-                    <span className="text-[10px] text-slate-500 leading-none">→</span>
-                    <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
+                    <span className="text-[14px] font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
+                    <span className="text-[10px] text-content-3 leading-none">→</span>
+                    <span className="text-[14px] font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
                 </div>
             </div>
         </div>

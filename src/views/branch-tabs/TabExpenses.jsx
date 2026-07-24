@@ -8,7 +8,7 @@ import { fetchBranchExpensesHistory } from '../../data/branches';
 // MOTOR DE ESTADOS FINANCIEROS
 // ============================================================================
 const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
-    if (!dueDay || !paidThrough) return { state: 'unknown', label: 'Sin Configurar', colorClass: 'border-slate-200/60 bg-slate-50/50 text-slate-500' };
+    if (!dueDay || !paidThrough) return { state: 'unknown', label: 'Sin Configurar', colorClass: 'border-slate-200/60 bg-surface-card-hover/50 text-content-3' };
 
     if (isReceiptPending) {
         return {
@@ -28,18 +28,18 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const ptMonth = parseInt(ptMonthStr, 10);
 
     if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al Día', colorClass: 'border-emerald-400 bg-emerald-50/50 text-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400' };
+        return { state: 'paid', label: 'Al Día', colorClass: 'border-emerald-400 bg-success/50 text-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400' };
     }
 
     if (ptYear === currentYear && ptMonth === currentMonth - 1) {
         if (currentDay > dueDay) {
-            return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-red-50/50 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+            return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/50 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
         } else {
-            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-amber-400 bg-amber-50/50 text-amber-700 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-400' };
+            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-amber-400 bg-warning/50 text-amber-700 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-400' };
         }
     }
 
-    return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-red-50/50 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+    return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/50 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
 };
 
 // ============================================================================
@@ -51,12 +51,12 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
     const isPendingReceipt = statusObj.state === 'pending_receipt';
 
     const colorMap = {
-        blue: 'text-[#0052CC] bg-blue-50 border-blue-100',
+        blue: 'text-brand bg-blue-50 border-blue-100',
         orange: 'text-orange-500 bg-orange-50 border-orange-100',
         cyan: 'text-cyan-500 bg-cyan-50 border-cyan-100',
         purple: 'text-purple-500 bg-purple-50 border-purple-100',
-        emerald: 'text-emerald-500 bg-emerald-50 border-emerald-100',
-        slate: 'text-slate-500 bg-slate-50 border-slate-200'
+        emerald: 'text-success bg-success/10 border-success/30',
+        slate: 'text-content-3 bg-surface-card-hover border-slate-200'
     };
 
     return (
@@ -64,7 +64,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             className={`group relative backdrop-blur-md rounded-[2rem] p-5 transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:-translate-y-1 hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
             style={{ animationDelay: `${delay}ms`, willChange: 'transform, opacity' }}
         >
-            <div className="absolute inset-0 bg-white/40 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-surface-card rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div className="flex items-center gap-3">
@@ -72,25 +72,25 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         {isPendingReceipt ? <AlertCircle size={20} strokeWidth={2}/> : <Icon size={20} strokeWidth={2} />}
                     </div>
                     <div className="min-w-0 pr-2">
-                        <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest truncate">{title}</p>
-                        <p className="text-[9px] font-bold text-slate-500 truncate">{provider || 'Sin proveedor'}</p>
+                        <p className="text-[11px] font-black text-content uppercase tracking-widest truncate">{title}</p>
+                        <p className="text-[9px] font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-fuchsia-600 text-white border-fuchsia-700' : 'bg-white border-slate-100 group-hover:bg-slate-50'}`}>
+                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-fuchsia-600 text-white border-fuchsia-700' : 'bg-white border-slate-100 group-hover:bg-surface-card-hover'}`}>
                     {statusObj.label}
                 </div>
             </div>
 
             <div className="flex-1 flex items-end justify-between mt-2 relative z-10">
                 <div>
-                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
-                    <p className="text-lg font-black text-slate-800">${amount ? Number(amount).toFixed(2) : '0.00'}</p>
+                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
+                    <p className="text-lg font-black text-content">${amount ? Number(amount).toFixed(2) : '0.00'}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-0.5">
+                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">
                         {isPendingReceipt ? 'Mes Pagado' : 'Día de Pago'}
                     </p>
-                    <p className="text-[12px] font-bold text-slate-700">
+                    <p className="text-[12px] font-bold text-content-2">
                         {isPendingReceipt ? paidThrough : (dueDay ? `Día ${dueDay}` : '-')}
                     </p>
                 </div>
@@ -106,7 +106,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:text-[#0052CC] hover:border-blue-200 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-slate-200 text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand hover:border-blue-200 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>
@@ -121,10 +121,10 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-white/80 backdrop-blur-xl border border-white/50 p-4 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">{label}</p>
-                <p className="text-base font-black text-slate-800 flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#0052CC] shadow-sm"></span>
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-4 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+                <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
+                <p className="text-base font-black text-content flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm"></span>
                     ${payload[0].value.toFixed(2)}
                 </p>
             </div>
@@ -259,13 +259,13 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
         <div className="space-y-6">
             
             {/* HEADER PRINCIPAL */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-white/60">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-border-card">
                 <div>
-                    <h3 className="font-black text-slate-800 uppercase tracking-tight text-lg">Finanzas y Gastos Operativos</h3>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
+                    <h3 className="font-black text-content uppercase tracking-tight text-lg">Finanzas y Gastos Operativos</h3>
+                    <p className="text-[11px] font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-[1.25rem] border border-emerald-100/50 shadow-sm flex items-center gap-2 backdrop-blur-md">
+                    <div className="px-4 py-2 bg-success/10 text-success rounded-[1.25rem] border border-success/50 shadow-sm flex items-center gap-2 backdrop-blur-md">
                         <DollarSign size={16} strokeWidth={2.5} />
                         <span className="text-[11px] font-black uppercase tracking-widest">Total Operativo Actual</span>
                         <span className="text-[14px] font-black">${totalMonthlyEst.toFixed(2)}</span>
@@ -278,7 +278,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* SKELETON DE CARGA DASHBOARD */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     {/* Gráfico Skeleton */}
-                    <div className="lg:col-span-2 bg-white/40 border border-white/50 rounded-[2rem] p-6 shadow-sm flex flex-col min-h-[280px]">
+                    <div className="lg:col-span-2 bg-surface-card border border-border-card rounded-[2rem] p-6 shadow-sm flex flex-col min-h-[280px]">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-12 h-12 skeleton rounded-[1.25rem]"></div>
                             <div className="flex flex-col gap-2 w-1/3">
@@ -298,14 +298,14 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
 
                     {/* Métricas Rápidas Skeleton */}
                     <div className="flex flex-col gap-5">
-                        <div className="bg-white/40 border border-white/50 rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                        <div className="bg-surface-card border border-border-card rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-4 h-4 rounded-full skeleton"></div>
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
                             <div className="h-8 skeleton rounded-lg w-1/3 mt-2"></div>
                         </div>
-                        <div className="bg-white/40 border border-white/50 rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                        <div className="bg-surface-card border border-border-card rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-lg skeleton"></div>
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
@@ -318,17 +318,17 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* DASHBOARD REAL */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
                     {/* Gráfico de Barras */}
-                    <div className="group lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[0_12px_40px_rgba(0,82,204,0.08)]">
-                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#0052CC]/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
+                    <div className="group lg:col-span-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[0_12px_40px_rgba(0,82,204,0.08)]">
+                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
                         
                         <div className="flex justify-between items-start mb-6 relative z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white/80 text-[#0052CC] rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
+                                <div className="w-12 h-12 bg-surface-card text-brand rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
                                     <BarChart3 size={22} strokeWidth={2.5}/>
                                 </div>
                                 <div>
-                                    <h4 className="text-[14px] font-black text-slate-800 uppercase tracking-widest leading-none mb-1">Tendencia de Gastos</h4>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Últimos 6 meses operacionales</p>
+                                    <h4 className="text-[14px] font-black text-content uppercase tracking-widest leading-none mb-1">Tendencia de Gastos</h4>
+                                    <p className="text-[10px] font-bold text-content-3 uppercase tracking-widest">Últimos 6 meses operacionales</p>
                                 </div>
                             </div>
                         </div>
@@ -377,17 +377,17 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <div className="flex flex-col gap-5">
                         
                         {/* Tarjeta de Variación Mensual */}
-                        <div className="group bg-white/50 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
+                        <div className="group bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                             <div className="flex items-center gap-2 mb-3 relative z-10">
-                                <Activity size={16} className="text-slate-400 transition-colors duration-300 group-hover:text-slate-600" strokeWidth={2.5}/>
-                                <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Variación vs Mes Anterior</h5>
+                                <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
+                                <h5 className="text-[10px] font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>
                             </div>
                             <div className="flex items-end gap-3 relative z-10">
-                                <span className="text-3xl font-black text-slate-800 tracking-tight">
+                                <span className="text-3xl font-black text-content tracking-tight">
                                     {Math.abs(stats.variation).toFixed(1)}%
                                 </span>
-                                <div className={`flex items-center gap-1 mb-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${stats.isUp ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                                <div className={`flex items-center gap-1 mb-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${stats.isUp ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
                                     {stats.isUp ? <TrendingUp size={12} strokeWidth={3}/> : <TrendingDown size={12} strokeWidth={3}/>}
                                     {stats.isUp ? 'Aumento' : 'Ahorro'}
                                 </div>
@@ -395,13 +395,13 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-amber-50/90 to-amber-100/50 backdrop-blur-xl border border-amber-200/60 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
+                        <div className="group bg-gradient-to-br from-amber-50/90 to-amber-100/50 backdrop-blur-xl border border-warning/60 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-amber-300/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-10">
-                                <div className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center shadow-sm border border-white">
-                                    <Zap size={16} className="text-amber-500" strokeWidth={2.5}/>
+                                <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-white">
+                                    <Zap size={16} className="text-warning" strokeWidth={2.5}/>
                                 </div>
-                                <h5 className="text-[10px] font-black uppercase tracking-widest text-amber-600/90">Mayor Gasto Externo</h5>
+                                <h5 className="text-[10px] font-black uppercase tracking-widest text-warning/90">Mayor Gasto Externo</h5>
                             </div>
                             <p className="text-[17px] font-black text-amber-950 leading-tight relative z-10 tracking-tight mt-1">
                                 {stats.highestService}

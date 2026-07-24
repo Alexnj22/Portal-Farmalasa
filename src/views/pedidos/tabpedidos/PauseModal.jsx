@@ -17,8 +17,8 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             <Pause size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800 text-[15px]">Pausar despacho</h3>
-                            <p className="text-[12px] text-slate-600 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
+                            <h3 className="font-bold text-content text-[15px]">Pausar despacho</h3>
+                            <p className="text-[12px] text-content-2 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -35,7 +35,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                     )}
 
                     <div>
-                        <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-2">¿Por qué pausas?</p>
+                        <p className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-2">¿Por qué pausas?</p>
                         <div className="grid grid-cols-2 gap-2">
                             {PAUSE_REASONS.map(opt => {
                                 const Icon     = opt.icon;
@@ -47,15 +47,15 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                                         disabled={isUsed}
                                         onClick={() => !isUsed && setRazonSel(opt.key)}
                                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
-                                            isUsed ? 'border-slate-100 bg-slate-50 text-slate-500 cursor-not-allowed' :
-                                            isSel  ? 'border-amber-400 bg-amber-50 text-amber-800 shadow-sm' :
-                                                     'border-slate-200 text-slate-700 hover:bg-slate-50'
+                                            isUsed ? 'border-slate-100 bg-surface-card-hover text-content-3 cursor-not-allowed' :
+                                            isSel  ? 'border-amber-400 bg-warning/10 text-amber-800 shadow-sm' :
+                                                     'border-slate-200 text-content-2 hover:bg-surface-card-hover'
                                         }`}
                                     >
-                                        <Icon size={15} className={isUsed ? 'text-slate-500' : isSel ? 'text-amber-600' : 'text-slate-500'} />
+                                        <Icon size={15} className={isUsed ? 'text-content-3' : isSel ? 'text-warning' : 'text-content-3'} />
                                         <div>
                                             <div>{opt.label}</div>
-                                            {isUsed && <div className="text-[10px] text-slate-500">Ya registrado</div>}
+                                            {isUsed && <div className="text-[10px] text-content-3">Ya registrado</div>}
                                         </div>
                                     </button>
                                 );
@@ -64,7 +64,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                     </div>
 
                     <div>
-                        <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-1.5 block">
+                        <label className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
                             {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
                         </label>
                         <textarea
@@ -72,14 +72,14 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             onChange={e => setComment(e.target.value)}
                             placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
                             rows={2}
-                            className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors text-slate-700"
+                            className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors text-content-2"
                         />
                     </div>
                 </PedidoModal.Body>
 
                 <PedidoModal.Footer>
                     <div className="flex justify-end gap-2">
-                        <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
+                        <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
                             Cancelar
                         </button>
                         <button

@@ -75,7 +75,7 @@ function getStatus(val, goal) {
 const STATUS_STYLES = {
   green:  { row:'bg-green-50/80',  cell:'text-green-800 font-semibold', badge:'bg-green-100 text-green-700 border border-green-200',    dot:'bg-green-500',  label:'Cumplió',    ring:'ring-green-400' },
   orange: { row:'bg-orange-50/80', cell:'text-orange-800 font-semibold',badge:'bg-orange-100 text-orange-700 border border-orange-200', dot:'bg-orange-400', label:'',           ring:'ring-orange-400' },
-  red:    { row:'bg-red-50/80',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',  dot:'bg-red-600',    label:'No Cumplió', ring:'ring-red-500' },
+  red:    { row:'bg-danger/80',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',  dot:'bg-red-600',    label:'No Cumplió', ring:'ring-red-500' },
 };
 
 // Linear regression → projects `ahead` steps from last non-null value
@@ -99,8 +99,8 @@ function project(data, ahead = 3) {
 function ChartTooltip({ active, payload, label, goals, isProjected }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/10 px-4 py-3 min-w-[200px]">
-      <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/10">
+    <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-border-card px-4 py-3 min-w-[200px]">
+      <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border-card">
         <span className="text-[11px] font-black uppercase tracking-widest text-white/60">{label}</span>
         {isProjected && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Proyección</span>}
       </div>
@@ -270,10 +270,10 @@ export default function MetasView() {
   }, [goals]);
 
   // Theme tokens
-  const card        = 'bg-white/60 border-white/55 backdrop-blur-xl';
+  const card        = 'bg-surface-card border-border-card backdrop-blur-xl';
   const shadow      = 'shadow-[0_4px_24px_rgba(0,82,204,0.07)]';
-  const txt         = 'text-slate-700';
-  const muted       = 'text-slate-500';
+  const txt         = 'text-content-2';
+  const muted       = 'text-content-3';
   const divider     = 'border-slate-200/60';
   const gridColor   = '#e2e8f0';
   const axisColor   = '#94a3b8';
@@ -292,8 +292,8 @@ export default function MetasView() {
           onClick={() => setShowGoalEditor(v=>!v)}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all
             ${showGoalEditor
-              ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-[0_3px_10px_rgba(0,82,204,0.35)]'
-              : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
+              ? 'bg-brand text-white border-brand shadow-[0_3px_10px_rgba(0,82,204,0.35)]'
+              : 'bg-surface-card-hover border-slate-200 text-content-3 hover:bg-surface-card-hover'
             }`}
         >
           <Settings2 size={13} />
@@ -316,7 +316,7 @@ export default function MetasView() {
                     type="text"
                     defaultValue={goals[b]?.toLocaleString('en-US')}
                     onBlur={e => updateGoal(b, e.target.value)}
-                    className="w-full pl-5 pr-2 py-1.5 rounded-lg text-[16px] font-bold border focus:outline-none focus:ring-2 focus:ring-[#0052CC]/40 bg-white border-slate-200 text-slate-700"
+                    className="w-full pl-5 pr-2 py-1.5 rounded-lg text-[16px] font-bold border focus:outline-none focus:ring-2 focus:ring-brand/40 bg-white border-slate-200 text-content-2"
                   />
                 </div>
               </div>
@@ -358,7 +358,7 @@ export default function MetasView() {
                             : status === 'red'    ? 'border-red-400/60'
                             : 'border-slate-200';
 
-          const pulse = 'bg-slate-200/70';
+          const pulse = 'bg-surface-card-hover/70';
 
           return (
             <div key={b}
@@ -399,7 +399,7 @@ export default function MetasView() {
                 <div className={`h-1.5 rounded-full animate-pulse ${pulse}`}/>
               ) : pct != null && goal > 0 && (
                 <div className="space-y-0.5">
-                  <div className="h-1.5 rounded-full overflow-hidden bg-slate-100">
+                  <div className="h-1.5 rounded-full overflow-hidden bg-surface-card-hover">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         status==='green' ? 'bg-green-500' : status==='orange' ? 'bg-orange-500' : 'bg-red-500'
@@ -416,7 +416,7 @@ export default function MetasView() {
 
               {trend != null && (
                 <div className={`flex items-center gap-1 text-[10px] font-semibold ${
-                  trend > 0 ? 'text-green-500' : trend < 0 ? 'text-red-500' : 'text-slate-500'
+                  trend > 0 ? 'text-green-500' : trend < 0 ? 'text-danger' : 'text-content-3'
                 }`}>
                   {trend > 0 ? <TrendingUp size={12}/> : trend < 0 ? <TrendingDown size={12}/> : <Minus size={12}/>}
                   {trend !== 0 && <span>{trend > 0 ? '+' : ''}{fmtK(trend)} vs mes anterior</span>}
@@ -442,7 +442,7 @@ export default function MetasView() {
                 onClick={() => toggleBranch(b)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
                   hidden.has(b)
-                    ? 'bg-slate-100 border-slate-200 text-slate-500'
+                    ? 'bg-surface-card-hover border-slate-200 text-content-3'
                     : 'border-transparent text-white shadow-sm'
                 }`}
                 style={!hidden.has(b) ? {background: COLORS[b]} : {}}
@@ -555,7 +555,7 @@ export default function MetasView() {
             <button
               onClick={() => setSelectedMonthIdx(i => Math.max(0, i - 1))}
               disabled={selectedMonthIdx === 0}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-surface-card-hover text-content-2 hover:bg-surface-card-hover disabled:opacity-30"
             >
               <ChevronLeft size={16} strokeWidth={2.5}/>
             </button>
@@ -570,7 +570,7 @@ export default function MetasView() {
             <button
               onClick={() => setSelectedMonthIdx(i => Math.min(MONTHS.length - 1, i + 1))}
               disabled={selectedMonthIdx === MONTHS.length - 1}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-surface-card-hover text-content-2 hover:bg-surface-card-hover disabled:opacity-30"
             >
               <ChevronRight size={16} strokeWidth={2.5}/>
             </button>
@@ -603,14 +603,14 @@ export default function MetasView() {
           <p className={`text-[11px] ${muted}`}>
             <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 inline-block"/>Cumplió ≥ 100%</span>
             <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-orange-100 inline-block"/>≥ 95%</span>
-            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-100 border border-red-300 inline-block"/>No Cumplió &lt; 95%</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-danger/10 border border-red-300 inline-block"/>No Cumplió &lt; 95%</span>
           </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse" style={{minWidth:'900px'}}>
             <thead>
-              <tr className={`border-b ${divider} bg-slate-50/80`}>
-                <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 bg-slate-50 ${muted}`}>Sucursal</th>
+              <tr className={`border-b ${divider} bg-surface-card-hover/80`}>
+                <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 bg-surface-card-hover ${muted}`}>Sucursal</th>
                 {MONTHS.slice(0,16).map(m => (
                   <th key={m.label} className={`text-right px-2 py-2.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${muted} ${m.yr===2026 ? 'bg-indigo-50/40' : ''}`}>
                     {m.label}
@@ -625,7 +625,7 @@ export default function MetasView() {
                 const goal = goals[b];
                 const totals = annualTotals[b];
                 return (
-                  <tr key={b} className={`border-b ${divider} transition-colors hover:bg-slate-50/60`}>
+                  <tr key={b} className={`border-b ${divider} transition-colors hover:bg-surface-card-hover/60`}>
                     <td className={`px-4 py-2 sticky left-0 bg-white border-r ${divider}`}>
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{background:COLORS[b]}} />
@@ -640,7 +640,7 @@ export default function MetasView() {
                         <td key={mi}
                           className={`px-2 py-2 text-right text-[11px] whitespace-nowrap font-mono
                             ${yr2026 ? 'bg-indigo-50/30' : ''}
-                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-red-100 text-red-900') : 'text-slate-500'}`}
+                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-danger/10 text-red-900') : 'text-content-3'}`}
                         >
                           {val == null ? <span className={muted}>—</span> : fmt(val)}
                         </td>
@@ -663,8 +663,8 @@ export default function MetasView() {
             </tbody>
             {/* Total row */}
             <tfoot>
-              <tr className={`border-t-2 ${divider} bg-slate-50`}>
-                <td className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest sticky left-0 bg-slate-50 ${txt}`}>Total</td>
+              <tr className={`border-t-2 ${divider} bg-surface-card-hover`}>
+                <td className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest sticky left-0 bg-surface-card-hover ${txt}`}>Total</td>
                 {Array.from({length:16},(_,mi) => {
                   const total = BRANCHES.reduce((a,b)=>a+(RAW[b][mi]||0),0);
                   return (

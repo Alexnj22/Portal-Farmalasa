@@ -21,7 +21,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
         aiBoxBg = "bg-amber-950/60 border-amber-500/30";
         aiGlow = "bg-amber-500";
         aiTitle = "Saly AI (Atención)";
-        aiIconColor = "text-amber-400";
+        aiIconColor = "text-warning";
     }
 
     const groupedAlerts = useMemo(() => {
@@ -67,7 +67,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
         <div className={`col-span-1 ${aiBoxBg} backdrop-blur-3xl backdrop-saturate-[180%] border rounded-[2rem] p-3.5 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.15)] text-white flex flex-col relative overflow-hidden transition-all duration-500 group/ai h-full max-h-[210px]`}>
             <div className={`absolute top-0 right-0 w-32 h-32 ${aiGlow} rounded-full blur-[60px] opacity-15 pointer-events-none`}></div>
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2 relative z-10 shrink-0">
+            <div className="flex items-center justify-between border-b border-border-card pb-2 mb-2 relative z-10 shrink-0">
                 <div className="flex items-center gap-1.5 text-[9px] font-black text-cyan-400 uppercase tracking-widest">
                     <Bot size={12} className={aiIconColor} /> {aiTitle}
                 </div>
@@ -78,11 +78,11 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                 {groupedAlerts.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center opacity-70">
                         <div className="relative mb-2">
-                            <HeartPulse size={24} strokeWidth={1.5} className="text-emerald-400" />
+                            <HeartPulse size={24} strokeWidth={1.5} className="text-success" />
                             <div className="absolute inset-0 bg-emerald-400 blur-xl opacity-40 animate-pulse"></div>
                         </div>
                         <p className="text-[10px] font-black tracking-widest uppercase text-emerald-300">Cobertura Óptima</p>
-                        <p className="text-[8px] text-slate-500 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
+                        <p className="text-[8px] text-content-3 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
                     </div>
                 ) : (
                     groupedAlerts.map((group) => {
@@ -92,7 +92,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                         
                         const cardBg = isDanger ? 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/30' : isWarning ? 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30' : 'bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/30';
                         const textColor = isDanger ? 'text-rose-300' : isWarning ? 'text-amber-300' : 'text-cyan-300';
-                        const iconColor = isDanger ? 'text-rose-400' : isWarning ? 'text-amber-400' : 'text-cyan-400';
+                        const iconColor = isDanger ? 'text-rose-400' : isWarning ? 'text-warning' : 'text-cyan-400';
                         const Icon = group.isGeneral ? AlertCircle : User;
 
                         // 🚨 1 AVISO: Tarjeta plana y compacta
@@ -100,7 +100,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                             return (
                                 <div key={group.name} className={`rounded-xl border backdrop-blur-sm transition-all duration-300 ${cardBg} flex flex-col p-2`}>
                                     <div className="flex items-start gap-2 min-w-0">
-                                        <div className={`shrink-0 p-1 rounded-lg bg-white/5 border border-white/10 ${iconColor}`}>
+                                        <div className={`shrink-0 p-1 rounded-lg bg-surface-card border border-border-card ${iconColor}`}>
                                             <Icon size={10} strokeWidth={2.5} />
                                         </div>
                                         <div className="flex flex-col min-w-0 pt-0.5">
@@ -120,7 +120,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                                     className="w-full px-2 py-1.5 flex items-center justify-between gap-2 text-left active:scale-[0.98] transition-transform"
                                 >
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <div className={`shrink-0 p-1 rounded-lg bg-white/5 border border-white/10 ${iconColor}`}>
+                                        <div className={`shrink-0 p-1 rounded-lg bg-surface-card border border-border-card ${iconColor}`}>
                                             <Icon size={10} strokeWidth={2.5} />
                                         </div>
                                         <div className="flex flex-col truncate text-left">
@@ -133,12 +133,12 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
 
                                 <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                                     <div className="overflow-hidden">
-                                        <div className="px-2 pb-2 pt-0 border-t border-white/5 mx-2 mt-1 flex flex-col gap-1.5">
+                                        <div className="px-2 pb-2 pt-0 border-t border-border-card mx-2 mt-1 flex flex-col gap-1.5">
                                             {group.alerts.map((alert, idx) => (
                                                 <div key={idx} className="flex items-start gap-1.5 pt-1.5">
                                                     <div className="mt-0.5 shrink-0">
                                                         {alert.type === 'danger' ? <AlertTriangle size={9} className="text-rose-400 animate-pulse" strokeWidth={2.5} /> :
-                                                         alert.type === 'warning' ? <AlertTriangle size={9} className="text-amber-400" strokeWidth={2.5} /> :
+                                                         alert.type === 'warning' ? <AlertTriangle size={9} className="text-warning" strokeWidth={2.5} /> :
                                                          <Sparkles size={9} className="text-cyan-400" strokeWidth={2.5} />}
                                                     </div>
                                                     <p className="text-[8.5px] font-medium text-white/80 leading-snug">{alert.msg}</p>

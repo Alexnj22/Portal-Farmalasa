@@ -69,16 +69,16 @@ const searchEmployees = (query, list, branchMap) => {
 const getStatusInfo = (rawStatus) => {
   const status = String(rawStatus || '').toUpperCase().trim();
 
-  if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-emerald-600 bg-emerald-50/80 border-emerald-200' };
+  if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-success bg-success/80 border-success/30' };
   if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-cyan-600 bg-cyan-50/80 border-cyan-200' };
-  if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-amber-600 bg-amber-50/80 border-amber-200' };
+  if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/80 border-warning/30' };
   if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-orange-600 bg-orange-50/80 border-orange-200' };
   if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-pink-600 bg-pink-50/80 border-pink-200' };
   if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-purple-600 bg-purple-50/80 border-purple-200' };
-  if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-red-600 bg-red-50/80 border-red-200' };
-  if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-slate-500 bg-slate-100/80 border-slate-300' };
+  if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/80 border-danger/30' };
+  if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-slate-300' };
 
-  return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-slate-600 bg-slate-50/80 border-slate-200' };
+  return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-content-2 bg-surface-card-hover/80 border-slate-200' };
 };
 
 // calcAgeYears decide si el documento de identidad esperado es DUI (adulto)
@@ -138,23 +138,23 @@ const PendingBadge = ({ emp }) => {
   return (
     <div ref={ref} onMouseEnter={show} onMouseLeave={hide}
       className="flex items-center shrink-0 cursor-default">
-      <AlertCircle size={13} strokeWidth={2.5} className="text-amber-500" />
+      <AlertCircle size={13} strokeWidth={2.5} className="text-warning" />
       {pos && createPortal(
         <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
           className="animate-in fade-in duration-150 min-w-[190px]">
-          <div className="bg-slate-800/95 backdrop-blur-sm text-white rounded-2xl shadow-xl border border-white/10 px-3 py-2.5">
-            <p className="text-[9px] font-black uppercase tracking-widest text-amber-400 mb-1.5">Información pendiente</p>
+          <div className="bg-slate-800/95 backdrop-blur-sm text-white rounded-2xl shadow-xl border border-border-card px-3 py-2.5">
+            <p className="text-[9px] font-black uppercase tracking-widest text-warning mb-1.5">Información pendiente</p>
             <ul className="space-y-1">
               {items.map((item, i) => (
                 <li key={i} className="flex items-baseline gap-1.5 text-[11px] whitespace-nowrap">
                   <span className="w-1 h-1 rounded-full bg-amber-400 shrink-0 self-center" />
                   <span className="font-bold">{item.label}</span>
-                  <span className="text-slate-500 font-medium">— {item.hint}</span>
+                  <span className="text-content-3 font-medium">— {item.hint}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="w-2 h-2 bg-slate-800/95 rotate-45 mx-auto -mt-1 border-r border-b border-white/10" />
+          <div className="w-2 h-2 bg-slate-800/95 rotate-45 mx-auto -mt-1 border-r border-b border-border-card" />
         </div>,
         document.body
       )}
@@ -290,7 +290,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       <DataCell className="w-[360px]">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
-            <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-white/70 flex items-center justify-center text-slate-500 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
+            <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-border-card flex items-center justify-center text-content-3 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
             {birthdayInfo?.isToday && (
@@ -316,7 +316,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             )}
 
             <div className="flex items-center gap-1.5 relative z-10">
-              <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate transition-colors group-hover:text-[#0052CC] tracking-tight" title={emp.name}>
+              <p className="font-black text-content text-[12px] md:text-[13px] truncate transition-colors group-hover:text-brand tracking-tight" title={emp.name}>
                 {shortName}
               </p>
               {isPendingData(emp) && <PendingBadge emp={emp} />}
@@ -331,28 +331,28 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               )}
               {anniversaryInfo && (
                 <div className="flex items-center gap-0.5" title={`Aniversario laboral: Cumple ${anniversaryInfo.years} años el día ${anniversaryInfo.day} de este mes`}>
-                  <Medal size={12} strokeWidth={2.5} className="text-amber-500 shrink-0" />
-                  <span className="text-[8px] font-black text-amber-700 bg-amber-100 px-1 rounded">{anniversaryInfo.years} Años</span>
+                  <Medal size={12} strokeWidth={2.5} className="text-warning shrink-0" />
+                  <span className="text-[8px] font-black text-amber-700 bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
                 </div>
               )}
               {expiryInfo && (
                 <div className="flex items-center gap-0.5" title={expiryInfo.tooltip}>
-                  <ShieldAlert size={12} strokeWidth={2.5} className={`${expiryInfo.isExpired ? 'text-red-600' : 'text-amber-500'} shrink-0`} />
-                  <span className={`text-[8px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-red-700 bg-red-100' : 'text-amber-700 bg-amber-100'}`}>{expiryInfo.label}</span>
+                  <ShieldAlert size={12} strokeWidth={2.5} className={`${expiryInfo.isExpired ? 'text-danger' : 'text-warning'} shrink-0`} />
+                  <span className={`text-[8px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-red-700 bg-danger/10' : 'text-amber-700 bg-warning/10'}`}>{expiryInfo.label}</span>
                 </div>
               )}
             </div>
             
             <div className="flex items-center gap-2 mt-0.5 h-[16px] relative z-10">
-              <p className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest truncate">
+              <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest truncate">
                 {emp.code || 'Sin código'}
               </p>
               {phoneDigits.length >= 8 && (
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-[-10px] group-hover:translate-x-0">
-                  <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="text-emerald-500 hover:text-emerald-600 hover:scale-110 hover:-translate-y-0.5 transition-all bg-emerald-50 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
+                  <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="text-success hover:text-success hover:scale-110 hover:-translate-y-0.5 transition-all bg-success/10 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
                     <MessageCircle size={10} strokeWidth={3} />
                   </a>
-                  <a href={`tel:${phoneDigits}`} className="text-[#0052CC] hover:text-blue-600 hover:scale-110 hover:-translate-y-0.5 transition-all bg-blue-50 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
+                  <a href={`tel:${phoneDigits}`} className="text-brand hover:text-blue-600 hover:scale-110 hover:-translate-y-0.5 transition-all bg-blue-50 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
                     <Phone size={10} strokeWidth={3} />
                   </a>
                 </div>
@@ -363,8 +363,8 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       </DataCell>
 
       <DataCell>
-        <div className="flex items-center gap-1.5 text-slate-600 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
-          <MapPin size={12} className="text-slate-400 shrink-0" />
+        <div className="flex items-center gap-1.5 text-content-2 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
+          <MapPin size={12} className="text-content-3 shrink-0" />
           <span className="truncate">{branchName || 'Sin Asignar'}</span>
         </div>
       </DataCell>
@@ -394,7 +394,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
             <button
               onClick={() => onRehireEmployee(emp)}
-              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-success/10 text-content-3 hover:text-success border border-border-card hover:border-success/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
               title="Recontratar"
             >
               <RefreshCw size={14} strokeWidth={2.5} />
@@ -403,14 +403,14 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           <button
             onClick={() => onEditEmployee(emp)}
             disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-500 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Edición rápida"
           >
             <Edit3 size={14} strokeWidth={2.5} />
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-white text-slate-600 hover:text-[#0052CC] transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-white text-content-2 hover:text-brand transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-border-card hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
             <ChevronRight size={16} strokeWidth={3} />
@@ -428,9 +428,9 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 // employee_documents...) no existen en un practicante y generarían badges de
 // "Información Pendiente" falsos si se reutilizara ese componente tal cual.
 const PRACTICANTE_ESTADO_CFG = {
-  ACTIVO:     { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: CheckCircle2, label: 'Activo' },
-  FINALIZADO: { bg: 'bg-slate-100',  text: 'text-slate-600',   border: 'border-slate-200',   icon: UserMinus,    label: 'Finalizado' },
-  CANCELADO:  { bg: 'bg-red-50',     text: 'text-red-600',     border: 'border-red-200',      icon: UserX,        label: 'Cancelado' },
+  ACTIVO:     { bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30', icon: CheckCircle2, label: 'Activo' },
+  FINALIZADO: { bg: 'bg-surface-card-hover',  text: 'text-content-2',   border: 'border-slate-200',   icon: UserMinus,    label: 'Finalizado' },
+  CANCELADO:  { bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',      icon: UserX,        label: 'Cancelado' },
 };
 
 const fmtShortDate = (d) => {
@@ -452,10 +452,10 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate tracking-tight" title={fullName}>{fullName}</p>
+              <p className="font-black text-content text-[12px] md:text-[13px] truncate tracking-tight" title={fullName}>{fullName}</p>
               <span className="text-[8px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
             </div>
-            <p className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest truncate mt-0.5">
+            <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest truncate mt-0.5">
               {p.institucion_educativa} · {fmtShortDate(p.fecha_inicio)}→{fmtShortDate(p.fecha_fin)}
             </p>
           </div>
@@ -463,8 +463,8 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       </DataCell>
 
       <DataCell>
-        <div className="flex items-center gap-1.5 text-slate-600 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
-          <MapPin size={12} className="text-slate-400 shrink-0" />
+        <div className="flex items-center gap-1.5 text-content-2 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
+          <MapPin size={12} className="text-content-3 shrink-0" />
           <span className="truncate">{branchName || 'Sin Asignar'}</span>
         </div>
       </DataCell>
@@ -487,7 +487,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <button
             onClick={() => onEdit(p)}
             disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-500 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Editar practicante"
           >
             <Edit3 size={14} strokeWidth={2.5} />
@@ -495,7 +495,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <button
             onClick={() => onDelete(p)}
             disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-red-50 text-slate-500 hover:text-red-500 border border-white/80 hover:border-red-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger border border-border-card hover:border-danger/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Eliminar practicante"
           >
             <Trash2 size={14} strokeWidth={2.5} />
@@ -507,10 +507,10 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 });
 
 const STAT_CARD_COLORS = {
-  blue:    { activeBg: 'bg-blue-50 border-blue-300 shadow-md shadow-blue-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/40',       iconBg: 'bg-blue-50',    iconColor: 'text-[#0052CC]',  textColor: 'text-slate-700'   },
-  emerald: { activeBg: 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px', inactiveBg: 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', textColor: 'text-emerald-600' },
+  blue:    { activeBg: 'bg-blue-50 border-blue-300 shadow-md shadow-blue-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/40',       iconBg: 'bg-blue-50',    iconColor: 'text-brand',  textColor: 'text-content-2'   },
+  emerald: { activeBg: 'bg-success/10 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px', inactiveBg: 'bg-white border-slate-100 hover:border-success/30 hover:bg-success/40', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
   cyan:    { activeBg: 'bg-cyan-50 border-cyan-300 shadow-md shadow-cyan-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/40',       iconBg: 'bg-cyan-50',    iconColor: 'text-cyan-600',   textColor: 'text-cyan-600'    },
-  amber:   { activeBg: 'bg-amber-50 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px',     inactiveBg: 'bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/40',     iconBg: 'bg-amber-50',   iconColor: 'text-amber-600',  textColor: 'text-amber-600'   },
+  amber:   { activeBg: 'bg-warning/10 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px',     inactiveBg: 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/40',     iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning'   },
   violet:  { activeBg: 'bg-violet-50 border-violet-300 shadow-md shadow-violet-100/80 -translate-y-px',   inactiveBg: 'bg-white border-slate-100 hover:border-violet-200 hover:bg-violet-50/40',   iconBg: 'bg-violet-50',  iconColor: 'text-violet-600', textColor: 'text-violet-600'  },
 };
 
@@ -527,11 +527,11 @@ function StaffStatCard({ icon: Icon, label, value, active, onClick, color, loadi
       </div>
       <div className="text-left">
         <div className={`text-[22px] font-black leading-none tabular-nums ${c.textColor}`}>
-          {loading ? <span className="text-slate-200">–</span> : value.toLocaleString()}
+          {loading ? <span className="text-content-3">–</span> : value.toLocaleString()}
         </div>
-        <div className="text-[10px] font-bold text-slate-600">{label}</div>
+        <div className="text-[10px] font-bold text-content-2">{label}</div>
       </div>
-      {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+      {active && <X size={11} className="text-content-3 ml-auto shrink-0" />}
     </button>
   );
 }
@@ -847,20 +847,20 @@ const StaffManagementView = ({
   };
 
   const filtersContent = (
-    <div className={`flex items-center bg-white/40 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+    <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-        <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
         <input
           ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
           type="text"
           placeholder="Buscar por nombre, código o cargo..."
-          className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
+          className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
+        {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
@@ -870,7 +870,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewEmployee}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#0052CC]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
@@ -886,10 +886,10 @@ const StaffManagementView = ({
           </button>
         </div>
 
-        <div className="flex items-center shrink-0 border-l border-white/30 pl-2 ml-1">
+        <div className="flex items-center shrink-0 border-l border-border-card pl-2 ml-1">
           <button
             onClick={() => setIsSearchActive(true)}
-            className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+            className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
             title="Buscar empleado"
           >
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -937,7 +937,7 @@ const StaffManagementView = ({
             />
           </div>
 
-          <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+          <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
             <div className="px-2 py-2 overflow-visible" style={{ width: '220px' }}>
               <LiquidSelect
                 value={selectedBranch}
@@ -951,11 +951,11 @@ const StaffManagementView = ({
               />
             </div>
 
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
+            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
             <button
               type="button"
               onClick={handleExportCSV}
-              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200/70 hover:border-emerald-200 shrink-0 transition-all hover:-translate-y-0.5"
+              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-success/10 text-success border border-slate-200/70 hover:border-success/30 shrink-0 transition-all hover:-translate-y-0.5"
               title="Exportar a Excel"
             >
               <Download size={13} strokeWidth={2.5} />
@@ -963,11 +963,11 @@ const StaffManagementView = ({
 
             {hasActiveFilters && (
               <>
-                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all shrink-0"
+                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0"
                   title="Limpiar filtros"
                 >
                   <Trash2 size={11} strokeWidth={3} />
@@ -978,7 +978,7 @@ const StaffManagementView = ({
         </div>
 
         {isStaffSearchFuzzy && normalizedSearch && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
             <Search size={12} strokeWidth={2.5} className="shrink-0" />
             Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
           </div>

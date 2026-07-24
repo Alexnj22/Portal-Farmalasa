@@ -279,36 +279,36 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   }, [employees, filterBranch, searchTerm, statusTab, evaluateEmployeeStatus]);
 
   const statCards = [
-    { id: "ALL", label: "Total", count: stats.total, color: "text-slate-900", border: "border-white/70", bg: "bg-white/40" },
-    { id: "WORKING", label: "En Turno", count: stats.working, color: "text-emerald-700", border: "border-emerald-200/60", bg: "bg-emerald-50/40" },
+    { id: "ALL", label: "Total", count: stats.total, color: "text-content", border: "border-border-card", bg: "bg-surface-card" },
+    { id: "WORKING", label: "En Turno", count: stats.working, color: "text-emerald-700", border: "border-success/60", bg: "bg-success/40" },
     { id: "EXTRA", label: "Horas Extra", count: stats.extra, color: "text-purple-700", border: "border-purple-200/60", bg: "bg-purple-50/40" },
     { id: "PAUSE", label: "En Pausa", count: stats.pause, color: "text-orange-700", border: "border-orange-200/60", bg: "bg-orange-50/40" },
-    { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-red-700", border: "border-red-200/60", bg: "bg-red-50/40", icon: AlertTriangle },
-    { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-slate-600", border: "border-slate-200/60", bg: "bg-slate-50/40" },
+    { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-red-700", border: "border-danger/60", bg: "bg-danger/40", icon: AlertTriangle },
+    { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-slate-200/60", bg: "bg-surface-card-hover/40" },
   ];
 
   const getStatusCardStyle = (status, isLate) => {
     if (isLate && status !== "FINISHED")
-      return "border-red-200 bg-white/70 shadow-[0_10px_30px_rgba(255,59,48,0.10)]";
+      return "border-danger/30 bg-surface-card shadow-[0_10px_30px_rgba(255,59,48,0.10)]";
     switch (status) {
       case "WORKING":
-        return "border-emerald-200 bg-white/70 shadow-[0_10px_30px_rgba(52,199,89,0.10)]";
+        return "border-success/30 bg-surface-card shadow-[0_10px_30px_rgba(52,199,89,0.10)]";
       case "EXTRA_WORKING":
-        return "border-purple-200 bg-white/70 shadow-[0_10px_30px_rgba(88,86,214,0.10)]";
+        return "border-purple-200 bg-surface-card shadow-[0_10px_30px_rgba(88,86,214,0.10)]";
       case "LUNCH":
-        return "border-orange-200 bg-white/70 shadow-[0_10px_30px_rgba(255,149,0,0.10)]";
+        return "border-orange-200 bg-surface-card shadow-[0_10px_30px_rgba(255,149,0,0.10)]";
       case "LACTATION":
-        return "border-pink-200 bg-white/70 shadow-[0_10px_30px_rgba(255,45,85,0.10)]";
+        return "border-pink-200 bg-surface-card shadow-[0_10px_30px_rgba(255,45,85,0.10)]";
       case "FINISHED":
-        return "border-black/[0.08] bg-white/40 opacity-70 hover:opacity-100 transition-opacity";
+        return "border-black/[0.08] bg-surface-card opacity-70 hover:opacity-100 transition-opacity";
       case "EARLY_EXIT":
-        return "border-[#0052CC]/20 bg-white/60 shadow-[0_10px_30px_rgba(0,82,204,0.08)]";
+        return "border-brand/20 bg-surface-card shadow-[0_10px_30px_rgba(0,82,204,0.08)]";
       case "BUSINESS_OUT":
-        return "border-sky-200 bg-white/60 shadow-[0_10px_30px_rgba(14,165,233,0.08)]";
+        return "border-sky-200 bg-surface-card shadow-[0_10px_30px_rgba(14,165,233,0.08)]";
       case "OFF_DAY":
-        return "border-black/[0.08] bg-white/35 border-dashed opacity-60";
+        return "border-black/[0.08] bg-surface-card border-dashed opacity-60";
       default:
-        return "border-black/[0.08] bg-white/45 border-dashed";
+        return "border-black/[0.08] bg-surface-card border-dashed";
     }
   };
 
@@ -347,13 +347,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "FINISHED":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
             <LogOut size={14} /> Finalizado
           </div>
         );
       case "EARLY_EXIT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#0052CC]/10 text-[#0052CC] rounded-xl text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-brand/10 text-brand rounded-xl text-[10px] font-bold uppercase tracking-widest border border-brand/20">
             <DoorOpen size={14} /> Permiso / Retiro
           </div>
         );
@@ -365,13 +365,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "OFF_DAY":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-slate-500 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-3 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
             <Clock size={14} /> Día Libre
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
             <CircleDashed size={14} /> Sin Marcar
           </div>
         );
@@ -395,9 +395,9 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
   const filtersContent = (
     <div className="flex items-center gap-2 md:gap-3">
-      <div className="hidden md:flex items-center gap-2 bg-white/50 backdrop-blur-sm border border-white/70 px-4 py-2 rounded-2xl">
-        <Clock size={15} className="text-[#0052CC]" />
-        <span className="text-[14px] font-black tracking-[0.12em] font-mono text-slate-900">
+      <div className="hidden md:flex items-center gap-2 bg-surface-card backdrop-blur-sm border border-border-card px-4 py-2 rounded-2xl">
+        <Clock size={15} className="text-brand" />
+        <span className="text-[14px] font-black tracking-[0.12em] font-mono text-content">
           {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
         </span>
       </div>
@@ -409,8 +409,8 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           "w-11 h-11 flex-shrink-0 rounded-[0.875rem] border flex items-center justify-center",
           "transition-all duration-200 hover:shadow-md active:scale-[0.97]",
           searchOpen
-            ? "ring-2 ring-[#0052CC] bg-white border-[#0052CC]/30 text-[#0052CC]"
-            : "border-white/60 bg-white/40 backdrop-blur-md text-slate-500 hover:bg-white hover:text-[#0052CC]",
+            ? "ring-2 ring-brand bg-white border-brand/30 text-brand"
+            : "border-border-card bg-surface-card backdrop-blur-md text-content-3 hover:bg-white hover:text-brand",
         ].join(" ")}
         title="Buscar empleado"
       >
@@ -420,7 +420,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         type="button"
         onClick={() => setIsDarkConcept(true)}
         title="Ver concepto oscuro"
-        className="w-11 h-11 flex-shrink-0 rounded-[0.875rem] border border-white/60 bg-white/40 backdrop-blur-md text-slate-500 hover:bg-white hover:text-[#0052CC] flex items-center justify-center transition-all duration-200 hover:shadow-md active:scale-[0.97]"
+        className="w-11 h-11 flex-shrink-0 rounded-[0.875rem] border border-border-card bg-surface-card backdrop-blur-md text-content-3 hover:bg-white hover:text-brand flex items-center justify-center transition-all duration-200 hover:shadow-md active:scale-[0.97]"
       >
         <Moon size={16} strokeWidth={2} />
       </button>
@@ -470,7 +470,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.22)" }}>
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">En vivo</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-success">En vivo</span>
               </div>
             </div>
             <p className="hidden md:block text-[10px] font-black tracking-[0.12em] font-mono mt-0.5"
@@ -531,7 +531,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                     : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   {Icon && (
                     <div className="absolute -right-3 -top-3 opacity-[0.08] transition-transform group-hover:scale-110 group-hover:rotate-12">
-                      <Icon size={70} className="text-red-400" />
+                      <Icon size={70} className="text-danger" />
                     </div>
                   )}
                   <p className="text-[10px] font-black uppercase tracking-widest mb-1 relative z-10"
@@ -701,13 +701,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           searchOpen ? "max-h-24 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0",
         ].join(" ")}
       >
-        <div className="glass-surface p-2 rounded-[1.5rem] border border-white/70 shadow-sm flex items-center bg-white/60">
-          <Search className="ml-4 text-slate-400" size={18} />
+        <div className="glass-surface p-2 rounded-[1.5rem] border border-border-card shadow-sm flex items-center bg-surface-card">
+          <Search className="ml-4 text-content-3" size={18} />
           <input
             ref={searchInputRef}
             type="text"
             placeholder="Escribe nombre o código..."
-            className="w-full bg-transparent border-none outline-none p-3 text-sm font-bold text-slate-700 placeholder-slate-400"
+            className="w-full bg-transparent border-none outline-none p-3 text-sm font-bold text-content-2 placeholder-slate-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -715,7 +715,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             <button
               type="button"
               onClick={() => setSearchTerm("")}
-              className="mr-4 text-xs font-black text-slate-500 hover:text-red-500 uppercase transition-colors"
+              className="mr-4 text-xs font-black text-content-3 hover:text-danger uppercase transition-colors"
             >
               Borrar
             </button>
@@ -737,7 +737,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               className={[
                 "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
                 isActive
-                  ? "bg-white border-[#0052CC] shadow-[0_12px_24px_rgba(0,82,204,0.15)] scale-[1.02] ring-1 ring-[#0052CC]"
+                  ? "bg-white border-brand shadow-[0_12px_24px_rgba(0,82,204,0.15)] scale-[1.02] ring-1 ring-brand"
                   : `${card.bg} ${card.border} hover:bg-white hover:border-white hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1`,
               ].join(" ")}
             >
@@ -745,20 +745,20 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 <div
                   className={[
                     "absolute -right-3 -top-3 opacity-10 transition-transform group-hover:scale-110 group-hover:rotate-12",
-                    card.id === "LATE" ? "text-red-500" : "",
+                    card.id === "LATE" ? "text-danger" : "",
                   ].join(" ")}
                 >
                   <Icon size={70} />
                 </div>
               )}
 
-              <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 relative z-10">
+              <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
                 {card.label}
               </p>
               <p
                 className={[
                   "text-[28px] font-black relative z-10 leading-none",
-                  isActive ? "text-[#0052CC]" : card.color,
+                  isActive ? "text-brand" : card.color,
                 ].join(" ")}
               >
                 {card.count}
@@ -766,7 +766,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
               {isActive && (
                 <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#0052CC] shadow-[0_0_10px_#0052CC]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand shadow-[0_0_10px_#0052CC]" />
                 </div>
               )}
             </button>
@@ -776,15 +776,15 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
       {/* GRID DE EMPLEADOS */}
       {employeeDataList.length === 0 ? (
-        <div className="glass-surface rounded-[2rem] p-20 text-center border border-white/70 shadow-sm flex flex-col items-center gap-4 mt-8">
-          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center animate-pulse">
-            <Users size={32} className="text-slate-300" />
+        <div className="glass-surface rounded-[2rem] p-20 text-center border border-border-card shadow-sm flex flex-col items-center gap-4 mt-8">
+          <div className="w-20 h-20 bg-surface-card-hover rounded-full flex items-center justify-center animate-pulse">
+            <Users size={32} className="text-content-3" />
           </div>
           <div>
-            <p className="text-[14px] font-black uppercase tracking-widest text-slate-600">
+            <p className="text-[14px] font-black uppercase tracking-widest text-content-2">
               No hay empleados en esta categoría
             </p>
-            <p className="text-[12px] text-slate-500 mt-1 font-medium">
+            <p className="text-[12px] text-content-3 mt-1 font-medium">
               Intenta cambiar el filtro o seleccionar otra tarjeta.
             </p>
           </div>
@@ -798,7 +798,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <div
                 key={emp.id}
                 className={[
-                  "p-5 rounded-[2.5rem] border bg-white/60 backdrop-blur-xl shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition-all duration-300",
+                  "p-5 rounded-[2.5rem] border bg-surface-card backdrop-blur-xl shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition-all duration-300",
                   "hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)]",
                   getStatusCardStyle(status, isLate),
                 ].join(" ")}
@@ -815,8 +815,8 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                         className={[
                           "h-14 w-14 rounded-2xl border-2 overflow-hidden flex items-center justify-center font-black text-lg shadow-sm transition-transform group-hover:scale-105",
                           isLate && status !== "FINISHED"
-                            ? "border-red-200 bg-red-50 text-red-500"
-                            : "border-white bg-white text-slate-500",
+                            ? "border-danger/30 bg-danger/10 text-danger"
+                            : "border-white bg-white text-content-3",
                         ].join(" ")}
                       >
                         {emp.photo ? (
@@ -837,10 +837,10 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                     </div>
 
                     <div className="min-w-0">
-                      <h3 className="font-bold text-slate-900 text-[15px] leading-tight truncate group-hover:text-[#0052CC] transition-colors">
+                      <h3 className="font-bold text-content text-[15px] leading-tight truncate group-hover:text-brand transition-colors">
                         {emp.name}
                       </h3>
-                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest truncate mt-0.5">
+                      <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
                         {emp.role || "Empleado"}
                       </p>
                     </div>
@@ -853,37 +853,37 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 {/* Detalles Info */}
                 <div className="space-y-2.5 pt-4 border-t border-black/[0.04]">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1.5">
                       <Building2 size={12} /> Sucursal
                     </span>
-                    <span className="font-semibold text-slate-900">{bName}</span>
+                    <span className="font-semibold text-content">{bName}</span>
                   </div>
 
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1.5">
                       <MapPin size={12} /> Turno
                     </span>
-                    <span className="font-semibold text-slate-900">{shiftName}</span>
+                    <span className="font-semibold text-content">{shiftName}</span>
                   </div>
 
                   {scheduleDetails?.start && (
-                    <div className="bg-white/50 rounded-xl p-2.5 border border-black/[0.04] space-y-1.5">
-                      <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-600">
-                        <Clock size={12} className="text-[#0052CC]" />
+                    <div className="bg-surface-card rounded-xl p-2.5 border border-black/[0.04] space-y-1.5">
+                      <div className="flex items-center gap-2 text-[10px] font-semibold text-content-2">
+                        <Clock size={12} className="text-brand" />
                         <span>
                           {formatTime12h(scheduleDetails.start)} - {formatTime12h(scheduleDetails.end)}
                         </span>
                       </div>
 
                       {scheduleDetails.lunch && (
-                        <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-500">
+                        <div className="flex items-center gap-2 text-[10px] font-semibold text-content-3">
                           <Utensils size={12} className="text-orange-500" />
                           <span>{formatTime12h(scheduleDetails.lunch)} (Almuerzo)</span>
                         </div>
                       )}
 
                       {scheduleDetails.lactation && (
-                        <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-500">
+                        <div className="flex items-center gap-2 text-[10px] font-semibold text-content-3">
                           <Baby size={12} className="text-pink-500" />
                           <span>{formatTime12h(scheduleDetails.lactation)} (Lactancia)</span>
                         </div>
@@ -892,13 +892,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                   )}
 
                   <div className="flex justify-between items-center text-[11px] pt-1">
-                    <span className="text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1.5">
                       <Timer size={12} /> Último Reg.
                     </span>
                     <span
                       className={[
                         "font-black text-[13px]",
-                        isLate && status !== "FINISHED" ? "text-red-600" : "text-slate-900",
+                        isLate && status !== "FINISHED" ? "text-danger" : "text-content",
                       ].join(" ")}
                     >
                       {lastActionTime || "--:--"}
@@ -927,7 +927,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                               "flex items-center gap-1 px-2 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider",
                               isLatest
                                 ? "bg-white border-blue-200 text-blue-700 shadow-sm"
-                                : "bg-white/40 border-black/5 text-slate-500",
+                                : "bg-surface-card border-black/5 text-content-3",
                             ].join(" ")}
                           >
                             <Icon size={10} strokeWidth={2.5} />

@@ -13,9 +13,9 @@ import {
 } from '../../data/pedidos';
 
 const STATUS_BADGE = {
-  pendiente:    { label: 'Pendiente',     cls: 'bg-amber-100  text-amber-700  border-amber-200'  },
+  pendiente:    { label: 'Pendiente',     cls: 'bg-warning/10  text-amber-700  border-warning/30'  },
   en_ruta:      { label: 'En ruta',       cls: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-  completada:   { label: 'Completada',    cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  completada:   { label: 'Completada',    cls: 'bg-success/10 text-emerald-700 border-success/30' },
   con_alerta:   { label: 'Con alerta',    cls: 'bg-rose-100   text-rose-700   border-rose-200'   },
 };
 
@@ -87,10 +87,10 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   };
 
   return (
-    <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/90 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-surface-card backdrop-blur-md rounded-2xl border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/80 transition-colors"
+        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-surface-card transition-colors"
         onClick={() => setExpanded(e => !e)}
       >
         <div className="flex items-center gap-3">
@@ -99,23 +99,23 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-black text-slate-800">Ruta #{ruta.numero}</span>
+              <span className="text-[13px] font-black text-content">Ruta #{ruta.numero}</span>
               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
                 {badge.label}
               </span>
               {ruta.salida_at && (
-                <span className="text-[10px] text-slate-500">· Salida {fmtTime(ruta.salida_at)}</span>
+                <span className="text-[10px] text-content-3">· Salida {fmtTime(ruta.salida_at)}</span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[11px] text-slate-500 font-medium">{ruta.conductor_nombre}</span>
+              <span className="text-[11px] text-content-3 font-medium">{ruta.conductor_nombre}</span>
               {total > 0 && (
-                <span className="text-[10px] text-slate-500">
+                <span className="text-[10px] text-content-3">
                   · {entregadas}/{total} parada{total !== 1 ? 's' : ''} entregada{entregadas !== 1 ? 's' : ''}
                 </span>
               )}
               {ruta.distancia_total_m > 0 && (
-                <span className="text-[10px] text-slate-500">
+                <span className="text-[10px] text-content-3">
                   · {fmtDist(ruta.distancia_total_m)}
                 </span>
               )}
@@ -125,7 +125,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
         <div className="flex items-center gap-2">
           {/* Progress bar */}
           {total > 0 && (
-            <div className="w-16 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+            <div className="w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
               <div
                 className="h-full rounded-full bg-indigo-500 transition-all"
                 style={{ width: `${(entregadas / total) * 100}%` }}
@@ -135,12 +135,12 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           {/* Ver mapa */}
           <button
             onClick={e => { e.stopPropagation(); setMapOpen(true); }}
-            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-indigo-50 text-content-3 hover:text-indigo-600 transition-colors"
             title="Ver mapa de ruta"
           >
             <Map size={14} />
           </button>
-          {expanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+          {expanded ? <ChevronUp size={14} className="text-content-3" /> : <ChevronDown size={14} className="text-content-3" />}
         </div>
       </div>
 
@@ -155,7 +155,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
               return (
                 <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                  isEntregado ? 'bg-emerald-50/70 border-emerald-200' : 'bg-white border-slate-200'
+                  isEntregado ? 'bg-success/70 border-success/30' : 'bg-white border-slate-200'
                 }`}>
                   {/* Number */}
                   <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
@@ -166,20 +166,20 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold text-slate-800">{stop.suc_name}</p>
+                    <p className="text-[12px] font-bold text-content">{stop.suc_name}</p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {stop.numeros?.length > 0 && (
-                        <span className="text-[10px] text-slate-500">
+                        <span className="text-[10px] text-content-3">
                           Pedido{stop.numeros.length > 1 ? 's' : ''} {stop.numeros.map(n => `#${n}`).join(', ')}
                         </span>
                       )}
                       {stop.dist_m != null && (
-                        <span className="text-[10px] text-slate-500">
+                        <span className="text-[10px] text-content-3">
                           · {fmtDist(stop.distancia_desde_anterior_m)} desde {idx === 0 ? 'bodega' : `parada ${idx}`}
                         </span>
                       )}
                       {isEntregado && (
-                        <span className="text-[10px] text-emerald-600 font-semibold">
+                        <span className="text-[10px] text-success font-semibold">
                           ✓ Entregado {fmtTime(stop.entregado_at)}
                         </span>
                       )}
@@ -198,7 +198,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                     </button>
                   )}
                   {isEntregado && (
-                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                    <CheckCircle2 size={16} className="text-success shrink-0" />
                   )}
                 </div>
               );
@@ -229,7 +229,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                 </button>
               )}
               {ruta.vuelta_base_at && (
-                <span className="text-[10px] text-slate-500 flex items-center gap-1 px-2">
+                <span className="text-[10px] text-content-3 flex items-center gap-1 px-2">
                   <Home size={10} /> Llegó {fmtTime(ruta.vuelta_base_at)}
                 </span>
               )}
@@ -330,12 +330,12 @@ export default function TabRutas({ searchTerm = '' }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center">
-            <Navigation size={28} className="text-slate-400" />
+          <div className="w-16 h-16 rounded-2xl bg-surface-card-hover border border-slate-200 flex items-center justify-center">
+            <Navigation size={28} className="text-content-3" />
           </div>
           <div className="text-center">
-            <p className="text-[15px] font-bold text-slate-700">Sin rutas activas</p>
-            <p className="text-[12px] text-slate-500 mt-1">
+            <p className="text-[15px] font-bold text-content-2">Sin rutas activas</p>
+            <p className="text-[12px] text-content-3 mt-1">
               {canEdit && !isBranch ? 'Crea una ruta para gestionar las entregas.' : 'No hay rutas en curso.'}
             </p>
           </div>
@@ -353,7 +353,7 @@ export default function TabRutas({ searchTerm = '' }) {
           {/* Active routes */}
           {active.length > 0 && (
             <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                 <Truck size={10} /> Rutas activas
               </p>
               {active.map(ruta => (
@@ -372,7 +372,7 @@ export default function TabRutas({ searchTerm = '' }) {
           {/* Completed routes */}
           {completed.length > 0 && (
             <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                 <CheckCircle2 size={10} /> Completadas hoy
               </p>
               {completed.map(ruta => (

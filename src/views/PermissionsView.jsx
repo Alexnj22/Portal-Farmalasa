@@ -41,7 +41,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Asistencia',
-        color: 'text-amber-600',
+        color: 'text-warning',
         modules: [
             { key: 'monitor',      label: 'Monitor Real-Time',      desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false, hasScope: true },
             { key: 'time_audit',   label: 'Auditoría de Tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false, hasScope: true },
@@ -63,7 +63,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Comercial',
-        color: 'text-emerald-600',
+        color: 'text-success',
         modules: [
             { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false, hasScope: true, tabs: [
                 { key: 'ventas_tab_ventas',     label: 'Ventas'     },
@@ -170,7 +170,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Sistema',
-        color: 'text-slate-600',
+        color: 'text-content-2',
         modules: [
             { key: 'kiosk_pin',    label: 'PIN de Marcación',       desc: 'Ver y copiar el PIN personal para marcar en el kiosco',     icon: ShieldCheck,   hasApprove: false },
             { key: 'su_pin',       label: 'Código SU (Supervisores)', desc: 'Ver el código SU de 6 dígitos para autorizar marcajes de jefes y subjefes', icon: ShieldAlert, hasApprove: false },
@@ -196,7 +196,7 @@ const ROLE_META = {
         label: 'Super Admin', locked: true,
         desc: 'Acceso total e irrestricto al sistema. No modificable.',
         color: 'from-yellow-400 to-amber-500', textColor: 'text-amber-700',
-        bg: 'bg-amber-50', border: 'border-amber-200',
+        bg: 'bg-warning/10', border: 'border-warning/30',
     },
     ADMIN: {
         label: 'Administrador', locked: false,
@@ -225,8 +225,8 @@ const ROLE_META = {
     EMPLEADO: {
         label: 'Empleado', locked: false,
         desc: 'Acceso al portal de autogestión personal solamente.',
-        color: 'from-slate-400 to-slate-500', textColor: 'text-slate-700',
-        bg: 'bg-slate-50', border: 'border-slate-200',
+        color: 'from-slate-400 to-slate-500', textColor: 'text-content-2',
+        bg: 'bg-surface-card-hover', border: 'border-slate-200',
     },
 };
 
@@ -241,7 +241,7 @@ const ROLE_COLORS = [
     { color: 'from-rose-400 to-pink-600',     textColor: 'text-pink-700',   bg: 'bg-pink-50',   border: 'border-pink-200'   },
     { color: 'from-amber-400 to-orange-500',  textColor: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200' },
     { color: 'from-cyan-400 to-cyan-600',     textColor: 'text-cyan-700',   bg: 'bg-cyan-50',   border: 'border-cyan-200'   },
-    { color: 'from-slate-400 to-slate-600',   textColor: 'text-slate-700',  bg: 'bg-slate-50',  border: 'border-slate-200'  },
+    { color: 'from-slate-400 to-slate-600',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-slate-200'  },
 ];
 
 const PERMISSION_TYPES = [
@@ -274,7 +274,7 @@ const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false, size
             onClick={() => !disabled && onChange(!value)}
             className={`relative ${w} rounded-full transition-all duration-300 flex-shrink-0 ${
                 disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-[0.97]'
-            } ${value ? color : 'bg-slate-200/80'}`}
+            } ${value ? color : 'bg-surface-card-hover/80'}`}
         >
             <span className={`absolute ${knob} rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.2)] transition-all duration-300 ${value ? on : 'left-[3px]'}`} />
         </button>
@@ -298,41 +298,41 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
     return (
         <div className={`rounded-[1.5rem] border transition-all duration-500 ease-out transform-gpu ${
             isComing
-                ? 'bg-white/20 backdrop-blur-xl border-white/20 opacity-40 select-none'
+                ? 'bg-surface-card backdrop-blur-xl border-border-card opacity-40 select-none'
                 : hasAnyPerm
-                    ? `bg-white/55 backdrop-blur-2xl border-white/75
+                    ? `bg-surface-card backdrop-blur-2xl border-border-card
                        shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,82,204,0.08)]
                        hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_16px_48px_rgba(0,82,204,0.16),0_4px_16px_rgba(0,0,0,0.06)]
-                       hover:-translate-y-2 hover:scale-[1.018] hover:bg-white/70
+                       hover:-translate-y-2 hover:scale-[1.018] hover:bg-surface-card
                        ${flash ? 'ring-2 ring-blue-300/50 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_0_0_4px_rgba(0,82,204,0.06),0_8px_32px_rgba(0,82,204,0.18)]' : ''}`
-                    : 'bg-white/25 backdrop-blur-xl border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-white/35'
+                    : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-surface-card'
         }`}>
             <div className="p-4">
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-3.5">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                         hasAnyPerm
-                            ? 'bg-gradient-to-br from-[#0052CC] to-[#6929C4] text-white shadow-[0_3px_12px_rgba(0,82,204,0.38)] scale-100'
-                            : 'bg-white/50 backdrop-blur-sm border border-white/60 text-slate-500 scale-90'
+                            ? 'bg-gradient-to-br from-brand to-[#6929C4] text-white shadow-[0_3px_12px_rgba(0,82,204,0.38)] scale-100'
+                            : 'bg-surface-card backdrop-blur-sm border border-border-card text-content-3 scale-90'
                     }`}>
                         <ModIcon size={15} strokeWidth={1.8} />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-slate-800' : 'text-slate-500'}`}>
+                            <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-content' : 'text-content-3'}`}>
                                 {module.label}
                             </p>
-                            {saving && <Loader2 size={10} className="text-slate-400 animate-spin flex-shrink-0" />}
+                            {saving && <Loader2 size={10} className="text-content-3 animate-spin flex-shrink-0" />}
                         </div>
-                        <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
+                        <p className="text-[10px] text-content-3 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
                     </div>
                 </div>
 
                 {/* Toggles */}
                 <div className={`rounded-xl p-2.5 space-y-1.5 border transition-all duration-300 ${
                     hasAnyPerm
-                        ? 'bg-white/50 backdrop-blur-sm border-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'
-                        : 'bg-white/20 border-white/30'
+                        ? 'bg-surface-card backdrop-blur-sm border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'
+                        : 'bg-surface-card border-border-card'
                 }`}>
                     {PERMISSION_TYPES.map(pt => {
                         if (pt.key === 'can_approve' && !module.hasApprove) return null;
@@ -346,17 +346,17 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                 title={PERM_DESC[pt.key]}
                                 className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-300 ${
                                     needsView ? 'opacity-20 pointer-events-none' : ''
-                                } ${isFlashing ? (val ? 'bg-blue-50/70 scale-[1.02]' : 'bg-red-50/50 scale-[0.99]') : ''}`}
+                                } ${isFlashing ? (val ? 'bg-blue-50/70 scale-[1.02]' : 'bg-danger/50 scale-[0.99]') : ''}`}
                             >
                                 <div className="flex items-center gap-2">
                                     <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
                                         val
                                             ? `${pt.activeColor} shadow-sm ${isFlashing ? 'scale-125' : 'scale-100'}`
-                                            : `bg-slate-200/50 ${isFlashing ? 'scale-75' : 'scale-100'}`
+                                            : `bg-surface-card-hover/50 ${isFlashing ? 'scale-75' : 'scale-100'}`
                                     }`}>
                                         <PtIcon size={9} className="text-white" strokeWidth={3} />
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-slate-700' : 'text-slate-600'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-content-2' : 'text-content-2'}`}>
                                         {pt.label}
                                     </span>
                                 </div>
@@ -373,10 +373,10 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
 
                 {/* Scope selector */}
                 {module.hasScope && perms.can_view && (
-                    <div className="mt-3 pt-3 border-t border-white/40">
+                    <div className="mt-3 pt-3 border-t border-border-card">
                         <div className="flex items-center gap-1.5 mb-2">
-                            <Globe2 size={9} className="text-slate-500" strokeWidth={2.5} />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Alcance</p>
+                            <Globe2 size={9} className="text-content-3" strokeWidth={2.5} />
+                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Alcance</p>
                         </div>
                         <div className="flex gap-1.5">
                             {SCOPE_OPTIONS.map(opt => (
@@ -388,7 +388,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                         currentScope === opt.value
                                             ? `${opt.color} border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.15)] scale-[1.02]`
-                                            : 'bg-white/50 backdrop-blur-sm border-white/50 text-slate-500 hover:bg-white/70 hover:text-slate-600'
+                                            : 'bg-surface-card backdrop-blur-sm border-border-card text-content-3 hover:bg-surface-card hover:text-content-2'
                                     } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                     {opt.label}
@@ -400,10 +400,10 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
 
                 {/* Sub-tabs */}
                 {tabs && perms.can_view && tabPerms && (
-                    <div className="mt-3 pt-3 border-t border-white/40">
+                    <div className="mt-3 pt-3 border-t border-border-card">
                         <div className="flex items-center gap-1.5 mb-2">
-                            <Layers size={9} className="text-slate-400" strokeWidth={2.5} />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Pestañas</p>
+                            <Layers size={9} className="text-content-3" strokeWidth={2.5} />
+                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Pestañas</p>
                         </div>
                         <div className="space-y-1.5">
                             {tabs.map(tab => {
@@ -412,13 +412,13 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     <div key={tab.key} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${
                                         tabPerm.can_view
                                             ? 'bg-blue-50/50 border-blue-200/40'
-                                            : 'bg-white/20 border-white/30'
+                                            : 'bg-surface-card border-border-card'
                                     }`}>
-                                        <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-slate-700' : 'text-slate-500'}`}>
+                                        <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
                                             {tab.label}
                                         </span>
                                         <div className="flex items-center gap-1.5">
-                                            {tabSaving?.[tab.key] && <Loader2 size={9} className="text-slate-400 animate-spin" />}
+                                            {tabSaving?.[tab.key] && <Loader2 size={9} className="text-content-3 animate-spin" />}
                                             <Toggle
                                                 value={!!tabPerm.can_view}
                                                 onChange={v => onTabChange(tab.key, 'can_view', v)}
@@ -684,15 +684,15 @@ const PermissionsView = () => {
     // Header flotante
     const headerLeft = (
         <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2 md:p-2.5 flex items-center justify-center shrink-0">
+            <div className="bg-gradient-to-tr from-brand to-[#6929C4] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2 md:p-2.5 flex items-center justify-center shrink-0">
                 <Lock className="text-white" size={20} strokeWidth={1.5} />
             </div>
-            <h2 className="font-semibold text-[18px] md:text-[22px] text-slate-900 tracking-tight">
+            <h2 className="font-semibold text-[18px] md:text-[22px] text-content tracking-tight">
                 Permisos de Acceso
             </h2>
             {selectedOrgRole && (
                 <>
-                    <div className="hidden md:block w-px h-6 bg-slate-200 mx-0.5" />
+                    <div className="hidden md:block w-px h-6 bg-surface-card-hover mx-0.5" />
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${roleStyle.bg} ${roleStyle.border}`}>
                         <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${roleStyle.color} flex items-center justify-center flex-shrink-0`}>
                             <ShieldCheck size={11} className="text-white" strokeWidth={2} />
@@ -707,24 +707,24 @@ const PermissionsView = () => {
     );
 
     const filtersContent = (
-        <div className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+        <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             {/* MODO BÚSQUEDA */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
                 <input
                     type="text"
                     placeholder="Buscar cargo..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}
                 />
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -733,18 +733,18 @@ const PermissionsView = () => {
                 {selectedRoleId && canEdit && (
                     <>
                         <button onClick={() => setConfirmActivate(true)} disabled={activatingAll || copyingFrom}
-                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 transform-gpu whitespace-nowrap shrink-0 bg-transparent text-amber-600 border-amber-200/60 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 transform-gpu whitespace-nowrap shrink-0 bg-transparent text-warning border-warning/60 hover:bg-warning/10 hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50">
                             {activatingAll ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} strokeWidth={2.5} />}
                             Activar todo
                         </button>
                         <div className="w-44 shrink-0">
                             <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }} options={copyOptions} placeholder={copyingFrom ? 'Copiando...' : 'Copiar de...'} icon={Copy} clearable={false} compact={true} disabled={activatingAll || copyingFrom} bare />
                         </div>
-                        <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                        <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
                     </>
                 )}
                 <button onClick={() => setIsSearchMode(true)}
-                    className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar cargo">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
@@ -767,7 +767,7 @@ const PermissionsView = () => {
                         {/* Skeleton left column */}
                         <div className="w-full lg:w-64 shrink-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] xl:pt-[200px] space-y-2.5 lg:pb-10">
                             {[...Array(6)].map((_, i) => (
-                                <div key={i} className="animate-stagger-child rounded-[1.5rem] border border-white/80 bg-white/60 p-4" style={{ '--stagger-delay': `${i * 60}ms` }}>
+                                <div key={i} className="animate-stagger-child rounded-[1.5rem] border border-border-card bg-surface-card p-4" style={{ '--stagger-delay': `${i * 60}ms` }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-xl skeleton flex-shrink-0" />
                                         <div className="flex-1 space-y-1.5">
@@ -785,7 +785,7 @@ const PermissionsView = () => {
                                     <div className="h-3 w-24 skeleton mx-auto mb-3" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((_, i) => (
-                                            <div key={i} className="animate-stagger-child bg-white/60 rounded-[1.5rem] border border-white/80 p-4" style={{ '--stagger-delay': `${(gi * 3 + i) * 50}ms` }}>
+                                            <div key={i} className="animate-stagger-child bg-surface-card rounded-[1.5rem] border border-border-card p-4" style={{ '--stagger-delay': `${(gi * 3 + i) * 50}ms` }}>
                                                 <div className="flex gap-3 mb-4">
                                                     <div className="w-9 h-9 rounded-xl skeleton flex-shrink-0" />
                                                     <div className="flex-1 space-y-1.5 pt-0.5">
@@ -809,12 +809,12 @@ const PermissionsView = () => {
 
                     {/* ── Columna izquierda: selector de cargos ── */}
                     <div className="w-full lg:w-64 shrink-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] xl:pt-[200px] [&::-webkit-scrollbar]:hidden">
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
+                        <p className="text-[10px] font-black text-content-2 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
                             <ShieldCheck size={10} /> Cargos
                         </p>
                         <div className="space-y-2">
                         {isPermRoleFuzzy && searchQuery && (
-                            <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-700 font-semibold">
+                            <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-amber-700 font-semibold">
                                 <Search size={11} strokeWidth={2.5} className="shrink-0" />
                                 Similares a &ldquo;{searchQuery}&rdquo;
                             </div>
@@ -831,9 +831,9 @@ const PermissionsView = () => {
                                     className={`w-full text-left rounded-[1.5rem] border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? isSURol
-                                                ? 'bg-gradient-to-br from-amber-50/90 to-orange-50/60 border-amber-200/70 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
+                                                ? 'bg-gradient-to-br from-amber-50/90 to-orange-50/60 border-warning/70 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
                                                 : `${cs.bg} ${cs.border} shadow-[0_4px_16px_rgba(0,0,0,0.08)]`
-                                            : 'bg-white/60 backdrop-blur-md border-white/80 hover:bg-white/80 hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
+                                            : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -841,16 +841,16 @@ const PermissionsView = () => {
                                             <ShieldCheck size={13} className="text-white" strokeWidth={2} />
                                             {isSURol && (
                                                 <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
-                                                    <Sparkles size={7} className="text-amber-500" strokeWidth={2.5} />
+                                                    <Sparkles size={7} className="text-warning" strokeWidth={2.5} />
                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-amber-900' : cs.textColor) : 'text-slate-700'}`}>{r.name}</p>
+                                                <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-amber-900' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
                                                 {isSURol && <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
                                             </div>
-                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-amber-700/60' : cs.textColor + ' opacity-70') : 'text-slate-500'}`}>
+                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-amber-700/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
@@ -862,10 +862,10 @@ const PermissionsView = () => {
                         </div>
 
                         {/* Info */}
-                        <div className="mt-4 mb-10 px-4 py-3 rounded-2xl bg-slate-50/80 border border-slate-100">
+                        <div className="mt-4 mb-10 px-4 py-3 rounded-2xl bg-surface-card-hover/80 border border-slate-100">
                             <div className="flex items-start gap-2">
-                                <Info size={11} className="text-slate-400 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                                <p className="text-[10px] text-slate-500 font-medium leading-snug">
+                                <Info size={11} className="text-content-3 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                                <p className="text-[10px] text-content-3 font-medium leading-snug">
                                     Los cambios se aplican inmediatamente a todos los empleados con este cargo.
                                 </p>
                             </div>
@@ -877,11 +877,11 @@ const PermissionsView = () => {
                         {!selectedRoleId ? (
                             /* Empty state */
                             <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 animate-in fade-in duration-500">
-                                <div className="w-16 h-16 rounded-[1.5rem] bg-white/70 border border-slate-100 shadow-sm flex items-center justify-center mb-4">
-                                    <MousePointerClick size={28} className="text-slate-500" strokeWidth={1.5} />
+                                <div className="w-16 h-16 rounded-[1.5rem] bg-surface-card border border-slate-100 shadow-sm flex items-center justify-center mb-4">
+                                    <MousePointerClick size={28} className="text-content-3" strokeWidth={1.5} />
                                 </div>
-                                <p className="text-[15px] font-black text-slate-500">Selecciona un cargo</p>
-                                <p className="text-[12px] text-slate-500 font-medium mt-1">para modificar sus permisos de acceso</p>
+                                <p className="text-[15px] font-black text-content-3">Selecciona un cargo</p>
+                                <p className="text-[12px] text-content-3 font-medium mt-1">para modificar sus permisos de acceso</p>
                             </div>
                         ) : (
                         /* Grid de módulos */
@@ -897,7 +897,7 @@ const PermissionsView = () => {
                                 <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
                                     isRoleSU
                                         ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-300/5 backdrop-blur-xl border-amber-300/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
-                                        : 'bg-white/50 backdrop-blur-xl border-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_2px_12px_rgba(0,0,0,0.04)]'
+                                        : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_2px_12px_rgba(0,0,0,0.04)]'
                                 }`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-amber-300/30 blur-xl pointer-events-none" />}
                                     <div className="relative p-3.5 flex flex-col gap-3">
@@ -906,12 +906,12 @@ const PermissionsView = () => {
                                             <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                                                 isRoleSU
                                                     ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_3px_12px_rgba(217,119,6,0.45)] scale-100'
-                                                    : 'bg-white/60 border border-white/70 scale-90'
+                                                    : 'bg-surface-card border border-border-card scale-90'
                                             }`}>
-                                                <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-slate-400'} strokeWidth={1.8} />
+                                                <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={1.8} />
                                                 {isRoleSU && (
                                                     <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow flex items-center justify-center">
-                                                        <Sparkles size={7} className="text-amber-500" strokeWidth={2.5} />
+                                                        <Sparkles size={7} className="text-warning" strokeWidth={2.5} />
                                                     </div>
                                                 )}
                                             </div>
@@ -925,21 +925,21 @@ const PermissionsView = () => {
                                         {/* Label */}
                                         <div>
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-amber-900' : 'text-slate-700'}`}>
+                                                <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-amber-900' : 'text-content-2'}`}>
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
                                                     <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
                                                 )}
                                             </div>
-                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-amber-700/70' : 'text-slate-500'}`}>
+                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-amber-700/70' : 'text-content-3'}`}>
                                                 {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso irrestricto al sistema'}
                                             </p>
                                         </div>
                                         {/* Warning badge */}
                                         {isRoleSU && (
                                             <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-amber-400/12 border border-amber-300/30 animate-in fade-in slide-in-from-bottom-1 duration-300">
-                                                <Zap size={8} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
+                                                <Zap size={8} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                                 <p className="text-[8px] font-black text-amber-700 uppercase tracking-wide">Permisos ignorados</p>
                                             </div>
                                         )}
@@ -964,15 +964,15 @@ const PermissionsView = () => {
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                                <div className="rounded-2xl border bg-white/55 backdrop-blur-2xl border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,0,0,0.06)] p-4 md:col-span-2">
+                                <div className="rounded-2xl border bg-surface-card backdrop-blur-2xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,0,0,0.06)] p-4 md:col-span-2">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all duration-300`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[13px] font-black text-slate-800 leading-tight">Nivel de Precio Máximo</p>
-                                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                                                Activo: <span className="font-black text-slate-600">{activeOpt.label}</span>
+                                            <p className="text-[13px] font-black text-content leading-tight">Nivel de Precio Máximo</p>
+                                            <p className="text-[10px] text-content-3 font-medium mt-0.5">
+                                                Activo: <span className="font-black text-content-2">{activeOpt.label}</span>
                                                 {activeOpt.sub !== activeOpt.label && ` · ${activeOpt.sub}`}
                                             </p>
                                         </div>
@@ -987,7 +987,7 @@ const PermissionsView = () => {
                                                     className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                                         isActive
                                                             ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.2)]`
-                                                            : 'bg-white/80 border-slate-100 text-slate-500 hover:border-slate-200 hover:text-slate-600'
+                                                            : 'bg-surface-card border-slate-100 text-content-3 hover:border-slate-200 hover:text-content-2'
                                                     } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
                                                     <OptIcon size={9} strokeWidth={2.5} />
                                                     {opt.label}
@@ -1011,7 +1011,7 @@ const PermissionsView = () => {
                                 <div key={g.group}>
                                     <div className="flex items-center gap-2.5 mb-3">
                                         <span className={`flex-1 border-t border-current opacity-[0.15] ${g.color}`} />
-                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-md border border-white/80 shadow-sm ${g.color}`}>
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-border-card shadow-sm ${g.color}`}>
                                             <p className="text-[9px] font-black uppercase tracking-widest">{g.group}</p>
                                             {groupPartial && !groupActive && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 flex-shrink-0" />}
                                             {groupActive && <Check size={9} strokeWidth={3} className="flex-shrink-0" />}
@@ -1024,7 +1024,7 @@ const PermissionsView = () => {
                                             title={groupActive ? 'Desactivar sección' : 'Activar sección'}
                                             className={`relative w-8 h-4 rounded-full transition-all duration-300 flex-shrink-0 ${
                                                 !canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                                            } ${groupActive ? 'bg-current ' + g.color : groupPartial ? 'bg-current ' + g.color + ' opacity-40' : 'bg-slate-200'}`}
+                                            } ${groupActive ? 'bg-current ' + g.color : groupPartial ? 'bg-current ' + g.color + ' opacity-40' : 'bg-surface-card-hover'}`}
                                         >
                                             <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${groupActive ? 'left-[18px]' : 'left-0.5'}`} />
                                         </button>

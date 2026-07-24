@@ -16,13 +16,13 @@ import { fetchStockParamsForRevision, updateStockParams, effectiveMinMax } from 
 const MINI_PAGE = 15;
 
 function renderLab(row) {
-    return <span className="text-slate-500 text-[11px] whitespace-nowrap">{row.products?.laboratorios?.nombre ?? '—'}</span>;
+    return <span className="text-content-3 text-[11px] whitespace-nowrap">{row.products?.laboratorios?.nombre ?? '—'}</span>;
 }
 function renderProd(row) {
     return (
         <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-medium text-slate-700">{row.products?.nombre ?? `Prod. ${row.erp_product_id}`}</span>
-            {row.products?.es_antibiotico && <span className="text-[9px] px-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 font-semibold shrink-0">Bajo Receta</span>}
+            <span className="font-medium text-content-2">{row.products?.nombre ?? `Prod. ${row.erp_product_id}`}</span>
+            {row.products?.es_antibiotico && <span className="text-[9px] px-1.5 rounded-full bg-danger/10 border border-danger/30 text-danger font-semibold shrink-0">Bajo Receta</span>}
         </div>
     );
 }
@@ -31,13 +31,13 @@ function renderPresentacion(row) {
     const factor = row.dispatch_factor || row.factor || 1;
     const TIPO_LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
     if (!tipo) {
-        if (factor > 1) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">×{factor} unid</span>;
-        return <span className="text-slate-500 text-[11px]">Unidad</span>;
+        if (factor > 1) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 whitespace-nowrap">×{factor} unid</span>;
+        return <span className="text-content-3 text-[11px]">Unidad</span>;
     }
     const label      = TIPO_LABELS[tipo] ?? tipo;
     const showFactor = factor > 1 && ['caja','blister','solo_cajas'].includes(tipo);
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 whitespace-nowrap">
             {label}{showFactor ? ` ×${factor}` : ''}{['multiplo','multiplo_unidades'].includes(tipo) ? ` ×${factor}` : ''}
         </span>
     );
@@ -49,7 +49,7 @@ function renderPresStock(row) {
     const dispFactor = row.dispatch_factor || factor;
     if (factor === dispFactor || !row.dispatch_tipo) return renderPresentacion(row);
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-slate-200 whitespace-nowrap">
             {factor <= 1 ? 'Unidad' : `×${factor} unid`}
         </span>
     );
@@ -58,8 +58,8 @@ function renderPresStock(row) {
 const renderSolicitado = r => {
     const sol = calcSolicitado(r);
     return sol != null
-        ? <span className="tabular-nums text-slate-500">{sol}</span>
-        : <span className="text-slate-500">—</span>;
+        ? <span className="tabular-nums text-content-3">{sol}</span>
+        : <span className="text-content-3">—</span>;
 };
 
 const COLS_ENVIADOS = [
@@ -69,19 +69,19 @@ const COLS_ENVIADOS = [
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
     { key: 'asig',       label: 'Enviado',    align: 'center', render: r => <span className="font-bold tabular-nums">{r.cantidad_asignada}</span> },
     { key: 'rec',        label: 'Recibido',   align: 'center', render: r => {
-        if (r.cantidad_recibida == null) return <span className="text-slate-500">—</span>;
+        if (r.cantidad_recibida == null) return <span className="text-content-3">—</span>;
         const diff = r.cantidad_recibida - r.cantidad_asignada;
         return (
-            <span className={`font-bold tabular-nums ${diff < 0 ? 'text-amber-600' : diff > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+            <span className={`font-bold tabular-nums ${diff < 0 ? 'text-warning' : diff > 0 ? 'text-success' : 'text-content-2'}`}>
                 {r.cantidad_recibida}{diff !== 0 && <span className="text-[10px] ml-0.5">({diff > 0 ? '+' : ''}{diff})</span>}
             </span>
         );
     }},
     { key: 'status', label: 'Estado', render: r => (
         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
-            r.status === 'recibido'       ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-            r.status === 'con_diferencia' ? 'bg-amber-50   text-amber-700   border-amber-200'   :
-                                            'bg-slate-50   text-slate-500   border-slate-200'
+            r.status === 'recibido'       ? 'bg-success/10 text-emerald-700 border-success/30' :
+            r.status === 'con_diferencia' ? 'bg-warning/10   text-amber-700   border-warning/30'   :
+                                            'bg-surface-card-hover   text-content-3   border-slate-200'
         }`}>
             {r.status === 'recibido' ? 'Recibido' : r.status === 'con_diferencia' ? 'Diferencia' : 'Pendiente'}
         </span>
@@ -93,13 +93,13 @@ const COLS_AGOTAMIENTO = [
     { key: 'prod',       label: 'Producto',      render: renderProd },
     { key: 'pres',       label: 'Presentación',  render: renderPresentacion },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
-    { key: 'enviado',    label: 'Enviado',    align: 'center', render: r => <span className="font-bold tabular-nums text-slate-700">{r.cantidad_asignada}</span> },
+    { key: 'enviado',    label: 'Enviado',    align: 'center', render: r => <span className="font-bold tabular-nums text-content-2">{r.cantidad_asignada}</span> },
     { key: 'falto',      label: 'Faltó',      align: 'center', render: r => {
         const sol = calcSolicitado(r);
         const falto = sol != null ? Math.max(0, sol - (r.cantidad_asignada ?? 0)) : null;
         return falto != null
             ? <span className="font-bold tabular-nums text-orange-600">{falto}</span>
-            : <span className="text-slate-500">—</span>;
+            : <span className="text-content-3">—</span>;
     }},
 ];
 
@@ -109,14 +109,14 @@ const COLS_SIN_STOCK = [
     { key: 'pres',       label: 'Presentación', render: renderPresentacion },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
     { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => (
-        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
+        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-rose-500' : 'text-content-2'}`}>
             {r.stock_packs_snapshot ?? '—'}
         </span>
     )},
     { key: 'motivo', label: 'Motivo', render: () => (
         <div className="flex flex-col gap-0.5">
-            <span className="text-amber-600 text-[10px] font-semibold">Sin stock en bodega</span>
-            <span className="text-slate-500 text-[9px]">Esperar reabastecimiento o generar un pedido manual</span>
+            <span className="text-warning text-[10px] font-semibold">Sin stock en bodega</span>
+            <span className="text-content-3 text-[9px]">Esperar reabastecimiento o generar un pedido manual</span>
         </div>
     )},
 ];
@@ -141,7 +141,7 @@ function formatUnitsRegla(units, presentations) {
 
 // Solo usado dentro de COLS_REGLA — no se comparte con el cuerpo principal.
 function fmtRegla(row) {
-    if (!row.dispatch_tipo) return <span className="text-slate-500">—</span>;
+    if (!row.dispatch_tipo) return <span className="text-content-3">—</span>;
     const tipoKey    = (row.dispatch_tipo ?? '').toLowerCase();
     const tipos      = { caja: 'CAJA', blister: 'BLÍSTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
     const base       = tipos[tipoKey] ?? row.dispatch_tipo.toUpperCase();
@@ -168,7 +168,7 @@ const COLS_REGLA = [
         const units  = packs != null ? Math.round(packs * factor) : null;
         const txt    = units != null ? formatUnitsRegla(units, r.presentations) : null;
         return (
-            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
+            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-rose-500' : 'text-content-2'}`}>
                 {txt ?? '—'}
             </span>
         );
@@ -182,10 +182,10 @@ const COLS_REGLA = [
         return (
             <div className="flex flex-col gap-0.5">
                 <span className="text-rose-600 text-[10px] font-semibold">Necesidad baja</span>
-                <span className="text-slate-500 text-[9px]">
+                <span className="text-content-3 text-[9px]">
                     {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de la regla` : 'Cantidad < 40% de la unidad mínima de despacho'}
                 </span>
-                <span className="text-slate-500 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
+                <span className="text-content-3 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
             </div>
         );
     }},
@@ -232,9 +232,9 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
 
     return (
         <div className="border-t border-slate-100">
-            <div className="flex items-center gap-1 pr-2 hover:bg-slate-50/50 transition-colors">
+            <div className="flex items-center gap-1 pr-2 hover:bg-surface-card-hover/50 transition-colors">
                 <button onClick={() => setOpen(v => !v)} className="flex-1 flex items-center gap-2 px-4 py-2.5 text-left">
-                    <span className="text-[11px] font-semibold text-slate-700 flex-1">{label}</span>
+                    <span className="text-[11px] font-semibold text-content-2 flex-1">{label}</span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-blue-50 text-blue-700 border-blue-200' : badgeCls}`}>
                         {search ? `${filteredRows.length}/${count}` : count}
                     </span>
@@ -243,28 +243,28 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                     {searchOpen ? (
                         <motion.div key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 160, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0">
                             <div className="relative flex items-center">
-                                <Search size={10} className="absolute left-2 text-slate-400 pointer-events-none" />
+                                <Search size={10} className="absolute left-2 text-content-3 pointer-events-none" />
                                 <input
                                     ref={searchRef}
                                     value={search}
                                     onChange={e => { setSearch(e.target.value); setPage(1); }}
                                     onKeyDown={e => e.key === 'Escape' && closeSearch()}
                                     placeholder="Buscar…"
-                                    className="w-full pl-6 pr-5 py-1 text-[16px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 shadow-sm"
+                                    className="w-full pl-6 pr-5 py-1 text-[16px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-content-2 placeholder:text-content-3 shadow-sm"
                                 />
-                                <button onClick={closeSearch} className="absolute right-1.5 text-slate-500 hover:text-slate-600">
+                                <button onClick={closeSearch} className="absolute right-1.5 text-content-3 hover:text-content-2">
                                     <X size={9} />
                                 </button>
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
+                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
                             <Search size={12} />
                         </motion.button>
                     )}
                 </AnimatePresence>
                 <button onClick={() => setOpen(v => !v)} className="p-1.5 shrink-0">
-                    {open ? <ChevronDown size={12} className="text-slate-500" /> : <ChevronRight size={12} className="text-slate-500" />}
+                    {open ? <ChevronDown size={12} className="text-content-3" /> : <ChevronRight size={12} className="text-content-3" />}
                 </button>
             </div>
             <AnimatePresence>
@@ -359,7 +359,7 @@ export default function ItemSections({ allItems, loading }) {
         setErrorMap(prev => ({ ...prev, [rowId]: null }));
     }, [origMap]);
 
-    if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-500" /></div>;
+    if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-content-3" /></div>;
 
     const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
     const agotamiento = allItems.filter(i => i.agotamiento);
@@ -367,7 +367,7 @@ export default function ItemSections({ allItems, loading }) {
     const porRegla    = allItems.filter(i => i.revision_minmax);
     const total       = allItems.length;
 
-    if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-500">Sin ítems.</div>;
+    if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-content-3">Sin ítems.</div>;
 
     // Mirrors the DB constraint chk_min_lt_max:
     // min=0 → max must be 0 or 1; min≥1 → max must be strictly > min
@@ -449,19 +449,19 @@ export default function ItemSections({ allItems, loading }) {
         const err      = errorMap[row.id] ?? null;
         const v6m      = psp?.units_sold_6m ?? null;
         const inputCls = (hasErr) =>
-            `w-14 text-[11px] font-bold border rounded-lg px-2 py-1 focus:outline-none bg-white text-slate-700 text-center disabled:opacity-40 transition-colors ${
+            `w-14 text-[11px] font-bold border rounded-lg px-2 py-1 focus:outline-none bg-white text-content-2 text-center disabled:opacity-40 transition-colors ${
                 hasErr ? 'border-rose-300 focus:border-rose-400 bg-rose-50/60' : 'border-slate-200 focus:border-blue-400'
             }`;
         return (
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
-                    <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 flex items-center gap-2 flex-wrap">
-                        <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wide shrink-0">Ventas 6M</span>
-                        <span className="text-[11px] font-bold tabular-nums text-slate-700 shrink-0">
-                            {psp === undefined ? <span className="text-slate-500">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
+                    <div className="rounded-xl border border-slate-100 bg-surface-card-hover/50 px-3 py-2 flex items-center gap-2 flex-wrap">
+                        <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">Ventas 6M</span>
+                        <span className="text-[11px] font-bold tabular-nums text-content-2 shrink-0">
+                            {psp === undefined ? <span className="text-content-3">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
                         </span>
-                        <div className="w-px h-4 bg-slate-200 shrink-0 mx-0.5" />
-                        <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wide shrink-0">MIN</span>
+                        <div className="w-px h-4 bg-surface-card-hover shrink-0 mx-0.5" />
+                        <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">MIN</span>
                         <input
                             type="number" min="0" value={edit.min} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
@@ -471,7 +471,7 @@ export default function ItemSections({ allItems, loading }) {
                             }}
                             className={inputCls(!!err && err !== 'MAX inválido' && !err.startsWith('MAX'))}
                         />
-                        <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wide shrink-0">MAX</span>
+                        <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">MAX</span>
                         <input
                             type="number" min="0" value={edit.max} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
@@ -482,11 +482,11 @@ export default function ItemSections({ allItems, loading }) {
                             className={inputCls(!!err && err !== 'MIN inválido')}
                         />
                         {isSaving && <Loader2 size={10} className="animate-spin text-blue-400 shrink-0" />}
-                        {!isSaving && isSaved && <Check size={10} className="text-emerald-500 shrink-0" />}
+                        {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
                         <button
                             onClick={() => restoreMinMax(row)} disabled={isSaving}
                             title="Restaurar MIN/MAX original"
-                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 disabled:opacity-50 transition-colors shrink-0"
+                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-content-3 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <RotateCcw size={9} />Restaurar
                         </button>
@@ -505,19 +505,19 @@ export default function ItemSections({ allItems, loading }) {
 
     return (
         <>
-            <div className="border-t border-slate-100 px-4 py-2.5 bg-slate-50/60 flex items-center gap-5 flex-wrap">
-                <span className="text-[11px] text-slate-500">Solicitados <strong className="text-slate-700">{total}</strong></span>
-                <span className="text-[11px] text-slate-500">Enviados <strong className="text-emerald-600">{enviados.length}</strong></span>
-                {agotamiento.length > 0 && <span className="text-[11px] text-slate-500">Stock insuficiente <strong className="text-orange-600">{agotamiento.length}</strong></span>}
-                {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
-                {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
+            <div className="border-t border-slate-100 px-4 py-2.5 bg-surface-card-hover/60 flex items-center gap-5 flex-wrap">
+                <span className="text-[11px] text-content-3">Solicitados <strong className="text-content-2">{total}</strong></span>
+                <span className="text-[11px] text-content-3">Enviados <strong className="text-success">{enviados.length}</strong></span>
+                {agotamiento.length > 0 && <span className="text-[11px] text-content-3">Stock insuficiente <strong className="text-orange-600">{agotamiento.length}</strong></span>}
+                {sinStock.length > 0 && <span className="text-[11px] text-content-3">Sin inventario <strong className="text-warning">{sinStock.length}</strong></span>}
+                {porRegla.length > 0 && <span className="text-[11px] text-content-3">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
-            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
+            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-success/10 text-emerald-700 border-success/30" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
                 label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamiento} columns={COLS_AGOTAMIENTO}
                 noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
             />
-            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
+            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-warning/10 text-amber-700 border-warning/30" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}

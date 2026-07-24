@@ -27,7 +27,7 @@ const FILTER_OPTIONS = [
 
 const BRANCH_TYPE_META = {
     FARMACIA:      { label: 'Farmacia',       color: 'bg-blue-50 text-blue-600 border-blue-200',         sectionLabel: 'Farmacias' },
-    BODEGA:        { label: 'Bodega',          color: 'bg-amber-50 text-amber-600 border-amber-200',       sectionLabel: 'Bodega' },
+    BODEGA:        { label: 'Bodega',          color: 'bg-warning/10 text-warning border-warning/30',       sectionLabel: 'Bodega' },
     ADMINISTRATIVA:{ label: 'Administración',  color: 'bg-violet-50 text-violet-600 border-violet-200',    sectionLabel: 'Administración' },
     EXTERNA:       { label: 'Externos',        color: 'bg-teal-50 text-teal-600 border-teal-200',          sectionLabel: 'Personal Externo' },
 };
@@ -38,7 +38,7 @@ const safeParse = (obj) => {
     try { return JSON.parse(obj) || {}; } catch { return {}; }
 };
 
-const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-white/70 border border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] cursor-pointer transition-all duration-300 hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5 active:scale-[0.97]";
+const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] cursor-pointer transition-all duration-300 hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5 active:scale-[0.97]";
 
 // ============================================================================
 // 🧠 FUNCIONES PURAS
@@ -175,7 +175,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
         evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
     }
 
-    const baseCardStyles = 'bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.7)]';
+    const baseCardStyles = 'bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.7)]';
 
     if (alerts.length === 0) {
         return { hasAlerts: false, message: 'Operativa', cardStyles: baseCardStyles, badgeStyles: 'hidden', icon: CheckCircle2, list: [] };
@@ -251,7 +251,7 @@ const BranchCard = memo(({
         <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-[2.5rem] transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]'}`}>
             
             {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
-            <div className={`absolute inset-0 z-50 bg-white/80 backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-indigo-100/50 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
+            <div className={`absolute inset-0 z-50 bg-surface-card backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-indigo-100/50 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
                 
                 {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -261,11 +261,11 @@ const BranchCard = memo(({
                 </div>
 
                 {/* Cabecera del Overlay IA */}
-                <div className="relative z-10 flex items-center justify-between p-5 border-b border-indigo-100/40 bg-white/30">
+                <div className="relative z-10 flex items-center justify-between p-5 border-b border-indigo-100/40 bg-surface-card">
                     <div className="flex items-center gap-3">
                         <div className="relative w-8 h-8 flex items-center justify-center">
                             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[3px] opacity-70"></div>
-                            <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-white/30">
+                            <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-border-card">
                                 <Sparkles size={14} className="text-white" strokeWidth={2.5} />
                             </div>
                         </div>
@@ -276,7 +276,7 @@ const BranchCard = memo(({
                     </div>
                     <button 
                         onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} 
-                        className="w-8 h-8 rounded-full bg-white/60 hover:bg-white text-indigo-400 flex items-center justify-center transition-all shadow-sm hover:shadow-md hover:text-indigo-600"
+                        className="w-8 h-8 rounded-full bg-surface-card hover:bg-white text-indigo-400 flex items-center justify-center transition-all shadow-sm hover:shadow-md hover:text-indigo-600"
                     >
                         <X size={14} strokeWidth={3} />
                     </button>
@@ -301,7 +301,7 @@ const BranchCard = memo(({
                                 <div key={index} className="relative mb-4 group/p">
                                     <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
                                     
-                                    <p className="text-[13px] font-medium text-slate-700 leading-relaxed text-justify pl-4">
+                                    <p className="text-[13px] font-medium text-content-2 leading-relaxed text-justify pl-4">
                                         {paragraph.split('**').map((text, i) => (
                                             i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
                                         ))}
@@ -315,7 +315,7 @@ const BranchCard = memo(({
 
             {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA */}
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-30">
-                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-white/90 backdrop-blur-md p-1 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] border border-white hover:scale-105">
+                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] border border-white hover:scale-105">
                     
                     {isFarmacia && (
                         <>
@@ -335,20 +335,20 @@ const BranchCard = memo(({
                             ) : (
                                 <>
                                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                    <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-white/95 transition-colors duration-300"></div>
+                                    <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
                                     <div className="absolute inset-0 border border-purple-200/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
                                     <Sparkles size={14} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
                                 </>
                             )}
                         </button>
-                        <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
+                        <div className="w-px h-4 bg-surface-card-hover mx-0.5"></div>
                         </>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-slate-500 hover:text-[#0052CC] hover:bg-[#0052CC]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-slate-500 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-content-3 hover:text-brand hover:bg-brand/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-content-3 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
 
                     {!deleteDisabled && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} disabled={!canEdit} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-slate-500 hover:text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} disabled={!canEdit} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-content-3 hover:text-danger hover:bg-danger/10 disabled:opacity-30 disabled:cursor-not-allowed" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
                     )}
                 </div>
                 {alertStatus.hasAlerts && (
@@ -356,14 +356,14 @@ const BranchCard = memo(({
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all cursor-help border ${alertStatus.badgeStyles}`}>
                             <alertStatus.icon size={14} strokeWidth={2.5} />
                         </div>
-                        <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-[1.2rem] shadow-[0_20px_40px_rgba(0,0,0,0.3)] opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-white/10 z-50">
-                            <p className="text-[8px] text-slate-600 uppercase tracking-widest mb-2.5 font-black border-b border-white/10 pb-1.5 flex items-center justify-between">
+                        <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-[1.2rem] shadow-[0_20px_40px_rgba(0,0,0,0.3)] opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-border-card z-50">
+                            <p className="text-[8px] text-content-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-card pb-1.5 flex items-center justify-between">
                                 Problemas Detectados <span className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[7px]">{alertStatus.list.length}</span>
                             </p>
                             <div className="space-y-2.5">
                                 {alertStatus.list.map((al, idx) => (
                                     <div key={idx} className="flex items-start gap-2.5 text-[10px] font-bold">
-                                        <al.icon size={13} className={`mt-0.5 shrink-0 ${al.level === 'critical' ? 'text-red-400 animate-pulse' : 'text-amber-400'}`} strokeWidth={2.5} />
+                                        <al.icon size={13} className={`mt-0.5 shrink-0 ${al.level === 'critical' ? 'text-danger animate-pulse' : 'text-warning'}`} strokeWidth={2.5} />
                                         <span className="leading-tight text-white/90">{al.message}</span>
                                     </div>
                                 ))}
@@ -376,15 +376,15 @@ const BranchCard = memo(({
             <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
                 <div className="flex items-start gap-3">
                     <button onClick={() => handleViewProfile(branch)} className="flex items-center gap-4 min-w-0 text-left group/header focus:outline-none w-full pr-[140px]">
-                        <div className="w-14 h-14 rounded-[1.25rem] bg-white border border-white/90 text-[#0052CC] shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
+                        <div className="w-14 h-14 rounded-[1.25rem] bg-white border border-border-card text-brand shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 flex-1 flex flex-col justify-center">
                             <div className="flex items-center gap-2">
-                                <h3 className="text-[18px] font-bold text-slate-800 leading-tight group-hover/header:text-[#0052CC] transition-colors duration-300 line-clamp-2">{branch.name}</h3>
+                                <h3 className="text-[18px] font-bold text-content leading-tight group-hover/header:text-brand transition-colors duration-300 line-clamp-2">{branch.name}</h3>
                                 <div className="relative group/status flex items-center justify-center p-1.5 cursor-help shrink-0">
-                                    {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-slate-300 shrink-0"></span>}
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 bg-slate-800/90 backdrop-blur-xl text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-xl opacity-0 invisible group-hover/status:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-50 pointer-events-none border border-white/10">
+                                    {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 bg-slate-800/90 backdrop-blur-xl text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-xl opacity-0 invisible group-hover/status:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-50 pointer-events-none border border-border-card">
                                         {isInactive ? 'Inactiva' : currentStatus.status === 'OPEN' ? 'Abierta Ahora' : 'Cerrada Ahora'}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-800/90"></div>
                                     </div>
@@ -393,11 +393,11 @@ const BranchCard = memo(({
 
                             <div className="flex items-center gap-2 mt-1">
                                 {branch.type && branch.type !== 'FARMACIA' && (
-                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-surface-card-hover text-content-3 border-slate-200'}`}>
                                         {BRANCH_TYPE_META[branch.type]?.label}
                                     </span>
                                 )}
-                                <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                                <p className="text-[10px] text-content-2 font-bold uppercase tracking-widest flex items-center gap-1">
                                     {branch.openingDate || branch.opening_date
                                         ? `${new Date(branch.openingDate || branch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
                                         : 'Pendiente de apertura'}
@@ -409,44 +409,44 @@ const BranchCard = memo(({
 
                 <div className="flex flex-col gap-2.5 mt-2">
                     <a href={branch.settings?.location?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || branch.name)}`} target="_blank" rel="noreferrer" className={`group/map flex items-start gap-3 p-3.5 rounded-[1.25rem] ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Abrir en Maps">
-                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-[#0052CC] border border-slate-100"><MapPin size={16} strokeWidth={2.5} /></div>
+                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-brand border border-slate-100"><MapPin size={16} strokeWidth={2.5} /></div>
                         <div className="flex-1 flex justify-between items-start gap-2 pr-1">
                             <div className="min-w-0 flex-1">
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-300 group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
-                                <p className="text-[12px] font-semibold text-slate-700 leading-snug break-words">{[branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || "No registrada"}</p>
+                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-300 group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
+                                <p className="text-[12px] font-semibold text-content-2 leading-snug break-words">{[branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || "No registrada"}</p>
                             </div>
                             <div className="shrink-0 mt-0.5" onClick={e => e.stopPropagation()}>
-                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ')); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); }} className="p-1.5 rounded-md bg-black/[0.03] text-slate-500 hover:text-slate-800 hover:bg-white hover:border-slate-200 border border-transparent hover:scale-105 hover:shadow-sm transition-all" title="Copiar"><Copy size={12} /></button>
+                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ')); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); }} className="p-1.5 rounded-md bg-black/[0.03] text-content-3 hover:text-content hover:bg-white hover:border-slate-200 border border-transparent hover:scale-105 hover:shadow-sm transition-all" title="Copiar"><Copy size={12} /></button>
                             </div>
                         </div>
                     </a>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-[#0052CC]"><Phone size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-brand"><Phone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Fijo</p>
-                                <p className="text-[12px] font-bold text-slate-700 whitespace-nowrap tracking-tight">{branch.phone || "—"}</p>
+                                <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Fijo</p>
+                                <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.phone || "—"}</p>
                             </div>
                         </button>
                         <button onClick={(e) => handlePhoneAction(e, branch.cell, 'Celular')} className={`group/cell flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full pr-8 ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-[#0052CC]"><Smartphone size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-brand"><Smartphone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Celular</p>
-                                <p className="text-[12px] font-bold text-slate-700 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
+                                <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Celular</p>
+                                <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
                             </div>
-                            {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-emerald-50 text-emerald-500 rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 transition-all hover:bg-emerald-500 hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
+                            {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 transition-all hover:bg-emerald-500 hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
                         </button>
                     </div>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-[1.25rem] px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-red-50/80 border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.1)] hover:bg-red-50 hover:shadow-sm' : 'bg-white/70 border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-[1.25rem] px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/80 border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.1)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
                         <div className="flex items-center gap-2">
-                            <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-red-500' : 'text-slate-500 group-hover/horario:text-[#0052CC]'}`} strokeWidth={2.5} />
-                            <span className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-red-500' : 'text-slate-500 group-hover/horario:text-slate-700'}`}>
+                            <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand'}`} strokeWidth={2.5} />
+                            <span className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
                                 {!scheduleDefined ? 'Falta Horario' : 'Horario (Hoy)'}
                             </span>
                         </div>
-                        <span className={`font-bold text-[12px] tracking-tight ${!scheduleDefined ? 'text-red-600' : todaySchedule === 'CERRADO' ? 'px-2 py-0.5 bg-slate-200/60 text-slate-500 rounded-md text-[9px] uppercase tracking-widest' : 'text-slate-800'}`}>
+                        <span className={`font-bold text-[12px] tracking-tight ${!scheduleDefined ? 'text-danger' : todaySchedule === 'CERRADO' ? 'px-2 py-0.5 bg-surface-card-hover/60 text-content-3 rounded-md text-[9px] uppercase tracking-widest' : 'text-content'}`}>
                             {!scheduleDefined ? 'Definir' : todaySchedule}
                         </span>
                     </button>
@@ -455,11 +455,11 @@ const BranchCard = memo(({
                 <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos legales">
                         <div className="flex items-center justify-between w-full">
-                            <Scale size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.legal === 0 ? 'text-red-500' : completion.legal === 100 ? 'text-slate-500 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
-                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.legal === 0 ? 'text-red-500/80' : 'text-slate-600 group-hover/prog:text-slate-700'}`}>Legal</span>
+                            <Scale size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.legal === 0 ? 'text-danger' : completion.legal === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.legal === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>Legal</span>
                         </div>
                         {completion.legal < 100 && (
-                            <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden border border-white/50">
+                            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
                                 <div className={`h-full transition-all duration-500 ${completion.legal === 0 ? 'bg-red-400' : 'bg-amber-400'}`} style={{ width: `${Math.max(completion.legal, 5)}%` }} />
                             </div>
                         )}
@@ -467,11 +467,11 @@ const BranchCard = memo(({
 
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchInmueble', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos de inmueble">
                         <div className="flex items-center justify-between w-full">
-                            <Building2 size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.property === 0 ? 'text-red-500' : completion.property === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
-                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.property === 0 ? 'text-red-500/80' : 'text-slate-600 group-hover/prog:text-slate-700'}`}>Local</span>
+                            <Building2 size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.property === 0 ? 'text-danger' : completion.property === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.property === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>Local</span>
                         </div>
                         {completion.property < 100 && (
-                            <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden border border-white/50">
+                            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
                                 <div className={`h-full transition-all duration-500 ${completion.property === 0 ? 'bg-red-400' : 'bg-amber-400'}`} style={{ width: `${Math.max(completion.property, 5)}%` }} />
                             </div>
                         )}
@@ -479,11 +479,11 @@ const BranchCard = memo(({
 
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar servicios básicos">
                         <div className="flex items-center justify-between w-full">
-                            <Zap size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.services === 0 ? 'text-red-500' : completion.services === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
-                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.services === 0 ? 'text-red-500/80' : 'text-slate-600 group-hover/prog:text-slate-700'}`}>Serv.</span>
+                            <Zap size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.services === 0 ? 'text-danger' : completion.services === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.services === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>Serv.</span>
                         </div>
                         {completion.services < 100 && (
-                            <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden border border-white/50">
+                            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
                                 <div className={`h-full transition-all duration-500 ${completion.services === 0 ? 'bg-red-400' : 'bg-amber-400'}`} style={{ width: `${Math.max(completion.services, 5)}%` }} />
                             </div>
                         )}
@@ -491,36 +491,36 @@ const BranchCard = memo(({
                 </div>
             </div>
 
-            <div className="px-6 py-4 bg-white/50 backdrop-blur-xl border-t border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">
+            <div className="px-6 py-4 bg-surface-card backdrop-blur-xl border-t border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">
                 <button
                     type="button"
                     onClick={() => openModal && openModal("viewBranchEmployees", branch)}
-                    className={`flex flex-col gap-1.5 items-start group/personal hover:bg-white/60 p-2 -ml-2 -my-2 rounded-xl transition-all cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
+                    className={`flex flex-col gap-1.5 items-start group/personal hover:bg-surface-card p-2 -ml-2 -my-2 rounded-xl transition-all cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
                     title="Ver Listado de Personal"
                 >
-                    <div className="flex items-center gap-2 text-slate-500 transition-colors duration-300 group-hover/personal:text-slate-600">
-                        <Users size={14} className="transition-transform duration-300 group-hover/personal:scale-110 group-hover/personal:text-[#0052CC]" strokeWidth={2.5} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 group-hover/personal:text-slate-600">Personal</span>
+                    <div className="flex items-center gap-2 text-content-3 transition-colors duration-300 group-hover/personal:text-content-2">
+                        <Users size={14} className="transition-transform duration-300 group-hover/personal:scale-110 group-hover/personal:text-brand" strokeWidth={2.5} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 group-hover/personal:text-content-2">Personal</span>
                     </div>
                     <div className="flex items-center gap-3 w-full pr-4">
-                        <div className="flex-1 h-1.5 bg-white shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] rounded-full overflow-hidden border border-white/80">
-                            <div className="h-full bg-gradient-to-r from-[#0052CC] to-[#00C6FF]" style={{ width: `${pct}%` }} />
+                        <div className="flex-1 h-1.5 bg-white shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] rounded-full overflow-hidden border border-border-card">
+                            <div className="h-full bg-gradient-to-r from-brand to-[#00C6FF]" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-[14px] font-black text-slate-800 leading-none">{count}</span>
+                        <span className="text-[14px] font-black text-content leading-none">{count}</span>
                     </div>
                 </button>
 
                 {!['ADMINISTRATIVA','EXTERNA'].includes(branch.type) && (
                     <>
-                        <div className="w-px h-8 bg-slate-200/60 mx-2"></div>
-                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-white/60 p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
-                            <div className="flex items-center gap-2 text-slate-500 transition-colors duration-300 group-hover/kiosk:text-slate-600">
+                        <div className="w-px h-8 bg-surface-card-hover/60 mx-2"></div>
+                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
+                            <div className="flex items-center gap-2 text-content-3 transition-colors duration-300 group-hover/kiosk:text-content-2">
                                 <span className="text-[10px] font-bold uppercase tracking-widest">Kioscos</span>
                                 <Monitor size={14} className="transition-transform duration-300 group-hover/kiosk:scale-110 group-hover/kiosk:text-indigo-500" strokeWidth={2.5} />
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className={`text-[14px] font-black leading-none ${activeKiosks > 0 ? 'text-indigo-600' : 'text-slate-500'}`}>{activeKiosks} <span className="text-[10px] font-bold text-slate-500">/ 3</span></span>
-                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-white shadow-inner border-slate-200'}`} />
+                                <span className={`text-[14px] font-black leading-none ${activeKiosks > 0 ? 'text-indigo-600' : 'text-content-3'}`}>{activeKiosks} <span className="text-[10px] font-bold text-content-3">/ 3</span></span>
+                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-emerald-400 border-success/30 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-white shadow-inner border-slate-200'}`} />
                             </div>
                         </button>
                     </>
@@ -688,44 +688,44 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
     }, []);
 
     const renderFiltersContent = () => (
-        <div className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+        <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
-                <input type="text" placeholder="Buscar sucursal o dirección..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} ref={(input) => { if (input && isSearchActive) setTimeout(() => input.focus(), 100) }} />
-                {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-                <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
+                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                <input type="text" placeholder="Buscar sucursal o dirección..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} ref={(input) => { if (input && isSearchActive) setTimeout(() => input.focus(), 100) }} />
+                {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+                <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
             </div>
 
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-3"}`}>
                 <div className="flex items-center min-w-0 flex-1">
                     <div className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isFilterPickerOpen ? "max-w-0 opacity-0 pointer-events-none gap-0 pr-0" : "max-w-[400px] opacity-100 gap-2 md:gap-3 pr-2 md:pr-3"}`}>
-                        <button type="button" onClick={() => setIsFilterPickerOpen(true)} className={`px-3 md:px-5 h-9 rounded-full flex items-center gap-2 md:gap-3 transition-all duration-300 group whitespace-nowrap border shrink-0 ${filterStatus !== "ALL" ? "bg-white text-slate-800 border-white shadow-md" : "bg-transparent text-slate-600 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90"}`}>
-                            <Filter size={16} className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${filterStatus !== 'ALL' ? 'text-[#0052CC]' : 'group-hover:scale-110'}`} />
+                        <button type="button" onClick={() => setIsFilterPickerOpen(true)} className={`px-3 md:px-5 h-9 rounded-full flex items-center gap-2 md:gap-3 transition-all duration-300 group whitespace-nowrap border shrink-0 ${filterStatus !== "ALL" ? "bg-white text-content border-white shadow-md" : "bg-transparent text-content-2 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"}`}>
+                            <Filter size={16} className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${filterStatus !== 'ALL' ? 'text-brand' : 'group-hover:scale-110'}`} />
                             <span className="text-[11px] md:text-[12px] font-bold uppercase tracking-wider">{FILTER_OPTIONS.find((o) => o.value === filterStatus)?.label || "Sucursales"}</span>
                         </button>
                     </div>
 
                     <div className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isFilterPickerOpen ? "max-w-[800px] opacity-100 ml-1 pr-1 gap-2" : "max-w-0 opacity-0 pointer-events-none m-0 p-0 gap-0"}`}>
                         {FILTER_OPTIONS.map((opt) => (
-                            <button key={opt.value} type="button" onClick={() => { setFilterStatus(opt.value); setIsFilterPickerOpen(false); }} className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${filterStatus === opt.value ? "bg-white text-slate-800 border-white shadow-md scale-[1.02]" : "bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90"}`}>
+                            <button key={opt.value} type="button" onClick={() => { setFilterStatus(opt.value); setIsFilterPickerOpen(false); }} className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${filterStatus === opt.value ? "bg-white text-content border-white shadow-md scale-[1.02]" : "bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"}`}>
                                 {opt.label}
                             </button>
                         ))}
-                        <button type="button" onClick={() => setIsFilterPickerOpen(false)} className="w-9 h-9 rounded-full bg-white/50 border border-white/60 hover:bg-red-50 hover:border-red-200 hover:text-red-500 text-slate-500 flex items-center justify-center transition-all duration-300 hover:shadow-md shrink-0 ml-1 hover:-translate-y-0.5"><X size={14} strokeWidth={2.5} /></button>
+                        <button type="button" onClick={() => setIsFilterPickerOpen(false)} className="w-9 h-9 rounded-full bg-surface-card border border-border-card hover:bg-danger/10 hover:border-danger/30 hover:text-danger text-content-3 flex items-center justify-center transition-all duration-300 hover:shadow-md shrink-0 ml-1 hover:-translate-y-0.5"><X size={14} strokeWidth={2.5} /></button>
                     </div>
                 </div>
 
                 <div className={`flex items-center shrink-0 border-l transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-slate-200/60 ${isFilterPickerOpen ? "max-w-0 opacity-0 scale-95 pointer-events-none ml-0 pl-0 border-transparent m-0" : "max-w-[600px] opacity-100 scale-100 ml-2 pl-2 gap-2"}`}>
                     {filterStatus !== "ALL" && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-11 h-11 rounded-full bg-white/70 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-11 h-11 rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
                     )}
-                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-[#0052CC] font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.15)] border border-white hover:border-[#0052CC]/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
+                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.15)] border border-white hover:border-brand/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
                         <Plus size={16} strokeWidth={2.5} />
                         <span className="hidden sm:inline">Nueva Sucursal</span>
                     </button>}
                 </div>
-                <div className={`flex items-center shrink-0 border-l border-white/30 transform-gpu transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isFilterPickerOpen ? "max-w-0 opacity-0 pointer-events-none ml-0 pl-0 border-transparent" : "pl-2 ml-1"}`}>
-                    <button onClick={() => setIsSearchActive(true)} className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar sucursal">
+                <div className={`flex items-center shrink-0 border-l border-border-card transform-gpu transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isFilterPickerOpen ? "max-w-0 opacity-0 pointer-events-none ml-0 pl-0 border-transparent" : "pl-2 ml-1"}`}>
+                    <button onClick={() => setIsSearchActive(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar sucursal">
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                         {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
                     </button>
@@ -747,13 +747,13 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         </div>
                     ) : filteredBranches.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-                            <div className={`bg-white/60 backdrop-blur-xl p-6 rounded-[2rem] mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-white/80 transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-emerald-500' : 'text-slate-500'}`}>
+                            <div className={`bg-surface-card backdrop-blur-xl p-6 rounded-[2rem] mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-border-card transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>
-                            <h3 className="text-[20px] font-black text-slate-800 tracking-tight">
+                            <h3 className="text-[20px] font-black text-content tracking-tight">
                                 {filterStatus === 'ALERTS' ? '¡Todo en orden!' : 'Sin sucursales'}
                             </h3>
-                            <p className="text-[14px] text-slate-500 mt-2 font-medium max-w-[300px] leading-relaxed">
+                            <p className="text-[14px] text-content-3 mt-2 font-medium max-w-[300px] leading-relaxed">
                                 {filterStatus === 'ALERTS'
                                     ? 'Ninguna de tus sucursales presenta alertas críticas en este momento.'
                                     : 'No encontramos sucursales que coincidan con tu búsqueda.'}
@@ -768,7 +768,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         return (
                             <div className="space-y-8 pt-4 px-2 pb-12">
                                 {isBranchSearchFuzzy && searchTerm && (
-                                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                         Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                                     </div>
@@ -780,8 +780,8 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                                 <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${BRANCH_TYPE_META[type]?.color}`}>
                                                     {BRANCH_TYPE_META[type]?.sectionLabel}
                                                 </span>
-                                                <div className="flex-1 h-px bg-slate-200/60" />
-                                                <span className="text-[10px] font-bold text-slate-500">{groupBranches.length}</span>
+                                                <div className="flex-1 h-px bg-surface-card-hover/60" />
+                                                <span className="text-[10px] font-bold text-content-3">{groupBranches.length}</span>
                                             </div>
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max">

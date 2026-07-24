@@ -44,13 +44,13 @@ const TYPE_ICONS = {
 
 // circle = card colored avatar; section = section label color
 const TYPE_COLORS = {
-    VACATION:     { circle: 'bg-emerald-500',  ring: 'ring-emerald-200', section: 'text-emerald-700', border: 'border-emerald-200/60', hover: 'hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]',  sectionIcon: 'text-emerald-600 bg-emerald-50 border-emerald-200/50'  },
+    VACATION:     { circle: 'bg-emerald-500',  ring: 'ring-emerald-200', section: 'text-emerald-700', border: 'border-success/60', hover: 'hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]',  sectionIcon: 'text-success bg-success/10 border-success/50'  },
     PERMIT:       { circle: 'bg-blue-500',     ring: 'ring-blue-200',    section: 'text-blue-700',    border: 'border-blue-200/50',    hover: 'hover:shadow-[0_8px_28px_rgba(59,130,246,0.12)]',   sectionIcon: 'text-blue-600 bg-blue-50 border-blue-200/50'           },
     SHIFT_CHANGE: { circle: 'bg-cyan-500',     ring: 'ring-cyan-200',    section: 'text-cyan-700',    border: 'border-cyan-200/50',    hover: 'hover:shadow-[0_8px_28px_rgba(6,182,212,0.12)]',    sectionIcon: 'text-cyan-600 bg-cyan-50 border-cyan-200/50'           },
-    OVERTIME:     { circle: 'bg-amber-500',    ring: 'ring-amber-200',   section: 'text-amber-700',   border: 'border-amber-200/50',   hover: 'hover:shadow-[0_8px_28px_rgba(245,158,11,0.12)]',   sectionIcon: 'text-amber-600 bg-amber-50 border-amber-200/50'        },
+    OVERTIME:     { circle: 'bg-amber-500',    ring: 'ring-amber-200',   section: 'text-amber-700',   border: 'border-warning/50',   hover: 'hover:shadow-[0_8px_28px_rgba(245,158,11,0.12)]',   sectionIcon: 'text-warning bg-warning/10 border-warning/50'        },
     ADVANCE:      { circle: 'bg-violet-500',   ring: 'ring-violet-200',  section: 'text-violet-700',  border: 'border-violet-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(139,92,246,0.12)]',   sectionIcon: 'text-violet-600 bg-violet-50 border-violet-200/50'     },
     CERTIFICATE:  { circle: 'bg-indigo-500',   ring: 'ring-indigo-200',  section: 'text-indigo-700',  border: 'border-indigo-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(99,102,241,0.12)]',   sectionIcon: 'text-indigo-600 bg-indigo-50 border-indigo-200/50'     },
-    DISABILITY:             { circle: 'bg-red-500',      ring: 'ring-red-200',      section: 'text-red-700',      border: 'border-red-200/60',      hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',     sectionIcon: 'text-red-600 bg-red-50 border-red-200/50'              },
+    DISABILITY:             { circle: 'bg-red-500',      ring: 'ring-red-200',      section: 'text-red-700',      border: 'border-danger/60',      hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',     sectionIcon: 'text-danger bg-danger/10 border-danger/50'              },
     ANNULMENT_REQUEST:      { circle: 'bg-rose-500',     ring: 'ring-rose-200',     section: 'text-rose-700',     border: 'border-rose-200/60',     hover: 'hover:shadow-[0_8px_28px_rgba(244,63,94,0.14)]',     sectionIcon: 'text-rose-600 bg-rose-50 border-rose-200/50'           },
     PAYMENT_CHANGE_REQUEST: { circle: 'bg-sky-500',      ring: 'ring-sky-200',      section: 'text-sky-700',      border: 'border-sky-200/50',      hover: 'hover:shadow-[0_8px_28px_rgba(14,165,233,0.12)]',    sectionIcon: 'text-sky-600 bg-sky-50 border-sky-200/50'              },
     VENDOR_CHANGE_REQUEST:  { circle: 'bg-purple-500',   ring: 'ring-purple-200',   section: 'text-purple-700',   border: 'border-purple-200/50',   hover: 'hover:shadow-[0_8px_28px_rgba(168,85,247,0.12)]',    sectionIcon: 'text-purple-600 bg-purple-50 border-purple-200/50'     },
@@ -64,32 +64,32 @@ const fmtDateFull = (iso) => !iso ? '—' : new Date(iso).toLocaleDateString('es
 const CompactSummary = ({ req }) => {
     const meta = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
     if (req.type === 'VACATION' && meta.startDate)
-        return <span className="text-[10px] text-slate-500">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}</span>;
+        return <span className="text-[10px] text-content-3">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}</span>;
     if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeName)
-        return <span className="text-[10px] text-slate-500">↔ {meta.targetEmployeeName.split(' ')[0]}{meta.date ? ` · ${fmtDate(meta.date)}` : ''}</span>;
+        return <span className="text-[10px] text-content-3">↔ {meta.targetEmployeeName.split(' ')[0]}{meta.date ? ` · ${fmtDate(meta.date)}` : ''}</span>;
     if (req.type === 'DISABILITY' && meta.startDate) {
         const days = meta.days || (meta.endDate ? Math.max(1, Math.round((new Date(meta.endDate+'T00:00:00') - new Date(meta.startDate+'T00:00:00')) / 86400000) + 1) : null);
-        return <span className="text-[10px] text-slate-500">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}{days ? ` · ${days}d` : ''}</span>;
+        return <span className="text-[10px] text-content-3">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}{days ? ` · ${days}d` : ''}</span>;
     }
     if (req.type === 'PERMIT') {
         const dates = meta.permissionDates || [];
-        if (dates.length) return <span className="text-[10px] text-slate-500">{dates.length === 1 ? fmtDate(dates[0]) : `${dates.length} días`}</span>;
+        if (dates.length) return <span className="text-[10px] text-content-3">{dates.length === 1 ? fmtDate(dates[0]) : `${dates.length} días`}</span>;
     }
     if (req.type === 'ADVANCE' && meta.amount)
-        return <span className="text-[10px] text-slate-500">${Number(meta.amount).toLocaleString('es-SV')}</span>;
+        return <span className="text-[10px] text-content-3">${Number(meta.amount).toLocaleString('es-SV')}</span>;
     if (req.type === 'CERTIFICATE' && meta.certificateType) {
         const labels = { LABORAL: 'Laboral', SALARIO: 'Salario', BANCARIA: 'Bancaria' };
-        return <span className="text-[10px] text-slate-500">{labels[meta.certificateType] || meta.certificateType}</span>;
+        return <span className="text-[10px] text-content-3">{labels[meta.certificateType] || meta.certificateType}</span>;
     }
     if (req.type === 'ANNULMENT_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-slate-500">{meta.correlativo}{meta.reason ? ` · ${meta.reason}` : ''}</span>;
+        return <span className="text-[10px] text-content-3">{meta.correlativo}{meta.reason ? ` · ${meta.reason}` : ''}</span>;
     if (req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-slate-500">{meta.correlativo} · {meta.current_pago} → {meta.new_pago}</span>;
+        return <span className="text-[10px] text-content-3">{meta.correlativo} · {meta.current_pago} → {meta.new_pago}</span>;
     if (req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-slate-500">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
+        return <span className="text-[10px] text-content-3">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
     if (req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-slate-500">{meta.correlativo} · {(meta.current_cliente || 'Sin nombre').split(' ')[0]} → {(meta.new_client_name || '').split(' ')[0]}</span>;
-    if (req.note) return <span className="text-[10px] text-slate-500 italic truncate max-w-[160px]">"{req.note}"</span>;
+        return <span className="text-[10px] text-content-3">{meta.correlativo} · {(meta.current_cliente || 'Sin nombre').split(' ')[0]} → {(meta.new_client_name || '').split(' ')[0]}</span>;
+    if (req.note) return <span className="text-[10px] text-content-3 italic truncate max-w-[160px]">"{req.note}"</span>;
     return null;
 };
 
@@ -97,9 +97,9 @@ const CompactSummary = ({ req }) => {
 const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employeesById }) => {
     const [expanded, setExpanded] = useState(false);
 
-    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-slate-100 text-slate-500', border: 'border-slate-200', dot: 'bg-slate-400' };
+    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-slate-200', dot: 'bg-content-3' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
-    const tc        = TYPE_COLORS[req.type] || { circle: 'bg-slate-400', ring: 'ring-slate-200', border: 'border-white/80', hover: '', sectionIcon: '' };
+    const tc        = TYPE_COLORS[req.type] || { circle: 'bg-content-3', ring: 'ring-slate-200', border: 'border-border-card', hover: '', sectionIcon: '' };
     const meta      = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
     const isRejected = req.status === 'REJECTED';
     const isUrgent   = req.type === 'DISABILITY' && req.status === 'PENDING';
@@ -110,8 +110,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
     };
 
     return (
-        <div className={`rounded-[2rem] border bg-white/60 backdrop-blur-2xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
-            ${isUrgent ? 'border-red-300' : isRejected ? 'border-red-200/60' : `${tc.border}`}`}>
+        <div className={`rounded-[2rem] border bg-surface-card backdrop-blur-2xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
+            ${isUrgent ? 'border-red-300' : isRejected ? 'border-danger/60' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}
             <button onClick={() => setExpanded(v => !v)}
@@ -125,7 +125,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                         {req.employee && (
-                            <span className="text-[13px] font-semibold text-slate-800 truncate leading-tight max-w-[160px]">
+                            <span className="text-[13px] font-semibold text-content truncate leading-tight max-w-[160px]">
                                 {req.employee.name}
                             </span>
                         )}
@@ -133,24 +133,24 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
                             {statConf.label}
                         </span>
-                        {isUrgent && <span className="text-[9px] font-black text-red-500 animate-pulse shrink-0">URGENTE</span>}
+                        {isUrgent && <span className="text-[9px] font-black text-danger animate-pulse shrink-0">URGENTE</span>}
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <CompactSummary req={req} />
-                        <span className="text-[9px] text-slate-500 shrink-0">{fmtDateFull(req.created_at)}</span>
+                        <span className="text-[9px] text-content-3 shrink-0">{fmtDateFull(req.created_at)}</span>
                         {req.current_level && req.status === 'PENDING' && req.type !== 'DISABILITY' && (
-                            <span className="text-[9px] text-slate-500 shrink-0">· Niv. {req.current_level}/{req.type === 'SHIFT_CHANGE' ? 2 : 3}</span>
+                            <span className="text-[9px] text-content-3 shrink-0">· Niv. {req.current_level}/{req.type === 'SHIFT_CHANGE' ? 2 : 3}</span>
                         )}
                     </div>
                 </div>
 
                 <ChevronDown size={14} strokeWidth={2.5}
-                    className={`text-slate-500 flex-shrink-0 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
+                    className={`text-content-3 flex-shrink-0 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Expandable body */}
             <div className={`overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${expanded ? 'max-h-[900px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="px-4 pb-4 pt-3 border-t border-white/60 space-y-2.5">
+                <div className="px-4 pb-4 pt-3 border-t border-border-card space-y-2.5">
 
                     {/* SHIFT_CHANGE */}
                     {req.type === 'SHIFT_CHANGE' && (
@@ -166,13 +166,13 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             )}
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2">
-                                    <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
-                                        <p className="text-[11px] font-black text-slate-700">{meta.myShift || '—'}</p>
+                                    <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
+                                        <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
+                                        <p className="text-[11px] font-black text-content-2">{meta.myShift || '—'}</p>
                                     </div>
                                     <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-2.5">
                                         <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
-                                        <p className="text-[11px] font-black text-slate-700">{meta.targetShift || '—'}</p>
+                                        <p className="text-[11px] font-black text-content-2">{meta.targetShift || '—'}</p>
                                     </div>
                                 </div>
                             )}
@@ -183,26 +183,26 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {req.type === 'DISABILITY' && (
                         <div className="space-y-2">
                             {meta.startDate && (
-                                <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-red-50/80 border border-red-200/70">
-                                    <Stethoscope size={13} className="text-red-500 flex-shrink-0" strokeWidth={2} />
+                                <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/80 border border-danger/70">
+                                    <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-0.5">Período</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-danger mb-0.5">Período</p>
                                         <p className="text-[13px] font-bold text-red-700">
                                             {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
-                                            {meta.days && <span className="text-red-400 font-medium ml-1.5">· {meta.days}d</span>}
+                                            {meta.days && <span className="text-danger font-medium ml-1.5">· {meta.days}d</span>}
                                         </p>
-                                        {Number(meta.days) > 3 && <p className="text-[10px] text-amber-600 font-black mt-0.5">Requiere boleta ISSS</p>}
+                                        {Number(meta.days) > 3 && <p className="text-[10px] text-warning font-black mt-0.5">Requiere boleta ISSS</p>}
                                     </div>
                                 </div>
                             )}
                             {meta.docUrl ? (
                                 <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/70 border border-white/80 text-[11px] font-bold text-slate-600 hover:text-[#0052CC] transition-all">
+                                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card border border-border-card text-[11px] font-bold text-content-2 hover:text-brand transition-all">
                                     <FileImage size={12} strokeWidth={2} />{meta.docName || 'Ver certificado adjunto'}
                                 </a>
                             ) : (
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-amber-50/70 border border-amber-200/60">
-                                    <AlertTriangle size={11} className="text-amber-500 flex-shrink-0" strokeWidth={2} />
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-warning/70 border border-warning/60">
+                                    <AlertTriangle size={11} className="text-warning flex-shrink-0" strokeWidth={2} />
                                     <p className="text-[10px] text-amber-700 font-medium">Sin certificado adjunto.</p>
                                 </div>
                             )}
@@ -211,10 +211,10 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* VACATION */}
                     {req.type === 'VACATION' && meta.startDate && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-50/60 border border-emerald-200/50">
-                            <CalendarDays size={13} className="text-emerald-500 flex-shrink-0" strokeWidth={2} />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-success/60 border border-success/50">
+                            <CalendarDays size={13} className="text-success flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Período</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-success mb-0.5">Período</p>
                                 <p className="text-[12px] font-bold text-emerald-700">
                                     {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
                                 </p>
@@ -271,13 +271,13 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     {meta.fecha && <p className="text-[10px] text-rose-500">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
                                 </div>
                                 {meta.tipo_documento && (
-                                    <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>{meta.tipo_documento}</span>
+                                    <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-danger/10 text-red-700 border border-danger/30' : 'bg-surface-card-hover text-content-2 border border-slate-200'}`}>{meta.tipo_documento}</span>
                                 )}
                             </div>
                             {meta.reason && (
-                                <div className="px-3 py-2 rounded-2xl bg-white/70 border border-white/80">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Motivo de anulación</p>
-                                    <p className="text-[11px] font-bold text-slate-700">{meta.reason}</p>
+                                <div className="px-3 py-2 rounded-2xl bg-surface-card border border-border-card">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-0.5">Motivo de anulación</p>
+                                    <p className="text-[11px] font-bold text-content-2">{meta.reason}</p>
                                 </div>
                             )}
                         </div>
@@ -294,13 +294,13 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Actual</p>
-                                    <p className="text-[12px] font-black text-slate-700 capitalize">{meta.current_pago || '—'}</p>
+                                <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
+                                    <p className="text-[12px] font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
                                 </div>
                                 <div className="bg-sky-50/80 border border-sky-100 rounded-2xl p-2.5">
                                     <p className="text-[8px] font-black text-sky-500 uppercase tracking-widest mb-0.5">Cambiar a</p>
-                                    <p className="text-[12px] font-black text-slate-700 capitalize">{meta.new_pago || '—'}</p>
+                                    <p className="text-[12px] font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                                 </div>
                             </div>
                         </div>
@@ -317,21 +317,21 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Vendedor actual</p>
+                                <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Vendedor actual</p>
                                     {meta.current_vendor_photo && (
                                         <img src={meta.current_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
-                                    <p className="text-[11px] font-black text-slate-700">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
-                                    {meta.current_vendor_code && <p className="text-[9px] text-slate-500 font-mono">#{meta.current_vendor_code}</p>}
+                                    <p className="text-[11px] font-black text-content-2">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
+                                    {meta.current_vendor_code && <p className="text-[9px] text-content-3 font-mono">#{meta.current_vendor_code}</p>}
                                 </div>
                                 <div className="bg-purple-50/80 border border-purple-100 rounded-2xl p-2.5">
                                     <p className="text-[8px] font-black text-purple-500 uppercase tracking-widest mb-0.5">Asignar a</p>
                                     {meta.new_vendor_photo && (
                                         <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
-                                    <p className="text-[11px] font-black text-slate-700">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
-                                    {meta.new_vendor_code && <p className="text-[9px] text-slate-500 font-mono">#{meta.new_vendor_code}</p>}
+                                    <p className="text-[11px] font-black text-content-2">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
+                                    {meta.new_vendor_code && <p className="text-[9px] text-content-3 font-mono">#{meta.new_vendor_code}</p>}
                                 </div>
                             </div>
                         </div>
@@ -348,21 +348,21 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Cliente actual</p>
-                                    <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mb-1">
-                                        <span className="text-slate-500 font-black text-[10px] leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
+                                <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1">Cliente actual</p>
+                                    <div className="w-6 h-6 rounded-full bg-surface-card-hover flex items-center justify-center mb-1">
+                                        <span className="text-content-3 font-black text-[10px] leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
                                     </div>
-                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
+                                    <p className="text-[11px] font-black text-content-2 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
                                 </div>
                                 <div className="bg-teal-50/80 border border-teal-100 rounded-2xl p-2.5">
                                     <p className="text-[8px] font-black text-teal-500 uppercase tracking-widest mb-1">Cambiar a</p>
                                     <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center mb-1">
                                         <span className="text-teal-600 font-black text-[10px] leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
                                     </div>
-                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{meta.new_client_name}</p>
+                                    <p className="text-[11px] font-black text-content-2 leading-tight">{meta.new_client_name}</p>
                                     {(meta.new_client_nit || meta.new_client_dui) && (
-                                        <p className="text-[9px] text-slate-500 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
+                                        <p className="text-[9px] text-content-3 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
                                     )}
                                 </div>
                             </div>
@@ -372,23 +372,23 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* Note */}
                     {req.note && (
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Motivo del empleado</p>
-                            <p className="text-[12px] text-slate-700 bg-white/70 rounded-2xl p-3 border border-white/80 leading-relaxed">{req.note}</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo del empleado</p>
+                            <p className="text-[12px] text-content-2 bg-surface-card rounded-2xl p-3 border border-border-card leading-relaxed">{req.note}</p>
                         </div>
                     )}
 
                     {/* Rejection reason */}
                     {isRejected && req.approver_note && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-red-50/80 border border-red-200/70">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-red-400 mb-1">Motivo de rechazo</p>
+                        <div className="px-3 py-2.5 rounded-2xl bg-danger/80 border border-danger/70">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-danger mb-1">Motivo de rechazo</p>
                             <p className="text-[12px] text-red-800 font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
                     )}
 
                     {/* Approval note */}
                     {!isRejected && req.approver_note && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/60">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-1">Nota del aprobador</p>
+                        <div className="px-3 py-2.5 rounded-2xl bg-success/80 border border-success/60">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-success mb-1">Nota del aprobador</p>
                             <p className="text-[12px] text-emerald-800 font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
                     )}
@@ -396,14 +396,14 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* Approval history */}
                     {req.approvals && req.approvals.length > 0 && (
                         <div className="space-y-1.5">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Historial</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Historial</p>
                             {req.approvals.map((ap, i) => (
-                                <div key={i} className="flex items-start gap-2 bg-emerald-50/70 border border-emerald-200/50 rounded-2xl p-2.5">
-                                    <CheckCircle2 size={12} className="text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
+                                <div key={i} className="flex items-start gap-2 bg-success/70 border border-success/50 rounded-2xl p-2.5">
+                                    <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />
                                     <div className="min-w-0">
                                         <p className="text-[11px] font-black text-emerald-700">{getApproverLabel(ap)}</p>
-                                        <p className="text-[9px] text-slate-500 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
-                                        {ap.approverNote && <p className="text-[10px] text-slate-600 mt-0.5 italic">"{ap.approverNote}"</p>}
+                                        <p className="text-[9px] text-content-3 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                        {ap.approverNote && <p className="text-[10px] text-content-2 mt-0.5 italic">"{ap.approverNote}"</p>}
                                     </div>
                                 </div>
                             ))}
@@ -411,7 +411,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     )}
 
                     {req.employee?.code && (
-                        <p className="text-[10px] text-slate-500">Código: <span className="font-mono font-bold text-slate-600">{req.employee.code}</span></p>
+                        <p className="text-[10px] text-content-3">Código: <span className="font-mono font-bold text-content-2">{req.employee.code}</span></p>
                     )}
 
                     {req.status === 'PENDING' && (
@@ -594,14 +594,14 @@ const RequestsView = () => {
         <div className="flex items-center gap-2 md:gap-3">
             {canCreate && (
                 <button onClick={() => openCreateModal()}
-                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78 backdrop-blur-xl border border-white/22 hover:border-white/36 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-200 active:scale-[0.97] shrink-0">
+                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-brand/72 to-brand-hover/78 backdrop-blur-xl border border-border-card hover:border-border-card text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-200 active:scale-[0.97] shrink-0">
                     <span className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
                         <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
                     </span>
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Nueva Solicitud</span>
                 </button>
             )}
-        <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Pending dot — outside the overflow-hidden area via outline trick */}
             {pendingCount > 0 && !isSearchMode && (
@@ -616,13 +616,13 @@ const RequestsView = () => {
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
-                {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-slate-500 hover:text-red-500 transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+                {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
-                    className="w-11 h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
+                    className="w-11 h-11 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -634,20 +634,20 @@ const RequestsView = () => {
                     <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                             statusFilter === tab.key
-                                ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                                ? 'bg-white text-content border-white shadow-md scale-[1.02]'
+                                : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                         }`}>
                         {tab.label}
                         {tab.key === 'PENDING' && pendingCount > 0 && (
-                            <span className={`ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${statusFilter === 'PENDING' ? 'bg-slate-200 text-slate-700' : 'bg-red-100 text-red-600'}`}>
+                            <span className={`ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${statusFilter === 'PENDING' ? 'bg-surface-card-hover text-content-2' : 'bg-danger/10 text-danger'}`}>
                                 {pendingCount}
                             </span>
                         )}
                     </button>
                 ))}
-                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
                 <button onClick={() => setIsSearchMode(true)}
-                    className="w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
+                    className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>
@@ -667,11 +667,11 @@ const RequestsView = () => {
                                 <div className="flex items-center gap-2 mb-3">
                                     <div className="w-6 h-6 skeleton rounded-lg" />
                                     <div className="h-3 w-24 skeleton rounded-full" />
-                                    <div className="flex-1 h-px bg-slate-200/50 mx-1" />
+                                    <div className="flex-1 h-px bg-surface-card-hover/50 mx-1" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
-                                        <div key={i} className="rounded-[2rem] border border-black/[0.06] bg-white/60 p-4 flex items-center gap-3">
+                                        <div key={i} className="rounded-[2rem] border border-black/[0.06] bg-surface-card p-4 flex items-center gap-3">
                                             <div className="w-9 h-9 skeleton rounded-full shrink-0" />
                                             <div className="flex-1 space-y-2">
                                                 <div className="h-3 w-28 skeleton rounded-full" />
@@ -686,14 +686,14 @@ const RequestsView = () => {
                 ) : baseFiltered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                         <div className="relative group flex flex-col items-center text-center">
-                            <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-[#0052CC]' : statusFilter === 'APPROVED' ? 'bg-emerald-500' : statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-slate-400'}`} />
-                            <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${statusFilter === 'PENDING' ? 'text-[#0052CC]' : statusFilter === 'APPROVED' ? 'text-emerald-500' : statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-500'}`}>
+                            <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-emerald-500' : statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-content-3'}`} />
+                            <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${statusFilter === 'PENDING' ? 'text-brand' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
                                 {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
                             </div>
-                            <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
+                            <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">
                                 {statusFilter === 'PENDING' ? 'Todo al día' : 'Sin resultados'}
                             </h3>
-                            <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                            <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">
                                 {statusFilter === 'PENDING' ? 'No hay solicitudes pendientes de revisión.' : 'Sin solicitudes en esta categoría.'}
                             </p>
                         </div>
@@ -701,7 +701,7 @@ const RequestsView = () => {
                 ) : (
                     <>
                     {isReqSearchFuzzy && rawSearch.trim() && (
-                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{rawSearch.trim()}&rdquo; — no se encontraron coincidencias exactas
                         </div>
@@ -709,7 +709,7 @@ const RequestsView = () => {
                     {groupedByType.map(([type, cards]) => {
                         const TypeIcon  = TYPE_ICONS[type] || FileText;
                         const typeConf  = REQUEST_TYPES[type] || { label: type };
-                        const tc        = TYPE_COLORS[type] || { sectionIcon: 'text-slate-600 bg-slate-50 border-slate-200', section: 'text-slate-700' };
+                        const tc        = TYPE_COLORS[type] || { sectionIcon: 'text-content-2 bg-surface-card-hover border-slate-200', section: 'text-content-2' };
                         const isCollapsed = collapsedSections.has(type);
 
                         return (
@@ -719,10 +719,10 @@ const RequestsView = () => {
                                         <TypeIcon size={12} strokeWidth={2} />
                                     </div>
                                     <h3 className={`text-[11px] font-black uppercase tracking-widest ${tc.section}`}>{typeConf.label}</h3>
-                                    <span className="text-[10px] font-bold text-slate-500">{cards.length}</span>
-                                    <div className="flex-1 h-px bg-slate-200/50 mx-1" />
+                                    <span className="text-[10px] font-bold text-content-3">{cards.length}</span>
+                                    <div className="flex-1 h-px bg-surface-card-hover/50 mx-1" />
                                     <ChevronDown size={13} strokeWidth={2.5}
-                                        className={`text-slate-500 transition-transform duration-300 flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                        className={`text-content-3 transition-transform duration-300 flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
                                 </button>
 
                                 <div className={`transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[9999px] opacity-100 overflow-visible'}`}>
@@ -747,27 +747,27 @@ const RequestsView = () => {
             {actionModal && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
-                    <div className="relative bg-white/80 backdrop-blur-2xl border border-white/80 rounded-[2.5rem] shadow-[0_32px_80px_rgba(0,0,0,0.15)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-                        <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-emerald-50 border-emerald-200/60 shadow-[0_6px_20px_rgba(16,185,129,0.15)]' : 'bg-red-50 border-red-200/60 shadow-[0_6px_20px_rgba(239,68,68,0.15)]'}`}>
-                            {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-emerald-600" strokeWidth={2} /> : <XCircle size={26} className="text-red-600" strokeWidth={2} />}
+                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2.5rem] shadow-[0_32px_80px_rgba(0,0,0,0.15)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+                        <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/60 shadow-[0_6px_20px_rgba(16,185,129,0.15)]' : 'bg-danger/10 border-danger/60 shadow-[0_6px_20px_rgba(239,68,68,0.15)]'}`}>
+                            {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
                         </div>
-                        <h3 className="text-[18px] font-bold text-slate-800 text-center mb-1">
+                        <h3 className="text-[18px] font-bold text-content text-center mb-1">
                             {actionModal.mode === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}
                         </h3>
-                        <p className="text-[12px] text-slate-500 text-center mb-5">
+                        <p className="text-[12px] text-content-3 text-center mb-5">
                             {REQUEST_TYPES[actionModal.req.type]?.label} · {actionModal.req.employee?.name}
                         </p>
-                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5 block">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-content-2 mb-1.5 block">
                             {actionModal.mode === 'reject' ? 'Motivo de rechazo' : 'Nota para el empleado'}
-                            {actionModal.mode === 'reject' && <span className="text-red-400 ml-1">*</span>}
+                            {actionModal.mode === 'reject' && <span className="text-danger ml-1">*</span>}
                         </label>
                         <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
                             disabled={isActioning}
-                            className="w-full px-4 py-3 rounded-[1.5rem] border border-white/80 bg-white/60 backdrop-blur-md text-[16px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC]/40 resize-none transition-all disabled:opacity-50" />
+                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
                             <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
-                                className="flex-1 py-3 rounded-2xl border border-white/80 bg-white/60 text-slate-500 text-[13px] font-medium hover:bg-white/80 transition-all disabled:opacity-50">
+                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-[13px] font-medium hover:bg-surface-card transition-all disabled:opacity-50">
                                 Cancelar
                             </button>
                             <button onClick={handleConfirmAction}
@@ -789,19 +789,19 @@ const RequestsView = () => {
             {createModalOpen && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isCreatingReq && setCreateModalOpen(false)} />
-                    <div className="relative bg-white/80 backdrop-blur-2xl border border-white/80 rounded-[2.5rem] shadow-[0_32px_80px_rgba(0,0,0,0.15)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2.5rem] shadow-[0_32px_80px_rgba(0,0,0,0.15)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center gap-3 mb-1">
-                            <div className="w-11 h-11 rounded-2xl bg-[#0052CC]/10 border border-[#0052CC]/20 flex items-center justify-center shrink-0">
-                                <ClipboardList size={20} className="text-[#0052CC]" strokeWidth={2} />
+                            <div className="w-11 h-11 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
+                                <ClipboardList size={20} className="text-brand" strokeWidth={2} />
                             </div>
                             <div>
-                                <h3 className="text-[16px] font-bold text-slate-800">Nueva Solicitud</h3>
-                                <p className="text-[11px] text-slate-500">A nombre de un empleado</p>
+                                <h3 className="text-[16px] font-bold text-content">Nueva Solicitud</h3>
+                                <p className="text-[11px] text-content-3">A nombre de un empleado</p>
                             </div>
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Empleado <span className="text-red-400">*</span></p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1.5">Empleado <span className="text-danger">*</span></p>
                             <LiquidSelect
                                 value={createEmployeeId}
                                 onChange={setCreateEmployeeId}
@@ -814,7 +814,7 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Tipo</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Tipo</p>
                             <div className="flex flex-wrap gap-2">
                                 {CREATABLE_TYPES.map(({ key, icon: Icon }) => {
                                     const conf = REQUEST_TYPES[key];
@@ -826,7 +826,7 @@ const RequestsView = () => {
                                             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
                                                 createType === key
                                                     ? `${conf.color} ${conf.border} shadow-sm`
-                                                    : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'
+                                                    : 'border-slate-200 text-content-3 hover:border-slate-300 bg-white'
                                             }`}
                                         >
                                             <Icon size={13} strokeWidth={2} />
@@ -838,7 +838,7 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1.5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1.5">
                                 {createType === 'VACATION' ? 'Período de Vacaciones' :
                                  createType === 'PERMIT'   ? 'Días de Permiso' :
                                  'Fecha'}
@@ -863,25 +863,25 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Motivo / Descripción <span className="text-red-400">*</span></p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo / Descripción <span className="text-danger">*</span></p>
                             <textarea
                                 value={createNote}
                                 onChange={e => setCreateNote(e.target.value)}
                                 rows={3}
                                 placeholder="Describe la solicitud..."
                                 disabled={isCreatingReq}
-                                className="w-full px-4 py-3 rounded-[1.5rem] border border-white/80 bg-white/60 backdrop-blur-md text-[16px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC]/40 resize-none transition-all disabled:opacity-50"
+                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
                             />
                         </div>
 
                         <div className="flex items-center gap-2 pt-1">
                             <button onClick={() => !isCreatingReq && setCreateModalOpen(false)} disabled={isCreatingReq}
-                                className="flex-1 py-3 rounded-2xl border border-white/80 bg-white/60 text-slate-500 text-[13px] font-medium hover:bg-white/80 transition-all disabled:opacity-50">
+                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-[13px] font-medium hover:bg-surface-card transition-all disabled:opacity-50">
                                 Cancelar
                             </button>
                             <button onClick={handleCreateRequest}
                                 disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-[#0052CC] hover:bg-[#003D99] shadow-[0_4px_16px_rgba(0,82,204,0.3)]">
+                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-brand hover:bg-brand-hover shadow-[0_4px_16px_rgba(0,82,204,0.3)]">
                                 {isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}
                             </button>
                         </div>

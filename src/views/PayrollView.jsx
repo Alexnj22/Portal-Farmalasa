@@ -27,8 +27,8 @@ const roleOrder = (emp) => {
 };
 
 const STATUS_META = {
-    DRAFT:    { label: 'Borrador',  color: 'bg-slate-100 text-slate-600 border-slate-200' },
-    APPROVED: { label: 'Aprobada', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    DRAFT:    { label: 'Borrador',  color: 'bg-surface-card-hover text-content-2 border-slate-200' },
+    APPROVED: { label: 'Aprobada', color: 'bg-success/10 text-emerald-700 border-success/30' },
     PAID:     { label: 'Pagada',   color: 'bg-blue-50 text-blue-700 border-blue-200' },
 };
 
@@ -278,18 +278,18 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                 const branchName = branch?.name || 'Otras áreas';
                 return (
                     <div key={branch?.id || '__none__'}
-                        className="backdrop-blur-[30px] rounded-[2.5rem] bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
+                        className="backdrop-blur-[30px] rounded-[2.5rem] bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
                         style={{ animationDelay: `${gi * 80}ms` }}>
 
                         {/* Branch header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/60 bg-white/20 flex-wrap gap-3">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-border-card bg-surface-card flex-wrap gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.3)]">
+                                <div className="w-8 h-8 bg-gradient-to-tr from-brand to-[#6929C4] rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.3)]">
                                     <Building2 size={14} className="text-white" strokeWidth={2} />
                                 </div>
                                 <div>
-                                    <p className="text-[13px] font-black text-slate-800 tracking-tight">{branchName}</p>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">{grp.length} empleado{grp.length !== 1 ? 's' : ''}</p>
+                                    <p className="text-[13px] font-black text-content tracking-tight">{branchName}</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2">{grp.length} empleado{grp.length !== 1 ? 's' : ''}</p>
                                 </div>
                             </div>
 
@@ -297,22 +297,22 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 {/* Print all boletas for this branch */}
                                 <button
                                     onClick={() => printBoletasBatch(grp, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm"
                                     title="Imprimir todas las boletas de esta sucursal">
                                     <Printer size={11} strokeWidth={2.5} /> Boletas
                                 </button>
                                 {/* Print branch planilla */}
                                 <button
                                     onClick={() => printBranchPlanilla(grp, branch, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm"
                                     title="Imprimir planilla de esta sucursal">
                                     <Printer size={11} strokeWidth={2.5} /> Planilla
                                 </button>
 
-                                <div className="w-px h-5 bg-white/50 mx-1" />
+                                <div className="w-px h-5 bg-surface-card mx-1" />
 
                                 <div className="text-right">
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-slate-600">Total a pagar</p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-content-2">Total a pagar</p>
                                     <p className="text-[15px] font-black text-emerald-700">{fmt(branchNet)}</p>
                                 </div>
                             </div>
@@ -324,34 +324,34 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 const emp    = e.employee || {};
                                 const edited = e.status === 'EDITED';
                                 return (
-                                    <DataRow key={e.id} index={ei} className={edited ? 'bg-amber-50/20' : ''}>
+                                    <DataRow key={e.id} index={ei} className={edited ? 'bg-warning/20' : ''}>
                                         <DataCell className="whitespace-nowrap">
                                             <div className="flex items-center gap-3">
                                                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-8 h-8 rounded-xl shrink-0" />
                                                 <div>
-                                                    <p className="font-black text-slate-800 text-[11px] leading-tight">{emp.name || '—'}</p>
-                                                    {emp.role && <p className="text-[9px] text-slate-500 font-medium leading-tight">{emp.role}</p>}
-                                                    {edited && <span className="text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">editado</span>}
+                                                    <p className="font-black text-content text-[11px] leading-tight">{emp.name || '—'}</p>
+                                                    {emp.role && <p className="text-[9px] text-content-3 font-medium leading-tight">{emp.role}</p>}
+                                                    {edited && <span className="text-[8px] font-black text-warning bg-warning/10 px-1.5 py-0.5 rounded-full border border-warning/30 inline-block mt-0.5">editado</span>}
                                                 </div>
                                             </div>
                                         </DataCell>
                                         <DataCell align="right" className="font-bold">{round2(e.days_worked)}</DataCell>
                                         <DataCell align="right" className="font-bold">{fmt(e.ordinary_salary)}</DataCell>
                                         <DataCell align="right" className="font-bold text-blue-600">{fmt(e.subtotal_b)}</DataCell>
-                                        <DataCell align="right" className="text-slate-500">{fmt(e.isss_deduction)}</DataCell>
-                                        <DataCell align="right" className="text-slate-500">{fmt(e.afp_deduction)}</DataCell>
-                                        <DataCell align="right" className="text-slate-500">{fmt(e.renta_deduction)}</DataCell>
-                                        <DataCell align="right" className="font-bold text-red-600">{fmt(e.total_deductions)}</DataCell>
+                                        <DataCell align="right" className="text-content-3">{fmt(e.isss_deduction)}</DataCell>
+                                        <DataCell align="right" className="text-content-3">{fmt(e.afp_deduction)}</DataCell>
+                                        <DataCell align="right" className="text-content-3">{fmt(e.renta_deduction)}</DataCell>
+                                        <DataCell align="right" className="font-bold text-danger">{fmt(e.total_deductions)}</DataCell>
                                         <DataCell align="right" className="font-black text-emerald-700 whitespace-nowrap">{fmt(e.net_pay)}</DataCell>
                                         <DataCell>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => onPrint(e)} title="Imprimir boleta individual"
-                                                    className="p-1.5 rounded-lg hover:bg-white/80 text-slate-500 hover:text-slate-700 transition-colors">
+                                                    className="p-1.5 rounded-lg hover:bg-surface-card text-content-3 hover:text-content-2 transition-colors">
                                                     <Printer size={12} strokeWidth={2.5} />
                                                 </button>
                                                 {!isPaid && (
                                                     <button onClick={() => onEdit(e)} title="Editar"
-                                                        className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-500 hover:text-amber-600 transition-colors">
+                                                        className="p-1.5 rounded-lg hover:bg-warning/10 text-content-3 hover:text-warning transition-colors">
                                                         <Edit2 size={12} strokeWidth={2.5} />
                                                     </button>
                                                 )}
@@ -485,18 +485,18 @@ const PayrollView = ({ openModal }) => {
     const isDraft    = !activePeriod?.status || activePeriod?.status === 'DRAFT';
 
     const filtersContent = (
-        <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
             {/* Search mode */}
             <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[700px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                <div className="flex items-center bg-white/60 backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[240px] border border-white/80 shadow-sm">
-                    <Search size={14} className="text-slate-400 shrink-0" strokeWidth={2.5} />
+                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[240px] border border-border-card shadow-sm">
+                    <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                     <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[16px] font-semibold text-slate-700 placeholder-slate-400 w-full" />
-                    {searchTerm && <button onClick={() => setSearchTerm('')} className="text-slate-500 hover:text-slate-600 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
+                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-slate-400 w-full" />
+                    {searchTerm && <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
                 </div>
                 <button onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-11 rounded-full bg-white/60 backdrop-blur-md text-slate-500 hover:text-slate-800 hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-white/60 hover:shadow-sm active:scale-[0.97]">
+                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
                     Cancelar
                 </button>
             </div>
@@ -505,13 +505,13 @@ const PayrollView = ({ openModal }) => {
                 {getScope('payroll') !== 'BRANCH' && <><div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val||'')} options={branchOptions} placeholder="Todas las sucursales" compact clearable={false} icon={Building2} bare />
                 </div>
-                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" /></>}
+                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" /></>}
                 <div className="w-[160px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val||'ALL')} options={statusOptions} compact clearable={false} icon={ListFilter} bare />
                 </div>
-                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
+                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
                 </button>
@@ -536,16 +536,16 @@ const PayrollView = ({ openModal }) => {
 
                     {/* ── Sidebar: Períodos ── */}
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
-                        <div className="backdrop-blur-[30px] rounded-[2.5rem] p-5 bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                        <div className="backdrop-blur-[30px] rounded-[2.5rem] p-5 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex items-center justify-between mb-4">
-                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Períodos</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
                                 <button onClick={() => openModal?.('newPayrollPeriod')}
-                                    className="w-8 h-8 bg-[#0052CC] text-white rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
+                                    className="w-8 h-8 bg-brand text-white rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
                                     <Plus size={14} strokeWidth={2.5} />
                                 </button>
                             </div>
                             {filteredPeriods.length === 0 ? (
-                                <p className="text-center py-10 text-slate-500 text-[11px] font-medium">Sin períodos aún</p>
+                                <p className="text-center py-10 text-content-3 text-[11px] font-medium">Sin períodos aún</p>
                             ) : (
                                 <div className="space-y-2">
                                     {filteredPeriods.map((p, i) => {
@@ -555,9 +555,9 @@ const PayrollView = ({ openModal }) => {
                                             <button key={p.id} onClick={() => setActivePeriod(p)}
                                                 className="w-full text-left p-3.5 rounded-2xl border transition-all duration-300 animate-in fade-in"
                                                 style={{ animationDelay: `${i*40}ms`, background: active?'rgba(0,82,204,0.08)':'rgba(255,255,255,0.5)', borderColor: active?'rgba(0,82,204,0.25)':'rgba(255,255,255,0.7)', boxShadow: active?'0 4px 16px rgba(0,82,204,0.12)':'none' }}>
-                                                <p className={`text-[11px] font-black leading-tight ${active?'text-[#0052CC]':'text-slate-800'}`}>{p.name}</p>
+                                                <p className={`text-[11px] font-black leading-tight ${active?'text-brand':'text-content'}`}>{p.name}</p>
                                                 <div className="flex items-center justify-between mt-1.5">
-                                                    <p className="text-[9px] text-slate-500">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
+                                                    <p className="text-[9px] text-content-3">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
                                                     <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
                                                 </div>
                                             </button>
@@ -571,21 +571,21 @@ const PayrollView = ({ openModal }) => {
                     {/* ── Main content ── */}
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
                         {!activePeriod ? (
-                            <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-                                <div className="w-16 h-16 bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,82,204,0.3)] mb-4">
+                            <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                                <div className="w-16 h-16 bg-gradient-to-tr from-brand to-[#6929C4] rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,82,204,0.3)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
-                                <p className="text-[15px] font-black text-slate-700 uppercase tracking-tight">Selecciona un período</p>
-                                <p className="text-[12px] text-slate-500 mt-1">O crea una nueva quincena con el botón +</p>
+                                <p className="text-[15px] font-black text-content-2 uppercase tracking-tight">Selecciona un período</p>
+                                <p className="text-[12px] text-content-3 mt-1">O crea una nueva quincena con el botón +</p>
                             </div>
                         ) : (
                             <>
                                 {/* Period summary card */}
-                                <div className="backdrop-blur-[30px] rounded-[2.5rem] p-6 bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="backdrop-blur-[30px] rounded-[2.5rem] p-6 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
-                                            <h2 className="text-[16px] font-black text-slate-800 tracking-tight">{activePeriod.name}</h2>
-                                            <p className="text-[10px] text-slate-500 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
+                                            <h2 className="text-[16px] font-black text-content tracking-tight">{activePeriod.name}</h2>
+                                            <p className="text-[10px] text-content-3 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className={`text-[9px] font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).color}`}>
@@ -593,7 +593,7 @@ const PayrollView = ({ openModal }) => {
                                             </span>
                                             {(isDraft||isApproved) && (
                                                 <button onClick={handleGenerate} disabled={generating}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all disabled:opacity-50 shadow-sm">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all disabled:opacity-50 shadow-sm">
                                                     <RotateCcw size={12} strokeWidth={2.5} className={generating?'animate-spin':''} />
                                                     {generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}
                                                 </button>
@@ -602,16 +602,16 @@ const PayrollView = ({ openModal }) => {
                                                 <>
                                                     {/* Print ALL boletas in batch */}
                                                     <button onClick={() => printBoletasBatch(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm">
                                                         <Printer size={12} strokeWidth={2.5} /> Todas las Boletas
                                                     </button>
                                                     {/* Global planilla */}
                                                     <button onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm">
                                                         <Printer size={12} strokeWidth={2.5} /> Planilla Global
                                                     </button>
                                                     <button onClick={downloadCSV}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm">
                                                         <Download size={12} strokeWidth={2.5} /> CSV Banco
                                                     </button>
                                                 </>
@@ -624,7 +624,7 @@ const PayrollView = ({ openModal }) => {
                                             )}
                                             {isApproved && (
                                                 <button onClick={() => setConfirming({ action:'PAID', label:'marcar como pagada' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0052CC] hover:bg-[#003D99] text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(0,82,204,0.35)]">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(0,82,204,0.35)]">
                                                     <Banknote size={12} strokeWidth={2.5} /> Marcar Pagada
                                                 </button>
                                             )}
@@ -632,15 +632,15 @@ const PayrollView = ({ openModal }) => {
                                     </div>
 
                                     {payrollEntries.length > 0 && (
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-white/60">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-border-card">
                                             {[
-                                                { label:'Sal. Ordinario', value:totals.grossA,  color:'text-slate-800' },
+                                                { label:'Sal. Ordinario', value:totals.grossA,  color:'text-content' },
                                                 { label:'Extras / Otros', value:totals.extrasB, color:'text-blue-700'  },
-                                                { label:'Deducciones',    value:totals.deducts,  color:'text-red-600'  },
+                                                { label:'Deducciones',    value:totals.deducts,  color:'text-danger'  },
                                                 { label:'Total a Pagar',  value:totals.net,      color:'text-emerald-700' },
                                             ].map(t => (
-                                                <div key={t.label} className="text-center bg-white/40 rounded-2xl py-3 px-2 border border-white/60">
-                                                    <p className="text-[8px] text-slate-600 uppercase tracking-widest font-black">{t.label}</p>
+                                                <div key={t.label} className="text-center bg-surface-card rounded-2xl py-3 px-2 border border-border-card">
+                                                    <p className="text-[8px] text-content-2 uppercase tracking-widest font-black">{t.label}</p>
                                                     <p className={`text-[16px] font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
                                                 </div>
                                             ))}
@@ -649,12 +649,12 @@ const PayrollView = ({ openModal }) => {
 
                                     {/* Unapproved timesheets warning */}
                                     {unapprovedCount > 0 && (
-                                        <div className="mt-3 flex items-center gap-3 bg-amber-50/60 border border-amber-200/60 rounded-2xl px-4 py-2.5">
-                                            <AlertTriangle size={14} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
+                                        <div className="mt-3 flex items-center gap-3 bg-warning/60 border border-warning/60 rounded-2xl px-4 py-2.5">
+                                            <AlertTriangle size={14} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                             <p className="text-[11px] font-bold text-amber-700 flex-1">
                                                 {unapprovedCount} timesheet{unapprovedCount !== 1 ? 's' : ''} sin aprobar en este período
                                             </p>
-                                            <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">
+                                            <span className="text-[9px] font-black text-warning uppercase tracking-widest">
                                                 Revisa en Auditoría
                                             </span>
                                         </div>
@@ -663,8 +663,8 @@ const PayrollView = ({ openModal }) => {
 
                                 {/* Entries */}
                                 {isLoadingPayroll ? (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] bg-white/40 border border-white/80 overflow-hidden">
-                                        <div className="px-6 py-4 border-b border-white/60 bg-white/20 flex items-center gap-3">
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] bg-surface-card border border-border-card overflow-hidden">
+                                        <div className="px-6 py-4 border-b border-border-card bg-surface-card flex items-center gap-3">
                                             <div className="w-8 h-8 skeleton rounded-xl" />
                                             <div className="space-y-1.5">
                                                 <div className="h-3 w-28 skeleton rounded-full" />
@@ -699,13 +699,13 @@ const PayrollView = ({ openModal }) => {
                                         </table>
                                     </div>
                                 ) : filteredEntries.length === 0 ? (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-500 text-[12px] animate-in fade-in duration-500">
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card text-center text-content-3 text-[12px] animate-in fade-in duration-500">
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (
                                     <>
                                     {isPayrollSearchFuzzy && searchTerm && (
-                                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                                         </div>

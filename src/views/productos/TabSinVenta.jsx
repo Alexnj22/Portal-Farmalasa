@@ -25,11 +25,11 @@ const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const SUC_COLORS = {
     1: 'bg-blue-50 text-blue-700 border-blue-200',
     2: 'bg-violet-50 text-violet-700 border-violet-200',
-    3: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    4: 'bg-amber-50 text-amber-700 border-amber-200',
+    3: 'bg-success/10 text-emerald-700 border-success/30',
+    4: 'bg-warning/10 text-amber-700 border-warning/30',
     5: 'bg-rose-50 text-rose-700 border-rose-200',
     7: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-    6: 'bg-slate-50 text-slate-600 border-slate-200',
+    6: 'bg-surface-card-hover text-content-2 border-slate-200',
 };
 
 
@@ -40,10 +40,10 @@ const MODES = [
         sub:    'se venden pero sin parámetros',
         Icon:   AlertTriangle,
         rpc:    'get_products_sold_no_minmax',
-        activeBg:   'bg-amber-50 border-amber-300 shadow-amber-100/80 -translate-y-px',
-        inactiveBg: 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/30',
-        numColor:   'text-amber-600',
-        iconColor:  'text-amber-500',
+        activeBg:   'bg-warning/10 border-amber-300 shadow-amber-100/80 -translate-y-px',
+        inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/30',
+        numColor:   'text-warning',
+        iconColor:  'text-warning',
     },
     {
         key:    'stock_ret',
@@ -51,10 +51,10 @@ const MODES = [
         sub:    'stock físico sin venta 6m',
         Icon:   Archive,
         rpc:    'get_stagnant_inventory',
-        activeBg:   'bg-slate-100 border-slate-300 shadow-slate-100/80 -translate-y-px',
-        inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
-        numColor:   'text-slate-700',
-        iconColor:  'text-slate-500',
+        activeBg:   'bg-surface-card-hover border-slate-300 shadow-slate-100/80 -translate-y-px',
+        inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-surface-card-hover',
+        numColor:   'text-content-2',
+        iconColor:  'text-content-3',
     },
 ];
 
@@ -79,18 +79,18 @@ function getSuggestion(row) {
     if (row.fecha_vencimiento_min)
         daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - new Date()) / 86_400_000);
     if (daysToExpiry !== null && daysToExpiry < 0)
-        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, cls: 'bg-red-100 text-red-800 border-red-300' };
+        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, cls: 'bg-danger/10 text-red-800 border-red-300' };
     if (daysToExpiry !== null && daysToExpiry <= 30)
-        return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, cls: 'bg-red-50 text-red-700 border-red-200' };
+        return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, cls: 'bg-danger/10 text-red-700 border-danger/30' };
     const urgentExpiry = daysToExpiry !== null && daysToExpiry <= 90;
     if (soldIn.length === 0)
-        return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200' };
+        return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-surface-card-hover text-content-3 border-slate-200' };
     const best = soldIn[0], bestUnits = Number(best.units), bestName = ERP_NAMES[best.esid] || `Suc.${best.esid}`;
     if (bestUnits < 5)
-        return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200' };
+        return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-surface-card-hover text-content-3 border-slate-200' };
     if (bestUnits < 20)
-        return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200' };
-    return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+        return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-blue-50 text-blue-700 border-blue-200' };
+    return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-amber-700 border-warning/30' : 'bg-success/10 text-emerald-700 border-success/30' };
 }
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
@@ -160,20 +160,20 @@ function UltimaVentaCell({ row, allBranches }) {
     if (!fecha) {
         return (
             <div>
-                <span className="text-[10px] text-slate-500 italic">Nunca vendido</span>
+                <span className="text-[10px] text-content-3 italic">Nunca vendido</span>
             </div>
         );
     }
 
     const days  = Math.floor((now - new Date(fecha)) / 86_400_000);
-    const color = days > 365 ? 'text-red-500' : days > 180 ? 'text-orange-500' : 'text-slate-600';
+    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-orange-500' : 'text-content-2';
     const label = new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
 
     if (!allBranches) {
         return (
             <div>
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-500">hace {days}d</span>
+                <span className="block text-[9px] text-content-3">hace {days}d</span>
             </div>
         );
     }
@@ -187,15 +187,15 @@ function UltimaVentaCell({ row, allBranches }) {
         const name = ERP_NAMES[s.esid] || `Suc.${s.esid}`;
         const tipContent = (
             <div className="flex items-center justify-between gap-6 whitespace-nowrap">
-                <span className="text-[12px] font-semibold text-slate-700">{name}</span>
-                <span className="text-[12px] font-black tabular-nums text-[#0052CC]">{fmtSucDate(s.fecha)}</span>
+                <span className="text-[12px] font-semibold text-content-2">{name}</span>
+                <span className="text-[12px] font-black tabular-nums text-brand">{fmtSucDate(s.fecha)}</span>
             </div>
         );
         return (
             <LiquidTooltip content={tipContent}>
                 <div>
                     <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                    <span className="block text-[9px] text-slate-500">{name}</span>
+                    <span className="block text-[9px] text-content-3">{name}</span>
                 </div>
             </LiquidTooltip>
         );
@@ -205,13 +205,13 @@ function UltimaVentaCell({ row, allBranches }) {
     const sorted = [...porSuc].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     const tipContent = (
         <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Última venta por suc.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
             {sorted.map(s => {
                 const d = Math.floor((now - new Date(s.fecha)) / 86_400_000);
-                const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
+                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-orange-500' : 'text-brand';
                 return (
                     <div key={s.esid} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                        <span className="text-[12px] font-semibold text-slate-700">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
+                        <span className="text-[12px] font-semibold text-content-2">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
                         <span className={`text-[12px] font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
                     </div>
                 );
@@ -222,7 +222,7 @@ function UltimaVentaCell({ row, allBranches }) {
         <LiquidTooltip content={tipContent}>
             <div className="cursor-help">
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-500">{porSuc.length} suc. ⓘ</span>
+                <span className="block text-[9px] text-content-3">{porSuc.length} suc. ⓘ</span>
             </div>
         </LiquidTooltip>
     );
@@ -230,7 +230,7 @@ function UltimaVentaCell({ row, allBranches }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
-const GLASS_CARD = 'bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.12)] hover:bg-white/80';
+const GLASS_CARD = 'bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.12)] hover:bg-surface-card';
 
 const FILTER_CARD_CSS = `
 @keyframes cardIn {
@@ -257,29 +257,29 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
     const CARDS = [
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
-          activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
-          iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
-          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-500' },
+          activeBg: 'bg-success/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          iconBgActive: 'bg-success/10', iconColor: 'text-success',
+          numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
-          activeBg: 'bg-amber-50/80 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
-          iconBgActive: 'bg-amber-100', iconColor: 'text-amber-500',
-          numColor: n => n > 0 ? 'text-amber-600' : 'text-slate-500' },
+          activeBg: 'bg-warning/80 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
+          iconBgActive: 'bg-warning/10', iconColor: 'text-warning',
+          numColor: n => n > 0 ? 'text-warning' : 'text-content-3' },
         { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc., alto volumen',
           activeBg: 'bg-orange-50/80 border-orange-300 shadow-[0_4px_16px_rgba(249,115,22,0.20)] -translate-y-1',
           iconBgActive: 'bg-orange-100', iconColor: 'text-orange-500',
-          numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-500' },
+          numColor: n => n > 0 ? 'text-orange-600' : 'text-content-3' },
         { id: 'mayorista', Icon: Truck, label: 'Mayorista', sub: 'compra por volumen · no agregar',
           activeBg: 'bg-indigo-50/80 border-indigo-300 shadow-[0_4px_16px_rgba(99,102,241,0.20)] -translate-y-1',
           iconBgActive: 'bg-indigo-100', iconColor: 'text-indigo-500',
-          numColor: n => n > 0 ? 'text-indigo-600' : 'text-slate-500' },
+          numColor: n => n > 0 ? 'text-indigo-600' : 'text-content-3' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
-          activeBg: 'bg-slate-100/80 border-slate-300 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
-          iconBgActive: 'bg-slate-200', iconColor: 'text-slate-500',
-          numColor: n => n > 0 ? 'text-slate-600' : 'text-slate-500' },
+          activeBg: 'bg-surface-card-hover/80 border-slate-300 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
+          iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-3',
+          numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
         { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados',
-          activeBg: 'bg-slate-100/80 border-slate-400 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
-          iconBgActive: 'bg-slate-200', iconColor: 'text-slate-600',
-          numColor: n => n > 0 ? 'text-slate-700' : 'text-slate-500' },
+          activeBg: 'bg-surface-card-hover/80 border-slate-400 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
+          iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-2',
+          numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
     ];
 
     return (
@@ -292,18 +292,18 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
                         style={{ animationDelay: `${i * 45}ms` }}
                         className={`filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-300 min-w-[150px] disabled:opacity-40 backdrop-blur-sm
                             ${active ? c.activeBg : GLASS_CARD}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-white/70'}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-surface-card'}`}>
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0 flex-1">
                             <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
+                                {loading ? <span className="text-content-3 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
+                            <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
                         </div>
                         {active && (
-                            <div className="shrink-0 w-5 h-5 rounded-full bg-white/60 flex items-center justify-center">
-                                <X size={10} className="text-slate-500" />
+                            <div className="shrink-0 w-5 h-5 rounded-full bg-surface-card flex items-center justify-center">
+                                <X size={10} className="text-content-3" />
                             </div>
                         )}
                     </button>
@@ -322,17 +322,17 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 
     const CARDS = [
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
-          activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
-          iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
-          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-500' },
+          activeBg: 'bg-success/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          iconBgActive: 'bg-success/10', iconColor: 'text-success',
+          numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
           activeBg: 'bg-violet-50/80 border-violet-300 shadow-[0_4px_16px_rgba(139,92,246,0.20)] -translate-y-1',
           iconBgActive: 'bg-violet-100', iconColor: 'text-violet-600',
-          numColor: n => n > 0 ? 'text-violet-600' : 'text-slate-500' },
+          numColor: n => n > 0 ? 'text-violet-600' : 'text-content-3' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
-          activeBg: 'bg-red-50/80 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
-          iconBgActive: 'bg-red-100', iconColor: 'text-red-500',
-          numColor: n => n > 0 ? 'text-red-600' : 'text-slate-500' },
+          activeBg: 'bg-danger/80 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
+          iconBgActive: 'bg-danger/10', iconColor: 'text-danger',
+          numColor: n => n > 0 ? 'text-danger' : 'text-content-3' },
     ];
 
     return (
@@ -344,18 +344,18 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
                         style={{ animationDelay: `${i * 45}ms` }}
                         className={`filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-300 min-w-[150px] disabled:opacity-40 backdrop-blur-sm
                             ${active ? c.activeBg : GLASS_CARD}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-white/70'}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-surface-card'}`}>
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0 flex-1">
                             <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
+                                {loading ? <span className="text-content-3 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
+                            <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
                         </div>
                         {active && (
-                            <div className="shrink-0 w-5 h-5 rounded-full bg-white/60 flex items-center justify-center">
-                                <X size={10} className="text-slate-500" />
+                            <div className="shrink-0 w-5 h-5 rounded-full bg-surface-card flex items-center justify-center">
+                                <X size={10} className="text-content-3" />
                             </div>
                         )}
                     </button>
@@ -419,16 +419,16 @@ export default function TabGestionStock({ searchTerm = '' }) {
     }, [mode]);
 
     const tk = {
-        card:             'bg-white/90 border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm',
-        thead:            'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
+        card:             'bg-surface-card border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm',
+        thead:            'bg-gradient-to-r from-brand/[0.07] to-brand/[0.03] border-b border-brand/[0.12]',
         rowBorder:        'border-t border-slate-100',
-        rowHover:         'hover:bg-[#0052CC]/[0.03]',
-        skeleton:         'bg-slate-200/70',
-        emptyBg:          'bg-white/80 border-slate-200/70 backdrop-blur-sm',
-        filterPill:       'bg-white/80 border-slate-200/70 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
-        filterBtn:        'text-slate-500 hover:text-slate-700 hover:bg-white/60',
-        filterDivider:    'bg-slate-100',
-        totalText:        'text-slate-500',
+        rowHover:         'hover:bg-brand/[0.03]',
+        skeleton:         'bg-surface-card-hover/70',
+        emptyBg:          'bg-surface-card border-slate-200/70 backdrop-blur-sm',
+        filterPill:       'bg-surface-card border-slate-200/70 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
+        filterBtn:        'text-content-3 hover:text-content-2 hover:bg-surface-card',
+        filterDivider:    'bg-surface-card-hover',
+        totalText:        'text-content-3',
     };
 
     const loadMode = useCallback(async (erpId, m) => {
@@ -556,35 +556,35 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
 
                     {/* Total count card */}
-                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#0052CC]/[0.08]">
-                            <Package size={15} className="text-[#0052CC]/60" />
+                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-brand/[0.08]">
+                            <Package size={15} className="text-brand/60" />
                         </div>
                         <div className="text-left min-w-0">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
-                                {activeLoading ? <span className="text-slate-200">–</span> : activeData.length.toLocaleString()}
+                            <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
+                                {activeLoading ? <span className="text-content-3">–</span> : activeData.length.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">
+                            <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">
                                 {mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
                             </div>
-                            <div className="text-[9px] text-slate-500">en la sucursal activa</div>
+                            <div className="text-[9px] text-content-3">en la sucursal activa</div>
                         </div>
                     </div>
 
                     {/* Costo retenido */}
                     {mode === 'stock_ret' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50/80">
                                 <DollarSign size={15} className="text-orange-500" />
                             </div>
                             <div className="text-left min-w-0">
                                 <div className="text-[22px] font-black leading-none tabular-nums text-orange-600">
-                                    {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalCost)}
+                                    {activeLoading ? <span className="text-content-3">–</span> : fmtMoney(totalCost)}
                                 </div>
-                                <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">Costo retenido</div>
+                                <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">Costo retenido</div>
                                 {filteredCost > 0 && filteredCost !== totalCost
                                     ? <div className="text-[9px] text-orange-400">{fmtMoney(filteredCost)} en filtro</div>
-                                    : <div className="text-[9px] text-slate-500">total sucursal</div>
+                                    : <div className="text-[9px] text-content-3">total sucursal</div>
                                 }
                             </div>
                         </div>
@@ -592,29 +592,29 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-amber-50/80">
-                                <TrendingUp size={15} className="text-amber-500" />
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-warning/80">
+                                <TrendingUp size={15} className="text-warning" />
                             </div>
                             <div className="text-left min-w-0">
-                                <div className="text-[22px] font-black leading-none tabular-nums text-amber-600">
-                                    {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalRevenue)}
+                                <div className="text-[22px] font-black leading-none tabular-nums text-warning">
+                                    {activeLoading ? <span className="text-content-3">–</span> : fmtMoney(totalRevenue)}
                                 </div>
-                                <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">Revenue 6m</div>
-                                <div className="text-[9px] text-slate-500">sin parámetros min/max</div>
+                                <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">Revenue 6m</div>
+                                <div className="text-[9px] text-content-3">sin parámetros min/max</div>
                             </div>
                         </div>
                     )}
 
                     {/* Sub-filter cards */}
                     {mode === 'sin_gestion' && <React.Fragment key="sin_gestion_filters">
-                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
+                        <div className="w-px h-14 self-center hidden sm:block bg-surface-card-hover" />
                         <SinMinMaxFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'agregar' : id)}
                             loading={activeLoading} ignoredSet={ignoredSet} />
                     </React.Fragment>}
                     {mode === 'stock_ret' && <React.Fragment key="stock_ret_filters">
-                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
+                        <div className="w-px h-14 self-center hidden sm:block bg-surface-card-hover" />
                         <StockRetFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
                     </React.Fragment>}
@@ -633,12 +633,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_gestion' ? 'agregar' : 'todos'); }}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${
                                         active
-                                            ? 'bg-[#0052CC]/[0.12] text-[#0052CC] shadow-[inset_0_1px_3px_rgba(0,82,204,0.10)]'
+                                            ? 'bg-brand/[0.12] text-brand shadow-[inset_0_1px_3px_rgba(0,82,204,0.10)]'
                                             : tk.filterBtn
                                     }`}>
                                     {m.label}
                                     <span className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full min-w-[22px] text-center leading-tight transition-all duration-200 ${
-                                        active ? 'bg-[#0052CC] text-white shadow-sm' : 'bg-slate-100/80 text-slate-500'
+                                        active ? 'bg-brand text-white shadow-sm' : 'bg-surface-card-hover/80 text-content-3'
                                     }`}>
                                         {loadingMap[m.key] ? '…' : count.toLocaleString()}
                                     </span>
@@ -650,7 +650,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
 
                     {/* Sucursal */}
-                    {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-slate-500" /></div>}
+                    {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-content-3" /></div>}
                     <div className="px-2 py-2 overflow-visible" style={{ width: '170px' }}>
                         <LiquidSelect
                             value={String(selectedErp)}
@@ -667,9 +667,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
             {/* ── Error ── */}
             {activeError && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger font-semibold">
                     <AlertTriangle size={14} /> {activeError}
-                    <button onClick={() => loadMode(selectedErp, mode)} className="ml-auto text-red-500 hover:text-red-700 font-bold">Reintentar</button>
+                    <button onClick={() => loadMode(selectedErp, mode)} className="ml-auto text-danger hover:text-red-700 font-bold">Reintentar</button>
                 </div>
             )}
 
@@ -723,61 +723,61 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
                                                 className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                <span className="text-[13px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px] group-hover/copy:text-[#0052CC] transition-colors">
+                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-500 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </button>
-                                            <span className="text-[10px] text-slate-500">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
+                                            <span className="text-[10px] text-content-3">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
                                         </DataCell>
-                                        <DataCell hideBelow="md" className="text-[12px] text-slate-500">{row.laboratorio || '—'}</DataCell>
+                                        <DataCell hideBelow="md" className="text-[12px] text-content-3">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="center" hideBelow="lg">
                                             <div className="flex items-center justify-center gap-0.5">
                                                 {Array.from({ length: 6 }).map((_, i) => (
-                                                    <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-slate-100'}`} />
+                                                    <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-surface-card-hover'}`} />
                                                 ))}
                                             </div>
-                                            <div className="text-[9px] text-slate-500 mt-0.5 text-center">{sugg.months}/6</div>
+                                            <div className="text-[9px] text-content-3 mt-0.5 text-center">{sugg.months}/6</div>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
-                                            <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
-                                            <span className="text-[10px] text-amber-400 ml-1">uds.</span>
+                                            <span className="text-[13px] font-bold text-warning tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
+                                            <span className="text-[10px] text-warning ml-1">uds.</span>
                                         </DataCell>
                                         <DataCell align="right">
-                                            <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
+                                            <span className="text-[13px] font-bold text-content-2 tabular-nums">{fmtMoney(row.revenue)}</span>
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {isIgnored ? (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-500 border-slate-200 w-fit">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-slate-200 w-fit">
                                                     <EyeOff size={9} />No sugerir
                                                 </span>
                                             ) : (
                                                 <div className="flex flex-col gap-1">
                                                     {lvl === 'agregar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
-                                                        <span className="text-[9px] text-slate-500 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
-                                                        <span className="text-[9px] text-slate-500 italic">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-500">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-emerald-700 border-success/30 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
+                                                        <span className="text-[9px] text-content-3 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
+                                                        <span className="text-[9px] text-content-3 italic">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'evaluar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 w-fit"><AlertTriangle size={9} />Evaluar</span>
-                                                        <span className="text-[9px] text-slate-500 italic">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-500">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-warning/10 text-amber-700 border-warning/30 w-fit"><AlertTriangle size={9} />Evaluar</span>
+                                                        <span className="text-[9px] text-content-3 italic">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'encargo' && (<>
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200 w-fit"><ShoppingBag size={9} />Posible encargo</span>
                                                         <span className="text-[9px] text-orange-500 font-semibold">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-500 italic">No agregar a min/max</span>
+                                                        <span className="text-[9px] text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'mayorista' && (<>
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200 w-fit"><Truck size={9} />Venta mayorista</span>
                                                         <span className="text-[9px] text-indigo-500 font-semibold">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-500 italic">No agregar a min/max</span>
+                                                        <span className="text-[9px] text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'omitir' && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-500 border-slate-200 w-fit"><Minus size={9} />Sin acción</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-slate-200 w-fit"><Minus size={9} />Sin acción</span>
                                                     )}
                                                 </div>
                                             )}
@@ -785,12 +785,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell align="center" hideBelow="md">
                                             {isIgnored ? (
                                                 <button onClick={() => handleRestore(row.erp_product_id)} title="Restaurar sugerencia"
-                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                                                    className="p-1.5 rounded-lg text-content-3 hover:text-success hover:bg-success/10 transition-colors">
                                                     <Eye size={13} />
                                                 </button>
                                             ) : (
                                                 <button onClick={() => handleIgnore(row.erp_product_id)} title="No sugerir"
-                                                    className="p-1.5 rounded-lg text-slate-200 hover:text-slate-500 hover:bg-slate-100 transition-colors">
+                                                    className="p-1.5 rounded-lg text-content-3 hover:text-content-3 hover:bg-surface-card-hover transition-colors">
                                                     <EyeOff size={13} />
                                                 </button>
                                             )}
@@ -810,57 +810,57 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
                                                 className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                <span className="text-[13px] font-semibold text-slate-800 block truncate leading-snug max-w-[220px] group-hover/copy:text-[#0052CC] transition-colors">
+                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-500 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </button>
                                             {row.fecha_vencimiento_min && (() => {
                                                 const exp = new Date(row.fecha_vencimiento_min);
                                                 const expired = exp < new Date();
-                                                return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-500'}`}>
+                                                return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-danger' : 'text-content-3'}`}>
                                                     {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
                                                 </span>;
                                             })()}
                                         </DataCell>
-                                        <DataCell hideBelow="md" className="text-[12px] text-slate-500">{row.laboratorio || '—'}</DataCell>
+                                        <DataCell hideBelow="md" className="text-[12px] text-content-3">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {stock === 0 ? (
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200">Sin stock</span>
                                             ) : (
                                                 <>
-                                                    <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
-                                                    <span className="text-[10px] text-slate-500 ml-1">und</span>
+                                                    <span className="text-[13px] font-bold text-content-2 tabular-nums">{stock.toLocaleString()}</span>
+                                                    <span className="text-[10px] text-content-3 ml-1">und</span>
                                                 </>
                                             )}
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {cost > 0
                                                 ? <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
-                                                : <span className="text-[11px] text-slate-200">—</span>}
+                                                : <span className="text-[11px] text-content-3">—</span>}
                                         </DataCell>
                                         <DataCell align="center" hideBelow="md">
                                             {row.in_minmax ? (
                                                 <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-emerald-700 border-success/30"><CheckCircle2 size={9} />Con Min/Max</span>
                                                     {(row.min_qty != null || row.max_qty != null) && (
-                                                        <span className="text-[9px] font-mono text-slate-500 tabular-nums">
+                                                        <span className="text-[9px] font-mono text-content-3 tabular-nums">
                                                             <span className="text-orange-500 font-bold">{Number(row.min_qty ?? 0).toLocaleString()}</span>
-                                                            <span className="text-slate-500 mx-0.5">/</span>
+                                                            <span className="text-content-3 mx-0.5">/</span>
                                                             <span className="text-blue-500 font-bold">{Number(row.max_qty ?? 0).toLocaleString()}</span>
                                                         </span>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin Min/Max</span>
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30"><CircleDashed size={9} />Sin Min/Max</span>
                                             )}
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {sug
                                                 ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
-                                                : <span className="text-[11px] text-slate-200">—</span>}
+                                                : <span className="text-[11px] text-content-3">—</span>}
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             <UltimaVentaCell row={row} allBranches={false} />
@@ -868,10 +868,10 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell>
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 {soldIn.length === 0
-                                                    ? <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                    ? <span className="text-[10px] font-semibold text-content-3 bg-surface-card-hover border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
                                                     : soldIn.map(s => (
                                                         <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-surface-card-hover text-content-2 border-slate-200'}`}>
                                                             {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
                                                         </span>
                                                     ))}

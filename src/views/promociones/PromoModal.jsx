@@ -23,8 +23,8 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-slate-300 text-slate-700';
-const lbl = 'text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1.5 block';
+const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-content-3 text-content-2';
+const lbl = 'text-[10px] font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
 
@@ -79,7 +79,7 @@ function StepInfo({ form, set, branches }) {
                         className={`px-3 py-1.5 text-[11px] font-bold rounded-full border transition-all ${
                             form.branch_ids.length === branches.length
                                 ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white shadow-sm shadow-blue-200'
-                                : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                                : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
                         }`}
                     >
                         Todas
@@ -96,7 +96,7 @@ function StepInfo({ form, set, branches }) {
                                 className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                     active
                                         ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
-                                        : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                                        : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
                                 }`}
                             >
                                 {b.name}
@@ -127,14 +127,14 @@ function ProductRow({ pp, onRemove }) {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {pp.foto_url
                     ? <img src={pp.foto_url} className="w-full h-full object-cover" alt="" />
-                    : <Package size={13} className="text-slate-300" />}
+                    : <Package size={13} className="text-content-3" />}
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold text-slate-700 leading-tight truncate">{pp.nombre}</p>
+                <p className="text-[12px] font-semibold text-content-2 leading-tight truncate">{pp.nombre}</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    {pp.laboratorio && <span className="text-[10px] text-slate-500">{pp.laboratorio}</span>}
+                    {pp.laboratorio && <span className="text-[10px] text-content-3">{pp.laboratorio}</span>}
                     {pp.presentacion_tipo && (
-                        <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md">{pp.presentacion_tipo}</span>
+                        <span className="text-[10px] font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentacion_tipo}</span>
                     )}
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
@@ -142,29 +142,29 @@ function ProductRow({ pp, onRemove }) {
                         <span className="text-[10px] text-violet-600 font-medium">Factor: {pp.factor_descripcion}</span>
                     )}
                     {pp.stock_inicial && (
-                        <span className="text-[10px] text-slate-500">Stock: {pp.stock_inicial} und</span>
+                        <span className="text-[10px] text-content-3">Stock: {pp.stock_inicial} und</span>
                     )}
                     {pp.precio_promo && (
-                        <span className="text-[10px] text-slate-500">Precio promo: ${parseFloat(pp.precio_promo).toFixed(2)}</span>
+                        <span className="text-[10px] text-content-3">Precio promo: ${parseFloat(pp.precio_promo).toFixed(2)}</span>
                     )}
                 </div>
                 {/* Bonos */}
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                     {parseFloat(pp.bono_vendedor) > 0 && (
-                        <span className="text-[10px] text-emerald-600">Vendedor: ${parseFloat(pp.bono_vendedor).toFixed(2)}/trigger</span>
+                        <span className="text-[10px] text-success">Vendedor: ${parseFloat(pp.bono_vendedor).toFixed(2)}/trigger</span>
                     )}
                     {parseFloat(pp.bono_admin_pool) > 0 && (
                         <span className="text-[10px] text-blue-600">Admin pool: ${parseFloat(pp.bono_admin_pool).toFixed(2)}/trigger</span>
                     )}
                     {parseFloat(pp.bono_bodega_pool) > 0 && (
-                        <span className="text-[10px] text-amber-600">Bodega pool: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}/trigger</span>
+                        <span className="text-[10px] text-warning">Bodega pool: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}/trigger</span>
                     )}
                 </div>
             </div>
             <button
                 type="button"
                 onClick={onRemove}
-                className="p-1.5 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+                className="p-1.5 rounded-lg hover:bg-danger/10 text-content-3 hover:text-danger transition-colors flex-shrink-0"
             >
                 <Trash2 size={13} />
             </button>
@@ -294,7 +294,7 @@ function AddProductInline({ onAdd }) {
                 <div>
                     <label className={lbl}>Presentación *</label>
                     {loadingPresent ? (
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500 py-2">
+                        <div className="flex items-center gap-2 text-[11px] text-content-3 py-2">
                             <Loader2 size={12} className="animate-spin" /> Cargando presentaciones...
                         </div>
                     ) : (
@@ -307,7 +307,7 @@ function AddProductInline({ onAdd }) {
                                     className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                         presentacionId === opt.value
                                             ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
-                                            : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                                            : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
                                     }`}
                                 >
                                     {opt.label}
@@ -339,13 +339,13 @@ function AddProductInline({ onAdd }) {
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-emerald-100 rounded-xl p-3 space-y-2.5">
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-success/30 rounded-xl p-3 space-y-2.5">
                         <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
                             <Gift size={10} /> Bonificaciones por trigger
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                             <div>
-                                <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1.5 block">Vendedor ($)</label>
+                                <label className="text-[10px] font-bold text-success uppercase tracking-widest mb-1.5 block">Vendedor ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_vendedor')} onChange={e => s('bono_vendedor', e.target.value)} />
                             </div>
                             <div>
@@ -353,11 +353,11 @@ function AddProductInline({ onAdd }) {
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_admin_pool')} onChange={e => s('bono_admin_pool', e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5 block">Bodega pool ($)</label>
+                                <label className="text-[10px] font-bold text-warning uppercase tracking-widest mb-1.5 block">Bodega pool ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_bodega_pool')} onChange={e => s('bono_bodega_pool', e.target.value)} />
                             </div>
                         </div>
-                        <p className="text-[9px] text-emerald-600/60 font-medium">
+                        <p className="text-[9px] text-success/60 font-medium">
                             Pool = repartido entre todos del área. Vendedor = quien hizo la venta.
                         </p>
                     </div>
@@ -365,7 +365,7 @@ function AddProductInline({ onAdd }) {
             )}
 
             <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShow(false)} className="px-3 py-1.5 text-[11px] text-slate-500 hover:text-slate-600">Cancelar</button>
+                <button type="button" onClick={() => setShow(false)} className="px-3 py-1.5 text-[11px] text-content-3 hover:text-content-2">Cancelar</button>
                 <button
                     type="button"
                     onClick={handleAdd}
@@ -383,7 +383,7 @@ function StepProducts({ products, onAdd, onRemove }) {
     return (
         <div className="space-y-3">
             {products.length === 0 && (
-                <p className="text-[11px] text-slate-500 italic text-center py-2">Aún no hay productos. Agrega al menos uno.</p>
+                <p className="text-[11px] text-content-3 italic text-center py-2">Aún no hay productos. Agrega al menos uno.</p>
             )}
             {products.map((pp, idx) => (
                 <ProductRow key={idx} pp={pp} onRemove={() => onRemove(idx)} />
@@ -503,7 +503,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                 <div className="flex-none bg-gradient-to-br from-blue-700 via-blue-600 to-violet-600 px-7 pt-7 pb-6">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3.5">
-                            <div className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/15 border border-white/20 text-white shadow-inner">
+                            <div className="w-11 h-11 flex items-center justify-center rounded-2xl bg-surface-card border border-border-card text-white shadow-inner">
                                 <Tag size={20} strokeWidth={2.5} />
                             </div>
                             <div>
@@ -518,7 +518,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white transition-all"
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card border border-border-card text-white/70 hover:text-white transition-all"
                         >
                             <X size={16} strokeWidth={2.5} />
                         </button>
@@ -533,7 +533,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                             return (
                                 <React.Fragment key={s.key}>
                                     {idx > 0 && (
-                                        <div className={`flex-1 h-[2px] rounded-full transition-all duration-400 ${isDone ? 'bg-white/60' : 'bg-white/20'}`} />
+                                        <div className={`flex-1 h-[2px] rounded-full transition-all duration-400 ${isDone ? 'bg-surface-card' : 'bg-surface-card'}`} />
                                     )}
                                     <button
                                         type="button"
@@ -543,7 +543,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                                             isActive ? 'bg-white border-white text-blue-600 scale-110 shadow-lg shadow-blue-900/30'
                                             : isDone  ? 'bg-emerald-400 border-emerald-300 text-white'
-                                            : 'bg-white/10 border-white/25 text-white/50'
+                                            : 'bg-surface-card border-border-card text-white/50'
                                         }`}>
                                             {isDone ? <Check size={13} /> : <StepIcon size={12} />}
                                         </div>
@@ -572,11 +572,11 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none px-7 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/80">
+                <div className="flex-none px-7 py-4 border-t border-slate-100 flex items-center justify-between bg-surface-card-hover/80">
                     <button
                         type="button"
                         onClick={step === 0 ? handleClose : () => setStep(s => s - 1)}
-                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium text-slate-500 hover:text-slate-600 transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium text-content-3 hover:text-content-2 transition-colors"
                     >
                         {step > 0 && <ChevronLeft size={13} />}
                         {step === 0 ? 'Cancelar' : 'Atrás'}

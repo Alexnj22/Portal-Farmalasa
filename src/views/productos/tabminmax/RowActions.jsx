@@ -48,12 +48,12 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
             dropCls: 'text-rose-500 hover:text-rose-700 hover:bg-rose-50',
             onClick: () => onZeroOut() },
         hasRestaura && { key: 'restaurar', icon: <RotateCcw size={13}/>, label: 'Restaurar',
-            cls: `${B} text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50`,
-            dropCls: 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50',
+            cls: `${B} text-success hover:text-emerald-700 hover:bg-success/10`,
+            dropCls: 'text-success hover:text-emerald-700 hover:bg-success/10',
             onClick: () => onResetToCalc() },
         { key: 'hist', icon: <History size={13}/>, label: 'Historial',
-            cls: `${B} text-blue-400 hover:text-[#0052CC] hover:bg-blue-50`,
-            dropCls: 'text-blue-500 hover:text-[#0052CC] hover:bg-blue-50',
+            cls: `${B} text-blue-400 hover:text-brand hover:bg-blue-50`,
+            dropCls: 'text-blue-500 hover:text-brand hover:bg-blue-50',
             onClick: () => onOpenHistory() },
         filterHidden
             ? { key: 'show', icon: <Eye size={13}/>, label: 'Mostrar',
@@ -62,8 +62,8 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                 onClick: () => onUnhide() }
             : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={13} className="animate-spin"/> : <EyeOff size={13}/>,
                 label: 'Ocultar',
-                cls: `${B} text-slate-500 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`,
-                dropCls: 'text-slate-500 hover:text-slate-700 hover:bg-slate-100',
+                cls: `${B} text-content-3 hover:text-content-2 hover:bg-surface-card-hover disabled:pointer-events-none`,
+                dropCls: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
         isBodegaRow && canManage && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en red',
             cls: `${B} text-rose-500 hover:text-rose-700 hover:bg-rose-50`,
@@ -75,7 +75,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
         hasDraft && canManage && !isBodegaRow && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
             cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: () => onDiscardDraft() },
         hasDraft && canManage && !isBodegaRow && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
-            cls: 'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
+            cls: 'text-brand hover:text-brand-hover hover:bg-blue-50',
             onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
     ].filter(Boolean);
     const allBtns      = [...pool, ...extraBtns];
@@ -107,7 +107,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                     <motion.button
                         onClick={e => { e.stopPropagation(); open ? closeMenu() : openMenu(); }}
                         {...sp}
-                        className={`${B} text-slate-500 hover:text-slate-600 hover:bg-slate-100`}>
+                        className={`${B} text-content-3 hover:text-content-2 hover:bg-surface-card-hover`}>
                         <MoreHorizontal size={13}/>
                         <span className="text-[7px] font-bold leading-none">Más</span>
                     </motion.button>

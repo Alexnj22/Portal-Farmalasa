@@ -120,8 +120,8 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             <Users size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800 text-[15px]">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
-                            <p className="text-[12px] text-slate-600 mt-0.5">Escanea el carnet del empleado</p>
+                            <h3 className="font-bold text-content text-[15px]">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
+                            <p className="text-[12px] text-content-2 mt-0.5">Escanea el carnet del empleado</p>
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -137,7 +137,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 />
                                 <ScanLine size={28} className="text-blue-500" />
                                 {loading && (
-                                    <div className="absolute inset-0 rounded-2xl bg-white/80 flex items-center justify-center">
+                                    <div className="absolute inset-0 rounded-2xl bg-surface-card flex items-center justify-center">
                                         <Loader2 size={18} className="animate-spin text-blue-500" />
                                     </div>
                                 )}
@@ -157,7 +157,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 </div>
                             )}
 
-                            <p className="text-[12px] text-slate-600 text-center">
+                            <p className="text-[12px] text-content-2 text-center">
                                 Apunta el escáner al código de barras<br />del carnet del empleado
                             </p>
                         </div>
@@ -166,28 +166,28 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                     {employee && (
                         <motion.div
                             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200"
+                            className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30"
                         >
                             {employee.photo_url
                                 ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow" alt="" />
-                                : <div className="w-12 h-12 rounded-full bg-emerald-200 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-emerald-600" /></div>
+                                : <div className="w-12 h-12 rounded-full bg-emerald-200 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>
                                 <p className="font-bold text-emerald-800 text-[14px]">{employee.name}</p>
-                                <p className="text-[11px] text-emerald-600 mt-0.5">Confirma para registrar como apoyo</p>
+                                <p className="text-[11px] text-success mt-0.5">Confirma para registrar como apoyo</p>
                             </div>
                         </motion.div>
                     )}
 
                     {manualWarn && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700">
-                            <ShieldAlert size={14} className="shrink-0 text-red-500" />
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-red-700">
+                            <ShieldAlert size={14} className="shrink-0 text-danger" />
                             Solo se acepta escaneo. No se permite ingreso manual del teclado.
                         </div>
                     )}
                     {error && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700">
-                            <AlertTriangle size={14} className="shrink-0 text-red-500" />
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-red-700">
+                            <AlertTriangle size={14} className="shrink-0 text-danger" />
                             {error}
                         </div>
                     )}
@@ -196,11 +196,11 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                 <PedidoModal.Footer>
                     <div className="flex justify-between gap-2">
                         <button onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}
-                            className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[12px] transition-colors">
+                            className="px-3 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[12px] transition-colors">
                             Limpiar
                         </button>
                         <div className="flex gap-2">
-                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
+                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
                                 Cancelar
                             </button>
                             {employee && (

@@ -118,21 +118,21 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm">
 
             {/* ── Header ─────────────────────────────────── */}
-            <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-white/40">
+            <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-border-card">
                 {screen === 2 && (
                     <button onClick={() => setScreen(1)} disabled={submitting}
-                        className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100/80 text-slate-500 hover:bg-slate-200 transition-all shrink-0">
+                        className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover/80 text-content-3 hover:bg-surface-card-hover transition-all shrink-0">
                         <ChevronLeft size={14} />
                     </button>
                 )}
                 <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-[15px] font-black text-slate-800 leading-tight">
+                    <h3 className="text-[15px] font-black text-content leading-tight">
                         {screen === 1 ? 'Asignar cajas' : 'Página → Caja'}
                     </h3>
                 </div>
                 <button onClick={handleClose} disabled={submitting}
-                    className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100/80 text-slate-500 hover:bg-slate-200 transition-all shrink-0">
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover/80 text-content-3 hover:bg-surface-card-hover transition-all shrink-0">
                     <X size={13} />
                 </button>
             </div>
@@ -164,16 +164,16 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                         </div>
                         <div className="flex-1 min-w-0">
                             {loadingPages ? (
-                                <p className="text-[12px] text-slate-500 font-medium">Calculando páginas del PDF…</p>
+                                <p className="text-[12px] text-content-3 font-medium">Calculando páginas del PDF…</p>
                             ) : (
                                 <>
-                                    <p className="text-[26px] font-black text-slate-800 leading-none tabular-nums">
+                                    <p className="text-[26px] font-black text-content leading-none tabular-nums">
                                         {totalPages}
-                                        <span className="text-[13px] font-semibold text-slate-500 ml-1.5">
+                                        <span className="text-[13px] font-semibold text-content-3 ml-1.5">
                                             {totalPages === 1 ? 'página' : 'páginas'}
                                         </span>
                                     </p>
-                                    <p className="text-[11px] text-slate-500 mt-0.5">en el PDF del pedido</p>
+                                    <p className="text-[11px] text-content-3 mt-0.5">en el PDF del pedido</p>
                                 </>
                             )}
                         </div>
@@ -181,7 +181,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
                     {/* Box count input */}
                     <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                        <label className="block text-[11px] font-bold text-content-2 mb-2 uppercase tracking-wide">
                             ¿Cuántas cajas salen?
                         </label>
                         <div className="relative">
@@ -191,14 +191,14 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 onChange={e => setTotalCajasInput(e.target.value)}
                                 placeholder="Ej. 4"
                                 autoFocus
-                                className="w-full text-[22px] font-black text-slate-800 rounded-2xl border-2 border-slate-200 bg-white/80 px-4 py-3 pr-16 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all"
+                                className="w-full text-[22px] font-black text-content rounded-2xl border-2 border-slate-200 bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all"
                             />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-500 pointer-events-none">
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-3 pointer-events-none">
                                 cajas
                             </span>
                         </div>
                         {totalCajasInput && parsedCajas > 0 && !loadingPages && totalPages > 0 && (
-                            <p className="text-[10px] text-slate-500 mt-1.5 pl-1">
+                            <p className="text-[10px] text-content-3 mt-1.5 pl-1">
                                 {parsedCajas >= totalPages
                                     ? `1 página por caja`
                                     : `~${(totalPages / parsedCajas).toFixed(1)} páginas por caja`
@@ -214,13 +214,13 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 <div className="px-4 py-3 max-h-[56vh] overflow-y-auto scrollbar-hide">
                     {/* Box legend */}
                     <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                        <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mr-1">Cajas:</span>
+                        <span className="text-[10px] font-semibold text-content-2 uppercase tracking-wide mr-1">Cajas:</span>
                         {boxes.map(b => (
                             <span key={b} className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-violet-100 text-violet-600 border border-violet-200">
                                 C{b}
                             </span>
                         ))}
-                        <span className="ml-auto text-[10px] text-slate-500">{totalPages} pág.</span>
+                        <span className="ml-auto text-[10px] text-content-3">{totalPages} pág.</span>
                     </div>
 
                     {/* Page rows */}
@@ -232,8 +232,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 <div key={idx}
                                     className={`rounded-2xl border transition-all ${
                                         hasAssignment
-                                            ? 'bg-white/70 border-slate-200/70'
-                                            : 'bg-amber-50/60 border-amber-200'
+                                            ? 'bg-surface-card border-slate-200/70'
+                                            : 'bg-warning/60 border-warning/30'
                                     }`}>
                                     {/* Page info row */}
                                     <div className="flex items-center gap-3 px-3 pt-3 pb-2">
@@ -246,9 +246,9 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                             <span className="text-[15px] font-black tabular-nums leading-tight">{idx + 1}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[8px] font-semibold text-slate-600 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
-                                            <p className="text-[11px] font-semibold text-slate-700 truncate leading-tight">{pg.firstItem}</p>
-                                            <p className="text-[9px] text-slate-500 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
+                                            <p className="text-[8px] font-semibold text-content-2 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
+                                            <p className="text-[11px] font-semibold text-content-2 truncate leading-tight">{pg.firstItem}</p>
+                                            <p className="text-[9px] text-content-3 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
                                         </div>
                                     </div>
                                     {/* Box selector */}
@@ -260,7 +260,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
                                                         sel
                                                             ? 'bg-violet-500 border-violet-500 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
-                                                            : 'bg-white/80 border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50'
+                                                            : 'bg-surface-card border-slate-200 text-content-3 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50'
                                                     }`}>
                                                     Caja {box}
                                                 </button>
@@ -275,9 +275,9 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             )}
 
             {/* ── Footer ─────────────────────────────────── */}
-            <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-white/40">
+            <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-border-card">
                 <button onClick={handleClose} disabled={submitting}
-                    className="text-[12px] font-semibold px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100/80 transition-all">
+                    className="text-[12px] font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover/80 transition-all">
                     Cancelar
                 </button>
                 {screen === 1 ? (

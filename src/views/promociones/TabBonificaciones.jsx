@@ -13,9 +13,9 @@ const fmt$ = (n) =>
     `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const ROLE_STYLE = {
-    vendedor: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Vendedor' },
+    vendedor: { bg: 'bg-success/10 text-emerald-700 border-success/30', label: 'Vendedor' },
     admin:    { bg: 'bg-blue-50 text-blue-700 border-blue-200',           label: 'Admin'    },
-    bodega:   { bg: 'bg-amber-50 text-amber-700 border-amber-200',        label: 'Bodega'   },
+    bodega:   { bg: 'bg-warning/10 text-amber-700 border-warning/30',        label: 'Bodega'   },
 };
 
 const COLS = [
@@ -65,27 +65,27 @@ function PayModal({ bonif, onClose, onPaid }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-            <div className="bg-white/95 border border-slate-200 rounded-2xl shadow-xl p-5 w-80 max-w-full">
-                <p className="text-[13px] font-bold text-slate-700 mb-1">Registrar pago</p>
-                <p className="text-[11px] text-slate-500 mb-4">
+            <div className="bg-surface-card border border-slate-200 rounded-2xl shadow-xl p-5 w-80 max-w-full">
+                <p className="text-[13px] font-bold text-content-2 mb-1">Registrar pago</p>
+                <p className="text-[11px] text-content-3 mb-4">
                     {bonif.employees?.name || 'Empleado'} · {ROLE_STYLE[bonif.role]?.label} ·{' '}
                     Pendiente: <strong>{fmt$(pending)}</strong>
                 </p>
 
                 <div className="space-y-2.5">
                     <div>
-                        <label className="text-[10px] font-medium text-slate-500 mb-0.5 block">Monto ($)</label>
+                        <label className="text-[10px] font-medium text-content-3 mb-0.5 block">Monto ($)</label>
                         <input
                             type="number" step="0.01" min="0.01" max={pending}
-                            className="w-full text-[16px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"
+                            className="w-full text-[16px] bg-surface-card-hover border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-medium text-slate-500 mb-0.5 block">Notas (opcional)</label>
+                        <label className="text-[10px] font-medium text-content-3 mb-0.5 block">Notas (opcional)</label>
                         <textarea
-                            className="w-full text-[16px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 h-16 resize-none"
+                            className="w-full text-[16px] bg-surface-card-hover border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 h-16 resize-none"
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
                             placeholder="Ej: Pago quincenal, efectivo..."
@@ -94,7 +94,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                 </div>
 
                 <div className="flex gap-2 justify-end mt-4">
-                    <button onClick={onClose} className="px-3 py-1.5 text-[11px] text-slate-500 hover:text-slate-700">Cancelar</button>
+                    <button onClick={onClose} className="px-3 py-1.5 text-[11px] text-content-3 hover:text-content-2">Cancelar</button>
                     <button
                         onClick={handlePay}
                         disabled={saving}
@@ -143,16 +143,16 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
         <div>
             {/* Summary pill — right-aligned, glassmorphic */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0">
                     <div className="flex items-center gap-1.5 px-3 py-2">
-                        <Gift size={12} className="text-slate-400" />
-                        <span className="text-[11px] text-slate-500">Total ganado:</span>
-                        <span className="text-[11px] font-semibold text-slate-700">{fmt$(totalEarned)}</span>
+                        <Gift size={12} className="text-content-3" />
+                        <span className="text-[11px] text-content-3">Total ganado:</span>
+                        <span className="text-[11px] font-semibold text-content-2">{fmt$(totalEarned)}</span>
                     </div>
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                     <div className="flex items-center gap-1.5 px-3 py-2">
-                        <span className="text-[11px] text-slate-500">Pendiente:</span>
-                        <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-amber-600' : 'text-slate-500'}`}>
+                        <span className="text-[11px] text-content-3">Pendiente:</span>
+                        <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-warning' : 'text-content-3'}`}>
                             {fmt$(totalPending)}
                         </span>
                     </div>
@@ -160,10 +160,10 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
             </div>
 
             {bonifs.length === 0 && !loading && (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-content-3">
                     <Gift size={32} className="mx-auto mb-2 opacity-40" />
                     <p className="text-[12px]">Sin bonificaciones registradas</p>
-                    <p className="text-[11px] mt-1 text-slate-500">
+                    <p className="text-[11px] mt-1 text-content-3">
                         Las bonificaciones se acumulan automáticamente conforme se procesan las ventas de las promociones activas.
                     </p>
                 </div>
@@ -189,12 +189,12 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                                 {/* empleado */}
                                 <DataCell align="left">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                        <div className="w-6 h-6 rounded-full bg-surface-card-hover overflow-hidden flex-shrink-0 flex items-center justify-center">
                                             {b.employees?.photo_url
                                                 ? <img src={b.employees.photo_url} className="w-full h-full object-cover" alt="" />
-                                                : <User size={10} className="text-slate-400" />}
+                                                : <User size={10} className="text-content-3" />}
                                         </div>
-                                        <span className="text-[12px] font-medium text-slate-700">{empName}</span>
+                                        <span className="text-[12px] font-medium text-content-2">{empName}</span>
                                     </div>
                                 </DataCell>
 
@@ -207,23 +207,23 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
 
                                 {/* promo */}
                                 <DataCell align="left" hideBelow="md">
-                                    <span className="text-[11px] text-slate-600 font-medium">{promoName}</span>
-                                    <span className="ml-1.5 text-[10px] text-slate-500">{prodName}</span>
+                                    <span className="text-[11px] text-content-2 font-medium">{promoName}</span>
+                                    <span className="ml-1.5 text-[10px] text-content-3">{prodName}</span>
                                 </DataCell>
 
                                 {/* ganado */}
                                 <DataCell align="right">
-                                    <span className="text-[12px] font-semibold text-slate-700">{fmt$(b.amount_earned)}</span>
+                                    <span className="text-[12px] font-semibold text-content-2">{fmt$(b.amount_earned)}</span>
                                 </DataCell>
 
                                 {/* pagado */}
                                 <DataCell align="right">
-                                    <span className="text-[11px] text-slate-500">{fmt$(b.amount_paid)}</span>
+                                    <span className="text-[11px] text-content-3">{fmt$(b.amount_paid)}</span>
                                 </DataCell>
 
                                 {/* pendiente */}
                                 <DataCell align="right">
-                                    <span className={`text-[12px] font-semibold ${pending > 0 ? 'text-amber-600' : 'text-slate-500'}`}>
+                                    <span className={`text-[12px] font-semibold ${pending > 0 ? 'text-warning' : 'text-content-3'}`}>
                                         {fmt$(pending)}
                                     </span>
                                 </DataCell>

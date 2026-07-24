@@ -22,10 +22,10 @@ const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
 const ERP_COLORS = {
     1: 'text-blue-600 bg-blue-50 border-blue-100',
     2: 'text-violet-600 bg-violet-50 border-violet-100',
-    3: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+    3: 'text-success bg-success/10 border-success/30',
     4: 'text-sky-600 bg-sky-50 border-sky-100',
     5: 'text-rose-600 bg-rose-50 border-rose-100',
-    6: 'text-amber-700 bg-amber-50 border-amber-100',
+    6: 'text-amber-700 bg-warning/10 border-warning/30',
     7: 'text-indigo-600 bg-indigo-50 border-indigo-100',
 };
 
@@ -43,26 +43,26 @@ function expiryInfo(fecha) {
 }
 
 function ExpiryCell({ fecha }) {
-    if (!fecha) return <span className="text-slate-500 text-xs">—</span>;
+    if (!fecha) return <span className="text-content-3 text-xs">—</span>;
     const info = expiryInfo(fecha);
     if (!info) return null;
     if (info.expired) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <AlertTriangle size={9} /> {fecha}
         </span>
     );
     if (info.days <= 30) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <Calendar size={9} /> {fecha} <span className="opacity-70">{info.days}d</span>
         </span>
     );
-    if (info.days <= 90)  return <span className="text-xs font-semibold text-amber-600 whitespace-nowrap">{fecha}</span>;
+    if (info.days <= 90)  return <span className="text-xs font-semibold text-warning whitespace-nowrap">{fecha}</span>;
     if (info.days <= 180) return (
         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-400 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full whitespace-nowrap">
             <Calendar size={9} /> {fecha}
         </span>
     );
-    return <span className="text-xs text-slate-500 whitespace-nowrap">{fecha}</span>;
+    return <span className="text-xs text-content-3 whitespace-nowrap">{fecha}</span>;
 }
 
 export default function TabInventario({ searchTerm = '' }) {
@@ -237,14 +237,14 @@ export default function TabInventario({ searchTerm = '' }) {
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                            <Package size={15} className="text-[#0052CC]" />
+                            <Package size={15} className="text-brand" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
-                                {loading ? <span className="text-slate-200">–</span> : total.toLocaleString()}
+                            <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
+                                {loading ? <span className="text-content-3">–</span> : total.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600">Productos</div>
-                            <div className="text-[9px] text-slate-500">
+                            <div className="text-[10px] font-bold text-content-2">Productos</div>
+                            <div className="text-[9px] text-content-3">
                                 {selectedErp !== null ? ERP_NAMES[selectedErp] : 'todas las sucursales'}
                             </div>
                         </div>
@@ -254,20 +254,20 @@ export default function TabInventario({ searchTerm = '' }) {
                         onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); setFilterAreaVenc(false); }}
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterVencidos
-                                ? 'bg-red-50 border-red-300 shadow-md shadow-red-100/80 -translate-y-px'
-                                : 'bg-white border-slate-100 hover:border-red-200 hover:bg-red-50/40'
+                                ? 'bg-danger/10 border-red-300 shadow-md shadow-red-100/80 -translate-y-px'
+                                : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/40'
                         }`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-white' : 'bg-red-50'}`}>
-                            <AlertTriangle size={15} className="text-red-500" />
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-white' : 'bg-danger/10'}`}>
+                            <AlertTriangle size={15} className="text-danger" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-red-600">
-                                {loading ? <span className="text-slate-200">–</span> : expiredTotal.toLocaleString()}
+                            <div className="text-[22px] font-black leading-none tabular-nums text-danger">
+                                {loading ? <span className="text-content-3">–</span> : expiredTotal.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600">Vencidos</div>
-                            <div className="text-[9px] text-slate-500">por fecha</div>
+                            <div className="text-[10px] font-bold text-content-2">Vencidos</div>
+                            <div className="text-[9px] text-content-3">por fecha</div>
                         </div>
-                        {filterVencidos && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                        {filterVencidos && <X size={11} className="text-content-3 ml-auto shrink-0" />}
                     </button>
 
                     <button
@@ -282,12 +282,12 @@ export default function TabInventario({ searchTerm = '' }) {
                         </div>
                         <div className="text-left">
                             <div className="text-[22px] font-black leading-none tabular-nums text-orange-500">
-                                {loading ? <span className="text-slate-200">–</span> : sixMonthsTotal.toLocaleString()}
+                                {loading ? <span className="text-content-3">–</span> : sixMonthsTotal.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600">Próx. a vencer</div>
-                            <div className="text-[9px] text-slate-500">en 6 meses</div>
+                            <div className="text-[10px] font-bold text-content-2">Próx. a vencer</div>
+                            <div className="text-[9px] text-content-3">en 6 meses</div>
                         </div>
-                        {filterSixMonths && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                        {filterSixMonths && <X size={11} className="text-content-3 ml-auto shrink-0" />}
                     </button>
 
                     {isBodega && (
@@ -303,28 +303,28 @@ export default function TabInventario({ searchTerm = '' }) {
                             </div>
                             <div className="text-left">
                                 <div className="text-[22px] font-black leading-none tabular-nums text-rose-600">
-                                    {loading ? <span className="text-slate-200">–</span> : Object.keys(vencidosMap).length.toLocaleString()}
+                                    {loading ? <span className="text-content-3">–</span> : Object.keys(vencidosMap).length.toLocaleString()}
                                 </div>
-                                <div className="text-[10px] font-bold text-slate-600">Área vencidos</div>
-                                <div className="text-[9px] text-slate-500">ubicación bodega</div>
+                                <div className="text-[10px] font-bold text-content-2">Área vencidos</div>
+                                <div className="text-[9px] text-content-3">ubicación bodega</div>
                             </div>
-                            {filterAreaVenc && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                            {filterAreaVenc && <X size={11} className="text-content-3 ml-auto shrink-0" />}
                         </button>
                     )}
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
-                            <DollarSign size={15} className="text-emerald-600" />
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-success/10">
+                            <DollarSign size={15} className="text-success" />
                         </div>
                         <div className="text-left">
                             <div className="text-[22px] font-black leading-none tabular-nums text-emerald-700">
                                 {loading
-                                    ? <span className="text-slate-200">–</span>
+                                    ? <span className="text-content-3">–</span>
                                     : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 }
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600">Inversión</div>
-                            <div className="text-[9px] text-slate-500">costo sin IVA</div>
+                            <div className="text-[10px] font-bold text-content-2">Inversión</div>
+                            <div className="text-[9px] text-content-3">costo sin IVA</div>
                         </div>
                     </div>
 
@@ -333,7 +333,7 @@ export default function TabInventario({ searchTerm = '' }) {
                 {(() => {
                     const anyFilter = selectedErp !== null || filterLab !== null || filterCat !== null;
                     return (
-                        <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                        <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
 
                             {/* Sucursal */}
                             <div className="flex items-center">
@@ -351,14 +351,14 @@ export default function TabInventario({ searchTerm = '' }) {
                                 </div>
                                 {selectedErp !== null && (
                                     <button onClick={() => setSelectedErp(null)}
-                                        className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                        className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                         <X size={9} strokeWidth={3} />
                                     </button>
                                 )}
                             </div>
 
                             {labOptions.length > 0 && <>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                                 <div className="flex items-center">
                                     <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                                         <LiquidSelect
@@ -373,7 +373,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </div>
                                     {filterLab !== null && (
                                         <button onClick={() => setFilterLab(null)}
-                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                             <X size={9} strokeWidth={3} />
                                         </button>
                                     )}
@@ -381,7 +381,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             </>}
 
                             {catOptions.length > 0 && <>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                                 <div className="flex items-center">
                                     <div className="px-2 py-2 overflow-visible" style={{ width: '155px' }}>
                                         <LiquidSelect
@@ -396,7 +396,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </div>
                                     {filterCat !== null && (
                                         <button onClick={() => setFilterCat(null)}
-                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                             <X size={9} strokeWidth={3} />
                                         </button>
                                     )}
@@ -404,10 +404,10 @@ export default function TabInventario({ searchTerm = '' }) {
                             </>}
 
                             {anyFilter && <>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                                 <button
                                     onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }}
-                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all shrink-0">
+                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0">
                                     <X size={11} strokeWidth={3} />
                                 </button>
                             </>}
@@ -418,10 +418,10 @@ export default function TabInventario({ searchTerm = '' }) {
 
             {/* ── Table ── */}
             {loadError ? (
-                <div className="rounded-2xl border border-red-100 bg-red-50 shadow-sm py-16 text-center">
-                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-red-400" />
-                    <p className="text-sm font-semibold text-red-600 mb-1">Error al cargar inventario</p>
-                    <p className="text-[11px] text-red-400 mb-4">{loadError}</p>
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
+                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
+                    <p className="text-sm font-semibold text-danger mb-1">Error al cargar inventario</p>
+                    <p className="text-[11px] text-danger mb-4">{loadError}</p>
                     <button onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}
                         className="px-5 py-2 text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-full transition-colors">
                         Reintentar
@@ -460,31 +460,31 @@ export default function TabInventario({ searchTerm = '' }) {
                                     onClick={() => handleExpand(group.erp_sucursal_id, group.erp_product_id)}
                                     className={
                                         isExpanded ? 'bg-blue-50/50' :
-                                        hasExpired ? 'bg-red-50/40' :
-                                        isSoon     ? 'bg-amber-50/30' :
+                                        hasExpired ? 'bg-danger/40' :
+                                        isSoon     ? 'bg-warning/30' :
                                         isSixMo    ? 'bg-orange-50/20' : ''
                                     }
                                 >
                                     {selectedErp === null && (
                                         <DataCell className="whitespace-nowrap">
-                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-slate-600 bg-slate-50 border-slate-200'}`}>
+                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-content-2 bg-surface-card-hover border-slate-200'}`}>
                                                 {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
                                             </span>
                                         </DataCell>
                                     )}
 
                                     <DataCell hideBelow="lg">
-                                        <span className="text-[11px] text-slate-500">
-                                            {lab || <span className="text-slate-500">—</span>}
+                                        <span className="text-[11px] text-content-3">
+                                            {lab || <span className="text-content-3">—</span>}
                                         </span>
                                     </DataCell>
 
                                     <DataCell>
                                         <div className="flex items-center gap-2">
                                             <ChevronDown size={12} strokeWidth={2.5}
-                                                className={`text-slate-500 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#0052CC]' : ''}`} />
+                                                className={`text-content-3 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand' : ''}`} />
                                             <div className="min-w-0">
-                                                <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
+                                                <span className="text-[13px] font-medium text-content line-clamp-2 leading-tight">
                                                     {group.descripcion || '—'}
                                                 </span>
                                                 {group.es_antibiotico && (
@@ -500,28 +500,28 @@ export default function TabInventario({ searchTerm = '' }) {
                                         {pres.length > 0 ? (
                                             <div className="flex flex-wrap gap-1">
                                                 {pres.map(p => (
-                                                    <span key={p} className="text-[10px] font-bold text-slate-500 bg-slate-100/80 border border-slate-200/60 px-2 py-0.5 rounded-full">
+                                                    <span key={p} className="text-[10px] font-bold text-content-3 bg-surface-card-hover/80 border border-slate-200/60 px-2 py-0.5 rounded-full">
                                                         {p}
                                                     </span>
                                                 ))}
                                             </div>
-                                        ) : <span className="text-slate-500 text-xs">—</span>}
+                                        ) : <span className="text-content-3 text-xs">—</span>}
                                     </DataCell>
 
                                     <DataCell hideBelow="lg">
-                                        <span className="text-[11px] font-mono text-slate-500">
+                                        <span className="text-[11px] font-mono text-content-3">
                                             {loteDisplay}
                                         </span>
                                     </DataCell>
 
                                     <DataCell align="right" className="whitespace-nowrap">
                                         <span className={`text-sm font-semibold tabular-nums ${
-                                            units === 0 ? 'text-slate-500' :
-                                            hasExpired  ? 'text-red-600'   : 'text-slate-700'
+                                            units === 0 ? 'text-content-3' :
+                                            hasExpired  ? 'text-danger'   : 'text-content-2'
                                         }`}>
                                             {units.toLocaleString()}
                                         </span>
-                                        <span className="text-[9px] text-slate-500 ml-0.5">und</span>
+                                        <span className="text-[9px] text-content-3 ml-0.5">und</span>
                                         {(() => {
                                             const vUnits = vencidosMap[`${group.erp_sucursal_id}_${group.erp_product_id}`] || 0;
                                             if (!vUnits) return null;
@@ -543,12 +543,12 @@ export default function TabInventario({ searchTerm = '' }) {
                                         <td colSpan={colCount} className="p-0 border-b border-blue-100/60">
                                             <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
                                                 {expandLoading.has(key) ? (
-                                                    <div className="flex items-center gap-2 text-slate-500 py-2">
+                                                    <div className="flex items-center gap-2 text-content-3 py-2">
                                                         <Loader2 size={14} className="animate-spin" />
                                                         <span className="text-xs">Cargando...</span>
                                                     </div>
                                                 ) : (expandedData[key] || []).length === 0 && (expandedVencidos[key] || []).length === 0 ? (
-                                                    <p className="text-xs text-slate-500 py-2">Sin datos</p>
+                                                    <p className="text-xs text-content-3 py-2">Sin datos</p>
                                                 ) : (
                                                     <>
                                                         {/* Regular inventory */}
@@ -559,7 +559,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
                                                                             <th key={h}
-                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-slate-500 pr-6 last:pr-0 ${
+                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-content-3 pr-6 last:pr-0 ${
                                                                                     h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
                                                                                 }`}>
                                                                                 {h}
@@ -574,29 +574,29 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                         return (
                                                                             <tr key={j} className="border-t border-slate-100/60">
                                                                                 <td className="py-1.5 pr-6">
-                                                                                    <span className="text-[12px] font-semibold text-slate-700">
+                                                                                    <span className="text-[12px] font-semibold text-content-2">
                                                                                         {row.presentacion || '—'}
                                                                                     </span>
                                                                                     {row.detalle && (
-                                                                                        <span className="text-[10px] text-slate-500 font-mono ml-1.5">
+                                                                                        <span className="text-[10px] text-content-3 font-mono ml-1.5">
                                                                                             {row.detalle}
                                                                                         </span>
                                                                                     )}
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-slate-500">
+                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-content-3">
                                                                                     {row.lote || '—'}
                                                                                 </td>
                                                                                 <td className="py-1.5 pr-6">
                                                                                     <ExpiryCell fecha={row.fecha_vencimiento} />
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-slate-600 tabular-nums">
+                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-content-2 tabular-nums">
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-500' : 'text-slate-700'}`}>
+                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-content-2'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
-                                                                                    <span className="text-[9px] text-slate-500 ml-0.5">und</span>
+                                                                                    <span className="text-[9px] text-content-3 ml-0.5">und</span>
                                                                                 </td>
                                                                             </tr>
                                                                         );
@@ -649,7 +649,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-500' : 'text-rose-600'}`}>
+                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-rose-600'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
                                                                                     <span className="text-[9px] text-rose-500 ml-0.5">und</span>

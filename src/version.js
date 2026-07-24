@@ -5,8 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.45.1';
+export const APP_VERSION = '2.46.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.46.0 — refactor(theme): T4 arranca — codemod mecánico sobre los 110
+// archivos de vista (AUDITORIA-TEMA-2026-07.md §T4: "un script de codemod
+// cubre el 90%; revisión manual el resto"). Script en dos pasadas
+// (src/views/**/*.jsx, ~4,500 reemplazos):
+//   Pasada 1: text-slate-300..900→text-content/-2/-3; bg-white/N→
+//   bg-surface-card; border-white/N→border-border-card; #0052CC/#003D99→
+//   brand/brand-hover; text-red/emerald/amber-400..600→danger/success/
+//   warning; bg-red/emerald/amber-50/100→danger/success/warning con /10
+//   default (preserva la opacidad original si el caller ya tenía una, ej.
+//   bg-red-50/40→bg-danger/40 — no un /10 fijo que perdería la intención);
+//   border-red/emerald/amber-50/100/200 con la misma lógica de opacidad
+//   preservada, default /30.
+//   Pasada 2 (gap encontrado tras medir el gate de T7): bg-slate-50/100/200
+//   →bg-surface-card-hover, bg-slate-300/400→bg-content-3, text-slate-200→
+//   text-content-3 — la primera pasada no cubría bg-slate-* en absoluto.
+// Deliberadamente NO tocado (mismo criterio que ThemeToggle.jsx/
+// SidebarSyncStatus.jsx en T3): bg-slate-500/600/700/800/900/950 — grep de
+// contexto confirmó que son botones/chips neutros SIEMPRE oscuros a
+// propósito (ej. "Ver más"/tooltips con bg-slate-700 hover:bg-slate-800
+// text-white), no superficies de card que debieran reaccionar al tema.
+// Colores decorativos no semánticos (purple/indigo/pink/orange usados como
+// acento, no como card) tampoco se tocan — mismo criterio que el ícono
+// morado de aiSchedulerPreview en T3.
+// Gate mecánico de T7 (grep de text-slate-[0-9]/bg-white|slate-[0-9]/
+// border-white/hex crudo): 102→51 archivos con al menos un match restante
+// (bajó a la mitad en esta sola pasada; el resto son mayormente los
+// bg-slate-700/800 intencionales de arriba + hex decorativos no migrables
+// por regex). VentasView (vista de mayor tráfico, 137 matches originales)
+// quedó en 2 — ambos del tipo intencional documentado.
+// Build + tests verdes. Verificado con Playwright en AttendanceMonitorView
+// y VentasView (liquid/solid/dark): las stat cards que antes se veían como
+// cajas grises planas en dark theme ahora muestran el color/superficie
+// correctos del tema.
 
 // v2.45.1 — refactor(theme): AppLayout.jsx, limpieza final de T3 (header/nav
 // móvil). El resto del archivo (sidebar, flyouts) ya estaba correctamente

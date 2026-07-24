@@ -308,25 +308,25 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 animate={isVisible && !isExiting ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
                 transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 onAnimationComplete={() => { if (isExiting) onClose(); }}
-                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_30px_80px_rgba(0,0,0,0.22)] border border-white/60 flex flex-col cursor-default transform-gpu overflow-hidden"
+                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_30px_80px_rgba(0,0,0,0.22)] border border-border-card flex flex-col cursor-default transform-gpu overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-white/20 bg-white/[0.22] shrink-0 z-40">
+                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-border-card bg-white/[0.22] shrink-0 z-40">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-white/60 backdrop-blur-sm overflow-hidden border border-white/80 shadow-sm flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-surface-card backdrop-blur-sm overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
                             {employee?.photo_url
                                 ? <img src={employee.photo_url} className="w-full h-full object-cover" alt="" />
-                                : <CircleUserRound size={18} className="text-slate-500" strokeWidth={1.5} />}
+                                : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}
                         </div>
                         <div className="min-w-0">
-                            <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{employee?.name || '—'}</p>
-                            <p className="text-[10px] font-black text-[#0052CC] uppercase tracking-widest leading-none mt-0.5 capitalize">
+                            <p className="text-[13px] font-black text-content truncate leading-tight">{employee?.name || '—'}</p>
+                            <p className="text-[10px] font-black text-brand uppercase tracking-widest leading-none mt-0.5 capitalize">
                                 {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}{' '}
-                                <span className="text-slate-500 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
+                                <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
                             </p>
                         </div>
                     </div>
-                    <button onClick={handleClose} className="w-8 h-8 rounded-full bg-white/60 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-[0.97] shrink-0"><X size={16} strokeWidth={3} /></button>
+                    <button onClick={handleClose} className="w-8 h-8 rounded-full bg-surface-card hover:bg-danger/10 hover:text-danger text-content-3 flex items-center justify-center transition-colors active:scale-[0.97] shrink-0"><X size={16} strokeWidth={3} /></button>
                 </div>
 
                 {coverageMeta && (
@@ -376,14 +376,14 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/30'}`}>
+                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
                             
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
+                                <span className="text-[9px] font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                                     <Clock size={10} /> Cálculo de Horas
                                 </span>
                                 {netHours !== null && timeAuditErrors.length === 0 && (
-                                    <div className={`px-2 py-[2px] rounded border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm transition-all duration-300 ${Number(netHours) > 8 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                    <div className={`px-2 py-[2px] rounded border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm transition-all duration-300 ${Number(netHours) > 8 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
                                         {Number(netHours) > 8 && <Flame size={10} className="animate-pulse" />}
                                         {netHours}H TOTALES
                                     </div>
@@ -392,11 +392,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block group-hover/time:text-[#0052CC] transition-colors">Entrada</label>
+                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand transition-colors">Entrada</label>
                                     <TimePicker12 value={customStart} onChange={setCustomStart} />
                                 </div>
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block group-hover/time:text-[#0052CC] transition-colors">Salida</label>
+                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand transition-colors">Salida</label>
                                     <TimePicker12 value={customEnd} onChange={setCustomEnd} />
                                 </div>
                             </div>
@@ -464,14 +464,14 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
                 </div>
 
-                <div className="p-3 border-t border-white/20 bg-white/[0.22] shrink-0 z-30">
+                <div className="p-3 border-t border-border-card bg-white/[0.22] shrink-0 z-30">
                     <button 
                         onClick={handleSave} 
                         disabled={isSaveDisabled}
                         className={`w-full py-3.5 text-[12px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
                         ${isSaveDisabled 
-                            ? 'bg-slate-100 text-slate-500 border border-slate-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-[#0052CC] to-[#003D99] text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
+                            ? 'bg-surface-card-hover text-content-3 border border-slate-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-brand to-brand-hover text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
                     >
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}
                     </button>

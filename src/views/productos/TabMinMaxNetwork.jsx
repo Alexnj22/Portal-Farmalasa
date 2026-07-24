@@ -30,8 +30,8 @@ const COLS = [
 ];
 
 function NetCell({ b }) {
-    if (!b) return <div className="text-slate-200 text-[10px] text-center">—</div>;
-    const dot   = ALERT_DOT[b.alr] ?? 'bg-slate-300';
+    if (!b) return <div className="text-content-3 text-[10px] text-center">—</div>;
+    const dot   = ALERT_DOT[b.alr] ?? 'bg-content-3';
     const pedir = (b.alr === 'out_of_stock' || b.alr === 'below_min') && b.max > 0
         ? Math.max(0, b.max - b.stk) : null;
     return (
@@ -39,11 +39,11 @@ function NetCell({ b }) {
             <div className="flex items-center gap-0.5">
                 <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
                 <span className={`text-[11px] font-bold tabular-nums ml-0.5 ${
-                    b.stk === 0 ? 'text-red-500' : b.alr === 'below_min' ? 'text-orange-600' : 'text-slate-700'
+                    b.stk === 0 ? 'text-danger' : b.alr === 'below_min' ? 'text-orange-600' : 'text-content-2'
                 }`}>{b.stk.toLocaleString()}</span>
             </div>
             {pedir !== null && (
-                <span className="text-[8px] font-semibold text-red-400 tabular-nums">P:{pedir.toLocaleString()}</span>
+                <span className="text-[8px] font-semibold text-danger tabular-nums">P:{pedir.toLocaleString()}</span>
             )}
         </div>
     );
@@ -152,25 +152,25 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
             {/* ── Oportunidades de traslado ── */}
             {!loading && transferOps.length > 0 && (
-                <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 backdrop-blur-sm p-4 flex flex-col gap-3"
+                <div className="rounded-2xl border border-warning/60 bg-warning/50 backdrop-blur-sm p-4 flex flex-col gap-3"
                     style={{ boxShadow: '0 4px 20px rgba(245,158,11,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-600">Oportunidades de traslado</span>
-                        <span className="text-[9px] text-amber-500 font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-warning">Oportunidades de traslado</span>
+                        <span className="text-[9px] text-warning font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>
                     </div>
                     <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto">
                         {transferOps.map(item => (
                             <div key={item.erp_product_id} className="flex items-center gap-2 text-[11px] min-w-0">
-                                <span className="font-medium text-slate-700 flex-1 truncate min-w-0 leading-tight">{item.product_name}</span>
+                                <span className="font-medium text-content-2 flex-1 truncate min-w-0 leading-tight">{item.product_name}</span>
                                 <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
                                     {item.suppliers.map(s => (
                                         <span key={s.id} className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-black tabular-nums">
                                             {ERP_SHORT[s.id]} +{s.excess}
                                         </span>
                                     ))}
-                                    <ArrowRight size={10} className="text-slate-300 shrink-0" />
+                                    <ArrowRight size={10} className="text-content-3 shrink-0" />
                                     {item.needers.map(n => (
-                                        <span key={n.id} className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[9px] font-black tabular-nums">
+                                        <span key={n.id} className="px-1.5 py-0.5 bg-danger/10 text-red-700 rounded text-[9px] font-black tabular-nums">
                                             {ERP_SHORT[n.id]} -{n.pedir}
                                         </span>
                                     ))}
@@ -185,18 +185,18 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
             <div className="flex items-center gap-2.5 flex-wrap">
 
                 {/* Filter pill: ABC | Alert | Clear */}
-                <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0">
+                <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0">
                     {/* ABC */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (
                             <button key={cls} onClick={() => { setFilterAbc(cls); setPage(1); }}
-                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-500 hover:text-slate-600'}`}>
+                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
                                 {cls === 'all' ? 'ABC' : cls}
                             </button>
                         ))}
                     </div>
 
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
 
                     {/* Alert */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
@@ -205,7 +205,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                             if (cnt === 0) return null;
                             return (
                                 <button key={key} onClick={() => { setFilterAlert(key); setPage(1); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all ${filterAlert === key ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-500 hover:text-slate-600'}`}>
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all ${filterAlert === key ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
                                     {key !== 'all' && <span className={`w-1.5 h-1.5 rounded-full ${ALERT_DOT[key]}`} />}
                                     {key === 'all' ? 'Todos' : ALERT_LABELS[key]}
                                     {cnt !== null && <span className="tabular-nums">{cnt}</span>}
@@ -216,9 +216,9 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
                     {isDirty && (
                         <>
-                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                             <button onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }}
-                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                 <X size={11} strokeWidth={3} />
                             </button>
                         </>
@@ -228,22 +228,22 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 <div className="flex-1" />
 
                 {!loading && (
-                    <span className="text-[11px] text-slate-500">
-                        <strong className="text-slate-600">{sorted.length.toLocaleString()}</strong>
+                    <span className="text-[11px] text-content-3">
+                        <strong className="text-content-2">{sorted.length.toLocaleString()}</strong>
                         {!showAll && <span> de {data.length.toLocaleString()}</span>} productos
                     </span>
                 )}
 
                 <button onClick={() => { setShowAll(s => !s); setPage(1); }}
                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all ${
-                        showAll ? 'bg-slate-800 text-white border-slate-800' : 'bg-white/80 border-slate-200 text-slate-500 hover:border-slate-300'
+                        showAll ? 'bg-slate-800 text-white border-slate-800' : 'bg-surface-card border-slate-200 text-content-3 hover:border-slate-300'
                     }`}>
                     {showAll ? 'Solo alertas' : 'Ver todos'}
                 </button>
             </div>
 
             {error && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger font-semibold">
                     <AlertTriangle size={14} /> {error}
                 </div>
             )}
@@ -265,20 +265,20 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 {pageRows.map((row, i) => {
                     const bs     = row.branches || {};
                     const maxSev = Math.max(...Object.values(bs).map(b => SEVERITY[b.alr] ?? 0), 0);
-                    const rowTint = maxSev >= 4 ? 'bg-red-50/40' : maxSev >= 3 ? 'bg-orange-50/30' : '';
+                    const rowTint = maxSev >= 4 ? 'bg-danger/40' : maxSev >= 3 ? 'bg-orange-50/30' : '';
                     return (
                         <DataRow key={row.erp_product_id} index={i} className={rowTint}>
                             <DataCell align="left" className="!py-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     {row.abc_class && (
                                         <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md border ${
-                                            row.abc_class === 'A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                            row.abc_class === 'A' ? 'bg-success/10 text-emerald-700 border-success/30' :
                                             row.abc_class === 'B' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                            row.abc_class === 'C' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                                    'bg-slate-50 text-slate-500 border-slate-200'
+                                            row.abc_class === 'C' ? 'bg-warning/10 text-amber-700 border-warning/30' :
+                                                                    'bg-surface-card-hover text-content-3 border-slate-200'
                                         }`}>{row.abc_class}</span>
                                     )}
-                                    <span className="text-[12px] font-medium text-slate-800 truncate">{row.product_name}</span>
+                                    <span className="text-[12px] font-medium text-content truncate">{row.product_name}</span>
                                 </div>
                             </DataCell>
                             {ERP_ORDER.map(id => (

@@ -21,10 +21,10 @@ const inputCls = [
     'w-full',
     'bg-white/[0.22] hover:bg-white/[0.32]',
     'backdrop-blur-md',
-    'border border-white/65 hover:border-white/80',
-    'text-slate-800 placeholder-slate-400/80',
+    'border border-border-card hover:border-border-card',
+    'text-content placeholder-slate-400/80',
     'outline-none',
-    'focus:bg-white/[0.58] focus:border-white/90',
+    'focus:bg-white/[0.58] focus:border-border-card',
     'focus:shadow-[inset_0_2px_10px_rgba(0,0,0,0.04),0_0_0_3px_rgba(255,255,255,0.38)]',
     'transition-all duration-250',
     'font-bold',
@@ -58,9 +58,9 @@ const AmbientBG = () => (
 const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h-[54px]' }) => (
     <button type={type} onClick={onClick} disabled={disabled}
         className={`relative overflow-hidden group w-full ${height}
-            bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78
+            bg-gradient-to-b from-brand/72 to-brand-hover/78
             backdrop-blur-xl
-            border border-white/22 hover:border-white/36
+            border border-border-card hover:border-border-card
             text-white rounded-[1.5rem] font-black text-[13px] uppercase tracking-widest
             shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
             hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
@@ -88,17 +88,17 @@ const CameraScanner = ({ videoRef }) => (
             ].map((c,i) => (
                 <div key={i} style={{ position:'absolute', top:c.top, left:c.left, right:c.right, bottom:c.bottom, width:26, height:26, borderTop:c.bTop, borderLeft:c.bLeft, borderRight:c.bRight, borderBottom:c.bBottom, borderRadius:c.br, zIndex:11, filter:'drop-shadow(0 0 5px rgba(0,82,204,0.55))' }} />
             ))}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border border-white/15 rounded-xl"
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border border-border-card rounded-xl"
                 style={{ width:'62%', height:'52%' }} />
             <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', background:'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.35) 100%)', pointerEvents:'none' }} />
             <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'inset 0 0 32px rgba(0,0,0,0.30)', pointerEvents:'none' }} />
         </div>
-        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-white/55 rounded-[1.25rem] shadow-[0_4px_14px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.85)]">
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-border-card rounded-[1.25rem] shadow-[0_4px_14px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.85)]">
             <div className="relative shrink-0">
-                <div className="w-2 h-2 rounded-full bg-[#0052CC]" />
-                <div className="absolute inset-0 rounded-full bg-[#0052CC]/40 animate-ping" />
+                <div className="w-2 h-2 rounded-full bg-brand" />
+                <div className="absolute inset-0 rounded-full bg-brand/40 animate-ping" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Apunta la cámara al código de barras</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-content-2">Apunta la cámara al código de barras</p>
         </div>
     </div>
 );
@@ -356,53 +356,53 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 <div className={[
                     'flex items-center gap-3 px-4 rounded-[1.5rem] border backdrop-blur-md transition-all duration-300',
                     compact ? 'py-2.5' : 'py-3',
-                    st === 'error'   ? 'bg-red-50/55 border-red-200/80' :
-                    st === 'success' ? 'bg-emerald-50/55 border-emerald-200/80' :
-                    paused           ? 'bg-white/[0.14] border-white/45' :
-                                       'bg-[#0052CC]/[0.05] border-[#0052CC]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]',
+                    st === 'error'   ? 'bg-danger/55 border-danger/80' :
+                    st === 'success' ? 'bg-success/55 border-success/80' :
+                    paused           ? 'bg-white/[0.14] border-border-card' :
+                                       'bg-brand/[0.05] border-brand/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]',
                 ].join(' ')}>
                     <div className={[
                         'relative shrink-0 flex items-center justify-center rounded-[1rem] border transition-all duration-300',
                         compact ? 'w-10 h-10' : 'w-11 h-11',
-                        st === 'error'   ? 'bg-red-100/60 border-red-200' :
-                        st === 'success' ? 'bg-emerald-100/60 border-emerald-200' :
-                        paused           ? 'bg-white/40 border-white/60' :
-                                           'bg-white/60 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]',
+                        st === 'error'   ? 'bg-danger/60 border-danger/30' :
+                        st === 'success' ? 'bg-success/60 border-success/30' :
+                        paused           ? 'bg-surface-card border-border-card' :
+                                           'bg-surface-card border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]',
                     ].join(' ')}>
                         {st === 'reading' || isLoading
-                            ? <Loader2 size={compact?17:19} className="text-[#0052CC] animate-spin" strokeWidth={2.2} />
+                            ? <Loader2 size={compact?17:19} className="text-brand animate-spin" strokeWidth={2.2} />
                             : st === 'success'
-                                ? <CheckCircle2 size={compact?17:19} className="text-emerald-500" strokeWidth={2.2} />
+                                ? <CheckCircle2 size={compact?17:19} className="text-success" strokeWidth={2.2} />
                                 : st === 'error'
-                                    ? <AlertCircle size={compact?17:19} className="text-red-500" strokeWidth={2.2} />
-                                    : <ScanBarcode size={compact?17:19} className={paused || cameraActive ? 'text-slate-500' : 'text-[#0052CC]'} strokeWidth={2} />}
+                                    ? <AlertCircle size={compact?17:19} className="text-danger" strokeWidth={2.2} />
+                                    : <ScanBarcode size={compact?17:19} className={paused || cameraActive ? 'text-content-3' : 'text-brand'} strokeWidth={2} />}
                         {active && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0052CC]/50" />
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0052CC] border border-white/80" />
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand border border-border-card" />
                             </span>
                         )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
                         {scanFeedback ? (
                             <>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 truncate">Código: {scanFeedback.code}</p>
-                                <p className={`text-[12px] font-bold truncate ${st==='error'?'text-red-600':st==='success'?'text-emerald-600':'text-[#0052CC]'}`}>{scanFeedback.message}</p>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-content-3 truncate">Código: {scanFeedback.code}</p>
+                                <p className={`text-[12px] font-bold truncate ${st==='error'?'text-danger':st==='success'?'text-success':'text-brand'}`}>{scanFeedback.message}</p>
                             </>
                         ) : cameraActive ? (
                             <>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">Cámara activa</p>
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Escaneando con la cámara</p>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Cámara activa</p>
+                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide mt-0.5">Escaneando con la cámara</p>
                             </>
                         ) : paused ? (
                             <>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">Lector en pausa</p>
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Toca fuera de los campos para reactivar</p>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Lector en pausa</p>
+                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide mt-0.5">Toca fuera de los campos para reactivar</p>
                             </>
                         ) : (
                             <>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-[#0052CC]">Lector activo</p>
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">
+                                <p className="text-[11px] font-black uppercase tracking-widest text-brand">Lector activo</p>
+                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide mt-0.5">
                                     {scanHold ? `Escanea tu carné · usuario en ${scanHoldLeft}s` : 'Escanea tu carné para entrar'}
                                 </p>
                             </>
@@ -418,8 +418,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 'transition-all duration-300 active:scale-[0.93]',
                                 compact ? 'w-10 h-10' : 'w-11 h-11',
                                 cameraActive
-                                    ? 'bg-red-500/[0.15] border-red-400/45 text-red-400 shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-red-500/[0.25]'
-                                    : 'bg-white/[0.28] border-white/60 text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-white/85 hover:text-[#0052CC]',
+                                    ? 'bg-red-500/[0.15] border-red-400/45 text-danger shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-red-500/[0.25]'
+                                    : 'bg-white/[0.28] border-border-card text-content-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-border-card hover:text-brand',
                             ].join(' ')}
                         >
                             {cameraActive
@@ -439,7 +439,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
             <div className="relative flex items-center gap-3 px-1">
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/60 to-white/60" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 shrink-0">o con tu usuario</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-content-3 shrink-0">o con tu usuario</span>
                 <div className="flex-1 h-px bg-gradient-to-l from-transparent via-white/60 to-white/60" />
             </div>
 
@@ -449,7 +449,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     { ref: userPasswordRef, id: 'password', type: 'password', placeholder: 'Contraseña',      autoComplete: 'current-password', Icon: Lock },
                 ].map(({ ref, id, type, placeholder, autoComplete, Icon }) => (
                     <div key={id} className="relative group flex items-center">
-                        <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-500 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
+                        <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-content-3 group-focus-within:text-brand transition-colors pointer-events-none z-10" />
                         <input ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
@@ -457,9 +457,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </div>
                 ))}
                 {error && (
-                    <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 py-3 bg-red-50/50 backdrop-blur-md border border-red-200/80 rounded-[1.25rem] flex items-center gap-3">
-                        <AlertCircle size={15} className="text-red-500 shrink-0" strokeWidth={2.5} />
-                        <p className="text-red-600 text-[10px] font-black uppercase tracking-widest">{error}</p>
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 py-3 bg-danger/50 backdrop-blur-md border border-danger/80 rounded-[1.25rem] flex items-center gap-3">
+                        <AlertCircle size={15} className="text-danger shrink-0" strokeWidth={2.5} />
+                        <p className="text-danger text-[10px] font-black uppercase tracking-widest">{error}</p>
                     </div>
                 )}
                 <GlassButton height={compact ? 'h-[46px]' : 'h-[54px]'} disabled={isLoading}>
@@ -485,19 +485,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-[2.5rem]" />
                         <div className="relative flex flex-col items-center gap-3">
                             <div className="w-14 h-14 rounded-[1.25rem] bg-amber-400/10 border border-amber-300/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                                <Lock size={22} className="text-amber-500" strokeWidth={2} />
+                                <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
-                            <h3 className="text-[22px] font-black text-slate-800 tracking-tight text-center">Cambia tu contraseña</h3>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
+                            <h3 className="text-[22px] font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
+                            <p className="text-[10px] font-bold text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
                         </div>
                         <form id="cpf" onSubmit={e=>{e.preventDefault();handleChangePassword();}} className="relative flex flex-col gap-3">
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
-                                    <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
+                                    <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand transition-colors pointer-events-none z-10" />
                                     <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-[16px] rounded-[1.25rem]`} />
                                 </div>
                             ))}
-                            {changePassError && <div className="px-4 py-2.5 bg-red-50/60 border border-red-200/80 rounded-[1rem] flex items-center gap-2"><AlertCircle size={14} className="text-red-500 shrink-0" strokeWidth={2.5}/><p className="text-[11px] font-black text-red-600">{changePassError}</p></div>}
+                            {changePassError && <div className="px-4 py-2.5 bg-danger/60 border border-danger/80 rounded-[1rem] flex items-center gap-2"><AlertCircle size={14} className="text-danger shrink-0" strokeWidth={2.5}/><p className="text-[11px] font-black text-danger">{changePassError}</p></div>}
                             <GlassButton type="submit" disabled={changePassLoading||!newPassword||!confirmPassword} height="h-[52px]">
                                 {changePassLoading?<Loader2 size={18} className="animate-spin"/>:'Guardar contraseña'}
                             </GlassButton>
@@ -517,13 +517,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <div className={`flex flex-col items-center gap-2 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
                 <div className="relative">
                     <div className="absolute -inset-3 rounded-[2rem] blur-xl opacity-40 bg-gradient-to-tr from-violet-500/60 to-blue-400/40" />
-                    <div className="relative w-16 h-16 rounded-[1.5rem] bg-white/[0.55] backdrop-blur-xl border border-white/85 flex items-center justify-center shadow-[0_8px_24px_rgba(110,70,220,0.18),inset_0_2px_0_rgba(255,255,255,1)]">
+                    <div className="relative w-16 h-16 rounded-[1.5rem] bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[0_8px_24px_rgba(110,70,220,0.18),inset_0_2px_0_rgba(255,255,255,1)]">
                         <img src="/Logo192.png" alt="FarmaLasa" className="w-10 h-10 object-contain" />
                     </div>
                 </div>
                 <div className="text-center mt-1">
-                    <p className="font-black text-[20px] text-slate-800 tracking-tight leading-none">Portal Farmalasa</p>
-                    <p className="text-[9px] font-black text-[#0052CC]/70 uppercase tracking-[0.22em] mt-1">Sistema de Gestión</p>
+                    <p className="font-black text-[20px] text-content tracking-tight leading-none">Portal Farmalasa</p>
+                    <p className="text-[9px] font-black text-brand/70 uppercase tracking-[0.22em] mt-1">Sistema de Gestión</p>
                 </div>
             </div>
 
@@ -533,20 +533,20 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {renderLoginForm(true)}
                     {!isMobileOrApp() && (
                         <>
-                            <div className="h-px bg-white/40 mx-2" />
+                            <div className="h-px bg-surface-card mx-2" />
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-3 rounded-[1.5rem] bg-white/[0.18] backdrop-blur-md border border-white/65 flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-white/85 hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)]">
+                                className="group w-full p-3 rounded-[1.5rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)]">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-[0.875rem] bg-white/50 border border-white/75 flex items-center justify-center group-hover:bg-white transition-colors shadow-sm">
-                                        <Clock size={15} className="text-slate-500 group-hover:text-[#0052CC] transition-colors" strokeWidth={2.2} />
+                                    <div className="w-9 h-9 rounded-[0.875rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-white transition-colors shadow-sm">
+                                        <Clock size={15} className="text-content-3 group-hover:text-brand transition-colors" strokeWidth={2.2} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Terminal Kiosco</p>
-                                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
+                                        <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
+                                        <p className="text-[8px] font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
-                                <div className="w-7 h-7 rounded-full bg-white/55 border border-white/75 flex items-center justify-center group-hover:bg-[#0052CC] group-hover:border-transparent transition-all duration-200">
-                                    <ArrowRight size={12} className="text-slate-400 group-hover:text-white transition-colors" strokeWidth={2.5} />
+                                <div className="w-7 h-7 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-200">
+                                    <ArrowRight size={12} className="text-content-3 group-hover:text-white transition-colors" strokeWidth={2.5} />
                                 </div>
                             </button>
                         </>
@@ -560,9 +560,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {href:'https://farmalasa.com',Icon:Pill,label:'FarmaLasa',color:'#6929C4'},
                 ].map(({href,Icon,label,color})=>(
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-white/55 hover:border-white/85 rounded-[1.25rem] transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5">
+                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-[1.25rem] transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5">
                         <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-200 group-hover:scale-110" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-700 transition-colors">{label}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
                     </a>
                 ))}
             </div>
@@ -581,14 +581,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <div className="relative flex flex-col items-center gap-3">
                         <div className="relative group/logo">
                             <div className="absolute -inset-4 rounded-[2.5rem] blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-500 bg-gradient-to-tr from-violet-500/55 to-blue-400/38" />
-                            <div className="relative w-[88px] h-[88px] rounded-[1.75rem] bg-white/[0.62] backdrop-blur-2xl border border-white/90 flex items-center justify-center shadow-[0_12px_40px_rgba(110,70,220,0.16),inset_0_2px_0_rgba(255,255,255,1)]"
+                            <div className="relative w-[88px] h-[88px] rounded-[1.75rem] bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[0_12px_40px_rgba(110,70,220,0.16),inset_0_2px_0_rgba(255,255,255,1)]"
                                 style={{ animation:'lgn-logo 4.5s ease-in-out infinite' }}>
                                 <img src="/Logo192.png" alt="FarmaLasa" className="w-[58px] h-[58px] object-contain" />
                             </div>
                         </div>
                         <div className="text-center">
-                            <h1 className="text-[32px] font-black text-slate-800 tracking-tight leading-none">Portal</h1>
-                            <p className="text-[10px] font-black text-[#0052CC]/72 uppercase tracking-[0.22em] mt-2">Farmacias La Popular &amp; La Salud</p>
+                            <h1 className="text-[32px] font-black text-content tracking-tight leading-none">Portal</h1>
+                            <p className="text-[10px] font-black text-brand/72 uppercase tracking-[0.22em] mt-2">Farmacias La Popular &amp; La Salud</p>
                         </div>
                     </div>
 
@@ -602,18 +602,18 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {!isMobileOrApp() && (
                         <div className="relative">
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-4 rounded-[1.75rem] bg-white/[0.18] backdrop-blur-md border border-white/65 flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-white/88 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5">
+                                className="group w-full p-4 rounded-[1.75rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5">
                                 <div className="flex items-center gap-3.5">
-                                    <div className="w-11 h-11 rounded-[1.1rem] bg-white/50 border border-white/80 flex items-center justify-center group-hover:bg-white transition-all duration-200 shadow-sm group-hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)]">
-                                        <Clock size={19} className="text-slate-500 group-hover:text-[#0052CC] transition-colors" strokeWidth={2} />
+                                    <div className="w-11 h-11 rounded-[1.1rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-white transition-all duration-200 shadow-sm group-hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)]">
+                                        <Clock size={19} className="text-content-3 group-hover:text-brand transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[12px] font-black text-slate-700 uppercase tracking-widest">Terminal Kiosco</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
+                                        <p className="text-[12px] font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
+                                        <p className="text-[9px] font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-white/55 border border-white/75 flex items-center justify-center group-hover:bg-[#0052CC] group-hover:border-transparent transition-all duration-200 group-hover:shadow-[0_4px_12px_rgba(0,82,204,0.30)]">
-                                    <ArrowRight size={14} className="text-slate-400 group-hover:text-white transition-colors" strokeWidth={2.5} />
+                                <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-200 group-hover:shadow-[0_4px_12px_rgba(0,82,204,0.30)]">
+                                    <ArrowRight size={14} className="text-content-3 group-hover:text-white transition-colors" strokeWidth={2.5} />
                                 </div>
                             </button>
                         </div>
@@ -627,14 +627,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-[2rem]" />
                     <div className="relative flex items-center gap-2 px-1 mb-1">
                         <Sparkles size={11} className="text-violet-400" strokeWidth={2} />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Accesos rápidos</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
                     </div>
                     {[
                         {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Sistema de Ventas',sub:'DTE · OSS',color:'#0052CC',glow:'rgba(0,82,204,0.22)'},
                         {href:'https://farmalasa.com',Icon:Pill,label:'Farmalasa',sub:'Sitio web oficial',color:'#6929C4',glow:'rgba(105,41,196,0.22)'},
                     ].map(({href,Icon,label,sub,color,glow})=>(
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-white/55 hover:border-white/88 rounded-[1.25rem] transition-all duration-250 active:scale-[0.97] hover:scale-[1.02] hover:-translate-y-0.5 w-[210px] overflow-hidden"
+                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-border-card hover:border-border-card rounded-[1.25rem] transition-all duration-250 active:scale-[0.97] hover:scale-[1.02] hover:-translate-y-0.5 w-[210px] overflow-hidden"
                             onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${glow}, inset 0 1px 0 rgba(255,255,255,0.7)`; }}
                             onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; }}>
                             <div className="absolute inset-0 overflow-hidden rounded-[1.25rem] pointer-events-none">
@@ -645,10 +645,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <Icon size={16} strokeWidth={2} style={{color}} />
                             </div>
                             <div className="relative min-w-0">
-                                <p className="text-[11px] font-black text-slate-700 group-hover:text-slate-900 transition-colors truncate">{label}</p>
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">{sub}</p>
+                                <p className="text-[11px] font-black text-content-2 group-hover:text-content transition-colors truncate">{label}</p>
+                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide">{sub}</p>
                             </div>
-                            <ChevronRight size={11} className="relative text-slate-300 group-hover:text-slate-500 ml-auto shrink-0 transition-all duration-200 group-hover:translate-x-0.5" strokeWidth={2.5} />
+                            <ChevronRight size={11} className="relative text-content-3 group-hover:text-content-3 ml-auto shrink-0 transition-all duration-200 group-hover:translate-x-0.5" strokeWidth={2.5} />
                         </a>
                     ))}
                 </div>

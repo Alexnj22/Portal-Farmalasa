@@ -11,9 +11,9 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 
 const STATUS_CFG = {
-  pending:  { label: 'Pendiente', cls: 'bg-amber-100/80 text-amber-700 border-amber-200' },
-  approved: { label: 'Aprobada',  cls: 'bg-emerald-100/80 text-emerald-700 border-emerald-200' },
-  rejected: { label: 'Rechazada', cls: 'bg-red-100/80 text-red-600 border-red-200' },
+  pending:  { label: 'Pendiente', cls: 'bg-warning/80 text-amber-700 border-warning/30' },
+  approved: { label: 'Aprobada',  cls: 'bg-success/80 text-emerald-700 border-success/30' },
+  rejected: { label: 'Rechazada', cls: 'bg-danger/80 text-danger border-danger/30' },
 };
 
 function relTime(iso) {
@@ -29,9 +29,9 @@ function relTime(iso) {
 function Avatar({ emp, name }) {
   const photo = emp?.photo || emp?.photo_url || null;
   const initial = (name || '?').trim().charAt(0).toUpperCase();
-  if (photo) return <img src={photo} alt="" className="w-9 h-9 rounded-full object-cover border border-white/80 shadow-sm shrink-0" />;
+  if (photo) return <img src={photo} alt="" className="w-9 h-9 rounded-full object-cover border border-border-card shadow-sm shrink-0" />;
   return (
-    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 text-slate-600 flex items-center justify-center text-[13px] font-black shrink-0 border border-white/80">
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 text-content-2 flex items-center justify-center text-[13px] font-black shrink-0 border border-border-card">
       {initial}
     </div>
   );
@@ -46,27 +46,27 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
   const name      = r.requested_by_name || emp?.name || r.requested_by;
 
   return (
-    <div className="rounded-2xl border border-white/70 bg-white/55 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_20px_rgba(0,0,0,0.05)] p-4 flex flex-col gap-3 transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.09)]">
+    <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_20px_rgba(0,0,0,0.05)] p-4 flex flex-col gap-3 transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.09)]">
 
       {/* Header: solicitante + estado */}
       <div className="flex items-center gap-2.5">
         <Avatar emp={emp} name={name} />
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate">{name}</p>
-          <p className="text-[10px] text-slate-500">{relTime(r.requested_at)}</p>
+          <p className="text-[12px] font-black text-content truncate">{name}</p>
+          <p className="text-[10px] text-content-3">{relTime(r.requested_at)}</p>
         </div>
         <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
       </div>
 
       {/* Producto + sucursal */}
       <div className="min-w-0">
-        <p className="text-[13px] font-bold text-slate-800 leading-tight truncate">{r.product_name || `Producto ${r.erp_product_id}`}</p>
+        <p className="text-[13px] font-bold text-content leading-tight truncate">{r.product_name || `Producto ${r.erp_product_id}`}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100/70 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-content-3 bg-surface-card-hover/70 px-2 py-0.5 rounded-full">
             <Building2 size={10} /> {ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}
           </span>
           {r.current_sales_6m != null && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50/70 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success/70 px-2 py-0.5 rounded-full">
               <TrendingUp size={10} /> {Number(r.current_sales_6m).toLocaleString()} und · 6m
             </span>
           )}
@@ -74,12 +74,12 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       </div>
 
       {/* Valores: actual → propuesto */}
-      <div className="flex items-center justify-center gap-3 rounded-xl bg-slate-50/70 border border-slate-100 py-2">
-        <div className="text-right text-[12px] font-bold tabular-nums text-slate-500">
+      <div className="flex items-center justify-center gap-3 rounded-xl bg-surface-card-hover/70 border border-slate-100 py-2">
+        <div className="text-right text-[12px] font-bold tabular-nums text-content-3">
           <div>MIN {r.current_min ?? '—'}</div>
           <div>MAX {r.current_max ?? '—'}</div>
         </div>
-        <ArrowRight size={15} className="text-slate-300" />
+        <ArrowRight size={15} className="text-content-3" />
         <div className="text-left text-[12px] font-black tabular-nums">
           <div className="text-orange-600">MIN {r.requested_min}</div>
           <div className="text-blue-600">MAX {r.requested_max}</div>
@@ -87,14 +87,14 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       </div>
 
       {/* Motivo del solicitante */}
-      {r.reason && <p className="text-[11px] text-slate-500 italic leading-snug">“{r.reason}”</p>}
+      {r.reason && <p className="text-[11px] text-content-3 italic leading-snug">“{r.reason}”</p>}
 
       {/* Nota de decisión (historial) */}
       {!isPending && r.decision_note && (
-        <p className="text-[10px] text-slate-500">Nota: {r.decision_note}</p>
+        <p className="text-[10px] text-content-3">Nota: {r.decision_note}</p>
       )}
       {!isPending && (
-        <p className="text-[10px] text-slate-500 flex items-center gap-1">
+        <p className="text-[10px] text-content-3 flex items-center gap-1">
           <Clock size={10} /> {r.decided_by || '—'} · {relTime(r.decided_at)}
         </p>
       )}
@@ -107,7 +107,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar
           </button>
           <button onClick={() => setRejecting(true)} disabled={busy}
-            className="h-9 px-3 rounded-xl text-[12px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
+            className="h-9 px-3 rounded-xl text-[12px] font-bold text-danger bg-danger/10 hover:bg-red-500 hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
             <X size={14} /> Rechazar
           </button>
         </div>
@@ -118,14 +118,14 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         <div className="flex flex-col gap-2 mt-auto">
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} autoFocus
             placeholder="Motivo del rechazo (opcional)…"
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white/80 text-[16px] text-slate-700 placeholder-slate-400 outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 resize-none" />
+            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-surface-card text-[16px] text-content-2 placeholder-slate-400 outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 resize-none" />
           <div className="flex items-center gap-2">
             <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
               className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
               {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo
             </button>
             <button onClick={() => { setRejecting(false); setNote(''); }} disabled={busy}
-              className="h-8 px-3 rounded-xl text-[11px] font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+              className="h-8 px-3 rounded-xl text-[11px] font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
               Cancelar
             </button>
           </div>
@@ -329,7 +329,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           {[['pending', `Pendientes${pendingCount ? ` · ${pendingCount}` : ''}`], ['history', 'Historial']].map(([k, label]) => (
             <button key={k} onClick={() => { setTab(k); setSucFilter('all'); }}
               className={`px-4 py-2 rounded-full text-[12px] font-bold transition-colors ${
-                tab === k ? 'bg-[#0052CC] text-white shadow-sm' : 'bg-white/70 text-slate-500 border border-slate-200/70 hover:border-[#0052CC]/40'
+                tab === k ? 'bg-brand text-white shadow-sm' : 'bg-surface-card text-content-3 border border-slate-200/70 hover:border-brand/40'
               }`}>
               {label}
             </button>
@@ -337,7 +337,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         </div>
 
         {/* Filter pill estándar */}
-        <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] shrink-0">
+        <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] shrink-0">
           <div className="px-2 py-1.5" style={{ minWidth: 150 }}>
             <LiquidSelect value={sucFilter === 'all' ? '' : sucFilter}
               onChange={v => setSucFilter(v || 'all')}
@@ -345,13 +345,13 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           </div>
           {sucFilter !== 'all' && (
             <button onClick={() => setSucFilter('all')} title="Quitar sucursal"
-              className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+              className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
               <X size={9} strokeWidth={3} />
             </button>
           )}
           {tab === 'pending' && pendingInView > 0 && (
             <>
-              <div className="h-5 w-px bg-slate-100 shrink-0" />
+              <div className="h-5 w-px bg-surface-card-hover shrink-0" />
               <button onClick={approveAll} disabled={bulkBusy}
                 className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-black text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 transition-colors shrink-0">
                 {bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
@@ -363,7 +363,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-3.5 py-2 text-[12px] font-semibold text-red-600 flex items-center justify-between">
+        <div className="rounded-xl bg-danger/10 border border-danger/30 px-3.5 py-2 text-[12px] font-semibold text-danger flex items-center justify-between">
           {error}
           <button onClick={() => setError(null)}><X size={13} /></button>
         </div>
@@ -371,11 +371,11 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
       {/* ── Grid de cards ── */}
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-500" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-content-3" /></div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-2 text-slate-500">
+        <div className="flex flex-col items-center justify-center py-20 gap-2 text-content-3">
           <Inbox size={34} strokeWidth={1.5} />
-          <p className="text-[13px] font-semibold text-slate-500">
+          <p className="text-[13px] font-semibold text-content-3">
             {tab === 'pending' ? 'No hay solicitudes pendientes' : 'Sin historial de solicitudes'}
           </p>
         </div>

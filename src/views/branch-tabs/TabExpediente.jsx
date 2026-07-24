@@ -11,15 +11,15 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
 // ============================================================================
 const getDocStatus = (url, expDate) => {
-    if (!url) return { type: 'MISSING', label: 'Falta Documento', color: 'text-amber-500 bg-amber-50 border-amber-200', icon: AlertCircle };
+    if (!url) return { type: 'MISSING', label: 'Falta Documento', color: 'text-warning bg-warning/10 border-warning/30', icon: AlertCircle };
 
     if (expDate) {
         const diff = Math.ceil((new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24));
-        if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', color: 'text-red-600 bg-red-50 border-red-200 shadow-[0_0_10px_rgba(239,68,68,0.2)]', icon: AlertTriangle };
+        if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', color: 'text-danger bg-danger/10 border-danger/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]', icon: AlertTriangle };
         if (diff <= 45) return { type: 'WARNING', label: `Vence en ${diff}d`, color: 'text-orange-600 bg-orange-50 border-orange-200', icon: Clock };
     }
 
-    return { type: 'OK', label: 'Al Día', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', icon: CheckCircle2 };
+    return { type: 'OK', label: 'Al Día', color: 'text-success bg-success/10 border-success/30', icon: CheckCircle2 };
 };
 
 const formatDate = (dateStr) => {
@@ -40,8 +40,8 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
     return (
         <div className={`group relative flex flex-col p-5 rounded-[1.5rem] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-50 ${isMissing
-            ? 'bg-white/40 border-2 border-dashed border-slate-300 hover:border-[#0052CC]/40 hover:bg-white/70 min-h-[160px]'
-            : 'bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] min-h-[160px]'
+            ? 'bg-surface-card border-2 border-dashed border-slate-300 hover:border-brand/40 hover:bg-surface-card min-h-[160px]'
+            : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.04)] min-h-[160px]'
             }`}>
 
             {/* 🚨 HOVER ACTIONS NORMALES */}
@@ -49,7 +49,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-500 hover:text-[#0052CC] hover:bg-white transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-slate-100 text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
                         title="Ver PDF"
                     >
                         <Eye size={14} strokeWidth={2.5} />
@@ -58,7 +58,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                 <button
                     onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-500 hover:text-[#0052CC] hover:bg-white transition-all active:scale-[0.97]"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-slate-100 text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
                     title="Editar/Actualizar Datos"
                 >
                     <Edit3 size={14} strokeWidth={2.5} />
@@ -67,7 +67,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.isCustom && !doc.url && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-slate-100 text-content-3 hover:text-danger hover:bg-danger/10 transition-all active:scale-[0.97]"
                         title="Eliminar Espacio"
                     >
                         <Trash2 size={14} strokeWidth={2.5} />
@@ -78,7 +78,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             {/* HEADER DE LA TARJETA */}
             <div className="flex justify-between items-start mb-4 relative z-20">
                 <div className="flex items-center gap-2">
-                    <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-slate-500' : 'text-[#0052CC]'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
+                    <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-content-3' : 'text-brand'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
                         <FileText size={20} strokeWidth={1.5} />
                     </div>
 
@@ -92,7 +92,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 title="Ver Análisis de IA del Documento"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-10 group-hover/ai:opacity-100 transition-all duration-500 group-hover/ai:animate-spin [animation-duration:3s]"></div>
-                                <div className="absolute inset-[1px] bg-indigo-50/80 backdrop-blur-sm rounded-full z-0 group-hover/ai:bg-white/95 transition-colors duration-300 border border-indigo-200/50"></div>
+                                <div className="absolute inset-[1px] bg-indigo-50/80 backdrop-blur-sm rounded-full z-0 group-hover/ai:bg-surface-card transition-colors duration-300 border border-indigo-200/50"></div>
                                 <Sparkles size={14} strokeWidth={2.5} className="text-purple-500 group-hover/ai:text-purple-600 group-hover/ai:animate-pulse z-20 relative transition-colors" />
                             </button>
 
@@ -102,7 +102,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>
 
-                                <div className="bg-white/95 backdrop-blur-2xl border border-indigo-100/50 p-4 rounded-[1.25rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
+                                <div className="bg-surface-card backdrop-blur-2xl border border-indigo-100/50 p-4 rounded-[1.25rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
 
                                     {/* Fondo de luz sutil interno (Estilo holográfico) */}
                                     <div className="absolute inset-0 pointer-events-none z-0">
@@ -126,7 +126,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                                     {/* Contenido */}
                                     <div className="relative z-10 max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
-                                        <p className="text-[11px] font-semibold text-slate-700 leading-relaxed text-justify pl-3">
+                                        <p className="text-[11px] font-semibold text-content-2 leading-relaxed text-justify pl-3">
                                             {doc.aiSummary}
                                         </p>
                                     </div>
@@ -143,28 +143,28 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             </div>
 
             <div className="flex-1 relative z-10">
-                <h4 className={`text-[13px] font-black leading-tight mb-1 pr-2 ${isMissing ? 'text-slate-600' : 'text-slate-800'}`}>
+                <h4 className={`text-[13px] font-black leading-tight mb-1 pr-2 ${isMissing ? 'text-content-2' : 'text-content'}`}>
                     {doc.title}
                 </h4>
 
                 <div className="flex flex-col gap-1.5 mt-2">
                     {effectiveIssueDate && (
-                        <p className="text-[9px] font-bold text-slate-500 flex items-center gap-1">
-                            <span className="text-slate-600 uppercase tracking-widest text-[8px]">Emisión:</span> {formatDate(effectiveIssueDate)}
+                        <p className="text-[9px] font-bold text-content-3 flex items-center gap-1">
+                            <span className="text-content-2 uppercase tracking-widest text-[8px]">Emisión:</span> {formatDate(effectiveIssueDate)}
                         </p>
                     )}
                     {effectiveExpDate && (
-                        <p className={`text-[10px] font-bold flex items-center gap-1.5 ${status.type === 'EXPIRED' ? 'text-red-500' : 'text-slate-600'}`}>
-                            <Calendar size={12} strokeWidth={2.5} className={status.type === 'EXPIRED' ? 'text-red-400' : 'text-slate-400'} />
+                        <p className={`text-[10px] font-bold flex items-center gap-1.5 ${status.type === 'EXPIRED' ? 'text-danger' : 'text-content-2'}`}>
+                            <Calendar size={12} strokeWidth={2.5} className={status.type === 'EXPIRED' ? 'text-danger' : 'text-content-3'} />
                             {formatDate(effectiveExpDate)}
                         </p>
                     )}
 
                     {isMissing && doc.hasIssueDate && !effectiveIssueDate && (
-                        <p className="text-[9px] font-bold text-slate-500 mt-0.5 flex items-center gap-1"><AlertCircle size={10} /> Requiere Emisión</p>
+                        <p className="text-[9px] font-bold text-content-3 mt-0.5 flex items-center gap-1"><AlertCircle size={10} /> Requiere Emisión</p>
                     )}
                     {isMissing && (doc.hasExpiration || doc.expDate !== undefined) && !effectiveExpDate && (
-                        <p className="text-[9px] font-bold text-slate-500 mt-0.5 flex items-center gap-1"><Clock size={10} /> Requiere Vencimiento</p>
+                        <p className="text-[9px] font-bold text-content-3 mt-0.5 flex items-center gap-1"><Clock size={10} /> Requiere Vencimiento</p>
                     )}
                 </div>
             </div>
@@ -173,7 +173,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="mt-4 relative z-10">
                     <button
                         onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                        className="w-full h-10 rounded-xl bg-blue-50/50 text-[#0052CC] font-black text-[10px] uppercase tracking-widest border border-blue-200/60 hover:bg-[#0052CC] hover:text-white hover:border-[#0052CC] hover:shadow-[0_6px_20px_rgba(0,82,204,0.35)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
+                        className="w-full h-10 rounded-xl bg-blue-50/50 text-brand font-black text-[10px] uppercase tracking-widest border border-blue-200/60 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[0_6px_20px_rgba(0,82,204,0.35)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
                     >
                         <UploadCloud size={16} strokeWidth={2.5} /> Subir Archivo
                     </button>
@@ -342,25 +342,25 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             />
 
             {/* HEADER REDISEÑADO */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-white/60 pb-4 h-auto md:h-[60px]">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-border-card pb-4 h-auto md:h-[60px]">
 
                 <div className="flex items-center gap-4 w-full md:w-auto">
                     <div className="min-w-0">
-                        <h3 className="font-black text-slate-800 uppercase tracking-tight text-xl">Expediente Digital</h3>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
+                        <h3 className="font-black text-content uppercase tracking-tight text-xl">Expediente Digital</h3>
+                        <p className="text-[11px] font-bold text-content-3 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
                     </div>
 
-                    <div className="hidden sm:block w-px h-8 bg-slate-300/60 shrink-0"></div>
+                    <div className="hidden sm:block w-px h-8 bg-content-3/60 shrink-0"></div>
 
-                    <div className="hidden sm:flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/80 px-4 py-2 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] cursor-default shrink-0">
-                        <FolderOpen size={14} className={progress === 100 ? 'text-emerald-500' : 'text-[#0052CC]'} />
+                    <div className="hidden sm:flex items-center gap-3 bg-surface-card backdrop-blur-xl border border-border-card px-4 py-2 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] cursor-default shrink-0">
+                        <FolderOpen size={14} className={progress === 100 ? 'text-success' : 'text-brand'} />
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center w-20">
-                                <span className="text-[7px] font-black uppercase tracking-widest text-slate-500 leading-none">Subidos</span>
-                                <span className={`text-[9px] font-black leading-none ${progress === 100 ? 'text-emerald-600' : 'text-[#0052CC]'}`}>{progress}%</span>
+                                <span className="text-[7px] font-black uppercase tracking-widest text-content-3 leading-none">Subidos</span>
+                                <span className={`text-[9px] font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand'}`}>{progress}%</span>
                             </div>
-                            <div className="w-full h-1.5 bg-slate-200/60 rounded-full overflow-hidden">
-                                <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-emerald-500' : 'bg-[#0052CC]'}`} style={{ width: `${progress}%` }}></div>
+                            <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
+                                <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-emerald-500' : 'bg-brand'}`} style={{ width: `${progress}%` }}></div>
                             </div>
                         </div>
                     </div>
@@ -373,8 +373,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <button
                             onClick={() => setShowAllDocs(!showAllDocs)}
                             className={`h-10 px-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border flex items-center gap-1.5 transform hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ${showAllDocs
-                                ? 'bg-white/60 backdrop-blur-xl text-slate-800 border-white/80'
-                                : 'bg-white/60 backdrop-blur-xl text-slate-500 border-white/80'
+                                ? 'bg-surface-card backdrop-blur-xl text-content border-border-card'
+                                : 'bg-surface-card backdrop-blur-xl text-content-3 border-border-card'
                                 }`}
                         >
                             <Layers size={14} strokeWidth={2.5} /> {showAllDocs ? 'Ocultar' : 'Ver Todos'}
@@ -382,16 +382,16 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={() => openModal('addCustomDocument', liveBranch)}
-                            className="h-10 px-4 rounded-full bg-white/60 backdrop-blur-xl text-slate-700 font-black text-[10px] uppercase tracking-widest border border-white/80 flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-[#0052CC] active:scale-[0.97] shrink-0"
+                            className="h-10 px-4 rounded-full bg-surface-card backdrop-blur-xl text-content-2 font-black text-[10px] uppercase tracking-widest border border-border-card flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-brand active:scale-[0.97] shrink-0"
                         >
                             <Plus size={16} strokeWidth={3} /> Nuevo
                         </button>
 
-                        <div className="w-px h-6 bg-slate-300/60 mx-1"></div>
+                        <div className="w-px h-6 bg-content-3/60 mx-1"></div>
 
                         <button
                             onClick={handleSearchClick}
-                            className="w-10 h-10 rounded-full bg-[#0052CC] text-white flex items-center justify-center shadow-[0_4px_15px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shrink-0"
+                            className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center shadow-[0_4px_15px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shrink-0"
                             title="Buscar Documento"
                         >
                             <Search size={16} strokeWidth={3} />
@@ -399,9 +399,9 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                     </div>
 
                     <div className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
-                        <div className="relative w-full shadow-[0_8px_30px_rgba(0,82,204,0.12)] rounded-full overflow-hidden border border-[#0052CC]/20 bg-white/80 backdrop-blur-xl">
+                        <div className="relative w-full shadow-[0_8px_30px_rgba(0,82,204,0.12)] rounded-full overflow-hidden border border-brand/20 bg-surface-card backdrop-blur-xl">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Search size={16} className="text-[#0052CC]" />
+                                <Search size={16} className="text-brand" />
                             </div>
                             <input
                                 ref={searchInputRef}
@@ -409,11 +409,11 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Buscar documento..."
-                                className="w-full h-10 pl-11 pr-10 bg-transparent text-[16px] font-bold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-0 transition-all"
+                                className="w-full h-10 pl-11 pr-10 bg-transparent text-[16px] font-bold text-content-2 placeholder:text-content-3 focus:outline-none focus:ring-0 transition-all"
                             />
                             <button
                                 onClick={handleSearchClose}
-                                className="absolute right-1.5 top-1.5 w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                className="absolute right-1.5 top-1.5 w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors"
                             >
                                 <X size={14} strokeWidth={2.5} />
                             </button>
@@ -424,19 +424,19 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
             {/* ESTADO VACÍO */}
             {isSearchEmpty && (
-                <div className="flex flex-col items-center justify-center p-12 bg-white/40 border-2 border-dashed border-white rounded-[2rem] animate-in fade-in duration-500">
+                <div className="flex flex-col items-center justify-center p-12 bg-surface-card border-2 border-dashed border-white rounded-[2rem] animate-in fade-in duration-500">
                     {searchTerm ? (
                         <>
-                            <Search size={40} className="text-slate-300 mb-3" strokeWidth={1.5} />
-                            <p className="text-sm font-black text-slate-600">No se encontraron documentos</p>
-                            <p className="text-[11px] font-bold text-slate-500 mt-1">Ningún documento coincide con "{searchTerm}"</p>
+                            <Search size={40} className="text-content-3 mb-3" strokeWidth={1.5} />
+                            <p className="text-sm font-black text-content-2">No se encontraron documentos</p>
+                            <p className="text-[11px] font-bold text-content-3 mt-1">Ningún documento coincide con "{searchTerm}"</p>
                         </>
                     ) : (
                         <>
-                            <CheckCircle2 size={40} className="text-emerald-400 mb-3" strokeWidth={1.5} />
-                            <p className="text-sm font-black text-emerald-600">Expediente impecable</p>
-                            <p className="text-[11px] font-bold text-emerald-500/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] bg-white border border-[#0052CC]/20 shadow-[0_2px_10px_rgba(0,82,204,0.05)] hover:border-[#0052CC]/50 hover:bg-blue-50 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
+                            <CheckCircle2 size={40} className="text-success mb-3" strokeWidth={1.5} />
+                            <p className="text-sm font-black text-success">Expediente impecable</p>
+                            <p className="text-[11px] font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
+                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand bg-white border border-brand/20 shadow-[0_2px_10px_rgba(0,82,204,0.05)] hover:border-brand/50 hover:bg-blue-50 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
                                 Ver Documentos Al Día
                             </button>
                         </>
@@ -447,8 +447,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 1: LICENCIAS Y PERMISOS */}
             {(permisosDocs.length > 0 || customDocsByCategory['Permisos y Licencias']?.length > 0) && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
-                        <ShieldCheck size={12} className="text-emerald-500" strokeWidth={3} /> Licencias y Permisos
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                        <ShieldCheck size={12} className="text-success" strokeWidth={3} /> Licencias y Permisos
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {permisosDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
@@ -460,7 +460,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 2: CREDENCIALES DE PERSONAL */}
             {(personalDocs.length > 0 || customDocsByCategory['Recursos Humanos']?.length > 0) && (
                 <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <Users size={12} className="text-purple-500" strokeWidth={3} /> Credenciales de Personal
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -473,8 +473,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 3: INFRAESTRUCTURA Y OPERATIVOS */}
             {(infraDocs.length > 0 || customDocsByCategory['Operativo y Logística']?.length > 0) && (
                 <div className="space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
-                        <Building2 size={12} className="text-amber-500" strokeWidth={3} /> Infraestructura y Locales
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                        <Building2 size={12} className="text-warning" strokeWidth={3} /> Infraestructura y Locales
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {infraDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
@@ -490,8 +490,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                 return (
                     <div key={category} className={`space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500`} style={{ animationDelay: `${(index + 3) * 50}ms` }}>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
-                            <Tags size={12} className="text-[#0052CC]" strokeWidth={3} /> {category}
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                            <Tags size={12} className="text-brand" strokeWidth={3} /> {category}
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {docs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}

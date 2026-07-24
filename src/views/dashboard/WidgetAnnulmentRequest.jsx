@@ -66,14 +66,14 @@ function DocBadge({ tipo }) {
   const isCCF = tipo === 'CCF';
   return (
     <span className={`shrink-0 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md ${
-      isCCF ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'
+      isCCF ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'
     }`}>{tipo}</span>
   );
 }
 function PayBadge({ tipo }) {
   if (!tipo) return null;
   return (
-    <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 uppercase">
+    <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-emerald-700 uppercase">
       {tipo}
     </span>
   );
@@ -83,12 +83,12 @@ function VendorAvatar({ employee, size = 6 }) {
   const sz = AV[size] ?? AV[6];
   const base = `${sz} rounded-full overflow-hidden flex-shrink-0 border border-slate-200 flex items-center justify-center`;
   if (!employee)
-    return <div className={`${base} bg-slate-100`}><User size={size <= 6 ? 11 : 14} className="text-slate-500" /></div>;
+    return <div className={`${base} bg-surface-card-hover`}><User size={size <= 6 ? 11 : 14} className="text-content-3" /></div>;
   if (employee.photo || employee.photo_url)
     return <div className={base}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
   return (
     <div className={`${base} bg-gradient-to-br from-slate-200 to-slate-300`}>
-      <span className="text-slate-600 font-black text-[10px] leading-none">{employee.name?.charAt(0)}</span>
+      <span className="text-content-2 font-black text-[10px] leading-none">{employee.name?.charAt(0)}</span>
     </div>
   );
 }
@@ -99,25 +99,25 @@ function InvoiceHeader({ inv, onBack, vendor }) {
     <div className="flex flex-col gap-1 shrink-0 pb-2 border-b border-slate-100">
       <div className="flex items-center gap-2">
         <button onClick={onBack}
-          className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
+          className="w-6 h-6 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
           <ArrowLeft size={12} strokeWidth={2.5} />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{inv.cliente || 'Sin nombre'}</p>
-          <p className="text-[9px] text-slate-500 font-mono leading-tight">{inv.correlativo}</p>
+          <p className="text-[12px] font-black text-content truncate leading-tight">{inv.cliente || 'Sin nombre'}</p>
+          <p className="text-[9px] text-content-3 font-mono leading-tight">{inv.correlativo}</p>
         </div>
-        <p className="text-[13px] font-black text-slate-800 shrink-0">{fmtCurrency(inv.total)}</p>
+        <p className="text-[13px] font-black text-content shrink-0">{fmtCurrency(inv.total)}</p>
       </div>
       <div className="flex items-center gap-1.5 pl-8 flex-wrap">
-        <span className="text-[9px] text-slate-500 font-mono">ID #{inv.id}</span>
-        <span className="text-slate-200">·</span>
-        <span className="text-[9px] font-semibold text-slate-500">{fmtDate(inv.fecha)}</span>
+        <span className="text-[9px] text-content-3 font-mono">ID #{inv.id}</span>
+        <span className="text-content-3">·</span>
+        <span className="text-[9px] font-semibold text-content-3">{fmtDate(inv.fecha)}</span>
         {vendor && (
           <>
-            <span className="text-slate-200">·</span>
+            <span className="text-content-3">·</span>
             <span className="inline-flex items-center gap-1">
               <VendorAvatar employee={vendor} size={5} />
-              <span className="text-[9px] text-slate-500 font-semibold">{vendor.name?.split(' ')[0]}</span>
+              <span className="text-[9px] text-content-3 font-semibold">{vendor.name?.split(' ')[0]}</span>
             </span>
           </>
         )}
@@ -131,7 +131,7 @@ function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
   return (
     <div className="shrink-0 pt-2">
       <button onClick={onClick} disabled={disabled || isLoading}
-        className="w-full py-2.5 rounded-2xl bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+        className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
         {isLoading && <Loader2 size={14} className="animate-spin" />}
         {isLoading ? 'Enviando...' : label}
       </button>
@@ -185,28 +185,28 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
                 { label: 'ID Venta',      value: `#${inv.id}`, mono: true },
               ].map(({ label, value, mono }, i) => (
                 <div key={i} className={`px-3 py-1.5 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
-                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">{label}</p>
-                  <p className={`text-[11px] font-bold text-slate-700 ${mono ? 'font-mono' : ''}`}>{value}</p>
+                  <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">{label}</p>
+                  <p className={`text-[11px] font-bold text-content-2 ${mono ? 'font-mono' : ''}`}>{value}</p>
                 </div>
               ))}
             </div>
             <div>
               <div className="px-3 py-1.5 border-b border-slate-50">
-                <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">Vendedor</p>
+                <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">Vendedor</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <VendorAvatar employee={vendor} size={5} />
-                  <p className="text-[11px] font-bold text-slate-700 truncate">
+                  <p className="text-[11px] font-bold text-content-2 truncate">
                     {vendor ? vendor.name.split(' ').slice(0, 2).join(' ') : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '—')}
                   </p>
                 </div>
               </div>
               <div className="px-3 py-1.5 border-b border-slate-50">
-                <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">Fecha</p>
-                <p className="text-[12px] font-black text-slate-800">{fmtDate(inv.fecha)}</p>
+                <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">Fecha</p>
+                <p className="text-[12px] font-black text-content">{fmtDate(inv.fecha)}</p>
               </div>
               <div className="px-3 py-1.5">
-                <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">Total</p>
-                <p className="text-[13px] font-black text-slate-800">{fmtCurrency(inv.total)}</p>
+                <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">Total</p>
+                <p className="text-[13px] font-black text-content">{fmtCurrency(inv.total)}</p>
               </div>
             </div>
           </div>
@@ -214,24 +214,24 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
 
         {/* Productos */}
         <div className="shrink-0">
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1 mb-1">
+          <p className="text-[9px] font-black text-content-2 uppercase tracking-widest px-1 mb-1">
             Productos ({items.length})
           </p>
           {loading ? (
-            <div className="flex justify-center py-3"><Loader2 size={15} className="animate-spin text-slate-500" /></div>
+            <div className="flex justify-center py-3"><Loader2 size={15} className="animate-spin text-content-3" /></div>
           ) : items.length === 0 ? (
-            <p className="text-[11px] text-slate-500 text-center py-2">Sin detalle</p>
+            <p className="text-[11px] text-content-3 text-center py-2">Sin detalle</p>
           ) : (
             <div className="rounded-2xl border border-slate-100 bg-white overflow-hidden">
               {items.map((it, i) => (
                 <div key={i} className={`flex items-start gap-2 px-3 py-1.5 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold text-slate-700 leading-tight truncate">{it.descripcion}</p>
-                    {it.presentacion && <p className="text-[9px] text-slate-500">{it.presentacion}</p>}
+                    <p className="text-[11px] font-bold text-content-2 leading-tight truncate">{it.descripcion}</p>
+                    {it.presentacion && <p className="text-[9px] text-content-3">{it.presentacion}</p>}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[11px] font-black text-slate-700">{fmtCurrency(it.total_linea)}</p>
-                    <p className="text-[9px] text-slate-500">{it.cantidad} × {fmtCurrency(it.precio_unitario)}</p>
+                    <p className="text-[11px] font-black text-content-2">{fmtCurrency(it.total_linea)}</p>
+                    <p className="text-[9px] text-content-3">{it.cantidad} × {fmtCurrency(it.precio_unitario)}</p>
                   </div>
                 </div>
               ))}
@@ -241,10 +241,10 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
 
         {/* Período de gracia */}
         <div className={`rounded-2xl px-3 py-2 flex items-center gap-2 shrink-0 ${
-          withinGrace ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'
+          withinGrace ? 'bg-warning/10 border border-warning/30' : 'bg-danger/10 border border-danger/30'
         }`}>
-          <Clock size={12} className={withinGrace ? 'text-amber-500' : 'text-red-500'} strokeWidth={2.5} />
-          <p className={`text-[11px] font-bold ${withinGrace ? 'text-amber-700' : 'text-red-600'}`}>
+          <Clock size={12} className={withinGrace ? 'text-warning' : 'text-danger'} strokeWidth={2.5} />
+          <p className={`text-[11px] font-bold ${withinGrace ? 'text-amber-700' : 'text-danger'}`}>
             {withinGrace
               ? `${graceDaysLeft} día${graceDaysLeft !== 1 ? 's' : ''} restante${graceDaysLeft !== 1 ? 's' : ''} para solicitar anulación`
               : `Anulación fuera de plazo — ${age} días desde la venta`}
@@ -288,7 +288,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
-      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">Tipo de solicitud</p>
+      <p className="text-[10px] font-black text-content-2 uppercase tracking-widest px-1">Tipo de solicitud</p>
       <div className="flex flex-col gap-2 flex-1">
         {types.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
           <button key={key} onClick={() => onSelect(key)}
@@ -298,9 +298,9 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className={`text-[12px] font-black ${color}`}>{label}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">{desc}</p>
+              <p className="text-[10px] text-content-3 mt-0.5">{desc}</p>
             </div>
-            <ChevronRight size={13} strokeWidth={2.5} className="text-slate-300 shrink-0" />
+            <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
           </button>
         ))}
       </div>
@@ -377,17 +377,17 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </div>
         )}
         {ccfSameDay && (
-          <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-amber-50 border border-amber-200">
-            <ShieldAlert size={12} className="text-amber-500 mt-0.5 shrink-0" strokeWidth={2.5} />
+          <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-warning/10 border border-warning/30">
+            <ShieldAlert size={12} className="text-warning mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-[11px] font-bold text-amber-700 leading-snug">
               <strong>CCF:</strong> Asegúrate de que se emitirá la nota de crédito correspondiente.
             </p>
           </div>
         )}
         {ccfNotSameDay && (
-          <div className="rounded-2xl px-3 py-2 flex flex-col gap-2 bg-red-50 border border-red-300">
+          <div className="rounded-2xl px-3 py-2 flex flex-col gap-2 bg-danger/10 border border-red-300">
             <div className="flex items-start gap-2">
-              <ShieldAlert size={13} className="text-red-600 mt-0.5 shrink-0" strokeWidth={2.5} />
+              <ShieldAlert size={13} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
               <p className="text-[11px] font-bold text-red-700 leading-snug">
                 <strong>CCF de fecha anterior.</strong> Solo se anulan el mismo día y requieren nota de crédito.
               </p>
@@ -400,8 +400,8 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </div>
         )}
         {!withinGrace && !ccfNotSameDay && (
-          <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-red-50 border border-red-200">
-            <AlertTriangle size={12} className="text-red-500 mt-0.5 shrink-0" strokeWidth={2.5} />
+          <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-danger/10 border border-danger/30">
+            <AlertTriangle size={12} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-[11px] font-bold text-red-700 leading-snug">
               Factura fuera del plazo ({age} días). Requiere motivo detallado y aprobación del supervisor.
             </p>
@@ -409,29 +409,29 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo *</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo *</label>
           <div className="grid grid-cols-2 gap-1.5">
             {REASONS.map(r => (
               <button key={r} onClick={() => setReason(r)}
                 className={`text-left px-3 py-2 rounded-2xl border text-[11px] font-bold transition-all ${
-                  reason === r ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#0052CC]/40'
+                  reason === r ? 'bg-brand text-white border-brand' : 'bg-white text-content-2 border-slate-200 hover:border-brand/40'
                 }`}>{r}</button>
             ))}
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-            Comentarios {commentRequired && <span className="text-red-400">*</span>}
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">
+            Comentarios {commentRequired && <span className="text-danger">*</span>}
           </label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
-            className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:ring-2 transition-all resize-none ${
-              commentRequired && !comment.trim() ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-[#0052CC] focus:ring-[#0052CC]/10'
+            className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:ring-2 transition-all resize-none ${
+              commentRequired && !comment.trim() ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-brand focus:ring-brand/10'
             }`}
           />
         </div>
-        {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de anulación" onClick={handleSubmit} disabled={!canSubmit} loading={submitting} />
@@ -491,34 +491,34 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="rounded-2xl px-3 py-2 flex items-center gap-2 bg-slate-50 border border-slate-200">
-          <CreditCard size={13} className="text-slate-400 shrink-0" strokeWidth={2.5} />
+        <div className="rounded-2xl px-3 py-2 flex items-center gap-2 bg-surface-card-hover border border-slate-200">
+          <CreditCard size={13} className="text-content-3 shrink-0" strokeWidth={2.5} />
           <div>
-            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Forma de pago actual</p>
-            <p className="text-[12px] font-black text-slate-700">{PAYMENT_LABELS[currentPay] || currentPay || '—'}</p>
+            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Forma de pago actual</p>
+            <p className="text-[12px] font-black text-content-2">{PAYMENT_LABELS[currentPay] || currentPay || '—'}</p>
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cambiar a *</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Cambiar a *</label>
           <div className="grid grid-cols-2 gap-1.5">
             {available.map(m => (
               <button key={m} onClick={() => setNewPayment(m)}
                 className={`text-left px-3 py-2 rounded-2xl border text-[11px] font-bold transition-all ${
-                  newPayment === m ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#0052CC]/40'
+                  newPayment === m ? 'bg-brand text-white border-brand' : 'bg-white text-content-2 border-slate-200 hover:border-brand/40'
                 }`}>{PAYMENT_LABELS[m] || m}</button>
             ))}
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica el motivo del cambio..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newPayment} loading={submitting} />
@@ -589,11 +589,11 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Vendedor actual */}
-        <div className="rounded-2xl px-3 py-2 bg-slate-50 border border-slate-200">
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Vendedor actual</p>
+        <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-slate-200">
+          <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5">Vendedor actual</p>
           <div className="flex items-center gap-2.5">
             <VendorAvatar employee={currentVendor} size={8} />
-            <p className="text-[13px] font-black text-slate-700">
+            <p className="text-[13px] font-black text-content-2">
               {currentVendor?.name ?? `Vendedor #${inv.cod_vendedor || '—'}`}
             </p>
           </div>
@@ -601,9 +601,9 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
         {/* Lista — solo foto + nombre */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Asignar a *</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Asignar a *</label>
           {vendorList.length === 0 ? (
-            <p className="text-[11px] text-slate-500 text-center py-3">No hay otros vendedores en esta sucursal</p>
+            <p className="text-[11px] text-content-3 text-center py-3">No hay otros vendedores en esta sucursal</p>
           ) : (
             <div className="space-y-1">
               {vendorList.map(emp => {
@@ -611,12 +611,12 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                 return (
                   <button key={emp.id} onClick={() => setNewVendorId(String(emp.id))}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all ${
-                      isSelected ? 'bg-[#0052CC]/5 border-[#0052CC]/40' : 'bg-white border-slate-200 hover:border-slate-300'
+                      isSelected ? 'bg-brand/5 border-brand/40' : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}>
                     <VendorAvatar employee={emp} size={8} />
-                    <p className={`text-[12px] font-black flex-1 truncate ${isSelected ? 'text-[#0052CC]' : 'text-slate-700'}`}>{emp.name}</p>
+                    <p className={`text-[12px] font-black flex-1 truncate ${isSelected ? 'text-brand' : 'text-content-2'}`}>{emp.name}</p>
                     {isSelected && (
-                      <div className="w-4 h-4 rounded-full bg-[#0052CC] flex items-center justify-center shrink-0">
+                      <div className="w-4 h-4 rounded-full bg-brand flex items-center justify-center shrink-0">
                         <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </div>
                     )}
@@ -628,13 +628,13 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe reasignar esta venta..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newVendorId} loading={submitting} />
@@ -722,33 +722,33 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Cliente actual */}
-        <div className="rounded-2xl px-3 py-2 bg-slate-50 border border-slate-200">
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Cliente actual</p>
+        <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-slate-200">
+          <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shrink-0">
-              <span className="text-slate-600 font-black text-[11px] leading-none">{(inv.cliente || '?').charAt(0)}</span>
+              <span className="text-content-2 font-black text-[11px] leading-none">{(inv.cliente || '?').charAt(0)}</span>
             </div>
-            <p className="text-[13px] font-black text-slate-700 truncate">{inv.cliente || 'Sin nombre'}</p>
+            <p className="text-[13px] font-black text-content-2 truncate">{inv.cliente || 'Sin nombre'}</p>
           </div>
         </div>
 
         {/* Buscador de cliente nuevo */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cliente nuevo *</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Cliente nuevo *</label>
           <div className="relative">
             {searching
-              ? <Loader2 size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />
-              : <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />}
+              ? <Loader2 size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3 animate-spin" />
+              : <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3 pointer-events-none" />}
             <input
               type="text" value={query}
               onChange={e => { setQuery(e.target.value); setNewClient(null); }}
               placeholder="Nombre, NIT, DUI o teléfono..."
-              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
               spellCheck={false}
             />
             {query && (
               <button onClick={() => { setQuery(''); setNewClient(null); setResults([]); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600">
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-content-3 hover:text-content-2">
                 <X size={10} strokeWidth={2.5} />
               </button>
             )}
@@ -756,17 +756,17 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
           {/* Seleccionado */}
           {newClient && (
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl border bg-[#0052CC]/5 border-[#0052CC]/40">
-              <div className="w-7 h-7 rounded-full bg-[#0052CC]/10 flex items-center justify-center shrink-0">
-                <span className="text-[#0052CC] font-black text-[10px] leading-none">{newClient.name?.charAt(0)}</span>
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl border bg-brand/5 border-brand/40">
+              <div className="w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
+                <span className="text-brand font-black text-[10px] leading-none">{newClient.name?.charAt(0)}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-black text-[#0052CC] truncate">{newClient.name}</p>
+                <p className="text-[12px] font-black text-brand truncate">{newClient.name}</p>
                 {(newClient.nit || newClient.dui) && (
-                  <p className="text-[9px] text-slate-500 font-mono truncate">{newClient.nit || newClient.dui}</p>
+                  <p className="text-[9px] text-content-3 font-mono truncate">{newClient.nit || newClient.dui}</p>
                 )}
               </div>
-              <div className="w-4 h-4 rounded-full bg-[#0052CC] flex items-center justify-center shrink-0">
+              <div className="w-4 h-4 rounded-full bg-brand flex items-center justify-center shrink-0">
                 <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
             </div>
@@ -774,19 +774,19 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
           {/* Resultados */}
           {!newClient && query.trim().length >= 2 && !searching && results.length === 0 && (
-            <p className="text-[11px] text-slate-500 text-center py-2">Sin coincidencias en el listado de clientes</p>
+            <p className="text-[11px] text-content-3 text-center py-2">Sin coincidencias en el listado de clientes</p>
           )}
           {!newClient && results.length > 0 && (
             <div className="space-y-1 max-h-[180px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {results.map(c => (
                 <button key={c.id} onClick={() => setNewClient(c)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all bg-white border-slate-200 hover:border-[#0052CC]/40">
-                  <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <span className="text-slate-500 font-black text-[10px] leading-none">{c.name?.charAt(0)}</span>
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all bg-white border-slate-200 hover:border-brand/40">
+                  <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
+                    <span className="text-content-3 font-black text-[10px] leading-none">{c.name?.charAt(0)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold text-slate-700 truncate leading-tight">{c.name}</p>
-                    <p className="text-[9px] text-slate-500 font-mono truncate">
+                    <p className="text-[12px] font-bold text-content-2 truncate leading-tight">{c.name}</p>
+                    <p className="text-[9px] text-content-3 font-mono truncate">
                       {[c.nit && `NIT ${c.nit}`, c.dui && `DUI ${c.dui}`, c.phone].filter(Boolean).join(' · ') || `#${c.erp_id || c.id}`}
                     </p>
                   </div>
@@ -797,13 +797,13 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe cambiar el cliente..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newClient} loading={submitting} />
@@ -881,8 +881,8 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   if (!activeBranchId) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2">
-        <AlertTriangle size={28} strokeWidth={1.5} className="text-slate-300" />
-        <p className="text-[12px] font-semibold text-slate-500">Tu sucursal no está configurada</p>
+        <AlertTriangle size={28} strokeWidth={1.5} className="text-content-3" />
+        <p className="text-[12px] font-semibold text-content-3">Tu sucursal no está configurada</p>
       </div>
     );
   }
@@ -898,11 +898,11 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     const lbl = msgs[successInfo.type] || msgs.annul;
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
-        <CheckCircle2 size={40} className="text-emerald-500" strokeWidth={1.5} />
+        <CheckCircle2 size={40} className="text-success" strokeWidth={1.5} />
         <div className="text-center">
-          <p className="text-[14px] font-black text-slate-800">{lbl.title}</p>
-          <p className="text-[12px] text-slate-500 mt-1 max-w-[200px] leading-relaxed">{lbl.sub}</p>
-          {successInfo.supervisor && <p className="text-[11px] text-[#0052CC] font-bold mt-1">Supervisor: {successInfo.supervisor}</p>}
+          <p className="text-[14px] font-black text-content">{lbl.title}</p>
+          <p className="text-[12px] text-content-3 mt-1 max-w-[200px] leading-relaxed">{lbl.sub}</p>
+          {successInfo.supervisor && <p className="text-[11px] text-brand font-bold mt-1">Supervisor: {successInfo.supervisor}</p>}
         </div>
       </div>
     );
@@ -923,10 +923,10 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   return (
     <div className="flex flex-col gap-2.5 h-full">
       <div className="flex items-center justify-between shrink-0">
-        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+        <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">
           Ventas del mes — {activeBranch?.name || 'Tu sucursal'}
         </p>
-        <span className="text-[10px] font-bold text-slate-500">
+        <span className="text-[10px] font-bold text-content-3">
           {filtered.length !== invoices.length ? `${filtered.length} / ${invoices.length}` : `${invoices.length} facturas`}
         </span>
       </div>
@@ -935,38 +935,38 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       <div className="flex items-stretch gap-2 shrink-0">
         {/* Search */}
         <div className="flex-1 relative">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3 pointer-events-none" />
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cliente, vendedor, factura..."
-            className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+            className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
             spellCheck={false}
           />
           {search && (
             <button onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600">
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-content-3 hover:text-content-2">
               <X size={10} strokeWidth={2.5} />
             </button>
           )}
         </div>
 
         {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
-        <div className="w-[150px] shrink-0 rounded-2xl border border-slate-200 bg-white flex items-center focus-within:border-[#0052CC] focus-within:ring-2 focus-within:ring-[#0052CC]/10 transition-all">
+        <div className="w-[150px] shrink-0 rounded-2xl border border-slate-200 bg-white flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
           <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-slate-500" /></div>}
+        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-content-3" /></div>}
 
         {!loading && filtered.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-slate-500 font-medium">
+          <div className="py-8 text-center text-[12px] text-content-3 font-medium">
             {search || dateFilter ? 'Sin resultados con estos filtros' : 'No hay facturas este mes'}
           </div>
         )}
 
         {!loading && isFuzzy && search && (
-          <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-700 font-semibold">
+          <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-amber-700 font-semibold">
             <Search size={10} strokeWidth={2.5} className="shrink-0" />
             Similares a &ldquo;{search}&rdquo;
           </div>
@@ -980,17 +980,17 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
             <div key={inv.id}
               className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-100 bg-white hover:border-slate-200 transition-all">
               <div className="flex-1 min-w-0">
-                <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-slate-800' : 'text-slate-500'}`}>
+                <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-content' : 'text-content-3'}`}>
                   {inv.cliente || 'Sin nombre'}
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                  <span className="text-[9px] text-slate-500 font-mono">{inv.correlativo}</span>
+                  <span className="text-[9px] text-content-3 font-mono">{inv.correlativo}</span>
                   <DocBadge tipo={inv.tipo_documento} />
                   {inv.tipo_pago && <PayBadge tipo={inv.tipo_pago} />}
                   {/* Vendedor avatar + nombre aquí, no al inicio de la fila */}
                   <span className="inline-flex items-center gap-1">
                     <VendorAvatar employee={vendor} size={5} />
-                    <span className="text-[9px] text-slate-500 font-medium">
+                    <span className="text-[9px] text-content-3 font-medium">
                       {vendor ? vendor.name.split(' ')[0] : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '')}
                     </span>
                   </span>
@@ -998,22 +998,22 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
               </div>
 
               <div className="text-right shrink-0">
-                <p className={`text-[11px] font-black ${ok ? 'text-slate-700' : 'text-slate-500'}`}>
+                <p className={`text-[11px] font-black ${ok ? 'text-content-2' : 'text-content-3'}`}>
                   {fmtCurrency(inv.total)}
                 </p>
-                <p className="text-[8px] text-slate-500">{fmtDate(inv.fecha)}</p>
+                <p className="text-[8px] text-content-3">{fmtDate(inv.fecha)}</p>
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => { setFocused(inv); setView('detail'); }}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-[#0052CC] hover:text-white text-slate-500 transition-all"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-brand hover:text-white text-content-3 transition-all"
                   title="Ver detalle">
                   <Eye size={12} strokeWidth={2.5} />
                 </button>
                 <button onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
                   className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
-                    ok ? 'bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-500'
-                       : 'bg-red-50 hover:bg-red-500 hover:text-white text-red-400'
+                    ok ? 'bg-warning/10 hover:bg-amber-500 hover:text-white text-warning'
+                       : 'bg-danger/10 hover:bg-red-500 hover:text-white text-danger'
                   }`}
                   title="Solicitar modificación">
                   <AlertCircle size={12} strokeWidth={2.5} />

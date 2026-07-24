@@ -127,18 +127,18 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2 shrink-0">
         <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
+          className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
           <ArrowLeft size={13} strokeWidth={2.5} />
         </button>
-        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface-card-hover border border-slate-100 flex items-center justify-center">
           {product.foto_url
             ? <img src={product.foto_url} alt="" className="w-full h-full object-contain" />
-            : <Package size={16} className="text-slate-300" />}
+            : <Package size={16} className="text-content-3" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate">{product.nombre}</p>
-          {product.principio_activo && <p className="text-[10px] text-emerald-600 font-semibold truncate">{product.principio_activo}</p>}
-          <p className="text-[10px] text-slate-500 truncate">
+          <p className="text-[12px] font-black text-content truncate">{product.nombre}</p>
+          {product.principio_activo && <p className="text-[10px] text-success font-semibold truncate">{product.principio_activo}</p>}
+          <p className="text-[10px] text-content-3 truncate">
             {ERP_NAMES[Number(erp)] || 'Sucursal'}{product.laboratorio_nombre ? ` · ${product.laboratorio_nombre}` : ''}
           </p>
         </div>
@@ -147,16 +147,16 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Actual + contexto de ventas */}
         {erp && (
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 px-3.5 py-2.5 flex flex-col gap-1.5">
+          <div className="rounded-2xl border border-slate-100 bg-surface-card-hover/60 px-3.5 py-2.5 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">En uso ahora</span>
-              {loadingCur ? <Loader2 size={13} className="animate-spin text-slate-300" /> : (
+              <span className="text-[10px] font-black text-content-2 uppercase tracking-wider">En uso ahora</span>
+              {loadingCur ? <Loader2 size={13} className="animate-spin text-content-3" /> : (
                 <div className="text-right">
-                  <span className="text-[11px] font-bold text-slate-600">
-                    MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span> <span className="text-slate-500 font-medium">und</span>
+                  <span className="text-[11px] font-bold text-content-2">
+                    MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span> <span className="text-content-3 font-medium">und</span>
                   </span>
                   {(fmtEquiv(current?.min, pres) || fmtEquiv(current?.max, pres)) && (
-                    <div className="text-[9px] text-slate-500 font-semibold">
+                    <div className="text-[9px] text-content-3 font-semibold">
                       {fmtEquiv(current?.min, pres) || '—'} · {fmtEquiv(current?.max, pres) || '—'}
                     </div>
                   )}
@@ -165,10 +165,10 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             </div>
             {!loadingCur && (
               <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider flex items-center gap-1">
-                  <TrendingUp size={11} className="text-emerald-500" /> Ventas 6 meses
+                <span className="text-[10px] font-black text-content-2 uppercase tracking-wider flex items-center gap-1">
+                  <TrendingUp size={11} className="text-success" /> Ventas 6 meses
                 </span>
-                <span className="text-[11px] font-bold text-slate-700 tabular-nums">
+                <span className="text-[11px] font-bold text-content-2 tabular-nums">
                   {current?.sales6m != null ? `${Number(current.sales6m).toLocaleString()} und` : 'Sin ventas'}
                 </span>
               </div>
@@ -202,16 +202,16 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 
         {/* Motivo */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
             placeholder="¿Por qué este ajuste? (opcional)"
-            className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 resize-none" />
+            className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
         </div>
 
-        {err && <p className="text-[11px] text-red-500 font-semibold px-1">{err}</p>}
+        {err && <p className="text-[11px] text-danger font-semibold px-1">{err}</p>}
 
         <button onClick={submit} disabled={submitting}
-          className="w-full py-2.5 rounded-2xl bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
+          className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
           {submitting && <Loader2 size={14} className="animate-spin" />}
           {submitting ? 'Enviando…' : 'Enviar a aprobación'}
         </button>
@@ -272,10 +272,10 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
   if (view === 'success') {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
-        <CheckCircle2 size={40} className="text-emerald-500" strokeWidth={1.5} />
+        <CheckCircle2 size={40} className="text-success" strokeWidth={1.5} />
         <div className="text-center">
-          <p className="text-[14px] font-black text-slate-800">Solicitud enviada</p>
-          <p className="text-[12px] text-slate-500 mt-1">El supervisor fue notificado para aprobarla.</p>
+          <p className="text-[14px] font-black text-content">Solicitud enviada</p>
+          <p className="text-[12px] text-content-3 mt-1">El supervisor fue notificado para aprobarla.</p>
         </div>
       </div>
     );
@@ -294,47 +294,47 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
   return (
     <div className="flex flex-col gap-3 h-full">
       <div className="relative shrink-0">
-        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-content-3 pointer-events-none" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar producto para ajustar Min/Max…"
-          className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10"
+          className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
           spellCheck={false} />
         {search && (
           <button onClick={() => setSearch('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100">
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover">
             <X size={11} strokeWidth={2.5} />
           </button>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-slate-500" /></div>}
+        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-content-3" /></div>}
 
         {!loading && search.trim().length >= 2 && results.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-slate-500 font-medium">Sin resultados para "{search}"</div>
+          <div className="py-8 text-center text-[12px] text-content-3 font-medium">Sin resultados para "{search}"</div>
         )}
 
         {!loading && search.trim().length < 2 && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-500">
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
             <TrendingUp size={28} strokeWidth={1.5} />
-            <p className="text-[12px] font-semibold text-slate-500 text-center px-4">Buscá un producto para proponer un ajuste de mínimo/máximo</p>
+            <p className="text-[12px] font-semibold text-content-3 text-center px-4">Buscá un producto para proponer un ajuste de mínimo/máximo</p>
           </div>
         )}
 
         {!loading && results.map(p => (
           <button key={p.id} onClick={() => { setPicked(p); setView('form'); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-slate-100 bg-white hover:border-[#0052CC]/40 transition-colors text-left">
-            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-slate-100 bg-white hover:border-brand/40 transition-colors text-left">
+            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-surface-card-hover border border-slate-100 flex items-center justify-center">
               {p.foto_url
                 ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
-                : <Package size={14} className="text-slate-300" strokeWidth={2} />}
+                : <Package size={14} className="text-content-3" strokeWidth={2} />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-bold text-slate-800 truncate leading-tight">{p.nombre}</p>
-              {p.principio_activo && <p className="text-[9px] text-emerald-600 font-semibold truncate">{p.principio_activo}</p>}
-              {p.laboratorio_nombre && <p className="text-[9px] text-slate-500 truncate">{p.laboratorio_nombre}</p>}
+              <p className="text-[12px] font-bold text-content truncate leading-tight">{p.nombre}</p>
+              {p.principio_activo && <p className="text-[9px] text-success font-semibold truncate">{p.principio_activo}</p>}
+              {p.laboratorio_nombre && <p className="text-[9px] text-content-3 truncate">{p.laboratorio_nombre}</p>}
             </div>
-            <Building2 size={12} className="text-slate-300 shrink-0" />
+            <Building2 size={12} className="text-content-3 shrink-0" />
           </button>
         ))}
       </div>

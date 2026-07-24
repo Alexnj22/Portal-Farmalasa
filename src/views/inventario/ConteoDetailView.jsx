@@ -21,11 +21,11 @@ import {
 const PAGE_SIZE = 25;
 
 const ESTADO_CFG = {
-    BORRADOR:    { bg: 'bg-slate-100',  text: 'text-slate-600',   label: 'Borrador' },
-    EN_PROGRESO: { bg: 'bg-amber-50',   text: 'text-amber-700',   label: 'En Progreso' },
+    BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',   label: 'Borrador' },
+    EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-amber-700',   label: 'En Progreso' },
     FINALIZADO:  { bg: 'bg-blue-50',    text: 'text-blue-700',    label: 'Finalizado' },
-    APROBADO:    { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Aprobado' },
-    CERRADO:     { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Cerrado' },
+    APROBADO:    { bg: 'bg-success/10', text: 'text-emerald-700', label: 'Aprobado' },
+    CERRADO:     { bg: 'bg-success/10', text: 'text-emerald-700', label: 'Cerrado' },
 };
 
 const FILTRO_PILLS = [
@@ -57,7 +57,7 @@ const fmtDateTime = (iso) => {
     if (!iso) return '—';
     return new Date(iso).toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
-const difClass = (dif) => (dif == null ? 'text-slate-500' : dif === 0 ? 'text-emerald-600' : dif < 0 ? 'text-red-600' : 'text-blue-600');
+const difClass = (dif) => (dif == null ? 'text-content-3' : dif === 0 ? 'text-success' : dif < 0 ? 'text-danger' : 'text-blue-600');
 const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(dif));
 
 // Umbral "próximo a vencer" — mismo valor usado en get_conteo_products_page
@@ -74,8 +74,8 @@ function vencimientoStatus(fechaVencimiento) {
 }
 function VencimientoBadge({ status }) {
     if (!status) return null;
-    if (status === 'VENCIDO') return <span className="text-[8px] font-black uppercase text-red-700 bg-red-50 border border-red-300 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
-    return <span className="text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-300 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
+    if (status === 'VENCIDO') return <span className="text-[8px] font-black uppercase text-red-700 bg-danger/10 border border-red-300 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
+    return <span className="text-[8px] font-black uppercase text-amber-700 bg-warning/10 border border-amber-300 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
 }
 
 // Indicador "en vivo" — animate-pulse de Tailwind usa un único keyframe
@@ -84,7 +84,7 @@ function VencimientoBadge({ status }) {
 function LiveBadge() {
     return (
         <span
-            className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded-full animate-pulse shrink-0"
+            className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wide text-emerald-700 bg-success/10 border border-emerald-300 px-1.5 py-0.5 rounded-full animate-pulse shrink-0"
             title="En vivo — se actualiza hasta que se cuente"
         >
             <Radio size={9} strokeWidth={3} /> Vivo
@@ -154,15 +154,15 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
     };
 
     return (
-        <DataRow index={index} className="bg-slate-50/30">
-            <DataCell><span className="text-slate-500 text-[11px]">↳</span></DataCell>
+        <DataRow index={index} className="bg-surface-card-hover/30">
+            <DataCell><span className="text-content-3 text-[11px]">↳</span></DataCell>
             <DataCell hideBelow="lg" />
-            <DataCell align="center" hideBelow="md"><span className="text-[11px] font-semibold text-slate-600">{item.presentacion || '—'}</span></DataCell>
+            <DataCell align="center" hideBelow="md"><span className="text-[11px] font-semibold text-content-2">{item.presentacion || '—'}</span></DataCell>
             <DataCell hideBelow="md">
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-600 tabular-nums">{item.lote || '—'}</span>
+                    <span className="text-[11px] text-content-2 tabular-nums">{item.lote || '—'}</span>
                     {editable && (
-                        <button onClick={() => onEditLote(item)} disabled={saving} className="text-slate-500 hover:text-teal-600 transition-colors shrink-0" title="Corregir lote/vencimiento">
+                        <button onClick={() => onEditLote(item)} disabled={saving} className="text-content-3 hover:text-teal-600 transition-colors shrink-0" title="Corregir lote/vencimiento">
                             <Pencil size={10} />
                         </button>
                     )}
@@ -170,13 +170,13 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
             </DataCell>
             <DataCell align="center" hideBelow="lg">
                 <div className="flex items-center justify-center gap-1">
-                    <span className="text-[11px] text-slate-500 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
+                    <span className="text-[11px] text-content-3 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
                     <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
                 </div>
             </DataCell>
             <DataCell align="center">
                 <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-[12px] font-bold text-slate-700 tabular-nums">{sistema}</span>
+                    <span className="text-[12px] font-bold text-content-2 tabular-nums">{sistema}</span>
                     {isLive && <LiveBadge />}
                 </div>
             </DataCell>
@@ -190,7 +190,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onBlur={commit}
                     onKeyDown={handleFisicoKeyDown}
                     placeholder="—"
-                    className="w-16 text-center text-[16px] font-bold bg-white border border-slate-200 rounded-lg px-1 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-16 text-center text-[16px] font-bold bg-white border border-slate-200 rounded-lg px-1 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-surface-card-hover disabled:text-content-3"
                 />
             </DataCell>
             <DataCell align="center">
@@ -204,14 +204,14 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onChange={(e) => setNota(e.target.value)}
                     onBlur={commit}
                     placeholder="Nota..."
-                    className="w-full text-[16px] bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50"
+                    className="w-full text-[16px] bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-surface-card-hover"
                 />
             </DataCell>
             <DataCell align="center">
                 <div className="flex flex-col items-center gap-0.5">
-                    {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-emerald-500" /> : <span className="text-slate-500 text-[9px]">Pendiente</span>)}
+                    {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-success" /> : <span className="text-content-3 text-[9px]">Pendiente</span>)}
                     {contadoPorNombre && (
-                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[8px] font-semibold text-slate-500 hover:text-teal-600 transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
+                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[8px] font-semibold text-content-3 hover:text-teal-600 transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
                             <History size={9} /> {contadoPorNombre}
                         </button>
                     )}
@@ -227,18 +227,18 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
         <DataRow index={index} onClick={onToggle} className="cursor-pointer">
             <DataCell className="w-[280px]">
                 <div className="flex items-center gap-2">
-                    <ChevronRight size={14} className={`text-slate-400 shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
+                    <ChevronRight size={14} className={`text-content-3 shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <p className="font-bold text-slate-800 text-[12px] truncate">{product.product_nombre || `Producto ${product.erp_product_id}`}</p>
-                            {product.es_antibiotico && <span className="text-[7px] font-black uppercase text-amber-700 bg-amber-100 border border-amber-200 px-1 py-0.5 rounded shrink-0">Bajo Receta</span>}
+                            <p className="font-bold text-content text-[12px] truncate">{product.product_nombre || `Producto ${product.erp_product_id}`}</p>
+                            {product.es_antibiotico && <span className="text-[7px] font-black uppercase text-amber-700 bg-warning/10 border border-warning/30 px-1 py-0.5 rounded shrink-0">Bajo Receta</span>}
                         </div>
                     </div>
                 </div>
             </DataCell>
-            <DataCell hideBelow="lg"><span className="text-[11px] text-slate-500 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
+            <DataCell hideBelow="lg"><span className="text-[11px] text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
             <DataCell align="center" hideBelow="md">
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
+                <span className="text-[10px] font-bold text-content-3 bg-surface-card-hover border border-slate-200 px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
             </DataCell>
             <DataCell hideBelow="md" />
             <DataCell align="center" hideBelow="lg">
@@ -247,12 +247,12 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
                     {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
                 </div>
             </DataCell>
-            <DataCell align="center"><span className="text-[12px] font-black text-slate-700 tabular-nums">{product.sistema_total}</span></DataCell>
-            <DataCell align="center"><span className="text-[12px] font-black text-slate-700 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
+            <DataCell align="center"><span className="text-[12px] font-black text-content-2 tabular-nums">{product.sistema_total}</span></DataCell>
+            <DataCell align="center"><span className="text-[12px] font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
             <DataCell align="center"><span className={`text-[12px] font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span></DataCell>
             <DataCell hideBelow="lg" />
             <DataCell align="center">
-                <span className={`text-[10px] font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-emerald-600' : 'text-slate-500'}`}>
+                <span className={`text-[10px] font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-success' : 'text-content-3'}`}>
                     {product.contados_count}/{product.item_count}
                 </span>
             </DataCell>
@@ -272,29 +272,29 @@ function ItemHistoryModal({ item, onClose }) {
 
     return (
         <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
-            <div className="flex-none bg-transparent px-6 py-5 border-b border-white/40 flex items-center justify-between relative z-10">
+            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-10">
                 <div>
-                    <h3 className="font-black text-slate-800 text-[15px]">{item?.product_nombre}</h3>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
+                    <h3 className="font-black text-content text-[15px]">{item?.product_nombre}</h3>
+                    <p className="text-[10px] text-content-3 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
                 </div>
-                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all"><X size={16} /></button>
+                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
             </div>
             <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-10">
                 {history === null ? (
-                    <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-slate-500" /></div>
+                    <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-content-3" /></div>
                 ) : history.length === 0 ? (
-                    <p className="text-[12px] text-slate-500 text-center py-8">Sin registros todavía.</p>
+                    <p className="text-[12px] text-content-3 text-center py-8">Sin registros todavía.</p>
                 ) : (
                     <div className="space-y-2">
                         {history.map((h) => (
-                            <div key={h.id} className="bg-slate-50 rounded-xl p-3 flex items-center justify-between gap-3">
+                            <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
                                 <div>
-                                    <p className="text-[11px] font-bold text-slate-700">{h.contado_por_nombre || 'Desconocido'}</p>
-                                    <p className="text-[9px] text-slate-500">{fmtDateTime(h.contado_at)}</p>
-                                    {h.nota && <p className="text-[10px] text-slate-500 italic mt-0.5">"{h.nota}"</p>}
+                                    <p className="text-[11px] font-bold text-content-2">{h.contado_por_nombre || 'Desconocido'}</p>
+                                    <p className="text-[9px] text-content-3">{fmtDateTime(h.contado_at)}</p>
+                                    {h.nota && <p className="text-[10px] text-content-3 italic mt-0.5">"{h.nota}"</p>}
                                 </div>
                                 <div className="text-right shrink-0">
-                                    <p className="text-[11px] font-bold text-slate-700 tabular-nums">Sist. {h.sistema_cantidad} · Fís. {h.fisico_cantidad ?? '—'}</p>
+                                    <p className="text-[11px] font-bold text-content-2 tabular-nums">Sist. {h.sistema_cantidad} · Fís. {h.fisico_cantidad ?? '—'}</p>
                                     {h.diferencia != null && (
                                         <p className={`text-[10px] font-black tabular-nums ${difClass(h.diferencia)}`}>{difLabel(h.diferencia)}</p>
                                     )}
@@ -331,21 +331,21 @@ function EditLoteModal({ item, onClose, onSave }) {
 
     return (
         <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
-            <div className="flex-none bg-transparent px-6 py-5 border-b border-white/40 flex items-center justify-between relative z-10">
+            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-10">
                 <div>
-                    <h3 className="font-black text-slate-800 text-[15px]">Corregir lote</h3>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
+                    <h3 className="font-black text-content text-[15px]">Corregir lote</h3>
+                    <p className="text-[10px] text-content-3 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
                 </div>
-                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all"><X size={16} /></button>
+                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
             </div>
             <div className="px-6 py-5 flex flex-col gap-3 relative z-10">
-                <p className="text-[11px] text-slate-500">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
+                <p className="text-[11px] text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1 block">Lote</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>
                     <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
                 </div>
                 <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1 block">Fecha de vencimiento</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
                     <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
                 </div>
                 <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-[11px] font-bold text-white bg-teal-600 rounded-xl hover:bg-teal-700 disabled:opacity-50 transition-all">
@@ -523,24 +523,24 @@ export default function ConteoDetailView() {
     const es = conteo ? (ESTADO_CFG[conteo.status] || ESTADO_CFG.BORRADOR) : null;
 
     const filtersContent = (
-        <div className="flex items-center bg-white/40 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
                 <input
                     ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
                     type="text"
                     placeholder="Buscar producto, laboratorio o lote..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
-                {search && <button onClick={() => setSearch("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-                <button onClick={() => { setIsSearchActive(false); setSearch(""); }} className="w-11 h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
+                {search && <button onClick={() => setSearch("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+                <button onClick={() => { setIsSearchActive(false); setSearch(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
             </div>
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
                 <button
                     onClick={() => setIsSearchActive(true)}
-                    className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar producto, laboratorio o lote"
                 >
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -553,26 +553,26 @@ export default function ConteoDetailView() {
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 lg:p-8 space-y-6">
-                <button onClick={() => navigate('/conteo-inventario')} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-teal-600 transition-colors">
+                <button onClick={() => navigate('/conteo-inventario')} className="flex items-center gap-1.5 text-[11px] font-bold text-content-3 hover:text-teal-600 transition-colors">
                     <ChevronLeft size={14} /> Volver a Conteos
                 </button>
 
                 {conteo && (
-                    <div className="bg-white/60 rounded-[1.5rem] p-4 md:p-5 border border-white/90 shadow-sm">
+                    <div className="bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-sm">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <h2 className="text-[16px] font-black text-slate-800">{conteo.branches?.name}</h2>
+                                    <h2 className="text-[16px] font-black text-content">{conteo.branches?.name}</h2>
                                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${es.bg} ${es.text}`}>{es.label}</span>
                                 </div>
-                                <p className="text-[10px] text-slate-600 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
+                                <p className="text-[10px] text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <button onClick={() => handlePrint('hoja')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:border-teal-300 transition-all disabled:opacity-50">
+                                <button onClick={() => handlePrint('hoja')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-content-2 bg-white border border-slate-200 rounded-xl hover:border-teal-300 transition-all disabled:opacity-50">
                                     <Printer size={13} /> Imprimir Hoja
                                 </button>
                                 {hasResults && (
-                                    <button onClick={() => handlePrint('resultados')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:border-teal-300 transition-all disabled:opacity-50">
+                                    <button onClick={() => handlePrint('resultados')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-content-2 bg-white border border-slate-200 rounded-xl hover:border-teal-300 transition-all disabled:opacity-50">
                                         <Printer size={13} /> Imprimir Resultados
                                     </button>
                                 )}
@@ -591,17 +591,17 @@ export default function ConteoDetailView() {
 
                         {hasResults && (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                                <div className="bg-slate-50 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-[16px] font-black text-slate-700 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-slate-600 font-bold">Contados</p>
+                                <div className="bg-surface-card-hover rounded-xl px-3 py-2 text-center">
+                                    <p className="text-[16px] font-black text-content-2 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
+                                    <p className="text-[8px] uppercase tracking-widest text-content-2 font-bold">Contados</p>
                                 </div>
-                                <div className="bg-amber-50 rounded-xl px-3 py-2 text-center">
+                                <div className="bg-warning/10 rounded-xl px-3 py-2 text-center">
                                     <p className="text-[16px] font-black text-amber-700 tabular-nums">{conteo.total_diferencias ?? 0}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-amber-500 font-bold">Diferencias</p>
+                                    <p className="text-[8px] uppercase tracking-widest text-warning font-bold">Diferencias</p>
                                 </div>
-                                <div className="bg-red-50 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-[14px] font-black text-red-600 tabular-nums">{fmtMoney(conteo.valor_faltante)}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-red-400 font-bold">Faltante</p>
+                                <div className="bg-danger/10 rounded-xl px-3 py-2 text-center">
+                                    <p className="text-[14px] font-black text-danger tabular-nums">{fmtMoney(conteo.valor_faltante)}</p>
+                                    <p className="text-[8px] uppercase tracking-widest text-danger font-bold">Faltante</p>
                                 </div>
                                 <div className="bg-blue-50 rounded-xl px-3 py-2 text-center">
                                     <p className="text-[14px] font-black text-blue-600 tabular-nums">{fmtMoney(conteo.valor_sobrante)}</p>
@@ -613,11 +613,11 @@ export default function ConteoDetailView() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center rounded-2xl border border-slate-200/70 bg-white/80 overflow-hidden">
+                    <div className="flex items-center rounded-2xl border border-slate-200/70 bg-surface-card overflow-hidden">
                         {FILTRO_PILLS.map((f, idx) => (
                             <React.Fragment key={f.key}>
-                                {idx > 0 && <div className="h-5 w-px bg-slate-100" />}
-                                <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-[11px] font-semibold transition-all ${filtro === f.key ? 'bg-teal-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                                {idx > 0 && <div className="h-5 w-px bg-surface-card-hover" />}
+                                <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-[11px] font-semibold transition-all ${filtro === f.key ? 'bg-teal-600 text-white' : 'text-content-3 hover:bg-surface-card-hover'}`}>
                                     {f.label}
                                 </button>
                             </React.Fragment>
@@ -652,7 +652,7 @@ export default function ConteoDetailView() {
                             <React.Fragment key={key}>
                                 <ProductGroupRow product={product} index={i} expanded={isExpanded} onToggle={() => toggleExpand(product)} />
                                 {isExpanded && loadingExpand[key] && (
-                                    <tr><td colSpan={COLUMNS.length} className="py-4 text-center"><Loader2 size={16} className="animate-spin text-slate-400 inline" /></td></tr>
+                                    <tr><td colSpan={COLUMNS.length} className="py-4 text-center"><Loader2 size={16} className="animate-spin text-content-3 inline" /></td></tr>
                                 )}
                                 {isExpanded && lines && lines.map((item, j) => (
                                     <ItemRow
@@ -776,7 +776,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
         <div className="bg-teal-50/60 border border-teal-200/70 rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
                 <p className="text-[11px] font-black uppercase tracking-widest text-teal-700 flex items-center gap-1.5"><FlaskConical size={12} /> Producto no listado en el snapshot</p>
-                <button onClick={onCancel} className="text-slate-500 hover:text-red-500"><X size={14} /></button>
+                <button onClick={onCancel} className="text-content-3 hover:text-danger"><X size={14} /></button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="md:col-span-3">
@@ -797,8 +797,8 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
             </div>
             <div className="flex items-center gap-2">
                 <div>
-                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1 block">Vencimiento</label>
-                    <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} disabled={lote !== '__OTRO__'} className="text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400 disabled:bg-slate-100 disabled:text-slate-400" />
+                    <label className="text-[9px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Vencimiento</label>
+                    <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} disabled={lote !== '__OTRO__'} className="text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400 disabled:bg-surface-card-hover disabled:text-content-3" />
                 </div>
                 <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold text-white bg-teal-600 rounded-xl hover:bg-teal-700 disabled:opacity-40 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo

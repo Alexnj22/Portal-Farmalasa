@@ -93,16 +93,16 @@ export default function LabsPanel({ onClose, onChanged }) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b" style={glass.divider}>
                     <div className="flex items-center gap-2">
-                        <FlaskConical size={14} className="text-[#0052CC]" />
-                        <span className="text-[12px] font-black text-slate-800">Visibilidad de laboratorios</span>
+                        <FlaskConical size={14} className="text-brand" />
+                        <span className="text-[12px] font-black text-content">Visibilidad de laboratorios</span>
                         {hiddenCount > 0 && (
-                            <span className="text-[9px] font-black text-[#0052CC] bg-blue-50/80 border border-blue-200/70 px-1.5 py-0.5 rounded-full leading-none">
+                            <span className="text-[9px] font-black text-brand bg-blue-50/80 border border-blue-200/70 px-1.5 py-0.5 rounded-full leading-none">
                                 {hiddenCount} oculto{hiddenCount !== 1 ? 's' : ''}
                             </span>
                         )}
                     </div>
                     <button onClick={onClose}
-                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 transition-colors"
+                        className="w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 transition-colors"
                         style={{ background: 'rgba(255,255,255,0.6)' }}>
                         <X size={11} />
                     </button>
@@ -111,16 +111,16 @@ export default function LabsPanel({ onClose, onChanged }) {
                 {/* Search */}
                 <div className="px-3 pt-3 pb-1.5">
                     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl" style={glass.search}>
-                        <Search size={11} className="text-slate-400 shrink-0" />
+                        <Search size={11} className="text-content-3 shrink-0" />
                         <input
                             ref={searchRef}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Buscar laboratorio…"
-                            className="flex-1 text-[16px] text-slate-700 placeholder-slate-400 bg-transparent outline-none"
+                            className="flex-1 text-[16px] text-content-2 placeholder-slate-400 bg-transparent outline-none"
                         />
                         {search && (
-                            <button onClick={() => setSearch('')} className="text-slate-500 hover:text-slate-500 transition-colors shrink-0">
+                            <button onClick={() => setSearch('')} className="text-content-3 hover:text-content-3 transition-colors shrink-0">
                                 <X size={10} />
                             </button>
                         )}
@@ -128,12 +128,12 @@ export default function LabsPanel({ onClose, onChanged }) {
                 </div>
 
                 {/* Hint */}
-                <p className="px-4 pb-1.5 text-[9.5px] text-slate-500 leading-relaxed">
+                <p className="px-4 pb-1.5 text-[9.5px] text-content-3 leading-relaxed">
                     Ocultos: no aparecen en MinMax ni en el cálculo. No se cuentan como productos ocultos individualmente.
                 </p>
 
                 {err && (
-                    <p className="mx-3 mb-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] text-red-600 font-semibold">
+                    <p className="mx-3 mb-1.5 px-2.5 py-1.5 rounded-lg bg-danger/10 border border-danger/30 text-[10px] text-danger font-semibold">
                         {err}
                     </p>
                 )}
@@ -142,10 +142,10 @@ export default function LabsPanel({ onClose, onChanged }) {
                 <div className="px-3 pb-2 flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: '54vh' }}>
                     {loading ? (
                         <div className="flex items-center justify-center py-10">
-                            <Loader2 size={18} className="animate-spin text-slate-400" />
+                            <Loader2 size={18} className="animate-spin text-content-3" />
                         </div>
                     ) : visible.length === 0 ? (
-                        <div className="flex flex-col items-center py-8 gap-2 text-slate-500">
+                        <div className="flex flex-col items-center py-8 gap-2 text-content-3">
                             <FlaskConical size={22} />
                             <span className="text-[10px] font-semibold">Sin resultados</span>
                         </div>
@@ -159,20 +159,20 @@ export default function LabsPanel({ onClose, onChanged }) {
                                 className="flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all duration-200 disabled:opacity-60 hover:scale-[1.01] active:scale-[0.99]"
                                 style={hidden ? glass.rowOff : glass.row}>
                                 <div className="flex-1 min-w-0">
-                                    <div className={`text-[11px] font-semibold truncate ${hidden ? 'text-red-700' : 'text-slate-700'}`}>
+                                    <div className={`text-[11px] font-semibold truncate ${hidden ? 'text-red-700' : 'text-content-2'}`}>
                                         {lab.nombre}
                                     </div>
                                     {count > 0 && (
-                                        <div className={`text-[9px] tabular-nums ${hidden ? 'text-red-400' : 'text-slate-500'}`}>
+                                        <div className={`text-[9px] tabular-nums ${hidden ? 'text-danger' : 'text-content-3'}`}>
                                             {count} producto{count !== 1 ? 's' : ''}
                                         </div>
                                     )}
                                 </div>
                                 <div className="shrink-0">
                                     {saving === lab.id ? (
-                                        <Loader2 size={12} className="animate-spin text-slate-400" />
+                                        <Loader2 size={12} className="animate-spin text-content-3" />
                                     ) : (
-                                        <div className={`w-8 h-4 rounded-full transition-all duration-300 relative ${hidden ? 'bg-red-400' : 'bg-slate-200'}`}
+                                        <div className={`w-8 h-4 rounded-full transition-all duration-300 relative ${hidden ? 'bg-red-400' : 'bg-surface-card-hover'}`}
                                             style={hidden ? { boxShadow: '0 0 8px rgba(248,113,113,0.35)' } : {}}>
                                             <div className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-all duration-300 ${hidden ? 'left-[18px]' : 'left-0.5'}`} />
                                         </div>
@@ -186,7 +186,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                 {/* Footer */}
                 <div className="px-3 pb-3 pt-1 border-t mt-auto" style={glass.divider}>
                     <button onClick={onClose}
-                        className="w-full py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors duration-150"
+                        className="w-full py-2 rounded-xl text-[11px] font-bold text-content-3 hover:text-content-2 transition-colors duration-150"
                         style={glass.footer}
                         onMouseOver={e => Object.assign(e.currentTarget.style, { background: 'rgba(255,255,255,0.65)' })}
                         onMouseOut={e => Object.assign(e.currentTarget.style, glass.footer)}>

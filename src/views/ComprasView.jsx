@@ -77,26 +77,26 @@ function ItemsExpand({ receiptId }) {
     }, [receiptId]);
 
     if (loading) return (
-        <div className="px-6 py-4 text-[11px] text-slate-500 animate-pulse">Cargando ítems…</div>
+        <div className="px-6 py-4 text-[11px] text-content-3 animate-pulse">Cargando ítems…</div>
     );
     if (!items?.length) return (
-        <div className="px-6 py-4 text-[11px] text-slate-500">Sin ítems registrados.</div>
+        <div className="px-6 py-4 text-[11px] text-content-3">Sin ítems registrados.</div>
     );
 
     return (
         <div className="px-4 py-3">
-            <div className="overflow-x-auto rounded-xl border border-slate-200/60 bg-white/60">
+            <div className="overflow-x-auto rounded-xl border border-slate-200/60 bg-surface-card">
                 <table className="w-full text-[11px]">
                     <thead>
-                        <tr className="border-b border-slate-200/60 bg-slate-50/60">
-                            <th className="text-left px-3 py-2 font-semibold text-slate-500">#</th>
-                            <th className="text-left px-3 py-2 font-semibold text-slate-500">ID Producto</th>
-                            <th className="text-left px-3 py-2 font-semibold text-slate-500">Descripción</th>
-                            <th className="text-center px-3 py-2 font-semibold text-slate-500">Cant.</th>
-                            <th className="text-right px-3 py-2 font-semibold text-slate-500">P. Unit.</th>
-                            <th className="text-right px-3 py-2 font-semibold text-slate-500">Total línea</th>
-                            <th className="text-center px-3 py-2 font-semibold text-slate-500 hidden md:table-cell">Lote</th>
-                            <th className="text-center px-3 py-2 font-semibold text-slate-500 hidden md:table-cell">Vencimiento</th>
+                        <tr className="border-b border-slate-200/60 bg-surface-card-hover/60">
+                            <th className="text-left px-3 py-2 font-semibold text-content-3">#</th>
+                            <th className="text-left px-3 py-2 font-semibold text-content-3">ID Producto</th>
+                            <th className="text-left px-3 py-2 font-semibold text-content-3">Descripción</th>
+                            <th className="text-center px-3 py-2 font-semibold text-content-3">Cant.</th>
+                            <th className="text-right px-3 py-2 font-semibold text-content-3">P. Unit.</th>
+                            <th className="text-right px-3 py-2 font-semibold text-content-3">Total línea</th>
+                            <th className="text-center px-3 py-2 font-semibold text-content-3 hidden md:table-cell">Lote</th>
+                            <th className="text-center px-3 py-2 font-semibold text-content-3 hidden md:table-cell">Vencimiento</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100/70">
@@ -104,19 +104,19 @@ function ItemsExpand({ receiptId }) {
                             const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
                             return (
                                 <tr key={it.linea_num} className="hover:bg-blue-50/30 transition-colors">
-                                    <td className="px-3 py-2 text-slate-500 tabular-nums">{it.linea_num}</td>
-                                    <td className="px-3 py-2 text-slate-500 tabular-nums font-mono">{it.erp_product_id ?? '—'}</td>
-                                    <td className="px-3 py-2 text-slate-700 font-medium">{it.descripcion || '—'}</td>
-                                    <td className="px-3 py-2 text-center text-slate-700 tabular-nums">{fmtNum(it.cantidad)}</td>
-                                    <td className="px-3 py-2 text-right text-slate-700 tabular-nums">{fmt$(it.precio_unitario)}</td>
-                                    <td className="px-3 py-2 text-right font-semibold text-slate-800 tabular-nums">{fmt$(it.total_linea)}</td>
-                                    <td className="px-3 py-2 text-center text-slate-500 hidden md:table-cell">
+                                    <td className="px-3 py-2 text-content-3 tabular-nums">{it.linea_num}</td>
+                                    <td className="px-3 py-2 text-content-3 tabular-nums font-mono">{it.erp_product_id ?? '—'}</td>
+                                    <td className="px-3 py-2 text-content-2 font-medium">{it.descripcion || '—'}</td>
+                                    <td className="px-3 py-2 text-center text-content-2 tabular-nums">{fmtNum(it.cantidad)}</td>
+                                    <td className="px-3 py-2 text-right text-content-2 tabular-nums">{fmt$(it.precio_unitario)}</td>
+                                    <td className="px-3 py-2 text-right font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</td>
+                                    <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
                                         {lote
                                             ? <span className="bg-violet-50 text-violet-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{lote}</span>
-                                            : <span className="text-slate-500">—</span>
+                                            : <span className="text-content-3">—</span>
                                         }
                                     </td>
-                                    <td className="px-3 py-2 text-center text-slate-500 hidden md:table-cell">
+                                    <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
                                         {fmtDate(it.fecha_vencimiento)}
                                     </td>
                                 </tr>
@@ -161,14 +161,14 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
 
     const estadoBadge = (estado) => {
         if (!estado || estado === 'VIGENTE')
-            return <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Vigente</span>;
-        return <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{estado}</span>;
+            return <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">Vigente</span>;
+        return <span className="text-[10px] font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">{estado}</span>;
     };
 
     return (
         <div className="flex flex-col gap-4">
             {/* Summary line */}
-            <div className="text-[11px] text-slate-500 font-medium px-1">
+            <div className="text-[11px] text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
             </div>
 
@@ -177,34 +177,34 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
                     <React.Fragment key={row.id}>
                         <DataRow index={i} onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
                             <DataCell>
-                                <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha)}</span>
+                                <span className="font-semibold text-content-2 tabular-nums">{fmtDate(row.fecha)}</span>
                             </DataCell>
                             <DataCell>
                                 <div className="flex items-center gap-1.5">
                                     {!row.supplier_id && (
-                                        <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Proveedor no linkeado — verificar en ERP" />
+                                        <AlertTriangle size={12} className="text-warning shrink-0" title="Proveedor no linkeado — verificar en ERP" />
                                     )}
-                                    <span className="text-slate-800 font-medium text-[12px]">{provName(row)}</span>
+                                    <span className="text-content font-medium text-[12px]">{provName(row)}</span>
                                     {!row.supplier_id && (
-                                        <span className="text-[9px] font-mono text-slate-500">#{row.erp_purchase_id}</span>
+                                        <span className="text-[9px] font-mono text-content-3">#{row.erp_purchase_id}</span>
                                     )}
                                 </div>
                             </DataCell>
                             <DataCell align="center" hideBelow="md">{estadoBadge(row.estado)}</DataCell>
                             <DataCell align="center">
-                                <span className="tabular-nums text-slate-600">{row.purchase_receipt_items?.length ?? '—'}</span>
+                                <span className="tabular-nums text-content-2">{row.purchase_receipt_items?.length ?? '—'}</span>
                             </DataCell>
                             <DataCell align="right" hideBelow="md">
-                                <span className="tabular-nums text-slate-600 text-[11px]">{fmt$(row.subtotal)}</span>
+                                <span className="tabular-nums text-content-2 text-[11px]">{fmt$(row.subtotal)}</span>
                             </DataCell>
                             <DataCell align="right" hideBelow="lg">
-                                <span className="tabular-nums text-slate-500 text-[11px]">{fmt$(row.iva)}</span>
+                                <span className="tabular-nums text-content-3 text-[11px]">{fmt$(row.iva)}</span>
                             </DataCell>
                             <DataCell align="right">
-                                <span className="tabular-nums font-bold text-slate-800">{fmt$(row.total)}</span>
+                                <span className="tabular-nums font-bold text-content">{fmt$(row.total)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <button className="text-slate-500 hover:text-[#0052CC] transition-colors p-1 rounded-lg hover:bg-blue-50">
+                                <button className="text-content-3 hover:text-brand transition-colors p-1 rounded-lg hover:bg-blue-50">
                                     {expandedId === row.id
                                         ? <ChevronDown size={14} strokeWidth={2.5} />
                                         : <ChevronRight size={14} strokeWidth={2.5} />
@@ -256,7 +256,7 @@ function TabProductos({ searchTerm }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="text-[11px] text-slate-500 font-medium px-1">
+            <div className="text-[11px] text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${total.toLocaleString()} producto${total !== 1 ? 's' : ''} con historial`}
             </div>
 
@@ -264,28 +264,28 @@ function TabProductos({ searchTerm }) {
                 {rows.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
                         <DataCell align="center">
-                            <span className="font-mono text-[11px] text-slate-600 tabular-nums">{row.erp_product_id}</span>
+                            <span className="font-mono text-[11px] text-content-2 tabular-nums">{row.erp_product_id}</span>
                         </DataCell>
                         <DataCell align="center">
-                            <span className="tabular-nums text-slate-600 text-[11px]">{fmtDate(row.first_purchase_date)}</span>
+                            <span className="tabular-nums text-content-2 text-[11px]">{fmtDate(row.first_purchase_date)}</span>
                         </DataCell>
                         <DataCell align="center">
-                            <span className="tabular-nums text-slate-700 font-medium text-[11px]">{fmtDate(row.last_purchase_date)}</span>
+                            <span className="tabular-nums text-content-2 font-medium text-[11px]">{fmtDate(row.last_purchase_date)}</span>
                         </DataCell>
                         <DataCell align="center" hideBelow="md">
                             <span className="tabular-nums text-sky-600 font-bold text-[11px]">{row.days_since_first_purchase ?? '—'}d</span>
                         </DataCell>
                         <DataCell align="center">
-                            <span className="tabular-nums text-slate-600">{row.total_receipts}</span>
+                            <span className="tabular-nums text-content-2">{row.total_receipts}</span>
                         </DataCell>
                         <DataCell align="right" hideBelow="md">
-                            <span className="tabular-nums text-slate-600 text-[11px]">{fmtNum(row.total_units_received)}</span>
+                            <span className="tabular-nums text-content-2 text-[11px]">{fmtNum(row.total_units_received)}</span>
                         </DataCell>
                         <DataCell align="right">
-                            <span className="tabular-nums text-slate-700 text-[11px]">{fmt$(row.avg_cost)}</span>
+                            <span className="tabular-nums text-content-2 text-[11px]">{fmt$(row.avg_cost)}</span>
                         </DataCell>
                         <DataCell align="right">
-                            <span className="tabular-nums font-bold text-slate-800 text-[11px]">{fmt$(row.latest_cost)}</span>
+                            <span className="tabular-nums font-bold text-content text-[11px]">{fmt$(row.latest_cost)}</span>
                         </DataCell>
                     </DataRow>
                 ))}
@@ -336,47 +336,47 @@ export default function ComprasView() {
                     onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
                     className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors w-fit ${
                         sinProveedor
-                            ? 'bg-amber-100 border-amber-300 text-amber-800'
-                            : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
+                            ? 'bg-warning/10 border-amber-300 text-amber-800'
+                            : 'bg-warning/10 border-warning/30 text-amber-700 hover:bg-warning/10'
                     }`}
                 >
-                    <AlertTriangle size={12} className="text-amber-500" />
+                    <AlertTriangle size={12} className="text-warning" />
                     {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor linkeado — verificar en ERP
                     <span className="ml-1 text-[10px] font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
                 </button>
             )}
 
-            <div className="flex items-center gap-3 rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-2 flex-wrap">
+            <div className="flex items-center gap-3 rounded-2xl bg-surface-card border border-slate-200/70 px-4 py-2 flex-wrap">
                 {/* Date start */}
                 <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-slate-400" />
+                    <Calendar size={12} className="text-content-3" />
                     <input
                         type="date"
                         value={dateStart}
                         onChange={e => setDateStart(e.target.value)}
-                        className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
+                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
                     />
                 </div>
 
-                <div className="h-5 w-px bg-slate-100" />
+                <div className="h-5 w-px bg-surface-card-hover" />
 
                 {/* Date end */}
                 <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-slate-400" />
+                    <Calendar size={12} className="text-content-3" />
                     <input
                         type="date"
                         value={dateEnd}
                         onChange={e => setDateEnd(e.target.value)}
-                        className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
+                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
                     />
                 </div>
 
                 {activeTab === 'facturas' && (
                     <>
-                        <div className="h-5 w-px bg-slate-100" />
+                        <div className="h-5 w-px bg-surface-card-hover" />
                         {/* Supplier filter */}
                         <div className="flex items-center gap-1.5">
-                            <Users size={12} className="text-slate-400" />
+                            <Users size={12} className="text-content-3" />
                             <div className="w-[180px]">
                                 <LiquidSelect
                                     value={sinProveedor ? '' : supplierId}

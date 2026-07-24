@@ -19,20 +19,20 @@ const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV'
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
 
 const STATUS_META = {
-    DRAFT:            { label: 'Borrador',      bg: 'bg-slate-50',   text: 'text-slate-500',   border: 'border-slate-200',   bar: 'bg-slate-300'   },
+    DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-slate-200',   bar: 'bg-content-3'   },
     PRE_APPROVED:     { label: 'Pre-aprobado',  bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
-    CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   bar: 'bg-amber-400'   },
-    APPROVED:         { label: 'Aprobado',      bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', bar: 'bg-emerald-400' },
+    CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-warning/10',   text: 'text-amber-700',   border: 'border-warning/30',   bar: 'bg-amber-400'   },
+    APPROVED:         { label: 'Aprobado',      bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30', bar: 'bg-emerald-400' },
     PLANNED:          { label: 'Planificado',   bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
-    CONFIRMED:        { label: 'Confirmado',    bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', bar: 'bg-emerald-400' },
-    TAKEN:            { label: 'Tomado',        bg: 'bg-slate-100',  text: 'text-slate-500',   border: 'border-slate-200',   bar: 'bg-slate-300'   },
-    CANCELLED:        { label: 'Cancelado',     bg: 'bg-red-50',     text: 'text-red-500',     border: 'border-red-200',     bar: 'bg-red-300'     },
+    CONFIRMED:        { label: 'Confirmado',    bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30', bar: 'bg-emerald-400' },
+    TAKEN:            { label: 'Tomado',        bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-slate-200',   bar: 'bg-content-3'   },
+    CANCELLED:        { label: 'Cancelado',     bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',     bar: 'bg-red-300'     },
 };
 
 const HEADER_STATUS_META = {
-    DRAFT:        { label: 'Borrador',     color: 'text-slate-500',   bg: 'bg-slate-100'   },
+    DRAFT:        { label: 'Borrador',     color: 'text-content-3',   bg: 'bg-surface-card-hover'   },
     PRE_APPROVED: { label: 'Pre-aprobado', color: 'text-blue-700',    bg: 'bg-blue-50'     },
-    FINALIZED:    { label: 'Finalizado',   color: 'text-emerald-700', bg: 'bg-emerald-50'  },
+    FINALIZED:    { label: 'Finalizado',   color: 'text-emerald-700', bg: 'bg-success/10'  },
 };
 
 const StatusBadge = ({ status }) => {
@@ -45,10 +45,10 @@ const StatusBadge = ({ status }) => {
 };
 
 const InputLabel = ({ children }) => (
-    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
+    <p className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -58,7 +58,7 @@ const EligibilityBanner = ({ info }) => {
     let cfg;
     if (isEligible && inWindow) {
         cfg = {
-            bg: 'bg-emerald-50/80 border-emerald-200/60',
+            bg: 'bg-success/80 border-success/60',
             icon: <CheckCircle2 size={10} strokeWidth={2.5} className="text-emerald-700" />,
             label: 'Dentro de ventana válida',
             labelColor: 'text-emerald-700',
@@ -66,7 +66,7 @@ const EligibilityBanner = ({ info }) => {
         };
     } else if (isEligible && !inWindow) {
         cfg = {
-            bg: 'bg-amber-50/80 border-amber-200/60',
+            bg: 'bg-warning/80 border-warning/60',
             icon: <AlertCircle size={10} strokeWidth={2.5} className="text-amber-700" />,
             label: 'Fuera de ventana óptima',
             labelColor: 'text-amber-700',
@@ -82,7 +82,7 @@ const EligibilityBanner = ({ info }) => {
         };
     } else {
         cfg = {
-            bg: 'bg-red-50/80 border-red-200/60',
+            bg: 'bg-danger/80 border-danger/60',
             icon: <Ban size={10} strokeWidth={2.5} className="text-red-700" />,
             label: 'No elegible',
             labelColor: 'text-red-700',
@@ -179,9 +179,9 @@ const GanttChart = ({ plans, year }) => {
     }, [plans]);
 
     if (rows.length === 0) return (
-        <div className="flex flex-col items-center py-10 gap-3 text-slate-500">
+        <div className="flex flex-col items-center py-10 gap-3 text-content-3">
             <Palmtree size={36} strokeWidth={1} />
-            <p className="text-[13px] font-bold text-slate-500">Sin planes para este año</p>
+            <p className="text-[13px] font-bold text-content-3">Sin planes para este año</p>
         </div>
     );
 
@@ -193,7 +193,7 @@ const GanttChart = ({ plans, year }) => {
                     {months.map(m => (
                         <div
                             key={m.idx}
-                            className="text-[9px] font-black text-slate-600 uppercase tracking-widest text-center border-l border-slate-100/80 first:border-l-0 py-1"
+                            className="text-[9px] font-black text-content-2 uppercase tracking-widest text-center border-l border-slate-100/80 first:border-l-0 py-1"
                             style={{ flex: `${m.days} 0 0%` }}
                         >
                             {m.label}
@@ -210,23 +210,23 @@ const GanttChart = ({ plans, year }) => {
                             <React.Fragment key={emp?.id || bars[0]?.employee_id}>
                                 {showHeader && branchName && (
                                     <div className="flex items-center gap-2 mt-3 mb-1 ml-0 pr-0">
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 w-[160px] text-right pr-3 shrink-0">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-content-3 w-[160px] text-right pr-3 shrink-0">
                                             {branchName}
                                         </span>
-                                        <div className="flex-1 h-px bg-slate-100" />
+                                        <div className="flex-1 h-px bg-surface-card-hover" />
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2 group/row">
                                     <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
-                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
+                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">
                                             {(emp?.photo || emp?.photo_url)
                                                 ? <img src={emp?.photo || emp?.photo_url} alt={emp?.name} className="w-full h-full object-cover" />
                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                             }
                                         </div>
-                                        <span className="text-[11px] font-bold text-slate-700 truncate group-hover/row:text-[#0052CC] transition-colors">{emp?.name || 'Empleado'}</span>
+                                        <span className="text-[11px] font-bold text-content-2 truncate group-hover/row:text-brand transition-colors">{emp?.name || 'Empleado'}</span>
                                     </div>
-                                    <div className="flex-1 h-7 bg-white/50 border border-slate-100 rounded-xl relative overflow-visible">
+                                    <div className="flex-1 h-7 bg-surface-card border border-slate-100 rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}
                                         {months.map(m => (
                                             <div
@@ -246,9 +246,9 @@ const GanttChart = ({ plans, year }) => {
                                                 >
                                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-50 pointer-events-none">
                                                         <div className="bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
-                                                            <span className="block font-black text-[8px] uppercase tracking-widest text-slate-600 mb-0.5">{meta.label}</span>
+                                                            <span className="block font-black text-[8px] uppercase tracking-widest text-content-2 mb-0.5">{meta.label}</span>
                                                             <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
-                                                            <span className="ml-2 text-slate-500">· {p.days}d</span>
+                                                            <span className="ml-2 text-content-3">· {p.days}d</span>
                                                         </div>
                                                         <div className="w-2 h-2 bg-slate-900/90 rotate-45 -mt-1" />
                                                     </div>
@@ -267,7 +267,7 @@ const GanttChart = ({ plans, year }) => {
                     {Object.entries(STATUS_META).filter(([k]) => k !== 'CANCELLED').map(([k, m]) => (
                         <div key={k} className="flex items-center gap-1.5">
                             <div className={`w-3 h-3 rounded-sm ${m.bar}`} />
-                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{m.label}</span>
+                            <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">{m.label}</span>
                         </div>
                     ))}
                 </div>
@@ -636,29 +636,29 @@ const VacationPlanView = () => {
     }, [vacStatusFiltered, searchTerm]);
 
     const filtersContent = (
-        <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
 
             {/* Search mode */}
             <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                <div className="flex items-center bg-white/60 backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[260px] border border-white/80 shadow-sm">
-                    <Search size={14} className="text-slate-400 shrink-0" strokeWidth={2.5} />
+                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[260px] border border-border-card shadow-sm">
+                    <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                     <input
                         ref={searchInputRef}
                         type="text"
                         placeholder="Buscar empleado o sucursal…"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[16px] font-semibold text-slate-700 placeholder-slate-400 w-full"
+                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-slate-400 w-full"
                     />
                     {searchTerm && (
-                        <button onClick={() => setSearchTerm('')} className="text-slate-500 hover:text-slate-600 transition-colors">
+                        <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors">
                             <X size={13} strokeWidth={2.5} />
                         </button>
                     )}
                 </div>
                 <button
                     onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-11 rounded-full bg-white/60 backdrop-blur-md text-slate-500 hover:text-slate-800 hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-white/60 hover:shadow-sm active:scale-[0.97]">
+                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
                     Cancelar
                 </button>
             </div>
@@ -667,17 +667,17 @@ const VacationPlanView = () => {
             <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
 
                 {/* Year selector */}
-                <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full border border-white/80 shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-white/70 h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
+                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
+                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
-                    <span className="text-[12px] font-black text-slate-700 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
+                    <span className="text-[12px] font-black text-content-2 px-2 min-w-[46px] text-center select-none">{year}</span>
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                 </div>
 
-                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
 
                 {/* Branch filter */}
                 {getScope('vacation_plan') !== 'BRANCH' && <div className="w-[190px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
@@ -693,7 +693,7 @@ const VacationPlanView = () => {
                     />
                 </div>}
 
-                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
 
                 {/* Status filter */}
                 <div className="w-[180px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
@@ -715,12 +715,12 @@ const VacationPlanView = () => {
                     />
                 </div>
 
-                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
 
                 {/* Search button — blue pill standard */}
                 <button
                     onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
@@ -739,25 +739,25 @@ const VacationPlanView = () => {
                     <div ref={panelRef} className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div className={`backdrop-blur-[30px] rounded-[2.5rem] p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative ${
                             editingPlan
-                                ? 'bg-white/60 border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
-                                : 'bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                ? 'bg-surface-card border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                : 'bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                         }`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-amber-500' : 'bg-[#0052CC]'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-amber-500' : 'bg-brand'}`}>
                                         {editingPlan
                                             ? <Edit3 size={16} className="text-white" strokeWidth={2.5} />
                                             : <Plus size={16} className="text-white" strokeWidth={2.5} />
                                         }
                                     </div>
-                                    <h3 className="font-black text-slate-800 text-[15px] uppercase tracking-tight">
+                                    <h3 className="font-black text-content text-[15px] uppercase tracking-tight">
                                         {editingPlan ? 'Editar Asignación' : 'Nueva Asignación'}
                                     </h3>
                                 </div>
                                 {editingPlan && (
                                     <button
                                         onClick={handleCancelEdit}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group"
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
                                     >
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
@@ -788,7 +788,7 @@ const VacationPlanView = () => {
                                     const used = usedDaysByEmpId.get(String(selectedEmployee.id)) || 0;
                                     const remaining = 15 - used;
                                     return (
-                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-[#0052CC]/5 border-[#0052CC]/15 text-[#0052CC]' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-brand/5 border-brand/15 text-brand' : 'bg-danger/10 border-danger/30 text-red-700'}`}>
                                             <span className="font-black uppercase tracking-widest text-[9px]">Saldo vacacional {year}</span>
                                             <span className="font-black text-[14px]">{Math.max(0, remaining)}<span className="text-[9px] font-bold ml-0.5">/ 15 días</span></span>
                                         </div>
@@ -810,9 +810,9 @@ const VacationPlanView = () => {
 
                                 {/* Días calculados */}
                                 {computedDays > 0 && (
-                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-amber-500/8 border-amber-500/15' : 'bg-[#0052CC]/8 border-[#0052CC]/15'}`}>
-                                        <Calendar size={13} className={editingPlan ? 'text-amber-600' : 'text-[#0052CC]'} strokeWidth={2.5} />
-                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-amber-700' : 'text-[#0052CC]'}`}>{computedDays} días calendario</span>
+                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-amber-500/8 border-amber-500/15' : 'bg-brand/8 border-brand/15'}`}>
+                                        <Calendar size={13} className={editingPlan ? 'text-warning' : 'text-brand'} strokeWidth={2.5} />
+                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-amber-700' : 'text-brand'}`}>{computedDays} días calendario</span>
                                     </div>
                                 )}
 
@@ -830,22 +830,22 @@ const VacationPlanView = () => {
 
                                 {/* Confirmación inline al guardar edición */}
                                 {confirmingEdit && (
-                                    <div className="flex items-center gap-3 px-4 py-3 bg-amber-50/80 border border-amber-200/60 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <AlertCircle size={14} className="text-amber-600 shrink-0" strokeWidth={2.5} />
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-warning/80 border border-warning/60 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <AlertCircle size={14} className="text-warning shrink-0" strokeWidth={2.5} />
                                         <span className="text-[11px] font-black text-amber-800 flex-1">¿Confirmar cambios?</span>
-                                        <button type="button" onClick={() => setConfirmingEdit(false)} className="text-[10px] font-black text-slate-500 hover:text-slate-700 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-white/60 transition-all">No</button>
+                                        <button type="button" onClick={() => setConfirmingEdit(false)} className="text-[10px] font-black text-content-3 hover:text-content-2 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-surface-card transition-all">No</button>
                                     </div>
                                 )}
 
                                 <button
                                     type="submit"
                                     disabled={!canEdit || isSubmitting || !empId || !startDate || !endDate}
-                                    className={`w-full h-[48px] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-500 active:scale-[0.98] disabled:shadow-none ${
+                                    className={`w-full h-[48px] disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-500 active:scale-[0.98] disabled:shadow-none ${
                                         confirmingEdit
                                             ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_12px_rgba(34,197,94,0.3)]'
                                             : editingPlan
                                                 ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
-                                                : 'bg-[#0052CC] hover:bg-[#003D99] shadow-[0_4px_12px_rgba(0,82,204,0.3)]'
+                                                : 'bg-brand hover:bg-brand-hover shadow-[0_4px_12px_rgba(0,82,204,0.3)]'
                                     }`}
                                 >
                                     {isSubmitting
@@ -865,21 +865,21 @@ const VacationPlanView = () => {
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
 
                         {/* Plan header status card */}
-                        <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0052CC] to-[#6929C4] flex items-center justify-center shadow-sm">
+                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-[#6929C4] flex items-center justify-center shadow-sm">
                                         <Palmtree size={16} className="text-white" strokeWidth={2} />
                                     </div>
                                     <div>
-                                        <p className="text-[13px] font-black text-slate-800">Plan de Vacaciones {year}</p>
+                                        <p className="text-[13px] font-black text-content">Plan de Vacaciones {year}</p>
                                         {activeHeader ? (
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${HEADER_STATUS_META[activeHeader.status]?.bg || 'bg-slate-100'} ${HEADER_STATUS_META[activeHeader.status]?.color || 'text-slate-500'}`}>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${HEADER_STATUS_META[activeHeader.status]?.bg || 'bg-surface-card-hover'} ${HEADER_STATUS_META[activeHeader.status]?.color || 'text-content-3'}`}>
                                                 {HEADER_STATUS_META[activeHeader.status]?.label || activeHeader.status}
                                                 {activeHeader.ai_generated && ' · IA'}
                                             </span>
                                         ) : (
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Sin plan generado</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-content-2">Sin plan generado</span>
                                         )}
                                     </div>
                                 </div>
@@ -890,7 +890,7 @@ const VacationPlanView = () => {
                                             <button
                                                 onClick={handleGenerateAI}
                                                 disabled={isGeneratingPlan}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#6929C4] to-[#0052CC] text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(105,41,196,0.3)] hover:shadow-[0_6px_16px_rgba(105,41,196,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#6929C4] to-brand text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(105,41,196,0.3)] hover:shadow-[0_6px_16px_rgba(105,41,196,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
                                             >
                                                 {isGeneratingPlan
                                                     ? <><Loader2 size={12} className="animate-spin" /> Generando…</>
@@ -918,19 +918,19 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Gantt */}
-                        <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
                             <div className="flex items-center justify-between mb-5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
                                 </p>
-                                {isLoadingVacationPlans && <Loader2 size={14} className="animate-spin text-slate-400" />}
+                                {isLoadingVacationPlans && <Loader2 size={14} className="animate-spin text-content-3" />}
                             </div>
                             <GanttChart plans={filtered} year={year} />
                         </div>
 
                         {/* Tabla */}
-                        <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-5">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>
 
@@ -940,7 +940,7 @@ const VacationPlanView = () => {
                                         <thead>
                                             <tr className="border-b border-slate-100">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-600 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -965,14 +965,14 @@ const VacationPlanView = () => {
                                     </table>
                                 </div>
                             ) : filtered.length === 0 ? (
-                                <div className="flex flex-col items-center py-12 gap-3 text-slate-500">
+                                <div className="flex flex-col items-center py-12 gap-3 text-content-3">
                                     <Palmtree size={36} strokeWidth={1} />
-                                    <p className="text-[13px] font-bold text-slate-500">Sin asignaciones en este período</p>
+                                    <p className="text-[13px] font-bold text-content-3">Sin asignaciones en este período</p>
                                 </div>
                             ) : (
                                 <>
                                 {isVacSearchFuzzy && searchTerm && (
-                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                         Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                                     </div>
@@ -982,7 +982,7 @@ const VacationPlanView = () => {
                                         <thead>
                                             <tr className="border-b border-slate-100">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Saldo', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-600 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -993,41 +993,41 @@ const VacationPlanView = () => {
                                                 const remaining = 15 - usedDays;
                                                 return (
                                                     <React.Fragment key={p.id}>
-                                                        <tr className={`group/row hover:bg-white/40 transition-colors ${isEditing ? 'bg-amber-50/60' : ''}`}>
+                                                        <tr className={`group/row hover:bg-surface-card transition-colors ${isEditing ? 'bg-warning/60' : ''}`}>
                                                             <td className="py-3 pr-4">
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
-                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
+                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">
                                                                         {p.employee?.photo
                                                                             ? <img src={p.employee.photo} alt={p.employee.name} className="w-full h-full object-cover" />
                                                                             : (p.employee?.name || '?').charAt(0).toUpperCase()
                                                                         }
                                                                     </div>
-                                                                    <p className="font-bold text-slate-700 group-hover/row:text-[#0052CC] transition-colors">{p.employee?.name || '—'}</p>
+                                                                    <p className="font-bold text-content-2 group-hover/row:text-brand transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
-                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200 cursor-default">
+                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-warning/10 text-amber-700 border border-warning/30 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
                                                                             <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
-                                                                                <span className="text-slate-600 font-black uppercase tracking-widest text-[7px] mb-0.5">Fecha original</span>
+                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[7px] mb-0.5">Fecha original</span>
                                                                                 <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
-                                                                                <span className="text-slate-600 font-black uppercase tracking-widest text-[7px] mt-1 mb-0.5">Fecha actual</span>
+                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[7px] mt-1 mb-0.5">Fecha actual</span>
                                                                                 <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)} · {p.days}d</span>
                                                                             </span>
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                             </td>
-                                                            <td className="py-3 pr-4 text-slate-500 font-medium">{p.branch?.name || '—'}</td>
-                                                            <td className="py-3 pr-4 text-slate-600 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
-                                                            <td className="py-3 pr-4 font-black text-slate-700">{p.days}</td>
+                                                            <td className="py-3 pr-4 text-content-3 font-medium">{p.branch?.name || '—'}</td>
+                                                            <td className="py-3 pr-4 text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
+                                                            <td className="py-3 pr-4 font-black text-content-2">{p.days}</td>
                                                             <td className="py-3 pr-4">
-                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-[#0052CC] bg-[#0052CC]/5 border-[#0052CC]/15' : 'text-red-700 bg-red-50 border-red-200'}`}>
+                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand bg-brand/5 border-brand/15' : 'text-red-700 bg-danger/10 border-danger/30'}`}>
                                                                     {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
                                                                 </span>
                                                             </td>
                                                             <td className="py-3 pr-4 max-w-[160px]">
                                                                 {p.notes
-                                                                    ? <p className="text-[11px] text-slate-500 font-medium leading-snug line-clamp-2">{p.notes}</p>
-                                                                    : <span className="text-[10px] text-slate-500">—</span>
+                                                                    ? <p className="text-[11px] text-content-3 font-medium leading-snug line-clamp-2">{p.notes}</p>
+                                                                    : <span className="text-[10px] text-content-3">—</span>
                                                                 }
                                                             </td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
@@ -1038,7 +1038,7 @@ const VacationPlanView = () => {
                                                                             title="Editar"
                                                                             onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '', employee: p.employee })}
                                                                             disabled={!canEdit}
-                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-amber-100 border-amber-300 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-500 hover:text-white hover:border-slate-500'}`}
+                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-warning/10 border-amber-300 text-warning hover:bg-amber-500 hover:text-white hover:border-amber-500' : 'bg-surface-card-hover border-slate-200 text-content-3 hover:bg-slate-500 hover:text-white hover:border-slate-500'}`}
                                                                         >
                                                                             <Edit2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -1048,7 +1048,7 @@ const VacationPlanView = () => {
                                                                             title="Confirmar"
                                                                             onClick={() => handleConfirmPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-success/10 border border-success/30 text-success hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Check size={11} strokeWidth={3} />
                                                                         </button>
@@ -1058,7 +1058,7 @@ const VacationPlanView = () => {
                                                                             title="Cancelar"
                                                                             onClick={() => handleCancelPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 border border-red-200 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 border border-danger/30 text-danger hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Trash2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -1079,8 +1079,8 @@ const VacationPlanView = () => {
 
                         {/* Solicitudes de cambio */}
                         {vacationChangeRequests.length > 0 && (
-                            <div className="bg-white/40 backdrop-blur-[30px] border border-amber-200/60 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5 mb-4">
+                            <div className="bg-surface-card backdrop-blur-[30px] border border-warning/60 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-warning flex items-center gap-1.5 mb-4">
                                     <MessageSquare size={10} /> Solicitudes de cambio ({vacationChangeRequests.length})
                                 </p>
                                 <div className="space-y-3">
@@ -1089,24 +1089,24 @@ const VacationPlanView = () => {
                                         const isProcessing = processingRequestId === req.id;
                                         const emp = req.employee;
                                         return (
-                                            <div key={req.id} className="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-4">
+                                            <div key={req.id} className="bg-warning/60 border border-warning/60 rounded-2xl p-4">
                                                 <div className="flex flex-wrap items-start gap-3 justify-between">
                                                     <div className="flex items-center gap-2.5">
-                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">
                                                             {emp?.photo_url
                                                                 ? <img src={emp.photo || emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
                                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                                             }
                                                         </div>
                                                         <div>
-                                                            <p className="text-[12px] font-black text-slate-800">{emp?.name || 'Empleado'}</p>
-                                                            <p className="text-[10px] text-slate-500 font-medium">
+                                                            <p className="text-[12px] font-black text-content">{emp?.name || 'Empleado'}</p>
+                                                            <p className="text-[10px] text-content-3 font-medium">
                                                                 Solicita: <strong>{fmtShort(meta.requested_start)}</strong>
                                                                 <ArrowRight size={10} className="inline mx-1" strokeWidth={2.5} />
                                                                 <strong>{fmtShort(meta.requested_end)}</strong>
                                                             </p>
                                                             {meta.original_start && (
-                                                                <p className="text-[9px] text-slate-500 mt-0.5">
+                                                                <p className="text-[9px] text-content-3 mt-0.5">
                                                                     Original: {fmtShort(meta.original_start)} → {fmtShort(meta.original_end)}
                                                                 </p>
                                                             )}
@@ -1128,7 +1128,7 @@ const VacationPlanView = () => {
                                                             <button
                                                                 onClick={() => handleProcessRequest(req, 'REJECTED')}
                                                                 disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-500 hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-red-500 hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
                                                             >
                                                                 <X size={11} strokeWidth={3} /> Rechazar
                                                             </button>

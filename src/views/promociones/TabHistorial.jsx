@@ -60,10 +60,10 @@ export default function TabHistorial({ searchTerm }) {
         <div>
             {/* Info pill — right-aligned, glassmorphic */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0">
                     <div className="flex items-center gap-1.5 px-3 py-2">
-                        <History size={12} className="text-slate-400" />
-                        <span className="text-[11px] text-slate-500">
+                        <History size={12} className="text-content-3" />
+                        <span className="text-[11px] text-content-3">
                             {filtered.length} {filtered.length === 1 ? 'promoción cerrada' : 'promociones cerradas'}
                         </span>
                     </div>
@@ -90,19 +90,19 @@ export default function TabHistorial({ searchTerm }) {
                             <DataRow index={idx} onClick={() => toggleExpand(promo.id)}>
                                 <DataCell align="center">
                                     {isOpen
-                                        ? <ChevronDown  size={13} className="text-slate-400" />
-                                        : <ChevronRight size={13} className="text-slate-400" />}
+                                        ? <ChevronDown  size={13} className="text-content-3" />
+                                        : <ChevronRight size={13} className="text-content-3" />}
                                 </DataCell>
 
                                 <DataCell align="left">
-                                    <span className="text-[12px] font-semibold text-slate-700">{promo.nombre}</span>
+                                    <span className="text-[12px] font-semibold text-content-2">{promo.nombre}</span>
                                     {promo.laboratorios?.nombre && (
-                                        <span className="ml-1.5 text-[10px] text-slate-500">{promo.laboratorios.nombre}</span>
+                                        <span className="ml-1.5 text-[10px] text-content-3">{promo.laboratorios.nombre}</span>
                                     )}
                                 </DataCell>
 
                                 <DataCell align="center" hideBelow="md">
-                                    <span className="text-[11px] text-slate-500">
+                                    <span className="text-[11px] text-content-3">
                                         {fmtDate(promo.fecha_inicio)}
                                         {promo.fecha_fin && ` → ${fmtDate(promo.fecha_fin)}`}
                                         {!promo.fecha_inicio && '—'}
@@ -110,7 +110,7 @@ export default function TabHistorial({ searchTerm }) {
                                 </DataCell>
 
                                 <DataCell align="center">
-                                    <span className="text-[12px] font-medium text-slate-600">
+                                    <span className="text-[12px] font-medium text-content-2">
                                         {(promo.promotion_products || []).length}
                                     </span>
                                 </DataCell>
@@ -118,29 +118,29 @@ export default function TabHistorial({ searchTerm }) {
                                 <DataCell align="center" hideBelow="sm">
                                     {pct !== null ? (
                                         <div className="flex items-center gap-1.5 justify-center">
-                                            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div className={`h-full rounded-full ${pct >= 100 ? 'bg-emerald-400' : 'bg-slate-300'}`} style={{ width: `${pct}%` }} />
+                                            <div className="w-16 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
+                                                <div className={`h-full rounded-full ${pct >= 100 ? 'bg-emerald-400' : 'bg-content-3'}`} style={{ width: `${pct}%` }} />
                                             </div>
-                                            <span className="text-[10px] text-slate-500">{pct}%</span>
+                                            <span className="text-[10px] text-content-3">{pct}%</span>
                                         </div>
                                     ) : (
-                                        <span className="text-[11px] text-slate-500">{totalSold > 0 ? `${totalSold} und` : '—'}</span>
+                                        <span className="text-[11px] text-content-3">{totalSold > 0 ? `${totalSold} und` : '—'}</span>
                                     )}
                                 </DataCell>
                             </DataRow>
 
                             {isOpen && (
                                 <tr key={`exp-${promo.id}`}>
-                                    <td colSpan={COLS.length} className="p-0 bg-slate-50/50">
+                                    <td colSpan={COLS.length} className="p-0 bg-surface-card-hover/50">
                                         <div className="px-4 pb-3 pt-1">
                                             {(promo.promotion_branches || []).length > 0 && (
-                                                <div className="flex items-center gap-1 text-[10px] text-slate-500 mb-2">
+                                                <div className="flex items-center gap-1 text-[10px] text-content-3 mb-2">
                                                     <Building2 size={9} />
                                                     {(promo.promotion_branches || []).map(pb => pb.branches?.name).filter(Boolean).join(', ')}
                                                 </div>
                                             )}
                                             {promo.notas && (
-                                                <p className="text-[10px] text-slate-500 italic mb-2">"{promo.notas}"</p>
+                                                <p className="text-[10px] text-content-3 italic mb-2">"{promo.notas}"</p>
                                             )}
                                             {(promo.promotion_products || []).map(pp => {
                                                 const sold = (pp.promotion_sales_cache || []).reduce((a, r) => a + (r.units_sold || 0), 0);
@@ -149,26 +149,26 @@ export default function TabHistorial({ searchTerm }) {
                                                     : null;
                                                 return (
                                                     <div key={pp.id} className="flex items-center gap-3 py-1.5 border-b border-slate-100 last:border-0">
-                                                        <div className="w-6 h-6 rounded bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden">
+                                                        <div className="w-6 h-6 rounded bg-surface-card-hover border border-slate-100 flex items-center justify-center overflow-hidden">
                                                             {pp.products?.foto_url
                                                                 ? <img src={pp.products.foto_url} className="w-full h-full object-cover" alt="" />
-                                                                : <Package size={10} className="text-slate-300" />}
+                                                                : <Package size={10} className="text-content-3" />}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <span className="text-[11px] font-medium text-slate-600 truncate">{pp.products?.nombre}</span>
+                                                            <span className="text-[11px] font-medium text-content-2 truncate">{pp.products?.nombre}</span>
                                                             {pp.factor_descripcion && (
                                                                 <span className="ml-1.5 text-[10px] text-violet-500">{pp.factor_descripcion}</span>
                                                             )}
                                                         </div>
                                                         {pp.stock_inicial != null && (
-                                                            <span className="text-[10px] text-slate-500">{sold}/{pp.stock_inicial} und</span>
+                                                            <span className="text-[10px] text-content-3">{sold}/{pp.stock_inicial} und</span>
                                                         )}
                                                         {ppPct !== null && (
                                                             <div className="flex items-center gap-1">
-                                                                <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                    <div className={`h-full rounded-full ${ppPct >= 100 ? 'bg-emerald-400' : 'bg-slate-300'}`} style={{ width: `${ppPct}%` }} />
+                                                                <div className="w-12 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
+                                                                    <div className={`h-full rounded-full ${ppPct >= 100 ? 'bg-emerald-400' : 'bg-content-3'}`} style={{ width: `${ppPct}%` }} />
                                                                 </div>
-                                                                <span className="text-[9px] text-slate-500">{ppPct}%</span>
+                                                                <span className="text-[9px] text-content-3">{ppPct}%</span>
                                                             </div>
                                                         )}
                                                     </div>

@@ -44,10 +44,10 @@ const AccessDeniedView = () => {
 
             {/* Text */}
             <div className="relative animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '150ms' }}>
-                <h1 className="text-[32px] font-black text-slate-900 tracking-tight leading-none mb-2">
+                <h1 className="text-[32px] font-black text-content tracking-tight leading-none mb-2">
                     Acceso denegado
                 </h1>
-                <p className="text-[14px] text-slate-500 font-medium leading-relaxed mb-8">
+                <p className="text-[14px] text-content-3 font-medium leading-relaxed mb-8">
                     No tienes permiso para ver este módulo.
                 </p>
             </div>
@@ -56,7 +56,7 @@ const AccessDeniedView = () => {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '280ms' }}>
                 <button
                     onClick={() => navigate(-1)}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-slate-200 text-slate-700 text-[13px] font-black hover:bg-slate-50 active:scale-[0.97] transition-all"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-slate-200 text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all"
                 >
                     <ArrowLeft size={14} strokeWidth={2.5} />
                     Volver

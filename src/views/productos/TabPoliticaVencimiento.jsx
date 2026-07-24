@@ -199,7 +199,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-24 gap-2 text-slate-500">
+            <div className="flex items-center justify-center py-24 gap-2 text-content-3">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span className="text-sm">Cargando política de vencimiento…</span>
             </div>
@@ -216,7 +216,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             </div>
 
             {filtered.length === 0 ? (
-                <div className="text-center py-20 text-slate-500 text-sm">
+                <div className="text-center py-20 text-content-3 text-sm">
                     {searchTerm ? 'Sin resultados.' : 'No hay laboratorios registrados.'}
                 </div>
             ) : (
@@ -293,7 +293,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
 const SUMMARY_COLOR = {
     teal:   { bg: 'from-teal-50 to-white',   border: 'border-teal-100/80',   icon: 'bg-teal-100 text-teal-600',    glow: 'shadow-teal-100',   text: 'text-teal-600'   },
     indigo: { bg: 'from-indigo-50 to-white', border: 'border-indigo-100/80', icon: 'bg-indigo-100 text-indigo-600',glow: 'shadow-indigo-100', text: 'text-indigo-600' },
-    amber:  { bg: 'from-amber-50 to-white',  border: 'border-amber-100/80',  icon: 'bg-amber-100 text-amber-600',  glow: 'shadow-amber-100',  text: 'text-amber-600'  },
+    amber:  { bg: 'from-amber-50 to-white',  border: 'border-warning/80',  icon: 'bg-warning/10 text-warning',  glow: 'shadow-amber-100',  text: 'text-warning'  },
 };
 
 function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
@@ -304,7 +304,7 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
                 <Icon className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-                <p className="text-2xl font-black text-slate-800 leading-none tracking-tight">{value}</p>
+                <p className="text-2xl font-black text-content leading-none tracking-tight">{value}</p>
                 <p className={`text-[11px] mt-1 font-semibold uppercase tracking-wide ${c.text}`}>{label}</p>
             </div>
         </div>
@@ -321,20 +321,20 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
             layout
             className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                 isOpen
-                    ? 'border-teal-200/70 shadow-lg shadow-teal-50 bg-white/95 backdrop-blur-sm'
-                    : 'border-slate-200/60 hover:border-teal-200/50 hover:shadow-md bg-white/70 backdrop-blur-sm'
+                    ? 'border-teal-200/70 shadow-lg shadow-teal-50 bg-surface-card backdrop-blur-sm'
+                    : 'border-slate-200/60 hover:border-teal-200/50 hover:shadow-md bg-surface-card backdrop-blur-sm'
             }`}
         >
             <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3.5 text-left group">
                 <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                    isOpen ? 'bg-gradient-to-br from-teal-400 to-teal-500 shadow-md shadow-teal-200' : 'bg-slate-100 group-hover:bg-teal-50'
+                    isOpen ? 'bg-gradient-to-br from-teal-400 to-teal-500 shadow-md shadow-teal-200' : 'bg-surface-card-hover group-hover:bg-teal-50'
                 }`}>
-                    <FlaskConical className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-slate-400 group-hover:text-teal-500'}`} />
+                    <FlaskConical className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-content-3 group-hover:text-teal-500'}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{lab.nombre}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm font-semibold text-content truncate">{lab.nombre}</p>
+                    <p className="text-xs text-content-3 mt-0.5">
                         {proveedores.length === 0
                             ? 'Sin proveedores registrados'
                             : `${proveedores.length} proveedor${proveedores.length === 1 ? '' : 'es'}${devolutivoCount ? ` · ${devolutivoCount} devolutivo${devolutivoCount === 1 ? '' : 's'}` : ''}`}
@@ -342,9 +342,9 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                 </div>
 
                 <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                    isOpen ? 'bg-teal-50 rotate-180' : 'bg-slate-50 group-hover:bg-slate-100'
+                    isOpen ? 'bg-teal-50 rotate-180' : 'bg-surface-card-hover group-hover:bg-surface-card-hover'
                 }`}>
-                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-teal-500' : 'text-slate-400'}`} />
+                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-teal-500' : 'text-content-3'}`} />
                 </div>
             </button>
 
@@ -357,15 +357,15 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                     >
-                        <div className="mx-3 mb-3 rounded-xl bg-slate-50/80 border border-slate-100 p-3 space-y-2">
+                        <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-slate-100 p-3 space-y-2">
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">Proveedores</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-content-2">Proveedores</span>
                                     <button
                                         onClick={onMarkND}
                                         disabled={markingND}
                                         title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-white/70 text-slate-500 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
                                     >
                                         {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
                                         Marcar todo como ND
@@ -373,7 +373,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                                 </div>
                             )}
                             {proveedores.length === 0 && newRowIds.length === 0 && (
-                                <p className="text-[11px] text-slate-500 italic px-1 py-2">Este laboratorio aún no tiene proveedores registrados.</p>
+                                <p className="text-[11px] text-content-3 italic px-1 py-2">Este laboratorio aún no tiene proveedores registrados.</p>
                             )}
                             {proveedores.map(p => (
                                 <ProveedorRow key={p.id} proveedor={p} canEdit={canEdit} proveedorNameOptions={proveedorNameOptions} onUpdate={onUpdate} onDelete={onDelete} />
@@ -421,16 +421,16 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
     }
 
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/80 border border-slate-200/70 shadow-sm">
-            <Truck className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-card border border-slate-200/70 shadow-sm">
+            <Truck className="w-3.5 h-3.5 text-content-3 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold text-slate-700 truncate flex items-center gap-1.5">
+                <p className="text-[12px] font-semibold text-content-2 truncate flex items-center gap-1.5">
                     {isCofarsal(proveedor.nombre) && (
                         <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                     )}
                     {proveedor.nombre}
                 </p>
-                {proveedor.notas && <p className="text-[10px] text-slate-500 truncate mt-0.5">{proveedor.notas}</p>}
+                {proveedor.notas && <p className="text-[10px] text-content-3 truncate mt-0.5">{proveedor.notas}</p>}
             </div>
             {proveedor.vineta != null && (
                 <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full shrink-0" title="Viñeta">
@@ -438,20 +438,20 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
                 </span>
             )}
             {proveedor.devolutivo ? (
-                <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[9px] font-black uppercase text-emerald-700 bg-success/10 border border-success/30 px-2 py-0.5 rounded-full shrink-0">
                     Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}
                 </span>
             ) : (
-                <span className="text-[9px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[9px] font-black uppercase text-content-3 bg-surface-card-hover border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
                     No devolutivo
                 </span>
             )}
             {canEdit && (
                 <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => setEditing(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors">
+                    <button onClick={() => setEditing(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-content-3 hover:text-teal-600 hover:bg-teal-50 transition-colors">
                         <Pencil className="w-3 h-3" />
                     </button>
-                    <button onClick={() => onDelete(proveedor)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors">
+                    <button onClick={() => onDelete(proveedor)} className="w-6 h-6 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors">
                         <Trash2 className="w-3 h-3" />
                     </button>
                 </div>
@@ -527,11 +527,11 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         placeholder="0"
                         disabled={!draft.devolutivo}
                         title="Meses antes de vencer por política de devolución"
-                        className={`w-12 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 text-slate-700 text-center ${
+                        className={`w-12 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 text-content-2 text-center ${
                             draft.devolutivo && draft.meses_devolucion === '' ? 'border-red-300 focus:border-red-300' : 'border-slate-200 focus:border-teal-300'
                         }`}
                     />
-                    <span className="text-[9px] font-semibold text-slate-500 whitespace-nowrap">meses</span>
+                    <span className="text-[9px] font-semibold text-content-3 whitespace-nowrap">meses</span>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
@@ -543,9 +543,9 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
                         title="Viñeta: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio-viñeta vigente del producto para resolver la política automáticamente"
-                        className="w-14 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 border-slate-200 focus:border-teal-300 text-slate-700 text-center"
+                        className="w-14 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 border-slate-200 focus:border-teal-300 text-content-2 text-center"
                     />
-                    <span className="text-[9px] font-semibold text-slate-500 whitespace-nowrap">viñeta</span>
+                    <span className="text-[9px] font-semibold text-content-3 whitespace-nowrap">viñeta</span>
                 </div>
 
                 <button
@@ -553,8 +553,8 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     title={draft.devolutivo ? 'Marcar como No Devolutivo (ND)' : 'No Devolutivo (ND) — no acepta devolución'}
                     className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors shrink-0 ${
                         !draft.devolutivo
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-slate-300'
+                            ? 'bg-warning/10 text-amber-700 border-warning/30'
+                            : 'bg-surface-card-hover text-content-3 border-slate-200 hover:border-slate-300'
                     }`}
                 >
                     {!draft.devolutivo ? <Ban className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
@@ -564,20 +564,20 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.notas}
                     onChange={e => setF('notas', e.target.value)}
                     placeholder="Notas (opcional)"
-                    className="flex-1 min-w-[110px] text-[16px] px-2 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-600 placeholder-slate-300"
+                    className="flex-1 min-w-[110px] text-[16px] px-2 py-1.5 rounded-lg border border-slate-200 bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-content-2 placeholder-slate-300"
                 />
 
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
                     {saving ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-500" />
                     ) : justSaved ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <Check className="w-3.5 h-3.5 text-success" />
                     ) : null}
                 </div>
 
                 <button
                     onClick={onCancel}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white/60 hover:bg-red-50 hover:border-red-200 text-slate-500 hover:text-red-400 transition-all shrink-0"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-surface-card hover:bg-danger/10 hover:border-danger/30 text-content-3 hover:text-danger transition-all shrink-0"
                     title="Cerrar"
                 >
                     <X className="w-3.5 h-3.5" />
@@ -590,11 +590,11 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
                     onChange={e => setF('nombre', e.target.value)}
                     placeholder="Nombre del proveedor/droguería"
-                    className="w-full mt-1.5 text-[16px] font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-700 placeholder-slate-300"
+                    className="w-full mt-1.5 text-[16px] font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-content-2 placeholder-slate-300"
                 />
             )}
             {draft.devolutivo && draft.meses_devolucion === '' && (
-                <p className="text-[9px] font-black uppercase text-red-500 mt-1 px-0.5">Meses requeridos para guardar</p>
+                <p className="text-[9px] font-black uppercase text-danger mt-1 px-0.5">Meses requeridos para guardar</p>
             )}
         </motion.div>
     );

@@ -13,10 +13,10 @@ const LLEGADA_TIPO_LABEL = {
 
 export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null }) {
     const empChip = (emp) => emp ? (
-        <span className="flex items-center gap-1 text-[10px] text-slate-500">
+        <span className="flex items-center gap-1 text-[10px] text-content-3">
             {emp.photo_url
                 ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
-                : <UserCircle2 size={12} className="text-slate-500" />}
+                : <UserCircle2 size={12} className="text-content-3" />}
             {emp.name?.split(' ')[0]}
         </span>
     ) : null;
@@ -26,13 +26,13 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {cardApoyo.slice(0, 4).map((a, i) => (
                 a.photo_url
                     ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full object-cover border-2 border-white shadow-sm shrink-0" alt="" />
-                    : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-slate-500" /></span>
+                    : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-surface-card-hover border-2 border-white flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-content-3" /></span>
             ))}
         </div>
     ) : null;
 
     const apoyoBtn = (
-        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 active:scale-[0.97] transition-all shrink-0">
+        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-slate-200 active:scale-[0.97] transition-all shrink-0">
             <UserPlus size={10} />Apoyo
         </button>
     );
@@ -54,7 +54,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-2">
-            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Recepción</div>
+            <div className="text-[10px] font-semibold text-content-3 uppercase tracking-wide mb-2">Recepción</div>
 
             {/* Paso 1: Llegada — solo visible cuando aún no confirmada */}
             {!llegadaOk && (
@@ -69,8 +69,8 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Confirmado: llegada de cajas (7A.5) */}
             {llegadaOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-50/40 border-emerald-100 text-[11px]">
-                    <PackageCheck size={13} className="text-emerald-500" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/40 border-success/30 text-[11px]">
+                    <PackageCheck size={13} className="text-success" />
                     <span className="text-emerald-700">
                         Llegada confirmada{llegadaTipo && LLEGADA_TIPO_LABEL[llegadaTipo] ? ` — ${LLEGADA_TIPO_LABEL[llegadaTipo]}` : ''}
                     </span>
@@ -84,7 +84,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {llegadaOk && (hasDanadaPendiente || (hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos)) && (
                 <div className="flex flex-wrap gap-1.5">
                     {hasDanadaPendiente && cajasDanadas.map(n => (
-                        <span key={`d${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[10px] font-semibold text-amber-700">
+                        <span key={`d${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/30 text-[10px] font-semibold text-amber-700">
                             <AlertTriangle size={9} />#{n} dañada
                         </span>
                     ))}
@@ -145,8 +145,8 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Completado en ERP */}
             {erpOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-50/40 border-emerald-100 text-[11px]">
-                    <Database size={13} className="text-emerald-500" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/40 border-success/30 text-[11px]">
+                    <Database size={13} className="text-success" />
                     <span className="text-emerald-700">Confirmado en Sistema de Ventas</span>
                     <div className="ml-auto flex items-center gap-1.5">
                         {empChip(erpEmp)}

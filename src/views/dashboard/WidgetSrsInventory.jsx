@@ -73,37 +73,37 @@ export default function WidgetSrsInventory() {
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
           {loading
             ? <Loader2 size={14} className="text-violet-500 animate-spin" />
-            : <Search size={14} className="text-slate-400" />}
+            : <Search size={14} className="text-content-3" />}
         </div>
         <input
           type="text" value={query} onChange={e => handleInput(e.target.value)}
           placeholder="Buscar en Registro SRS..."
-          className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/10 transition-all"
+          className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/10 transition-all"
           spellCheck={false} autoComplete="off"
         />
         {query && (
           <button onClick={() => { setQuery(''); setResults(null); setInStock(new Set()); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">
             <X size={11} strokeWidth={2.5} />
           </button>
         )}
       </div>
 
       {error && (
-        <div className="px-3 py-2 rounded-2xl bg-red-50 border border-red-100 text-[11px] text-red-500 font-medium shrink-0">{error}</div>
+        <div className="px-3 py-2 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] text-danger font-medium shrink-0">{error}</div>
       )}
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {results === null && !loading && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-500">
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
             <FlaskConical size={32} strokeWidth={1.5} />
-            <p className="text-[12px] font-semibold text-slate-500">Busca un medicamento en el registro SRS</p>
+            <p className="text-[12px] font-semibold text-content-3">Busca un medicamento en el registro SRS</p>
           </div>
         )}
 
         {results !== null && results.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-slate-500 font-medium">Sin resultados para "{query}"</div>
+          <div className="py-8 text-center text-[12px] text-content-3 font-medium">Sin resultados para "{query}"</div>
         )}
 
         {(results || []).map((p) => {
@@ -125,17 +125,17 @@ export default function WidgetSrsInventory() {
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-2">
-                <p className="text-[12px] font-black text-slate-800 leading-tight flex-1">
-                  {nombre || <span className="text-slate-500 font-normal italic">Sin nombre</span>}
+                <p className="text-[12px] font-black text-content leading-tight flex-1">
+                  {nombre || <span className="text-content-3 font-normal italic">Sin nombre</span>}
                 </p>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasStock && (
-                    <span className="flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                    <span className="flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-emerald-700">
                       <CheckCircle2 size={9} strokeWidth={3} /> En stock
                     </span>
                   )}
                   <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                    activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                    activo ? 'bg-success/10 text-emerald-700' : 'bg-surface-card-hover text-content-3'
                   }`}>
                     {activo ? 'ACTIVO' : 'INACTIVO'}
                   </span>
@@ -144,8 +144,8 @@ export default function WidgetSrsInventory() {
 
               {(lab || forma) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  {lab && <span className="flex items-center gap-1 text-[11px] text-slate-500"><Building2 size={10} className="text-slate-500 shrink-0" />{lab}</span>}
-                  {forma && <span className="flex items-center gap-1 text-[11px] text-slate-500"><Pill size={10} className="text-slate-500 shrink-0" />{forma}</span>}
+                  {lab && <span className="flex items-center gap-1 text-[11px] text-content-3"><Building2 size={10} className="text-content-3 shrink-0" />{lab}</span>}
+                  {forma && <span className="flex items-center gap-1 text-[11px] text-content-3"><Pill size={10} className="text-content-3 shrink-0" />{forma}</span>}
                 </div>
               )}
 
@@ -159,7 +159,7 @@ export default function WidgetSrsInventory() {
               )}
 
               {noregistro && (
-                <span className="text-[10px] text-slate-500 font-mono">{noregistro}</span>
+                <span className="text-[10px] text-content-3 font-mono">{noregistro}</span>
               )}
             </div>
           );

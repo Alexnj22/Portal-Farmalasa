@@ -27,19 +27,19 @@ const ACTION_OPTIONS = [
 const getSeverityInfo = (severity) => {
     switch (severity) {
         case 'CRITICAL':
-            return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', icon: <AlertCircle size={12} /> };
+            return { color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/30', icon: <AlertCircle size={12} /> };
         case 'WARNING':
-            return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', icon: <AlertTriangle size={12} /> };
+            return { color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/30', icon: <AlertTriangle size={12} /> };
         case 'INFO':
         default:
-            return { color: 'text-[#0052CC]', bg: 'bg-[#0052CC]/10', border: 'border-[#0052CC]/20', icon: <Info size={12} /> };
+            return { color: 'text-brand', bg: 'bg-brand/10', border: 'border-brand/20', icon: <Info size={12} /> };
     }
 };
 
 const getSourceIcon = (source) => {
     if (source === 'KIOSK') return <MonitorSmartphone size={10} className="md:w-3 md:h-3 text-purple-500" />;
-    if (source === 'SYSTEM') return <Database size={10} className="md:w-3 md:h-3 text-slate-500" />;
-    return <Globe size={10} className="md:w-3 md:h-3 text-[#0052CC]" />; // ADMIN_PANEL
+    if (source === 'SYSTEM') return <Database size={10} className="md:w-3 md:h-3 text-content-3" />;
+    return <Globe size={10} className="md:w-3 md:h-3 text-brand" />; // ADMIN_PANEL
 };
 
 // ============================================================================
@@ -52,12 +52,12 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
     return (
         <DataRow>
             <DataCell>
-                <div className="text-[11px] md:text-xs font-black text-slate-800 uppercase tracking-tight transition-colors group-hover:text-[#0052CC]">
+                <div className="text-[11px] md:text-xs font-black text-content uppercase tracking-tight transition-colors group-hover:text-brand">
                     {logDate.toLocaleDateString()}
                 </div>
-                <div className="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
+                <div className="text-[9px] md:text-[10px] font-bold text-content-3 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
                     <span className="flex items-center gap-1"><Clock size={10} className="md:w-3 md:h-3" /> {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                    <span className="hidden md:inline mx-1 text-slate-500/50">|</span>
+                    <span className="hidden md:inline mx-1 text-content-3/50">|</span>
                     {/* 🚨 MEJORA: Muestra si fue Kiosco o Panel */}
                     <span className="flex items-center gap-1">
                         {getSourceIcon(log.source)}
@@ -69,7 +69,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             </DataCell>
             <DataCell>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-white/80 shadow-[0_2px_10px_rgba(0,0,0,0.04)] flex items-center justify-center text-slate-600 font-black text-[10px] md:text-[11px] uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
+                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] flex items-center justify-center text-content-2 font-black text-[10px] md:text-[11px] uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
                         {userPhoto ? (
                             <img src={userPhoto} alt={log.user_name} className="w-full h-full object-cover" />
                         ) : (
@@ -77,12 +77,12 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                         )}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[11px] md:text-[13px] font-bold text-slate-700 truncate max-w-[120px] md:max-w-none leading-tight">
+                        <span className="text-[11px] md:text-[13px] font-bold text-content-2 truncate max-w-[120px] md:max-w-none leading-tight">
                             {log.user_name || 'Sistema/Anónimo'}
                         </span>
                         {/* 🚨 MEJORA: Muestra la sucursal debajo del nombre si existe */}
                         {log.branch_name && (
-                            <span className="text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
+                            <span className="text-[8px] md:text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
                                 {log.branch_name}
                             </span>
                         )}
@@ -90,14 +90,14 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 </div>
             </DataCell>
             <DataCell>
-                <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-white/60 backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
+                <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-surface-card backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
                     {severityInfo.icon} <span className="hidden sm:inline">{log.action?.replace(/_/g, ' ') || 'ACCIÓN'}</span>
                 </span>
             </DataCell>
             <DataCell align="right">
                 <button
                     onClick={() => openModal('viewAuditDetail', log)}
-                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/70 hover:bg-white text-slate-600 hover:text-[#0052CC] rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-white/80 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-white text-content-2 hover:text-brand rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
                     title="Ver Detalles"
                 >
                     <Database size={14} className="md:w-3 md:h-3" /> <span className="hidden md:inline">Detalles</span>
@@ -272,7 +272,7 @@ const AuditView = ({ openModal }) => {
 const filtersContent = (
         <div
             // 🚨 CONTENEDOR DINÁMICO: "w-max" abraza el contenido y "max-w-full" evita que se rompa en móviles.
-            className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
+            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
         >
             {/* =========================================================
                 ESTADO 1: MODO BÚSQUEDA (Animación Reparada)
@@ -283,11 +283,11 @@ const filtersContent = (
                 ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"
                     }`}
             >
-                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
                 <input
                     type="text"
                     placeholder="Buscar usuario, equipo, acción..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearchTerm}
                     onChange={(e) => setRawSearchTerm(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100) }}
@@ -295,14 +295,14 @@ const filtersContent = (
                 {rawSearchTerm && (
                     <button
                         onClick={() => setRawSearchTerm("")}
-                        className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
+                        className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
                     >
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
                 <button
                     onClick={() => { setIsSearchMode(false); setRawSearchTerm(""); }}
-                    className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"
+                    className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"
                     title="Cerrar Búsqueda"
                 >
                     <ChevronRight size={18} strokeWidth={2.5} />
@@ -325,14 +325,14 @@ const filtersContent = (
                             type="button"
                             onClick={() => setIsActionPickerOpen(true)}
                             className={`px-3 md:px-5 h-9 rounded-full flex items-center gap-2 md:gap-3 transition-all duration-300 group whitespace-nowrap border shrink-0 ${actionFilter !== "ALL"
-                                ? "bg-white text-slate-800 border-white shadow-md"
-                                : "bg-transparent text-slate-600 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90"
+                                ? "bg-white text-content border-white shadow-md"
+                                : "bg-transparent text-content-2 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                 }`}
                             title="Cambiar tipo de acción"
                         >
                             <ListFilter
                                 size={16}
-                                className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${actionFilter !== 'ALL' ? 'text-[#0052CC]' : 'group-hover:scale-110'}`}
+                                className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${actionFilter !== 'ALL' ? 'text-brand' : 'group-hover:scale-110'}`}
                             />
                             <span className="text-[11px] md:text-[12px] font-bold uppercase tracking-wider">
                                 {ACTION_OPTIONS.find((o) => o.value === actionFilter)?.label || "Acciones"}
@@ -353,8 +353,8 @@ const filtersContent = (
                                         setIsActionPickerOpen(false);
                                     }}
                                     className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive
-                                        ? "bg-white text-slate-800 border-white shadow-md scale-[1.02]"
-                                        : "bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90"
+                                        ? "bg-white text-content border-white shadow-md scale-[1.02]"
+                                        : "bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                         }`}
                                 >
                                     {opt.label}
@@ -365,7 +365,7 @@ const filtersContent = (
                         <button
                             type="button"
                             onClick={() => setIsActionPickerOpen(false)}
-                            className="w-9 h-9 rounded-full bg-white/50 border border-white/60 hover:bg-red-50 hover:border-red-200 hover:text-red-500 text-slate-500 flex items-center justify-center transition-all duration-300 hover:shadow-md shrink-0 ml-1 hover:-translate-y-0.5"
+                            className="w-9 h-9 rounded-full bg-surface-card border border-border-card hover:bg-danger/10 hover:border-danger/30 hover:text-danger text-content-3 flex items-center justify-center transition-all duration-300 hover:shadow-md shrink-0 ml-1 hover:-translate-y-0.5"
                             title="Cerrar"
                         >
                             <X size={14} strokeWidth={2.5} />
@@ -384,7 +384,7 @@ const filtersContent = (
                 >
                     <div className={`flex items-center gap-1 shrink-0 px-2 py-1 rounded-2xl transition-all duration-300 group relative z-10 border w-auto ${startDate || endDate || isDatePickerOpen
                         ? 'bg-white border-white shadow-md'
-                        : 'bg-transparent border-transparent hover:shadow-md hover:bg-white hover:border-white/90 hover:-translate-y-0.5'
+                        : 'bg-transparent border-transparent hover:shadow-md hover:bg-white hover:border-border-card hover:-translate-y-0.5'
                         }`}>
                         
                         {/* 🚨 Aquí cambiamos a "Inicio" */}
@@ -395,7 +395,7 @@ const filtersContent = (
                             onOpenChange={setIsDatePickerOpen}
                         />
 
-                        <span className="text-slate-500 font-bold group-hover:text-slate-500 transition-colors mx-1">-</span>
+                        <span className="text-content-3 font-bold group-hover:text-content-3 transition-colors mx-1">-</span>
 
                         {/* 🚨 Aquí cambiamos a "Fin" */}
                         <LiquidDatePicker
@@ -414,7 +414,7 @@ const filtersContent = (
                                 e.stopPropagation();
                                 clearFilters();
                             }}
-                            className="w-11 h-11 rounded-full bg-white/70 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300"
+                            className="w-11 h-11 rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300"
                             title="Limpiar todos los filtros"
                         >
                             <Trash2 size={15} strokeWidth={2.5} />
@@ -423,7 +423,7 @@ const filtersContent = (
 
                     <button
                         onClick={() => setIsSearchMode(true)}
-                        className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                        className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                         title="Buscar por texto"
                     >
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -442,16 +442,16 @@ const filtersContent = (
             liveIndicator={isLive}
             filtersContent={filtersContent}
         >
-            <div className="px-4 md:px-8 py-4 md:py-5 bg-white/40 border-b border-white/90 flex justify-between items-center">
-                <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold uppercase text-slate-600 tracking-widest">
-                    <Hash size={12} className="text-[#0052CC] md:w-3 md:h-3" />
+            <div className="px-4 md:px-8 py-4 md:py-5 bg-surface-card border-b border-border-card flex justify-between items-center">
+                <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold uppercase text-content-2 tracking-widest">
+                    <Hash size={12} className="text-brand md:w-3 md:h-3" />
                     {totalItems} <span className="hidden sm:inline">Registros</span>
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white/80 text-slate-500 border-slate-200/60 hover:bg-white hover:text-[#0052CC]'}`}
+                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-slate-200/60 hover:bg-white hover:text-brand'}`}
                     >
                         {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
                         <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>
@@ -460,9 +460,9 @@ const filtersContent = (
                     <button
                         onClick={exportToCSV}
                         disabled={processedLogs.length === 0 || isExporting}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-emerald-50/90 text-emerald-600 border-emerald-200/50' : 'bg-white/80 hover:bg-white text-slate-600 border-slate-200/60 hover:text-[#0052CC]'}`}
+                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/90 text-success border-success/50' : 'bg-surface-card hover:bg-white text-content-2 border-slate-200/60 hover:text-brand'}`}
                     >
-                        {isExporting ? <Check size={12} className="text-emerald-500" /> : <Download size={12} className="group-hover:-translate-y-0.5 transition-transform" />}
+                        {isExporting ? <Check size={12} className="text-success" /> : <Download size={12} className="group-hover:-translate-y-0.5 transition-transform" />}
                         <span>{isExporting ? 'Ok' : 'Exportar'}</span>
                     </button>
                 </div>
@@ -488,7 +488,7 @@ const filtersContent = (
                 footer={totalItems > 0 ? (
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
                         <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                            <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mostrar</span>
+                            <span className="text-[9px] md:text-[10px] font-bold text-content-3 uppercase tracking-widest">Mostrar</span>
                             <div className="w-[110px]">
                                 <LiquidSelect
                                     value={itemsPerPage}
@@ -505,17 +505,17 @@ const filtersContent = (
                             </div>
                         </div>
                         <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
-                            <span className="text-[9px] md:text-[10px] font-bold text-slate-600 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
+                            <span className="text-[9px] md:text-[10px] font-bold text-content-2 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
                             <div className="flex gap-2">
-                                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#0052CC] disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
-                                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#0052CC] disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
+                                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
+                                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
                             </div>
                         </div>
                     </div>
                 ) : null}
             >
                 {isLogSearchFuzzy && debouncedSearchTerm && (
-                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                         Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
                     </div>

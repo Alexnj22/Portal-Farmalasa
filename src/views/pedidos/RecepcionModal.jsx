@@ -25,10 +25,10 @@ export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     return (
         <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-white border border-slate-200 shadow-sm">
             <LiquidAvatar src={emp.photo_url} alt={emp.name} fallbackText={emp.name} className={avatarCls} />
-            <span className="text-[11px] font-semibold text-slate-700 whitespace-nowrap">{emp.name}</span>
-            {sub && <span className="text-[9px] text-slate-500 whitespace-nowrap">{sub}</span>}
+            <span className="text-[11px] font-semibold text-content-2 whitespace-nowrap">{emp.name}</span>
+            {sub && <span className="text-[9px] text-content-3 whitespace-nowrap">{sub}</span>}
             {onRemove && (
-                <button onClick={onRemove} className="text-slate-500 hover:text-red-500 transition-colors">
+                <button onClick={onRemove} className="text-content-3 hover:text-danger transition-colors">
                     <X size={11} />
                 </button>
             )}
@@ -581,20 +581,20 @@ export default function RecepcionModal({
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Confirmar recepción</h3>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
+                            <h3 className="text-[15px] font-bold text-content leading-snug">Confirmar recepción</h3>
+                            <p className="text-[11px] text-content-3 mt-0.5">
                                 {sucursalNombre} · {rows.length} prod. · {allBoxNums.length} caja{allBoxNums.length !== 1 ? 's' : ''}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                             <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
                                 allAccessibleDone
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                                    ? 'bg-success/10 text-emerald-700 border-success/30'
+                                    : 'bg-surface-card-hover text-content-2 border-slate-200'
                             }`}>
                                 {receivedAccessible}/{accessibleBoxNums.length} recibidas
                             </span>
-                            <button onClick={onClose} disabled={saving} className="text-slate-500 hover:text-slate-600 transition-colors p-1">
+                            <button onClick={onClose} disabled={saving} className="text-content-3 hover:text-content-2 transition-colors p-1">
                                 <X size={18} />
                             </button>
                         </div>
@@ -618,14 +618,14 @@ export default function RecepcionModal({
                                     disabled={isRecibida || isFalta}
                                     onClick={() => { setSelectedCaja(boxNum); setScreen('items'); }}
                                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
-                                        isRecibida ? 'bg-emerald-50 border-emerald-200 cursor-default' :
-                                        isFalta    ? 'bg-slate-50 border-slate-100 cursor-default opacity-50' :
-                                        isDanada   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-[0.97] cursor-pointer' :
+                                        isRecibida ? 'bg-success/10 border-success/30 cursor-default' :
+                                        isFalta    ? 'bg-surface-card-hover border-slate-100 cursor-default opacity-50' :
+                                        isDanada   ? 'bg-warning/10 border-amber-300 hover:border-amber-400 active:scale-[0.97] cursor-pointer' :
                                                      'bg-white border-slate-200 hover:border-violet-300 hover:bg-violet-50 active:scale-[0.97] cursor-pointer'
                                     }`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
                                         isRecibida ? 'bg-emerald-500' :
-                                        isFalta    ? 'bg-slate-300' :
+                                        isFalta    ? 'bg-content-3' :
                                         isDanada   ? 'bg-amber-400' :
                                                      'bg-violet-500 shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
                                     }`}>
@@ -636,13 +636,13 @@ export default function RecepcionModal({
                                     </div>
                                     <div>
                                         <p className={`text-[12px] font-black leading-none ${
-                                            isRecibida ? 'text-emerald-700' : isFalta ? 'text-slate-500' : 'text-slate-700'
+                                            isRecibida ? 'text-emerald-700' : isFalta ? 'text-content-3' : 'text-content-2'
                                         }`}>Caja {boxNum}</p>
                                         {pageHint && (
                                             <p className="text-[9px] font-semibold text-violet-500 mt-0.5 leading-none">{pageHint}</p>
                                         )}
                                         <p className={`text-[9px] font-medium mt-0.5 ${
-                                            isRecibida ? 'text-emerald-500' : isFalta ? 'text-slate-500' : isDanada ? 'text-amber-600' : 'text-slate-500'
+                                            isRecibida ? 'text-success' : isFalta ? 'text-content-3' : isDanada ? 'text-warning' : 'text-content-3'
                                         }`}>
                                             {isRecibida ? '✓ Recibida' : isFalta ? 'En reenvío' : isDanada ? `${itemCount} prod. ⚠` : `${itemCount} prod.`}
                                         </p>
@@ -654,18 +654,18 @@ export default function RecepcionModal({
 
                     {!allAccessibleDone && accessibleBoxNums.length > 0 && (
                         <button onClick={handleConfirmarTodo} disabled={saving}
-                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-bold text-[13px] hover:bg-emerald-100 active:scale-[0.97] transition-all disabled:opacity-40">
+                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-emerald-300 bg-success/10 text-emerald-700 font-bold text-[13px] hover:bg-success/10 active:scale-[0.97] transition-all disabled:opacity-40">
                             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                             Confirmar todo OK
                             {faltaCajas.length > 0 && (
-                                <span className="text-[10px] font-medium text-emerald-500">(omite cajas en reenvío)</span>
+                                <span className="text-[10px] font-medium text-success">(omite cajas en reenvío)</span>
                             )}
                         </button>
                     )}
 
                     {allAccessibleDone && (
-                        <div className={`mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl border ${faltaCajas.length > 0 || hasFaltaItems ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
-                            <PackageCheck size={15} className={`shrink-0 mt-0.5 ${faltaCajas.length > 0 || hasFaltaItems ? 'text-amber-500' : 'text-emerald-500'}`} />
+                        <div className={`mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl border ${faltaCajas.length > 0 || hasFaltaItems ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30'}`}>
+                            <PackageCheck size={15} className={`shrink-0 mt-0.5 ${faltaCajas.length > 0 || hasFaltaItems ? 'text-warning' : 'text-success'}`} />
                             <p className={`text-[12px] font-medium leading-snug ${faltaCajas.length > 0 || hasFaltaItems ? 'text-amber-700' : 'text-emerald-700'}`}>
                                 {faltaCajas.length > 0
                                     ? `Cajas disponibles confirmadas. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
@@ -678,9 +678,9 @@ export default function RecepcionModal({
                     )}
 
                     {faltaCajas.length > 0 && !allAccessibleDone && (
-                        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
-                            <Truck size={12} className="text-slate-400 shrink-0" />
-                            <p className="text-[11px] text-slate-500">
+                        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-slate-200">
+                            <Truck size={12} className="text-content-3 shrink-0" />
+                            <p className="text-[11px] text-content-3">
                                 Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} en reenvío — se recibirá por separado.
                             </p>
                         </div>
@@ -689,7 +689,7 @@ export default function RecepcionModal({
                     {/* Cajas especiales */}
                     {especialItems.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-2">Cajas especiales</p>
+                            <p className="text-[10px] font-bold text-content-2 uppercase tracking-wide mb-2">Cajas especiales</p>
                             <div className={`grid gap-2 ${especialItems.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                                 {especialItems.map(({ label, item }) => {
                                     const isDamaged   = especialesLlegadas[label] === 'danada';
@@ -700,14 +700,14 @@ export default function RecepcionModal({
                                             disabled={isConfirmed || isFaltante}
                                             onClick={() => { setSelectedEspecial({ label, item }); setScreen('items'); }}
                                             className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
-                                                isConfirmed ? 'bg-emerald-50 border-emerald-200 cursor-default' :
-                                                isFaltante  ? 'bg-slate-50 border-slate-100 cursor-default opacity-50' :
-                                                isDamaged   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-[0.97] cursor-pointer' :
+                                                isConfirmed ? 'bg-success/10 border-success/30 cursor-default' :
+                                                isFaltante  ? 'bg-surface-card-hover border-slate-100 cursor-default opacity-50' :
+                                                isDamaged   ? 'bg-warning/10 border-amber-300 hover:border-amber-400 active:scale-[0.97] cursor-pointer' :
                                                               'bg-violet-50/60 border-violet-200 hover:border-violet-400 active:scale-[0.97] cursor-pointer'
                                             }`}>
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
                                                 isConfirmed ? 'bg-emerald-500' :
-                                                isFaltante  ? 'bg-slate-300' :
+                                                isFaltante  ? 'bg-content-3' :
                                                 isDamaged   ? 'bg-amber-400' :
                                                               'bg-violet-400'
                                             }`}>
@@ -718,13 +718,13 @@ export default function RecepcionModal({
                                             </div>
                                             <div>
                                                 <p className={`text-[12px] font-black leading-none ${
-                                                    isConfirmed ? 'text-emerald-700' : isFaltante ? 'text-slate-500' : 'text-slate-700'
+                                                    isConfirmed ? 'text-emerald-700' : isFaltante ? 'text-content-3' : 'text-content-2'
                                                 }`}>{label}</p>
-                                                <p className="text-[9px] text-slate-500 mt-0.5 leading-tight max-w-[90px] truncate">
+                                                <p className="text-[9px] text-content-3 mt-0.5 leading-tight max-w-[90px] truncate">
                                                     {item.products?.nombre ?? ''}
                                                 </p>
                                                 <p className={`text-[9px] font-medium mt-0.5 ${
-                                                    isConfirmed ? 'text-emerald-500' : isFaltante ? 'text-slate-500' : isDamaged ? 'text-amber-600' : 'text-violet-500'
+                                                    isConfirmed ? 'text-success' : isFaltante ? 'text-content-3' : isDamaged ? 'text-warning' : 'text-violet-500'
                                                 }`}>
                                                     {isConfirmed ? '✓ Confirmado' : isFaltante ? 'En reenvío' : isDamaged ? '⚠ Dañada' : `${item.cantidad_asignada} unid.`}
                                                 </p>
@@ -750,7 +750,7 @@ export default function RecepcionModal({
                 {allAccessibleDone && (
                     <PedidoModal.Footer className="space-y-2">
                         {saveError && (
-                            <div className="flex items-center gap-2 text-red-600 text-[12px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-2 text-danger text-[12px] bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
                                 <AlertTriangle size={13} /> {saveError}
                             </div>
                         )}
@@ -778,19 +778,19 @@ export default function RecepcionModal({
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-center gap-2">
                         <button onClick={goBackFromExtras} disabled={saving}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all shrink-0 disabled:opacity-40">
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
                             <ChevronLeft size={14} />
                         </button>
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Productos extra</h3>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
+                            <h3 className="text-[15px] font-bold text-content leading-snug">Productos extra</h3>
+                            <p className="text-[11px] text-content-3 mt-0.5">
                                 {extras.length === 0
                                     ? 'Productos recibidos que no estaban en el pedido'
                                     : `${extras.length} producto${extras.length !== 1 ? 's' : ''} agregado${extras.length !== 1 ? 's' : ''}`}
                             </p>
                         </div>
                         <button onClick={goBackFromExtras} disabled={saving}
-                            className="text-slate-500 hover:text-slate-600 transition-colors p-1 disabled:opacity-40">
+                            className="text-content-3 hover:text-content-2 transition-colors p-1 disabled:opacity-40">
                             <X size={18} />
                         </button>
                     </div>
@@ -799,7 +799,7 @@ export default function RecepcionModal({
                 {/* Item grid — mismo formato que pantalla de items */}
                 <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
                     <div className="max-h-[48vh] overflow-y-auto scrollbar-hide">
-                        <div className="sticky top-0 z-10 bg-white/97 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
+                        <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />
                                 <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
@@ -807,7 +807,7 @@ export default function RecepcionModal({
                                 <span />
                             </div>
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Producto</span>
+                                <span className="text-[10px] font-bold text-content-2 uppercase tracking-wide">Producto</span>
                                 <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
                                 <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
                                 <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
@@ -819,8 +819,8 @@ export default function RecepcionModal({
                         {extras.length === 0 && (
                             <div className="py-12 text-center">
                                 <PackagePlus size={30} className="text-indigo-200 mx-auto mb-2" />
-                                <p className="text-[13px] font-semibold text-slate-500">Sin productos extra</p>
-                                <p className="text-[11px] text-slate-500 mt-1">Buscá un producto abajo para agregarlo</p>
+                                <p className="text-[13px] font-semibold text-content-3">Sin productos extra</p>
+                                <p className="text-[11px] text-content-3 mt-1">Buscá un producto abajo para agregarlo</p>
                             </div>
                         )}
 
@@ -833,14 +833,14 @@ export default function RecepcionModal({
                                 const eBothZero = e.fQty === 0 && e.sQty === 0;
                                 const delta     = fRaw - sRaw;
                                 return (
-                                    <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-red-50' : eDiff ? 'bg-amber-50' : 'bg-white hover:bg-slate-50/50'}`}>
+                                    <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-danger/10' : eDiff ? 'bg-warning/10' : 'bg-white hover:bg-surface-card-hover/50'}`}>
                                         <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                             <div className="min-w-0">
                                                 <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 mb-0.5">
                                                     <Plus size={8} /> Extra
                                                 </span>
-                                                <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-red-600' : 'text-slate-700'}`}>{e.nombre}</p>
-                                                {eBothZero && <p className="text-[10px] text-red-500 font-medium">Al menos uno &gt; 0</p>}
+                                                <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
+                                                {eBothZero && <p className="text-[10px] text-danger font-medium">Al menos uno &gt; 0</p>}
                                             </div>
 
                                             <div className={eDiff ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
@@ -856,7 +856,7 @@ export default function RecepcionModal({
                                             <div className="relative">
                                                 <input type="number" min={0} value={e.fQty}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-teal-700 focus:border-teal-400'}`}
+                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-warning/10 text-amber-700' : 'border-teal-200 bg-white text-teal-700 focus:border-teal-400'}`}
                                                 />
                                                 {eDiff && delta !== 0 && (
                                                     <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
@@ -877,11 +877,11 @@ export default function RecepcionModal({
 
                                             <input type="number" min={0} value={e.sQty}
                                                 onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-violet-700 focus:border-violet-400'}`}
+                                                className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-warning/10 text-amber-700' : 'border-violet-200 bg-white text-violet-700 focus:border-violet-400'}`}
                                             />
 
                                             <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
-                                                className="flex justify-center p-1 text-slate-500 hover:text-red-500 transition-colors">
+                                                className="flex justify-center p-1 text-content-3 hover:text-danger transition-colors">
                                                 <Trash2 size={13} />
                                             </button>
                                         </div>
@@ -915,11 +915,11 @@ export default function RecepcionModal({
                                     setExtraDropCoords({ top: r.top, left: r.left, width: r.width });
                                 }
                             }}
-                            className="flex-1 text-[16px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
+                            className="flex-1 text-[16px] bg-transparent focus:outline-none placeholder-indigo-300 text-content-2"
                         />
                         {extraBusy
                             ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
-                            : extraSearch && <button onClick={() => setExtraSearch('')} className="text-slate-500 hover:text-slate-500 shrink-0"><X size={13} /></button>
+                            : extraSearch && <button onClick={() => setExtraSearch('')} className="text-content-3 hover:text-content-3 shrink-0"><X size={13} /></button>
                         }
                     </div>
                     {extraResults.length > 0 && createPortal(
@@ -929,10 +929,10 @@ export default function RecepcionModal({
                             left: extraDropCoords.left,
                             width: extraDropCoords.width,
                             zIndex: 99999,
-                        }} className="rounded-xl border border-indigo-200 bg-white/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+                        }} className="rounded-xl border border-indigo-200 bg-surface-card backdrop-blur-xl shadow-2xl overflow-hidden">
                             {extraResults.map(prod => (
                                 <button key={prod.id} onMouseDown={() => addExtra(prod)}
-                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
+                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-content-2 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
                                     <Plus size={12} className="text-indigo-400 shrink-0" />
                                     {prod.nombre}
                                 </button>
@@ -944,13 +944,13 @@ export default function RecepcionModal({
 
                 <PedidoModal.Footer className="space-y-2">
                     {saveError && (
-                        <div className="flex items-center gap-2 text-red-600 text-[12px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 text-danger text-[12px] bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
                             <AlertTriangle size={13} /> {saveError}
                         </div>
                     )}
                     <div className="flex items-center justify-between gap-2">
                         <button onClick={goBackFromExtras} disabled={saving}
-                            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors disabled:opacity-40">
+                            className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
                             Volver
                         </button>
                         <button onClick={goBackFromExtras}
@@ -979,7 +979,7 @@ export default function RecepcionModal({
                 <div className="flex items-center gap-2">
                     {hasCajaMap && (
                         <button onClick={goBack} disabled={saving}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all shrink-0 disabled:opacity-40">
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
                             <ChevronLeft size={14} />
                         </button>
                     )}
@@ -990,43 +990,43 @@ export default function RecepcionModal({
                                 exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
                                 {selectedEspecial !== null ? (
                                     <>
-                                        <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
+                                        <h3 className="text-[15px] font-bold text-content leading-snug">
                                             {selectedEspecial.label} — Caja especial
-                                            {isDanadaEspecial && <span className="ml-2 text-[11px] font-semibold text-amber-600">⚠ Dañada</span>}
+                                            {isDanadaEspecial && <span className="ml-2 text-[11px] font-semibold text-warning">⚠ Dañada</span>}
                                         </h3>
-                                        <p className="text-[11px] text-slate-500 mt-0.5">
+                                        <p className="text-[11px] text-content-3 mt-0.5">
                                             {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : hasCajaMap ? (
                                     <>
-                                        <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
+                                        <h3 className="text-[15px] font-bold text-content leading-snug">
                                             Caja {selectedCaja}
-                                            {isDanadaBox && <span className="ml-2 text-[11px] font-semibold text-amber-600">⚠ Dañada</span>}
+                                            {isDanadaBox && <span className="ml-2 text-[11px] font-semibold text-warning">⚠ Dañada</span>}
                                         </h3>
-                                        <p className="text-[11px] text-slate-500 mt-0.5">
+                                        <p className="text-[11px] text-content-3 mt-0.5">
                                             {selectedCajaRows.length} productos · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : (
                                     <>
-                                        <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Confirmar recepción</h3>
-                                        <p className="text-[11px] text-slate-500 mt-0.5">
+                                        <h3 className="text-[15px] font-bold text-content leading-snug">Confirmar recepción</h3>
+                                        <p className="text-[11px] text-content-3 mt-0.5">
                                             {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
                                         </p>
                                     </>
                                 )}
                                 {(isDanadaBox || isDanadaEspecial) && (
-                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
-                                        <AlertTriangle size={11} className="text-amber-500 shrink-0" />
+                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
+                                        <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-[10px] text-amber-700 font-medium">
                                             {isDanadaEspecial ? 'Esta caja especial llegó dañada — revisá el estado físico al contar' : 'Esta caja llegó dañada — revisá el estado físico al contar'}
                                         </span>
                                     </div>
                                 )}
                                 {!hasCajaMap && !isDanadaBox && cajaDanada.length > 0 && (
-                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
-                                        <AlertTriangle size={11} className="text-amber-500 shrink-0" />
+                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
+                                        <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-[10px] text-amber-700 font-medium">
                                             Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisá el estado físico
                                         </span>
@@ -1038,13 +1038,13 @@ export default function RecepcionModal({
                                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                                 <div className="relative">
-                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3" />
                                     <input ref={searchRef} type="text" placeholder="Buscar producto…"
                                         value={prodSearch} onChange={e => setProdSearch(e.target.value)}
                                         className="w-full text-[16px] border border-blue-200 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
                                     />
                                     {prodSearch && (
-                                        <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-500">
+                                        <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-3 hover:text-content-3">
                                             <X size={12} />
                                         </button>
                                     )}
@@ -1057,7 +1057,7 @@ export default function RecepcionModal({
                             onClick={() => setShowSearch(s => { if (!s) setTimeout(() => searchRef.current?.focus(), 80); else setProdSearch(''); return !s; })}
                             animate={showSearch ? { scale: 1.15 } : { scale: 1 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                            className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-blue-100 text-blue-600' : 'text-slate-500 hover:text-slate-600'}`}
+                            className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-blue-100 text-blue-600' : 'text-content-3 hover:text-content-2'}`}
                             title="Buscar producto"
                         >
                             <Search size={15} />
@@ -1065,7 +1065,7 @@ export default function RecepcionModal({
                         <button
                             onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hasCajaMap ? goBack : onClose)}
                             disabled={!showSearch && saving}
-                            className="text-slate-500 hover:text-slate-600 transition-colors p-1 disabled:opacity-40"
+                            className="text-content-3 hover:text-content-2 transition-colors p-1 disabled:opacity-40"
                         >
                             <X size={18} />
                         </button>
@@ -1076,7 +1076,7 @@ export default function RecepcionModal({
             {/* Item grid */}
             <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
               <div className="max-h-[48vh] overflow-y-auto">
-                <div className="sticky top-0 z-10 bg-white/97 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
+                <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
                     <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                         <span /><span />
                         <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
@@ -1084,8 +1084,8 @@ export default function RecepcionModal({
                         <span />
                     </div>
                     <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Producto</span>
-                        <span className="text-[10px] font-bold text-slate-600 uppercase text-center">Asig.</span>
+                        <span className="text-[10px] font-bold text-content-2 uppercase tracking-wide">Producto</span>
+                        <span className="text-[10px] font-bold text-content-2 uppercase text-center">Asig.</span>
                         <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
                         <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
                         <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
@@ -1095,7 +1095,7 @@ export default function RecepcionModal({
                 </div>
 
                 {visibleRows.length === 0 && !extras.length && (
-                    <p className="text-center text-[12px] text-slate-500 py-6">No se encontraron productos.</p>
+                    <p className="text-center text-[12px] text-content-3 py-6">No se encontraron productos.</p>
                 )}
 
                 <div className="divide-y divide-slate-100">
@@ -1136,9 +1136,9 @@ export default function RecepcionModal({
                         const confirmProblema = () => setTieneProblema(p => ({ ...p, [r.id]: 'done' }));
 
                         return (
-                            <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-amber-50' : hasProb ? 'bg-orange-50/40' : 'bg-white hover:bg-slate-50/50'}`}>
+                            <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-warning/10' : hasProb ? 'bg-orange-50/40' : 'bg-white hover:bg-surface-card-hover/50'}`}>
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                                    <span className="text-[12px] text-slate-700 font-semibold leading-snug">
+                                    <span className="text-[12px] text-content-2 font-semibold leading-snug">
                                         {r.products?.nombre}
                                         {!hasCajaMap && r.caja_especial && (
                                             <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9px] font-bold text-violet-600 bg-violet-50 border border-violet-200 rounded-full px-1.5 py-0.5">
@@ -1146,7 +1146,7 @@ export default function RecepcionModal({
                                             </span>
                                         )}
                                     </span>
-                                    <span className="text-[12px] font-bold text-slate-500 tabular-nums text-center">{defDispQty}</span>
+                                    <span className="text-[12px] font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
 
                                     <div className={fPres !== sPres ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
                                         <LiquidSelect
@@ -1163,7 +1163,7 @@ export default function RecepcionModal({
                                             data-qty-row={rowIdx} data-qty-col="fqty"
                                             onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                             onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`); n?.focus(); n?.select(); } }}
-                                            className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'}`}
+                                            className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-warning/10 text-amber-700' : 'border-teal-200 bg-white text-content-2 focus:border-teal-400'}`}
                                         />
                                         {hasDiff && (
                                             <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
@@ -1186,7 +1186,7 @@ export default function RecepcionModal({
                                         data-qty-row={rowIdx} data-qty-col="sqty"
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                         onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
+                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-warning/10 text-amber-700' : 'border-violet-200 bg-white text-content-2 focus:border-violet-400'}`}
                                     />
 
                                     <button onClick={toggleProblema}
@@ -1194,8 +1194,8 @@ export default function RecepcionModal({
                                         className={`flex justify-center p-1 rounded-lg transition-colors ${
                                             tp === 'done' ? 'text-orange-500 bg-orange-100'
                                             : tp === true  ? 'text-orange-500 bg-orange-100'
-                                            : hasDiff      ? 'text-amber-500 hover:bg-amber-100'
-                                            : 'text-slate-500 hover:text-amber-500 hover:bg-amber-50'
+                                            : hasDiff      ? 'text-warning hover:bg-warning/10'
+                                            : 'text-content-3 hover:text-warning hover:bg-warning/10'
                                         }`}
                                     >
                                         <AlertTriangle size={14} />
@@ -1210,13 +1210,13 @@ export default function RecepcionModal({
                                                 className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
                                                     (errorVals[r.id] || '') === t.value
                                                         ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                                                        : 'bg-white text-slate-500 border-slate-200 hover:border-orange-300 hover:text-orange-500'
+                                                        : 'bg-white text-content-3 border-slate-200 hover:border-orange-300 hover:text-orange-500'
                                                 }`}
                                             >{t.label}</button>
                                         ))}
                                         {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="text-[10px] text-slate-500">¿Cuántos?</span>
+                                                <span className="text-[10px] text-content-3">¿Cuántos?</span>
                                                 <input type="number" min={1} max={fQty}
                                                     value={cantProblemaVals[r.id] ?? 1}
                                                     onChange={e => setCantProblemaVals(p => ({
@@ -1224,7 +1224,7 @@ export default function RecepcionModal({
                                                     }))}
                                                     className="w-12 text-center border border-orange-300 rounded-full px-2 py-1 text-[16px] font-bold focus:outline-none focus:border-orange-500 bg-white text-orange-700"
                                                 />
-                                                <span className="text-[10px] text-slate-500">de {fQty}</span>
+                                                <span className="text-[10px] text-content-3">de {fQty}</span>
                                             </div>
                                         )}
                                         <input type="text" placeholder="Nota…"
@@ -1261,7 +1261,7 @@ export default function RecepcionModal({
             {/* Responsables */}
             {apoyo.length > 0 && (
                 <div className="flex-none border-t border-slate-100 px-5 py-3">
-                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Responsables</p>
+                    <p className="text-[10px] font-semibold text-content-3 uppercase tracking-wide mb-2">Responsables</p>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         {apoyo.map(a => <EmpChip key={a.id} emp={a} />)}
                     </div>
@@ -1270,7 +1270,7 @@ export default function RecepcionModal({
 
             <PedidoModal.Footer className="space-y-2">
                 {saveError && (
-                    <div className="flex items-center gap-2 text-red-600 text-[12px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 text-danger text-[12px] bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
                         <AlertTriangle size={13} /> {saveError}
                     </div>
                 )}
@@ -1278,13 +1278,13 @@ export default function RecepcionModal({
                     <button
                         onClick={hasCajaMap ? goBack : onClose}
                         disabled={saving}
-                        className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors disabled:opacity-40">
+                        className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
                         {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
                     <div className="flex items-center gap-2">
                         <button onClick={handleTodoOk} disabled={saving}
                             title="Confirma recibido exactamente como se envió, sin revisar línea por línea"
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 text-[13px] transition-colors disabled:opacity-40 active:scale-[0.97]">
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-emerald-300 bg-success/10 text-emerald-700 font-semibold hover:bg-success/10 text-[13px] transition-colors disabled:opacity-40 active:scale-[0.97]">
                             <Check size={14} />
                             Todo OK
                         </button>

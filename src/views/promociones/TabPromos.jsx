@@ -17,10 +17,10 @@ const fmtDate = (d) => {
 };
 
 const ESTADO_CFG = {
-    draft:  { bg: 'bg-slate-100',    text: 'text-slate-600',    border: 'border-slate-200',    dot: 'bg-slate-400',    label: 'Borrador' },
-    active: { bg: 'bg-emerald-50',   text: 'text-emerald-700',  border: 'border-emerald-200',  dot: 'bg-emerald-500',  label: 'Activa'   },
-    paused: { bg: 'bg-amber-50',     text: 'text-amber-700',    border: 'border-amber-200',    dot: 'bg-amber-400',    label: 'Pausada'  },
-    closed: { bg: 'bg-slate-50',     text: 'text-slate-500',    border: 'border-slate-150',    dot: 'bg-slate-300',    label: 'Cerrada'  },
+    draft:  { bg: 'bg-surface-card-hover',    text: 'text-content-2',    border: 'border-slate-200',    dot: 'bg-content-3',    label: 'Borrador' },
+    active: { bg: 'bg-success/10',   text: 'text-emerald-700',  border: 'border-success/30',  dot: 'bg-emerald-500',  label: 'Activa'   },
+    paused: { bg: 'bg-warning/10',     text: 'text-amber-700',    border: 'border-warning/30',    dot: 'bg-amber-400',    label: 'Pausada'  },
+    closed: { bg: 'bg-surface-card-hover',     text: 'text-content-3',    border: 'border-slate-150',    dot: 'bg-content-3',    label: 'Cerrada'  },
 };
 
 const ALL_STATES = ['draft', 'active', 'paused'];
@@ -47,10 +47,10 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
 
     return (
         <div className={`
-            relative bg-white/70 backdrop-blur-sm border rounded-2xl overflow-hidden
+            relative bg-surface-card backdrop-blur-sm border rounded-2xl overflow-hidden
             shadow-[0_2px_12px_rgba(0,0,0,0.05),inset_0_1px_4px_rgba(255,255,255,0.9)]
             transition-all duration-200 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]
-            ${promo.estado === 'active' ? 'border-emerald-200/70' : 'border-white/80'}
+            ${promo.estado === 'active' ? 'border-success/70' : 'border-border-card'}
         `}>
             {/* Active glow stripe */}
             {promo.estado === 'active' && (
@@ -67,16 +67,16 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 {es.label}
                             </span>
                             {promo.fecha_inicio && (
-                                <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                                <span className="flex items-center gap-1 text-[10px] text-content-3">
                                     <Calendar size={9} />
                                     {fmtDate(promo.fecha_inicio)}
                                     {promo.fecha_fin && ` → ${fmtDate(promo.fecha_fin)}`}
                                 </span>
                             )}
                         </div>
-                        <h3 className="text-[14px] font-bold text-slate-800 leading-tight">{promo.nombre}</h3>
+                        <h3 className="text-[14px] font-bold text-content leading-tight">{promo.nombre}</h3>
                         {labs.length > 0 && (
-                            <p className="flex items-center gap-1 text-[10px] text-slate-500 mt-0.5">
+                            <p className="flex items-center gap-1 text-[10px] text-content-3 mt-0.5">
                                 <FlaskConical size={9} /> {labs.join(', ')}
                             </p>
                         )}
@@ -89,7 +89,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Activar"
                                     onClick={() => onStateChange(promo, 'active')}
-                                    className="p-2 rounded-xl hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-success/10 text-content-3 hover:text-success transition-colors"
                                 >
                                     <Play size={14} />
                                 </button>
@@ -98,7 +98,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Pausar"
                                     onClick={() => onStateChange(promo, 'paused')}
-                                    className="p-2 rounded-xl hover:bg-amber-50 text-slate-500 hover:text-amber-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-warning/10 text-content-3 hover:text-warning transition-colors"
                                 >
                                     <Pause size={14} />
                                 </button>
@@ -107,7 +107,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Reactivar"
                                     onClick={() => onStateChange(promo, 'active')}
-                                    className="p-2 rounded-xl hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-success/10 text-content-3 hover:text-success transition-colors"
                                 >
                                     <Play size={14} />
                                 </button>
@@ -116,7 +116,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Cerrar promoción"
                                     onClick={() => onStateChange(promo, 'closed')}
-                                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-surface-card-hover text-content-3 hover:text-content-2 transition-colors"
                                 >
                                     <Lock size={14} />
                                 </button>
@@ -125,7 +125,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Eliminar borrador"
                                     onClick={() => onDelete(promo)}
-                                    className="p-2 rounded-xl hover:bg-red-50 text-slate-500 hover:text-red-500 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-danger/10 text-content-3 hover:text-danger transition-colors"
                                 >
                                     <Trash2 size={14} />
                                 </button>
@@ -137,16 +137,16 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 {/* Meta row */}
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mb-3">
                     {branches.length > 0 && (
-                        <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                        <span className="flex items-center gap-1 text-[10px] text-content-3">
                             <Building2 size={9} />
                             {branches.length <= 3 ? branches.join(', ') : `${branches.slice(0, 2).join(', ')} +${branches.length - 2}`}
                         </span>
                     )}
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <span className="flex items-center gap-1 text-[10px] text-content-3">
                         <Package size={9} /> {pps.length} {pps.length === 1 ? 'producto' : 'productos'}
                     </span>
                     {pps.some(pp => pp.bono_vendedor > 0 || pp.bono_admin_pool > 0 || pp.bono_bodega_pool > 0) && (
-                        <span className="flex items-center gap-1 text-[10px] text-emerald-500">
+                        <span className="flex items-center gap-1 text-[10px] text-success">
                             <Gift size={9} /> Con bonificación
                         </span>
                     )}
@@ -156,12 +156,12 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 {pct !== null && (
                     <div className="mb-3">
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] text-slate-500">Stock vendido</span>
-                            <span className="text-[10px] font-semibold text-slate-600">{totalSold}/{totalStock} und · {pct}%</span>
+                            <span className="text-[10px] text-content-3">Stock vendido</span>
+                            <span className="text-[10px] font-semibold text-content-2">{totalSold}/{totalStock} und · {pct}%</span>
                         </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-surface-card-hover rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-400' : promo.estado === 'active' ? 'bg-blue-500' : 'bg-slate-300'}`}
+                                className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-400' : promo.estado === 'active' ? 'bg-blue-500' : 'bg-content-3'}`}
                                 style={{ width: `${pct}%` }}
                             />
                         </div>
@@ -169,7 +169,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 )}
 
                 {promo.notas && (
-                    <p className="text-[10px] text-slate-500 italic mb-3 leading-relaxed">"{promo.notas}"</p>
+                    <p className="text-[10px] text-content-3 italic mb-3 leading-relaxed">"{promo.notas}"</p>
                 )}
 
                 {/* Expand toggle */}
@@ -177,7 +177,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                     <button
                         type="button"
                         onClick={() => setExpanded(e => !e)}
-                        className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-600 transition-colors w-full justify-center pt-1 border-t border-slate-100"
+                        className="flex items-center gap-1 text-[10px] text-content-3 hover:text-content-2 transition-colors w-full justify-center pt-1 border-t border-slate-100"
                     >
                         {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                         {expanded ? 'Ocultar productos' : 'Ver productos'}
@@ -187,7 +187,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
 
             {/* Expanded products */}
             {expanded && pps.length > 0 && (
-                <div className="border-t border-slate-100 bg-slate-50/50 px-4 pb-3 pt-2.5 space-y-2">
+                <div className="border-t border-slate-100 bg-surface-card-hover/50 px-4 pb-3 pt-2.5 space-y-2">
                     {pps.map(pp => {
                         const sold = (pp.promotion_sales_cache || []).reduce((a, r) => a + (r.units_sold || 0), 0);
                         const ppPct = pp.stock_inicial && pp.stock_inicial > 0
@@ -198,13 +198,13 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <div className="w-7 h-7 rounded-lg bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden mt-0.5">
                                     {pp.products?.foto_url
                                         ? <img src={pp.products.foto_url} className="w-full h-full object-cover" alt="" />
-                                        : <Package size={11} className="text-slate-300" />}
+                                        : <Package size={11} className="text-content-3" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-[11px] font-semibold text-slate-700 truncate">{pp.products?.nombre}</span>
+                                        <span className="text-[11px] font-semibold text-content-2 truncate">{pp.products?.nombre}</span>
                                         {pp.presentaciones?.tipo && (
-                                            <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md">{pp.presentaciones.tipo}</span>
+                                            <span className="text-[10px] font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentaciones.tipo}</span>
                                         )}
                                         {pp.factor_descripcion && (
                                             <span className="text-[10px] text-violet-600 font-medium bg-violet-50 px-1.5 py-0.5 rounded-md">{pp.factor_descripcion}</span>
@@ -213,25 +213,25 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                     {/* Bonos */}
                                     <div className="flex flex-wrap gap-x-2 mt-0.5">
                                         {pp.bono_vendedor > 0 && (
-                                            <span className="text-[10px] text-emerald-600">Vend: ${parseFloat(pp.bono_vendedor).toFixed(2)}</span>
+                                            <span className="text-[10px] text-success">Vend: ${parseFloat(pp.bono_vendedor).toFixed(2)}</span>
                                         )}
                                         {pp.bono_admin_pool > 0 && (
                                             <span className="text-[10px] text-blue-600">Admin: ${parseFloat(pp.bono_admin_pool).toFixed(2)}</span>
                                         )}
                                         {pp.bono_bodega_pool > 0 && (
-                                            <span className="text-[10px] text-amber-600">Bodega: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}</span>
+                                            <span className="text-[10px] text-warning">Bodega: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}</span>
                                         )}
                                     </div>
                                     {/* Mini progress */}
                                     {ppPct !== null && (
                                         <div className="flex items-center gap-1.5 mt-1">
-                                            <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+                                            <div className="flex-1 h-1 bg-surface-card-hover rounded-full overflow-hidden">
                                                 <div
                                                     className={`h-full rounded-full ${ppPct >= 100 ? 'bg-emerald-400' : 'bg-blue-400'}`}
                                                     style={{ width: `${ppPct}%` }}
                                                 />
                                             </div>
-                                            <span className="text-[9px] text-slate-500 w-8 text-right">{sold}/{pp.stock_inicial}</span>
+                                            <span className="text-[9px] text-content-3 w-8 text-right">{sold}/{pp.stock_inicial}</span>
                                         </div>
                                     )}
                                 </div>
@@ -311,26 +311,26 @@ export default function TabPromos({ searchTerm, canEdit }) {
         <div>
             {/* Filter pill — glassmorphic, right-aligned */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0 overflow-visible">
                     <div className="flex items-center px-2 py-2">
-                        <Tag size={13} className="text-slate-400 flex-shrink-0" />
+                        <Tag size={13} className="text-content-3 flex-shrink-0" />
                     </div>
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                     {pillFilters.map((pf, idx) => (
                         <React.Fragment key={pf.key}>
-                            {idx > 0 && <div className="h-5 w-px bg-slate-100 shrink-0" />}
+                            {idx > 0 && <div className="h-5 w-px bg-surface-card-hover shrink-0" />}
                             <button
                                 onClick={() => setFilterState(pf.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all ${
                                     filterState === pf.key
                                         ? 'bg-blue-600 text-white shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                        : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover'
                                 }`}
                             >
                                 {pf.label}
                                 {pf.count > 0 && (
                                     <span className={`text-[9px] font-bold px-1 py-0.5 rounded-full ${
-                                        filterState === pf.key ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+                                        filterState === pf.key ? 'bg-surface-card text-white' : 'bg-surface-card-hover text-content-3'
                                     }`}>
                                         {pf.count}
                                     </span>
@@ -341,7 +341,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
                     {canEdit && (
                         <>
-                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                             <button
                                 onClick={() => setShowModal(true)}
                                 className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold text-blue-600 hover:bg-blue-50 transition-all"
@@ -355,7 +355,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
             {/* Loading */}
             {loading && (
-                <div className="flex items-center justify-center py-16 text-slate-500">
+                <div className="flex items-center justify-center py-16 text-content-3">
                     <Loader2 size={20} className="animate-spin mr-2" />
                     <span className="text-[12px]">Cargando promociones...</span>
                 </div>
@@ -364,8 +364,8 @@ export default function TabPromos({ searchTerm, canEdit }) {
             {/* Empty */}
             {!loading && filtered.length === 0 && (
                 <div className="text-center py-16">
-                    <Tag size={32} className="mx-auto mb-3 text-slate-200" />
-                    <p className="text-[13px] text-slate-500 font-medium">
+                    <Tag size={32} className="mx-auto mb-3 text-content-3" />
+                    <p className="text-[13px] text-content-3 font-medium">
                         {searchTerm ? 'Sin resultados para esa búsqueda' : 'No hay promociones aquí'}
                     </p>
                     {canEdit && !searchTerm && (

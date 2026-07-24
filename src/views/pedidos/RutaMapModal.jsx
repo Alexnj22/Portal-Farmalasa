@@ -456,8 +456,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     : centerOnPosition;
 
   const gpsIconColor = isConductor
-    ? (gpsStatus === 'ok' ? 'text-blue-500' : gpsStatus === 'denied' ? 'text-red-400' : 'text-slate-500')
-    : (driverOnline ? 'text-emerald-500' : driverPos ? 'text-amber-400' : 'text-slate-500');
+    ? (gpsStatus === 'ok' ? 'text-blue-500' : gpsStatus === 'denied' ? 'text-danger' : 'text-content-3')
+    : (driverOnline ? 'text-success' : driverPos ? 'text-warning' : 'text-content-3');
 
   return (
     <PedidoModal open onClose={onClose} maxWidth="max-w-2xl">
@@ -471,7 +471,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
               <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider">
                 {isConductor ? 'Tu ruta activa' : 'Rastreo en vivo'}
               </p>
-              <h3 className="text-[15px] font-black text-slate-800 leading-tight">
+              <h3 className="text-[15px] font-black text-content leading-tight">
                 Ruta #{ruta.numero} · {ruta.conductor_nombre}
               </h3>
             </div>
@@ -481,7 +481,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             {/* Indicador rastreo — admin */}
             {!isConductor && (
               <span className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg border ${
-                driverOnline ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : driverPos ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-500'
+                driverOnline ? 'bg-success/10 border-success/30 text-emerald-700' : driverPos ? 'bg-warning/10 border-warning/30 text-amber-700' : 'bg-surface-card-hover border-slate-200 text-content-3'
               }`}>
                 <Radio size={8} className={driverOnline ? 'animate-pulse' : ''} />
                 {driverOnline ? 'En vivo' : driverPos ? 'Última posición' : 'Sin señal'}
@@ -493,7 +493,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
                 <RefreshCw size={8} /> {recalcCount} recálculo{recalcCount !== 1 ? 's' : ''}
               </span>
             )}
-            <button onClick={onClose} className="text-slate-500 hover:text-slate-600 p-1 transition-colors">
+            <button onClick={onClose} className="text-content-3 hover:text-content-2 p-1 transition-colors">
               <X size={16} />
             </button>
           </div>
@@ -510,7 +510,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             onClick={conductorBtnClick}
             disabled={conductorBtnDisabled}
             title={conductorBtnLabel}
-            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-white shadow-md border border-slate-200 rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-white shadow-md border border-slate-200 rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {isConductor
               ? <Crosshair size={11} className={gpsIconColor} />
@@ -520,7 +520,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           </button>
 
           {/* Badge mapa */}
-          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-600 shadow-sm border border-white/60">
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-content-2 shadow-sm border border-border-card">
             {mapsMode
               ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />Google Maps</>
               : <><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />OpenStreetMap</>
@@ -537,21 +537,21 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
 
         {/* Lista de paradas */}
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">
             Paradas · {entregadas}/{paradas.length} entregadas
           </p>
           <div className="space-y-1.5">
             {paradas.map((stop, i) => (
               <div key={stop.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${
-                stop.entregado_at ? 'bg-emerald-50/60 border-emerald-200' : 'bg-white border-slate-200'
+                stop.entregado_at ? 'bg-success/60 border-success/30' : 'bg-white border-slate-200'
               }`}>
                 <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
                   stop.entregado_at ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-700'
                 }`}>{i + 1}</span>
-                <p className="text-[12px] font-semibold text-slate-700 flex-1 truncate">{stop.suc_name}</p>
+                <p className="text-[12px] font-semibold text-content-2 flex-1 truncate">{stop.suc_name}</p>
                 {stop.entregado_at
-                  ? <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 shrink-0"><CheckCircle2 size={10} />{fmtTime(stop.entregado_at)}</span>
-                  : <span className="text-[10px] text-slate-500 flex items-center gap-1 shrink-0"><Clock size={10} />Pendiente</span>
+                  ? <span className="text-[10px] text-success font-semibold flex items-center gap-1 shrink-0"><CheckCircle2 size={10} />{fmtTime(stop.entregado_at)}</span>
+                  : <span className="text-[10px] text-content-3 flex items-center gap-1 shrink-0"><Clock size={10} />Pendiente</span>
                 }
               </div>
             ))}

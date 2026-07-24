@@ -15,8 +15,8 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                         <Ban size={20} className="text-white" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-slate-800 text-[15px]">Anular pedido</h3>
-                        <p className="text-[12px] text-slate-600 mt-0.5">#{modal?.numero}</p>
+                        <h3 className="font-bold text-content text-[15px]">Anular pedido</h3>
+                        <p className="text-[12px] text-content-2 mt-0.5">#{modal?.numero}</p>
                     </div>
                 </div>
             </PedidoModal.Header>
@@ -24,14 +24,14 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
             <PedidoModal.Body className="space-y-4">
                 {modal?.requiresReason ? (
                     <>
-                        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200">
-                            <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
+                            <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" />
                             <p className="text-[12px] text-amber-800">
                                 Este pedido ya fue iniciado. Se anulará la preparación en curso y todos los ítems pendientes.
                             </p>
                         </div>
                         <div>
-                            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-1.5 block">
+                            <label className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
                                 Motivo de anulación *
                             </label>
                             <textarea
@@ -39,16 +39,16 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                                 onChange={e => setMotivo(e.target.value)}
                                 placeholder="Describe el motivo de la anulación…"
                                 rows={3}
-                                className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-red-400 bg-white resize-none transition-colors text-slate-700"
+                                className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-red-400 bg-white resize-none transition-colors text-content-2"
                             />
                             {motivo.trim().length > 0 && motivo.trim().length < 5 && (
-                                <p className="text-[10px] text-red-500 mt-1">Mínimo 5 caracteres.</p>
+                                <p className="text-[10px] text-danger mt-1">Mínimo 5 caracteres.</p>
                             )}
                         </div>
                     </>
                 ) : (
-                    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200">
-                        <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30">
+                        <AlertTriangle size={14} className="text-danger shrink-0 mt-0.5" />
                         <p className="text-[12px] text-red-800">
                             ¿Confirmas que deseas anular el pedido <strong>#{modal?.numero}</strong>?<br />
                             Esta acción no se puede deshacer.
@@ -59,7 +59,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
 
             <PedidoModal.Footer>
                 <div className="flex justify-end gap-2">
-                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
+                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
                         Cancelar
                     </button>
                     <button

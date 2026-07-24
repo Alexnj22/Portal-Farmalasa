@@ -24,9 +24,9 @@ function deriveCajas(cajaMap, items) {
 }
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200' },
-    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200' },
-    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-success/10 hover:text-success hover:border-success/30' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
 export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, cajasElectrolit = 0, cajasEspeciales = [], draftKey = null }) {
@@ -140,10 +140,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100 shrink-0">
                 <div className="flex-1">
-                    <p className="text-[11px] font-medium text-slate-600 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-[14px] font-bold text-slate-800 leading-tight">¿Cómo llegó cada caja?</h3>
+                    <p className="text-[11px] font-medium text-content-2 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
+                    <h3 className="text-[14px] font-bold text-content leading-tight">¿Cómo llegó cada caja?</h3>
                 </div>
-                <button onClick={handleClose} disabled={submitting} className="text-slate-500 hover:text-slate-600 transition-colors">
+                <button onClick={handleClose} disabled={submitting} className="text-content-3 hover:text-content-2 transition-colors">
                     <X size={15} />
                 </button>
             </div>
@@ -164,15 +164,15 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-3">
-                <p className="text-[10px] text-slate-600 uppercase tracking-wide font-semibold">
+                <p className="text-[10px] text-content-2 uppercase tracking-wide font-semibold">
                     {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
                 </p>
 
                 <div className="space-y-2">
                     {cajas.map(c => {
                         const est = getEst(c.num);
-                        const rowBg = est === 'ok'      ? 'bg-emerald-50/60 border-emerald-200/70'
-                                    : est === 'danada'  ? 'bg-amber-50/60 border-amber-200/70'
+                        const rowBg = est === 'ok'      ? 'bg-success/60 border-success/70'
+                                    : est === 'danada'  ? 'bg-warning/60 border-warning/70'
                                     :                     'bg-rose-50/60 border-rose-200/70';
                         const numBg = est === 'ok'      ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
                                     : est === 'danada'  ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
@@ -183,8 +183,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                     {c.num}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[12px] font-bold text-slate-700 leading-tight">{c.label}</p>
-                                    <p className="text-[10px] font-medium text-slate-500 mt-0.5">{c.hint}</p>
+                                    <p className="text-[12px] font-bold text-content-2 leading-tight">{c.label}</p>
+                                    <p className="text-[10px] font-medium text-content-3 mt-0.5">{c.hint}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                     {(['ok', 'danada', 'faltante']).map(e => {
@@ -205,7 +205,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {hayProblemas && (
                     <div>
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Nota (opcional)</label>
+                        <label className="text-[10px] font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja 3 aplastada, caja 4 nunca fue cargada…"
@@ -216,13 +216,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {/* Electrolit — cuántas no llegaron */}
                 {cajasElectrolit > 0 && (
-                    <div className="p-3 rounded-2xl border border-amber-100 bg-amber-50/60 flex flex-col gap-2.5">
+                    <div className="p-3 rounded-2xl border border-warning/30 bg-warning/60 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
-                            <Zap size={13} className="text-amber-500 shrink-0" />
+                            <Zap size={13} className="text-warning shrink-0" />
                             <span className="text-[11px] font-semibold text-amber-700 flex-1">
                                 ¿Cuántas cajas de Electrolit no llegaron?
                             </span>
-                            <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wide">
+                            <span className="text-[9px] font-bold text-warning uppercase tracking-wide">
                                 de {cajasElectrolit}
                             </span>
                         </div>
@@ -231,26 +231,26 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 onClick={() => setElectrolitFaltantes(0)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitFaltantes === 0
                                     ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
-                                    : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                    : 'bg-white text-content-3 border-slate-200 hover:border-success/30 hover:text-success'}`}>
                                 ✓ Todas llegaron
                             </button>
                             <div className="flex items-center gap-1 shrink-0">
                                 <button
                                     onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}
                                     disabled={(electrolitFaltantes ?? 0) <= 0}
-                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30">
+                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-content-2 font-black text-[14px] flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
                                     −
                                 </button>
                                 <span className={`w-8 text-center text-[15px] font-black tabular-nums ${
-                                    electrolitFaltantes === null ? 'text-slate-500'
-                                    : electrolitFaltantes === 0  ? 'text-emerald-600'
+                                    electrolitFaltantes === null ? 'text-content-3'
+                                    : electrolitFaltantes === 0  ? 'text-success'
                                     :                              'text-rose-600'}`}>
                                     {electrolitFaltantes ?? '—'}
                                 </span>
                                 <button
                                     onClick={() => setElectrolitFaltantes(f => Math.min(cajasElectrolit, (f ?? 0) + 1))}
                                     disabled={(electrolitFaltantes ?? 0) >= cajasElectrolit}
-                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30">
+                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-content-2 font-black text-[14px] flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
                                     +
                                 </button>
                             </div>
@@ -277,16 +277,16 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             {cajasEspeciales.map(e => {
                                 const est = espEstados[e.label] ?? 'ok';
                                 return (
-                                    <div key={e.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-emerald-50/80 border-emerald-200/70' : 'bg-rose-50/80 border-rose-200/70'}`}>
-                                        <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-emerald-600' : 'text-rose-600'}`}>{e.label}</span>
-                                        <span className="flex-1 text-[10px] text-slate-600 leading-tight">{e.product_name}</span>
+                                    <div key={e.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/80 border-success/70' : 'bg-rose-50/80 border-rose-200/70'}`}>
+                                        <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-rose-600'}`}>{e.label}</span>
+                                        <span className="flex-1 text-[10px] text-content-2 leading-tight">{e.product_name}</span>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-content-3 border-slate-200 hover:border-success/30 hover:text-success'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-500 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-content-3 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -302,15 +302,15 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {/* Cajas de más */}
                 <div>
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-100/80 bg-amber-50/40">
-                        <HelpCircle size={13} className="text-amber-500 shrink-0" />
-                        <span className="text-[11px] text-slate-600 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-warning/80 bg-warning/40">
+                        <HelpCircle size={13} className="text-warning shrink-0" />
+                        <span className="text-[11px] text-content-2 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
-                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-[0.97] transition-all disabled:opacity-30">−</button>
-                            <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-500'}`}>{cajasExtra}</span>
+                                className="w-6 h-6 rounded-lg bg-white border border-warning/30 text-content-2 font-black text-[13px] flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all disabled:opacity-30">−</button>
+                            <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-warning' : 'text-content-3'}`}>{cajasExtra}</span>
                             <button onClick={() => setCajasExtra(n => n + 1)}
-                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-[0.97] transition-all">+</button>
+                                className="w-6 h-6 rounded-lg bg-white border border-warning/30 text-content-2 font-black text-[13px] flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all">+</button>
                         </div>
                     </div>
                     {cajasExtra > 0 && (
@@ -318,7 +318,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             {Array.from({ length: cajasExtra }, (_, i) => {
                                 const d = cajasExtraData[i] ?? {};
                                 return (
-                                    <div key={i} className="p-3 rounded-xl border border-amber-100 bg-white space-y-2">
+                                    <div key={i} className="p-3 rounded-xl border border-warning/30 bg-white space-y-2">
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="text-[10px] font-bold text-amber-700">Caja extra {i + 1}</span>
                                             <label className="flex items-center gap-1.5 cursor-pointer select-none">
@@ -328,7 +328,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     onChange={e => setExtraField(i, 'sinRotulacion', e.target.checked)}
                                                     className="w-3.5 h-3.5 rounded accent-amber-500"
                                                 />
-                                                <span className="text-[10px] text-slate-500">Sin rotulación</span>
+                                                <span className="text-[10px] text-content-3">Sin rotulación</span>
                                             </label>
                                         </div>
                                         {!d.sinRotulacion && (
@@ -352,7 +352,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                             </div>
                                         )}
                                         {d.sinRotulacion && (
-                                            <p className="text-[10px] text-amber-600 italic">Se reportará a bodega como caja sin identificar.</p>
+                                            <p className="text-[10px] text-warning italic">Se reportará a bodega como caja sin identificar.</p>
                                         )}
                                     </div>
                                 );
@@ -367,7 +367,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 {(hayProblemas || cajasExtra > 0) && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-amber-700 border border-warning/30">
                                 ⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}
                             </span>
                         )}
@@ -384,18 +384,18 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     </div>
                 )}
                 {extraError && (
-                    <p className="text-[10px] text-red-600 font-medium flex items-center gap-1">
+                    <p className="text-[10px] text-danger font-medium flex items-center gap-1">
                         <span>⚠</span> {extraError}
                     </p>
                 )}
                 {Object.keys(estados).length === 0 && cajas.length > 0 && (
-                    <p className="text-[10px] text-slate-500 text-center pb-1">
+                    <p className="text-[10px] text-content-3 text-center pb-1">
                         Las cajas sin marcar se registran como <strong>OK</strong>
                     </p>
                 )}
                 <div className="flex items-center justify-between gap-2">
                     <button onClick={handleClose} disabled={submitting}
-                        className="text-[11px] font-semibold px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-all">
+                        className="text-[11px] font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover transition-all">
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting}

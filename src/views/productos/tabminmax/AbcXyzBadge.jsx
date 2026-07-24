@@ -5,8 +5,8 @@ import { normXyz } from './helpers';
 
 export default function AbcXyzBadge({ abc, xyz }) {
     const xyzKey = normXyz(xyz);
-    const abcColor = abc === 'C' ? 'text-amber-600' : 'text-slate-500';
-    const xyzColor = xyzKey === 'Z' ? 'text-rose-500' : 'text-slate-500';
+    const abcColor = abc === 'C' ? 'text-warning' : 'text-content-3';
+    const xyzColor = xyzKey === 'Z' ? 'text-rose-500' : 'text-content-3';
     return (
         <span className="font-black tracking-tight shrink-0" title={`${ABC_CFG[abc]?.title ?? ''} · ${XYZ_CFG[xyzKey]?.desc ?? ''}`}>
             <span className={`text-[11px] ${abcColor}`}>{abc || '—'}</span>

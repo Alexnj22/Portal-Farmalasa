@@ -207,9 +207,9 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
 const loadAllPrices = async () => (await fetchAllProductPreciosForCotizaciones()) ?? [];
 
 // ─── Fila de totales helper ────────────────────────────────────────────────────
-const Row = ({ label, val, className = 'text-slate-600' }) => (
+const Row = ({ label, val, className = 'text-content-2' }) => (
     <div className="flex justify-between items-center">
-        <span className="text-[11px] font-bold text-slate-500">{label}</span>
+        <span className="text-[11px] font-bold text-content-3">{label}</span>
         <span className={`text-[12px] font-bold ${className}`}>{val}</span>
     </div>
 );
@@ -229,42 +229,42 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
     const dsg = desglose(item.precioUnitario, item.cantidad);
 
     return (
-        <div className="bg-white/60 backdrop-blur-sm border border-white/80 rounded-2xl p-4 shadow-sm space-y-3">
+        <div className="bg-surface-card backdrop-blur-sm border border-border-card rounded-2xl p-4 shadow-sm space-y-3">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[9px] font-black text-slate-500 bg-slate-100 rounded-lg px-2 py-1 shrink-0">#{idx + 1}</span>
-                    <p className="text-[12px] font-black text-slate-800 leading-tight truncate">{item.productName}</p>
+                    <span className="text-[9px] font-black text-content-3 bg-surface-card-hover rounded-lg px-2 py-1 shrink-0">#{idx + 1}</span>
+                    <p className="text-[12px] font-black text-content leading-tight truncate">{item.productName}</p>
                 </div>
                 <button type="button" onClick={() => removeItem(item._id)}
-                    className="w-7 h-7 shrink-0 rounded-xl bg-red-50 text-red-400 border border-red-100 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center">
+                    className="w-7 h-7 shrink-0 rounded-xl bg-danger/10 text-danger border border-danger/30 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center">
                     <X size={12} strokeWidth={3} />
                 </button>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="col-span-1">
-                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Presentación</label>
+                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Presentación</label>
                     <LiquidSelect value={item.presentacionId} onChange={v => updateItem(item._id, 'presentacionId', v)}
                         options={presOptions} placeholder={presOptions.length === 0 ? 'Sin precios' : 'Seleccionar...'}
                         icon={Tag} compact clearable={false} />
                 </div>
                 <div className="col-span-1">
-                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Tipo Precio</label>
+                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Tipo Precio</label>
                     <LiquidSelect value={item.priceType} onChange={v => updateItem(item._id, 'priceType', v)}
                         options={priceOptions} placeholder="Precio..." icon={Percent} compact clearable={false} />
                 </div>
                 <div>
-                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Cantidad</label>
+                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Cantidad</label>
                     <input type="number" min="0" step="0.001" value={item.cantidad}
                         onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
-                        className="w-full bg-white/80 border border-white/80 rounded-2xl px-3 py-2.5 text-[16px] font-bold text-slate-800 text-center outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
+                        className="w-full bg-surface-card border border-border-card rounded-2xl px-3 py-2.5 text-[16px] font-bold text-content text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
                 </div>
                 <div>
-                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
+                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-500">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-content-3">$</span>
                         <input type="number" min="0" step="0.01" value={item.precioUnitario}
                             onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
-                            className="w-full bg-white/80 border border-white/80 rounded-2xl pl-6 pr-3 py-2.5 text-[16px] font-bold text-slate-800 text-right outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
+                            className="w-full bg-surface-card border border-border-card rounded-2xl pl-6 pr-3 py-2.5 text-[16px] font-bold text-content text-right outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
                     </div>
                 </div>
             </div>
@@ -272,25 +272,25 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                 {isCCF ? (
                     <>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">P. s/IVA</span>
-                            <span className="text-[11px] font-black text-slate-600">{fmt(dsg.unitSinIva)}</span>
+                            <span className="text-[9px] font-bold text-content-2 uppercase tracking-wider">P. s/IVA</span>
+                            <span className="text-[11px] font-black text-content-2">{fmt(dsg.unitSinIva)}</span>
                         </div>
-                        <span className="text-slate-200">|</span>
+                        <span className="text-content-3">|</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Subtotal s/IVA</span>
-                            <span className="text-[11px] font-black text-slate-600">{fmt(dsg.subtotalSinIva)}</span>
+                            <span className="text-[9px] font-bold text-content-2 uppercase tracking-wider">Subtotal s/IVA</span>
+                            <span className="text-[11px] font-black text-content-2">{fmt(dsg.subtotalSinIva)}</span>
                         </div>
-                        <span className="text-slate-200">|</span>
+                        <span className="text-content-3">|</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">IVA 13%</span>
+                            <span className="text-[9px] font-bold text-content-2 uppercase tracking-wider">IVA 13%</span>
                             <span className="text-[11px] font-black text-blue-600">{fmt(dsg.subtotalIva)}</span>
                         </div>
-                        <span className="text-slate-200">|</span>
+                        <span className="text-content-3">|</span>
                     </>
                 ) : null}
                 <div className="flex items-center gap-1.5 ml-auto">
-                    <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Subtotal</span>
-                    <span className="text-[14px] font-black text-[#0052CC]">{fmt(item.subtotal)}</span>
+                    <span className="text-[9px] font-bold text-content-2 uppercase tracking-wider">Subtotal</span>
+                    <span className="text-[14px] font-black text-brand">{fmt(item.subtotal)}</span>
                 </div>
             </div>
         </div>
@@ -659,7 +659,7 @@ export default function CotizacionesView() {
         <GlassViewLayout icon={Receipt} title={isEdit ? 'Editar Cotización' : 'Nueva Cotización'}
             filtersContent={
                 <button onClick={() => { resetForm(); setMode('list'); }}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                    className="flex items-center gap-2 px-4 py-2.5 bg-surface-card text-content-2 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-border-card hover:bg-surface-card hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                     <ChevronLeft size={14} strokeWidth={3} /> Lista
                 </button>
             }
@@ -667,21 +667,21 @@ export default function CotizacionesView() {
             <div className="p-4 lg:p-6 space-y-4">
 
                 {/* ── Cabecera ─────────────────────────────────────────────── */}
-                <div className="bg-white/50 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-sm space-y-4">
-                    <div className="flex items-center gap-2.5 pb-3 border-b border-white/60">
+                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-border-card">
                         <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
                             <FileText size={16} strokeWidth={2.5} />
                         </div>
-                        <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-700">Datos Generales</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-widest text-content-2">Datos Generales</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Fecha</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Fecha</label>
                             <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[16px] font-bold text-slate-700 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
+                                className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-[16px] font-bold text-content-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Cliente</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Cliente</label>
                             <LiquidSelect value={customerId}
                                 onChange={handleCustomerChange}
                                 onSearchChange={searchCustomers}
@@ -690,13 +690,13 @@ export default function CotizacionesView() {
                                 options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Tipo Documento</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Tipo Documento</label>
                             <LiquidSelect value={docType}
                                 onChange={v => { setDocType(v); if (v === 'COF') setAppliesRetention(false); }}
                                 options={DOC_OPTS} placeholder="Tipo..." icon={FileText} compact clearable={false} />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Forma de Pago</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Forma de Pago</label>
                             <LiquidSelect value={paymentType} onChange={setPaymentType}
                                 options={PAY_OPTS} placeholder="Forma de pago..." icon={CreditCard} compact clearable={false} />
                         </div>
@@ -706,10 +706,10 @@ export default function CotizacionesView() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                         {/* Sucursal */}
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Sucursal</label>
-                            <div className="flex items-center gap-2 bg-white/40 border border-white/60 rounded-2xl px-4 py-3 min-h-[46px]">
-                                <Building2 size={13} className="text-slate-400 shrink-0" />
-                                <span className="text-[12px] font-bold text-slate-600 truncate">
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Sucursal</label>
+                            <div className="flex items-center gap-2 bg-surface-card border border-border-card rounded-2xl px-4 py-3 min-h-[46px]">
+                                <Building2 size={13} className="text-content-3 shrink-0" />
+                                <span className="text-[12px] font-bold text-content-2 truncate">
                                     {branches.find(b => String(b.id) === String(formBranchId))?.name || '—'}
                                 </span>
                             </div>
@@ -718,20 +718,20 @@ export default function CotizacionesView() {
                         {/* Retención */}
                         <div className="flex flex-col gap-2">
                             <div onClick={() => isCCFMode && setAppliesRetention(p => !p)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer select-none transition-all ${!isCCFMode ? 'opacity-40 cursor-not-allowed' : ''} ${appliesRetention ? 'bg-amber-50 border-amber-300' : 'bg-white/40 border-white/60 hover:bg-white/60'}`}>
+                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer select-none transition-all ${!isCCFMode ? 'opacity-40 cursor-not-allowed' : ''} ${appliesRetention ? 'bg-warning/10 border-amber-300' : 'bg-surface-card border-border-card hover:bg-surface-card'}`}>
                                 <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${appliesRetention ? 'bg-amber-500 border-amber-500' : 'border-slate-300'}`}>
                                     {appliesRetention && <CheckCircle2 size={12} strokeWidth={3} className="text-white" />}
                                 </div>
                                 <div>
-                                    <p className="text-[11px] font-black text-slate-700 leading-none">Retención 1%</p>
-                                    <p className="text-[9px] font-bold text-slate-500 mt-0.5">Solo CCF — agente de retención</p>
+                                    <p className="text-[11px] font-black text-content-2 leading-none">Retención 1%</p>
+                                    <p className="text-[9px] font-bold text-content-3 mt-0.5">Solo CCF — agente de retención</p>
                                 </div>
-                                {appliesRetention && <span className="ml-auto text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">ACTIVA</span>}
+                                {appliesRetention && <span className="ml-auto text-[9px] font-black text-warning bg-warning/10 px-2 py-0.5 rounded-full">ACTIVA</span>}
                             </div>
                             {suggestRetention && (
                                 <div onClick={() => setAppliesRetention(true)}
-                                    className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100 transition-all">
-                                    <AlertTriangle size={12} className="text-amber-500 shrink-0" />
+                                    className="flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/30 rounded-xl cursor-pointer hover:bg-warning/10 transition-all">
+                                    <AlertTriangle size={12} className="text-warning shrink-0" />
                                     <span className="text-[10px] font-bold text-amber-700">Base &gt; $100 en CCF. ¿Aplicar retención?</span>
                                 </div>
                             )}
@@ -739,24 +739,24 @@ export default function CotizacionesView() {
 
                         {/* Notas */}
                         <div>
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
                             <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
                                 placeholder="Observaciones..."
-                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[16px] font-bold text-slate-700 placeholder-slate-300 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
+                                className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-[16px] font-bold text-content-2 placeholder-slate-300 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
                         </div>
                     </div>
                 </div>
 
                 {/* ── Productos ─────────────────────────────────────────────── */}
-                <div className="bg-white/50 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-sm space-y-3">
+                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm space-y-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-xl bg-success/10 text-success border border-success/30 flex items-center justify-center">
                                 <ShoppingCart size={16} strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-700">
+                            <h3 className="text-[12px] font-black uppercase tracking-widest text-content-2">
                                 Productos
-                                {items.length > 0 && <span className="ml-2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">{items.length}</span>}
+                                {items.length > 0 && <span className="ml-2 text-[10px] font-black text-success bg-success/10 px-2 py-0.5 rounded-full border border-success/30">{items.length}</span>}
                             </h3>
                             {isCCFMode && (
                                 <span className="flex items-center gap-1 text-[9px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">
@@ -775,8 +775,8 @@ export default function CotizacionesView() {
                     </div>
 
                     {items.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 gap-3 text-slate-500">
-                            <div className="w-12 h-12 rounded-[1rem] bg-slate-50 flex items-center justify-center border border-slate-100"><Package size={22} strokeWidth={1.5} /></div>
+                        <div className="flex flex-col items-center justify-center py-10 gap-3 text-content-3">
+                            <div className="w-12 h-12 rounded-[1rem] bg-surface-card-hover flex items-center justify-center border border-slate-100"><Package size={22} strokeWidth={1.5} /></div>
                             <p className="text-[12px] font-bold">Busca y selecciona productos</p>
                         </div>
                     ) : (
@@ -792,35 +792,35 @@ export default function CotizacionesView() {
                 {/* ── Totales ───────────────────────────────────────────────── */}
                 {items.length > 0 && (
                     <div className="flex justify-end">
-                        <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
-                            <div className="flex items-center gap-2 pb-3 border-b border-white/60 mb-1">
+                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
+                            <div className="flex items-center gap-2 pb-3 border-b border-border-card mb-1">
                                 <Calculator size={14} className="text-blue-600" />
-                                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-700">Resumen</h3>
+                                <h3 className="text-[11px] font-black uppercase tracking-widest text-content-2">Resumen</h3>
                             </div>
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(totals.base)} />
                             <Row label="IVA 13%" val={fmt(totals.iva)} />
-                            {appliesRetention && <Row label="Retención 1%" val={`–${fmt(totals.retention)}`} className="text-amber-600" />}
+                            {appliesRetention && <Row label="Retención 1%" val={`–${fmt(totals.retention)}`} className="text-warning" />}
                             <div className="flex justify-between items-center pt-3 border-t border-slate-100">
-                                <span className="text-[14px] font-black text-slate-800">TOTAL</span>
-                                <span className="text-[22px] font-black text-[#0052CC]">{fmt(totals.total)}</span>
+                                <span className="text-[14px] font-black text-content">TOTAL</span>
+                                <span className="text-[22px] font-black text-brand">{fmt(totals.total)}</span>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {saveError && (
-                    <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 text-[12px] font-bold px-4 py-3 rounded-2xl">
+                    <div className="flex items-center gap-3 bg-danger/10 border border-danger/30 text-red-700 text-[12px] font-bold px-4 py-3 rounded-2xl">
                         <AlertCircle size={16} strokeWidth={2.5} />{saveError}
                     </div>
                 )}
 
                 <div className="flex items-center justify-end gap-3 pb-4">
                     <button onClick={() => { resetForm(); setMode('list'); }}
-                        className="px-6 py-3 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                        className="px-6 py-3 bg-surface-card text-content-2 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-border-card hover:bg-surface-card hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                         Cancelar
                     </button>
                     <button onClick={isEdit ? handleUpdate : handleSave} disabled={saving || items.length === 0}
-                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#0052CC] hover:bg-[#003D99] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97]'}`}>
+                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-content-3 cursor-not-allowed' : 'bg-brand hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97]'}`}>
                         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2.5} />}
                         {saving ? 'Guardando...' : isEdit ? 'Actualizar Cotización' : 'Guardar Cotización'}
                     </button>
@@ -841,21 +841,21 @@ export default function CotizacionesView() {
                 filtersContent={
                     <div className="flex items-center gap-2 flex-wrap">
                         <button onClick={() => setMode('list')}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                            className="flex items-center gap-2 px-4 py-2.5 bg-surface-card text-content-2 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-border-card hover:bg-surface-card hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                             <ChevronLeft size={14} strokeWidth={3} /> Lista
                         </button>
                         {cot.status === 'ACTIVA' && canEdit && (
                             <>
                                 <button onClick={() => startEdit(cot)}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-surface-card-hover text-content-2 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-surface-card-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                     <Edit2 size={13} strokeWidth={2.5} /> Editar
                                 </button>
                                 <button onClick={() => setConfirmAnular(cot.id)}
-                                    className="px-4 py-2.5 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                    className="px-4 py-2.5 bg-danger/10 text-danger text-[11px] font-black uppercase tracking-widest rounded-2xl border border-danger/30 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                     Anular
                                 </button>
                                 <button onClick={() => handlePrint(cot, itemsData)}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#0052CC] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-[#003D99] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
                                     <Printer size={14} strokeWidth={2.5} /> Imprimir / PDF
                                 </button>
                             </>
@@ -865,7 +865,7 @@ export default function CotizacionesView() {
             >
                 <div className="p-4 lg:p-6 space-y-4">
                     {cot.status === 'ANULADA' && (
-                        <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 text-[12px] font-bold px-5 py-3.5 rounded-2xl">
+                        <div className="flex items-center gap-3 bg-danger/10 border border-danger/30 text-red-700 text-[12px] font-bold px-5 py-3.5 rounded-2xl">
                             <X size={16} strokeWidth={3} /> Esta cotización fue anulada.
                         </div>
                     )}
@@ -878,25 +878,25 @@ export default function CotizacionesView() {
                             { icon: CreditCard, label: 'Forma de Pago', val: { EFECTIVO:'Efectivo', TARJETA:'Tarjeta', TRANSFERENCIA:'Transferencia', CHEQUE:'Cheque' }[cot.payment_type] },
                             { icon: Building2,  label: 'Sucursal',      val: branchName || `Suc. ${cot.branch_id}`, sub: fmtD(cot.fecha) },
                         ].map(c => (
-                            <div key={c.label} className="bg-white/50 backdrop-blur-sm border border-white/80 rounded-2xl p-4 shadow-sm">
+                            <div key={c.label} className="bg-surface-card backdrop-blur-sm border border-border-card rounded-2xl p-4 shadow-sm">
                                 <div className="flex items-center gap-1.5 mb-1.5">
-                                    <c.icon size={11} className="text-slate-500" strokeWidth={2} />
-                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{c.label}</span>
+                                    <c.icon size={11} className="text-content-3" strokeWidth={2} />
+                                    <span className="text-[9px] font-black text-content-2 uppercase tracking-widest">{c.label}</span>
                                 </div>
-                                <p className="text-[13px] font-black text-slate-800 leading-tight">{c.val}</p>
-                                {c.sub && <p className="text-[10px] font-bold text-slate-500 mt-0.5">{c.sub}</p>}
+                                <p className="text-[13px] font-black text-content leading-tight">{c.val}</p>
+                                {c.sub && <p className="text-[10px] font-bold text-content-3 mt-0.5">{c.sub}</p>}
                             </div>
                         ))}
                     </div>
 
                     {/* Creador */}
                     {cot.created_by_name && (
-                        <div className="flex items-center gap-3 bg-white/40 border border-white/60 rounded-2xl px-4 py-3">
+                        <div className="flex items-center gap-3 bg-surface-card border border-border-card rounded-2xl px-4 py-3">
                             <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name}
                                 className="w-8 h-8 rounded-full shrink-0" />
                             <div>
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Preparada por</p>
-                                <p className="text-[13px] font-black text-slate-700">{cot.created_by_name}</p>
+                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Preparada por</p>
+                                <p className="text-[13px] font-black text-content-2">{cot.created_by_name}</p>
                             </div>
                         </div>
                     )}
@@ -906,22 +906,22 @@ export default function CotizacionesView() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead>
-                                    <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
-                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-600">#</th>
-                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-600">Producto</th>
-                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-600">Pres.</th>
-                                        <th className="px-4 py-2.5 text-center text-[9px] font-black uppercase tracking-widest text-slate-600">Cant.</th>
+                                    <tr className="bg-brand/5 backdrop-blur-xl border-b border-brand/10">
+                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-content-2">#</th>
+                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-content-2">Producto</th>
+                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-content-2">Pres.</th>
+                                        <th className="px-4 py-2.5 text-center text-[9px] font-black uppercase tracking-widest text-content-2">Cant.</th>
                                         {isCCF ? (
                                             <>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">P.Unit s/IVA</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">Subtotal s/IVA</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">IVA 13%</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">Total</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-content-2">P.Unit s/IVA</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-content-2">Subtotal s/IVA</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-content-2">IVA 13%</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-content-2">Total</th>
                                             </>
                                         ) : (
                                             <>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">P.Unit.</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">Subtotal</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-content-2">P.Unit.</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-content-2">Subtotal</th>
                                             </>
                                         )}
                                     </tr>
@@ -931,21 +931,21 @@ export default function CotizacionesView() {
                                         const dsg = desglose(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1));
                                         return (
                                             <tr key={it.id || i} className="border-t border-black/[0.04]">
-                                                <td className="px-4 py-2.5 text-[11px] font-black text-slate-500">{i + 1}</td>
-                                                <td className="px-4 py-2.5 text-[12px] font-bold text-slate-800 max-w-[200px] truncate">{it.product_nombre}</td>
-                                                <td className="px-4 py-2.5 text-[11px] text-slate-500">{it.presentacion_desc || '—'}</td>
-                                                <td className="px-4 py-2.5 text-center text-[12px] font-bold text-slate-700">{parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
+                                                <td className="px-4 py-2.5 text-[11px] font-black text-content-3">{i + 1}</td>
+                                                <td className="px-4 py-2.5 text-[12px] font-bold text-content max-w-[200px] truncate">{it.product_nombre}</td>
+                                                <td className="px-4 py-2.5 text-[11px] text-content-3">{it.presentacion_desc || '—'}</td>
+                                                <td className="px-4 py-2.5 text-center text-[12px] font-bold text-content-2">{parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
                                                 {isCCF ? (
                                                     <>
-                                                        <td className="px-4 py-2.5 text-right text-[11px] text-slate-600">{fmt(dsg.unitSinIva)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-[11px] text-slate-600">{fmt(dsg.subtotalSinIva)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[11px] text-content-2">{fmt(dsg.unitSinIva)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[11px] text-content-2">{fmt(dsg.subtotalSinIva)}</td>
                                                         <td className="px-4 py-2.5 text-right text-[11px] text-blue-600">{fmt(dsg.subtotalIva)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-[13px] font-black text-slate-800">{fmt(dsg.total)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[13px] font-black text-content">{fmt(dsg.total)}</td>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <td className="px-4 py-2.5 text-right text-[12px] text-slate-600">{fmt(it.precio_unitario)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-[13px] font-black text-slate-800">{fmt(it.subtotal)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[12px] text-content-2">{fmt(it.precio_unitario)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[13px] font-black text-content">{fmt(it.subtotal)}</td>
                                                     </>
                                                 )}
                                             </tr>
@@ -958,24 +958,24 @@ export default function CotizacionesView() {
 
                     {/* Totales */}
                     <div className="flex justify-end">
-                        <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
-                            <div className="flex items-center gap-2 pb-3 border-b border-white/60">
+                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
+                            <div className="flex items-center gap-2 pb-3 border-b border-border-card">
                                 <Calculator size={14} className="text-blue-600" />
-                                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-700">Totales</h3>
+                                <h3 className="text-[11px] font-black uppercase tracking-widest text-content-2">Totales</h3>
                             </div>
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(vTotals.base)} />
                             <Row label="IVA 13%" val={fmt(vTotals.iva)} />
-                            {cot.applies_retention && <Row label="Retención 1%" val={`–${fmt(vTotals.retention)}`} className="text-amber-600" />}
+                            {cot.applies_retention && <Row label="Retención 1%" val={`–${fmt(vTotals.retention)}`} className="text-warning" />}
                             <div className="flex justify-between items-center pt-3 border-t border-slate-100">
-                                <span className="text-[14px] font-black text-slate-800">TOTAL</span>
-                                <span className="text-[22px] font-black text-[#0052CC]">{fmt(vTotals.total)}</span>
+                                <span className="text-[14px] font-black text-content">TOTAL</span>
+                                <span className="text-[22px] font-black text-brand">{fmt(vTotals.total)}</span>
                             </div>
                         </div>
                     </div>
 
                     {cot.notes && (
-                        <div className="bg-amber-50/80 border border-amber-200/60 rounded-2xl px-5 py-4">
-                            <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Notas</p>
+                        <div className="bg-warning/80 border border-warning/60 rounded-2xl px-5 py-4">
+                            <p className="text-[9px] font-black text-warning uppercase tracking-widest mb-1">Notas</p>
                             <p className="text-[13px] font-bold text-amber-900">{cot.notes}</p>
                         </div>
                     )}
@@ -983,7 +983,7 @@ export default function CotizacionesView() {
                     {cot.status === 'ACTIVA' && (
                         <div className="flex justify-end pb-4">
                             <button onClick={() => handlePrint(cot, itemsData)}
-                                className="flex items-center gap-2 px-7 py-3.5 bg-[#0052CC] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-[#003D99] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
+                                className="flex items-center gap-2 px-7 py-3.5 bg-brand text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
                                 <Printer size={16} strokeWidth={2.5} /> Imprimir / Guardar PDF
                             </button>
                         </div>
@@ -1022,7 +1022,7 @@ export default function CotizacionesView() {
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={canEdit ? (
                 <button onClick={() => { resetForm(); setMode('new'); }}
-                    className="flex items-center gap-2 px-5 py-3.5 bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                    className="flex items-center gap-2 px-5 py-3.5 bg-brand text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,82,204,0.35)] hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                     <Plus size={15} strokeWidth={3} /> Nueva Cotización
                 </button>
             ) : undefined}
@@ -1030,13 +1030,13 @@ export default function CotizacionesView() {
             {/* Stats */}
             <div className="px-5 pt-5 pb-4 flex flex-wrap gap-3">
                 {[
-                    { label: 'Total',    val: cotizaciones.length,                                                                                      color: 'text-slate-700' },
-                    { label: 'Activas',  val: cotizaciones.filter(c => c.status === 'ACTIVA').length,                                                    color: 'text-emerald-600' },
-                    { label: 'Anuladas', val: cotizaciones.filter(c => c.status === 'ANULADA').length,                                                   color: 'text-red-500' },
+                    { label: 'Total',    val: cotizaciones.length,                                                                                      color: 'text-content-2' },
+                    { label: 'Activas',  val: cotizaciones.filter(c => c.status === 'ACTIVA').length,                                                    color: 'text-success' },
+                    { label: 'Anuladas', val: cotizaciones.filter(c => c.status === 'ANULADA').length,                                                   color: 'text-danger' },
                     { label: 'Monto',    val: fmt(cotizaciones.filter(c => c.status === 'ACTIVA').reduce((s, c) => s + parseFloat(c.total || 0), 0)),    color: 'text-blue-600' },
                 ].map(s => (
-                    <div key={s.label} className="flex items-center gap-2 bg-white/60 border border-white/80 px-4 py-2.5 rounded-2xl shadow-sm">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">{s.label}</span>
+                    <div key={s.label} className="flex items-center gap-2 bg-surface-card border border-border-card px-4 py-2.5 rounded-2xl shadow-sm">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-content-2">{s.label}</span>
                         <span className={`text-[15px] font-black ${s.color}`}>{s.val}</span>
                     </div>
                 ))}
@@ -1068,47 +1068,47 @@ export default function CotizacionesView() {
                             key={cot.id}
                             index={i}
                             onClick={() => openCot(cot)}
-                            className={isAnulada ? 'opacity-50 bg-red-50/20' : ''}
+                            className={isAnulada ? 'opacity-50 bg-danger/20' : ''}
                         >
                             <DataCell>
-                                <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-500' : 'text-[#0052CC]'}`}>{cot.numero}</span>
+                                <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-content-3' : 'text-brand'}`}>{cot.numero}</span>
                             </DataCell>
                             <DataCell>
-                                <p className="text-[12px] font-bold text-slate-700">{fmtD(cot.fecha)}</p>
+                                <p className="text-[12px] font-bold text-content-2">{fmtD(cot.fecha)}</p>
                             </DataCell>
                             <DataCell>
-                                <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{cot.customer_name}</p>
+                                <p className="text-[12px] text-content-2 truncate max-w-[160px]">{cot.customer_name}</p>
                             </DataCell>
                             <DataCell hideBelow="sm">
-                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-700'}`}>
+                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-blue-50 text-blue-600' : 'bg-success/10 text-emerald-700'}`}>
                                     {cot.document_type}
                                 </span>
                             </DataCell>
                             <DataCell hideBelow="lg">
-                                <span className="text-[11px] text-slate-600">{branchName}</span>
+                                <span className="text-[11px] text-content-2">{branchName}</span>
                             </DataCell>
                             <DataCell hideBelow="md">
                                 {cot.created_by_name ? (
                                     <div className="flex items-center gap-2">
                                         <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name} className="w-6 h-6 rounded-full shrink-0" />
-                                        <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{cot.created_by_name}</span>
+                                        <span className="text-[11px] text-content-2 truncate max-w-[100px]">{cot.created_by_name}</span>
                                     </div>
-                                ) : <span className="text-slate-500">—</span>}
+                                ) : <span className="text-content-3">—</span>}
                             </DataCell>
                             <DataCell hideBelow="sm">
-                                <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-success/10 text-emerald-700 border-success/30' : 'bg-danger/10 text-red-700 border-danger/30'}`}>
                                     {cot.status}
                                 </span>
                             </DataCell>
                             <DataCell align="right">
-                                <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-slate-500' : 'text-slate-800'}`}>{fmt(cot.total)}</span>
+                                <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-content-3' : 'text-content'}`}>{fmt(cot.total)}</span>
                             </DataCell>
                             <DataCell onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                                     {!isAnulada && canEdit && (
                                         <>
                                             <button title="Editar" onClick={() => startEdit(cot)}
-                                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors">
+                                                className="w-7 h-7 rounded-lg bg-surface-card-hover hover:bg-surface-card-hover text-content-3 hover:text-content-2 flex items-center justify-center transition-colors">
                                                 <Edit2 size={12} strokeWidth={2.5} />
                                             </button>
                                             <button title="Imprimir / PDF"
@@ -1121,7 +1121,7 @@ export default function CotizacionesView() {
                                                 <Printer size={12} strokeWidth={2.5} />
                                             </button>
                                             <button title="Anular" onClick={() => setConfirmAnular(cot.id)}
-                                                className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-colors">
+                                                className="w-7 h-7 rounded-lg bg-danger/10 hover:bg-danger/10 text-danger hover:text-danger flex items-center justify-center transition-colors">
                                                 <Trash2 size={12} strokeWidth={2.5} />
                                             </button>
                                         </>

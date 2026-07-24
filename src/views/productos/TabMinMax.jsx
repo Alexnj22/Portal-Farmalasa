@@ -58,17 +58,17 @@ const iconAnim = {
 // Historial MIN/MAX: label + color por tipo de acción. Todas comparten la misma
 // forma de datos (old_min/old_max/new_min/new_max) — un solo render las cubre.
 const MINMAX_HISTORY_ACTION_META = {
-    MINMAX_LIVE_EDIT:               { label: 'EN VIVO',        badge: 'bg-emerald-50 text-emerald-600' },
-    MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       badge: 'bg-amber-50 text-amber-600' },
+    MINMAX_LIVE_EDIT:               { label: 'EN VIVO',        badge: 'bg-success/10 text-success' },
+    MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       badge: 'bg-warning/10 text-warning' },
     MINMAX_BODEGA_MANUAL_OVERRIDE:  { label: 'MANUAL BODEGA',  badge: 'bg-violet-50 text-violet-600' },
-    MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     badge: 'bg-emerald-50 text-emerald-600' },
+    MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     badge: 'bg-success/10 text-success' },
     MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  badge: 'bg-sky-50 text-sky-600' },
-    MINMAX_RESET_CALC:              { label: 'RESTAURADO',     badge: 'bg-emerald-50 text-emerald-600' },
-    MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       badge: 'bg-slate-100 text-slate-500' },
-    MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     badge: 'bg-slate-100 text-slate-500' },
-    MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    badge: 'bg-red-50 text-red-600' },
-    MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    badge: 'bg-red-50 text-red-600' },
-    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODA LA RED', badge: 'bg-red-50 text-red-600' },
+    MINMAX_RESET_CALC:              { label: 'RESTAURADO',     badge: 'bg-success/10 text-success' },
+    MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       badge: 'bg-surface-card-hover text-content-3' },
+    MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     badge: 'bg-surface-card-hover text-content-3' },
+    MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    badge: 'bg-danger/10 text-danger' },
+    MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    badge: 'bg-danger/10 text-danger' },
+    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODA LA RED', badge: 'bg-danger/10 text-danger' },
 };
 
 // STAT_CFGS, VISIBLE_STAT_KEYS: extraídos a ./tabminmax/constants.js (Bloque
@@ -399,16 +399,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {/* Active ABC/XYZ filter badge + clear */}
                         {(filterAbc !== 'all' || filterXyz !== 'all') && (
                             <>
-                                <div className="h-5 w-px bg-slate-200/60 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
                                 <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
-                                    className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors shrink-0">
+                                    className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-danger/10 hover:border-danger/30 hover:text-danger transition-colors shrink-0">
                                     {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
                                     <X size={9} strokeWidth={3} />
                                 </button>
                             </>
                         )}
 
-                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
+                        <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
 
                         {/* CSV */}
                         <motion.button onClick={async () => {
@@ -432,41 +432,41 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             disabled={data.length === 0 || loading}
                             title="Exportar CSV"
                             {...chipAnim}
-                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-30">
+                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-content-3 hover:text-content-2 transition-colors disabled:opacity-30">
                             <Download size={12} /> CSV
                         </motion.button>
 
-                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
+                        <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
 
                         {/* Config — solo can_edit (guardar hace RLS raw error si no) */}
                         <motion.button onClick={() => setConfigOpen(o => !o)}
                             disabled={!canManage}
                             title={canManage ? 'Configurar parámetros' : 'Necesitás permiso de edición en Min/Max'}
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${configOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${configOpen ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
                             <Settings2 size={13} />
                         </motion.button>
 
-                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
+                        <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
 
                         {/* Labs visibility — solo can_edit (guardar hace RLS raw error si no) */}
                         <motion.button onClick={() => setLabsOpen(o => !o)}
                             disabled={!canManage}
                             title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitás permiso de edición en Min/Max'}
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${labsOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${labsOpen ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
                             <FlaskConical size={13} />
                         </motion.button>
 
                         {!isBodega && (
                             <>
-                                <div className="h-5 w-px bg-slate-200/60 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
 
                                 {/* Todas las sucursales — oculto en Bodega (se actualiza sola vía trigger) */}
                                 <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'all' })} disabled={!canManage || calculating || loading}
                                     title="Recalcular todas las sucursales (Bodega se actualiza sola)"
                                     {...chipAnim}
-                                    className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-40 disabled:pointer-events-none">
+                                    className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-content-3 hover:text-content-2 transition-colors disabled:opacity-40 disabled:pointer-events-none">
                                     {calculating && calcMode === 'all'
                                         ? <><Loader2 size={11} className="animate-spin" /> {calcProgress ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}` : 'Calculando…'}</>
                                         : <><Layers size={11} /> Todas las sucursales</>}
@@ -478,10 +478,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {/* Calcular — blue right cap (oculto para Bodega: se actualiza sola) */}
                     {!isBodega && (
                         <>
-                            <div className="self-stretch w-px bg-slate-200/60 shrink-0" />
+                            <div className="self-stretch w-px bg-surface-card-hover/60 shrink-0" />
                             <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'single' })} disabled={!canManage || calculating || loading}
                                 {...ctaAnim}
-                                className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 transition-colors rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
+                                className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-brand hover:bg-blue-700 transition-colors rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                 {calculating && calcMode === 'single'
                                     ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
                                     : <><RefreshCw size={12} /> Calcular</>}
@@ -500,32 +500,32 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         filterXyz={filterXyz} setFilterXyz={setFilterXyz}
                         loading={loading}
                     />
-                    {config && <div className={`${glass} px-4 py-3 flex flex-col gap-2 text-[10px] text-slate-500 min-w-[200px]`} style={glassStyle}>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Fórmula actual</span>
+                    {config && <div className={`${glass} px-4 py-3 flex flex-col gap-2 text-[10px] text-content-3 min-w-[200px]`} style={glassStyle}>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-content-2">Fórmula actual</span>
                         <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between gap-4">
-                                <span className="font-semibold text-slate-600">MAX (objetivo)</span>
-                                <span className="font-black text-slate-800">{cycleDays} días</span>
+                                <span className="font-semibold text-content-2">MAX (objetivo)</span>
+                                <span className="font-black text-content">{cycleDays} días</span>
                             </div>
                             <div className="flex items-center justify-between gap-4">
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-600 inline-block" /> MIN (X)</span>
-                                <span className="font-black text-slate-700">{config?.reorder_x_days ?? 7}d</span>
+                                <span className="font-black text-content-2">{config?.reorder_x_days ?? 7}d</span>
                             </div>
                             <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400 inline-block" /> MIN (Y)</span>
-                                <span className="font-black text-slate-500">{config?.reorder_y_days ?? 10}d</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-content-3 inline-block" /> MIN (Y)</span>
+                                <span className="font-black text-content-3">{config?.reorder_y_days ?? 10}d</span>
                             </div>
                             <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300 inline-block" /> MIN (Z)</span>
-                                <span className="font-black text-slate-500">{config?.reorder_z_days ?? 15}d</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-content-3 inline-block" /> MIN (Z)</span>
+                                <span className="font-black text-content-3">{config?.reorder_z_days ?? 15}d</span>
                             </div>
-                            <div className="h-px bg-slate-100 my-0.5" />
+                            <div className="h-px bg-surface-card-hover my-0.5" />
                             <div className="flex items-center justify-between gap-4">
                                 <span>Ventana histórica</span>
-                                <span className="font-bold text-slate-600">{config?.analysis_days ?? 180}d</span>
+                                <span className="font-bold text-content-2">{config?.analysis_days ?? 180}d</span>
                             </div>
                         </div>
-                        <p className="text-[9px] text-slate-500 mt-auto pt-2 leading-snug">
+                        <p className="text-[9px] text-content-3 mt-auto pt-2 leading-snug">
                             XYZ: X≤percentil {config?.xyz_x_percentile ?? 5} · Y≤percentil {config?.xyz_y_percentile ?? 35} · Z=resto (relativo a cada sucursal)<br />
                             ABC: A&lt;{config?.abc_a_pct ?? 70}% revenue · B&lt;{config?.abc_b_pct ?? 90}%
                         </p>
@@ -539,7 +539,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     <Settings2 size={13} className="shrink-0 text-blue-500" />
                     <span className="flex-1">Configuración actualizada — recalculá para que los nuevos parámetros surtan efecto.</span>
                     <button onClick={() => setCalcularConfirm({ open: true, mode: 'single' })}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-lg transition-colors">
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-brand hover:bg-blue-700 rounded-lg transition-colors">
                         <RefreshCw size={10} /> Recalcular ahora
                     </button>
                     <button onClick={() => setConfigChanged(false)} className="text-blue-300 hover:text-blue-500"><X size={12} /></button>
@@ -549,16 +549,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
             {!loading && neverCalc && (
                 <div className={`${glass} py-16 text-center`} style={glassStyle}>
-                    <Package size={36} className="opacity-30 mx-auto mb-4 text-slate-500" />
-                    <p className="text-[15px] font-bold text-slate-700 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
-                    <p className="text-[12px] text-slate-500 mb-6 max-w-sm mx-auto leading-relaxed">
+                    <Package size={36} className="opacity-30 mx-auto mb-4 text-content-3" />
+                    <p className="text-[15px] font-bold text-content-2 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
+                    <p className="text-[12px] text-content-3 mb-6 max-w-sm mx-auto leading-relaxed">
                         {isBodega
                             ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Seleccioná una sucursal, calculá y publicá sus borradores.'
                             : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.`}
                     </p>
                     {!isBodega && (
                         <button onClick={handleRecalcular} disabled={calculating}
-                            className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold text-white bg-[#0052CC] rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
+                            className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold text-white bg-brand rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
                             {calculating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                             Calcular {ERP_NAMES[selectedErp]}
                         </button>
@@ -586,7 +586,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             const active = filterAlert === cfg.key;
                             return (
                                 <React.Fragment key={cfg.key}>
-                                    {i > 0 && <div className="h-5 w-px bg-slate-200/50 shrink-0" />}
+                                    {i > 0 && <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />}
                                     <motion.button
                                         whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
@@ -594,13 +594,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             transition-[background-color,border-color,color,box-shadow] duration-100
                                             ${active
                                                 ? cfg.chipActive + ' font-bold border shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
-                                                : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
+                                                : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                         <motion.span
                                             className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`}
                                             animate={active ? { scale: [1, 1.5, 1] } : { scale: 1 }}
                                             transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                                         />
-                                        <span className={`tabular-nums font-black text-[11px] ${active ? '' : 'text-slate-700'}`}>
+                                        <span className={`tabular-nums font-black text-[11px] ${active ? '' : 'text-content-2'}`}>
                                             {loading ? '–' : stats[cfg.key]}
                                         </span>
                                         <span>{cfg.label}</span>
@@ -619,7 +619,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {/* Clase A — urgente, visible cuando hay datos publicados */}
                         {hasPublishedData && criticalACount > 0 && !loading && (
                             <>
-                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterAbc(prev => prev === 'A' ? 'all' : 'A'); setPage(1); }}
@@ -627,7 +627,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         transition-[background-color,border-color,color,box-shadow] duration-100
                                         ${filterAbc === 'A'
                                             ? 'bg-rose-50/90 text-rose-700 font-bold border border-rose-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
-                                            : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
+                                            : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                     <AlertTriangle size={9} className={`shrink-0 ${filterAbc === 'A' ? 'text-rose-500' : 'text-rose-400'}`} />
                                     <span className="font-black">A</span>
                                     <span className="tabular-nums font-black text-[11px]">{criticalACount}</span>
@@ -646,7 +646,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <AnimatePresence>
                         {sparseCount > 0 && !loading && (
                             <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
@@ -654,13 +654,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         transition-[background-color,border-color,color,box-shadow] duration-100
                                         ${filterSparse
                                             ? 'bg-orange-50/90 text-orange-700 font-bold border border-orange-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
-                                            : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
+                                            : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                     <motion.span
                                         className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterSparse ? 'bg-orange-400' : 'bg-orange-300'}`}
                                         animate={filterSparse ? { scale: [1, 1.5, 1] } : { scale: 1 }}
                                         transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                                     />
-                                    <span className={`tabular-nums font-black text-[11px] ${filterSparse ? '' : 'text-slate-700'}`}>{sparseCount}</span>
+                                    <span className={`tabular-nums font-black text-[11px] ${filterSparse ? '' : 'text-content-2'}`}>{sparseCount}</span>
                                     <span>Revisar</span>
                                     <AnimatePresence>
                                     {filterSparse && (
@@ -681,7 +681,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <AnimatePresence>
                         {!isBodega && dispatchRiskCount > 0 && !loading && (
                             <motion.div key="dispatch-risk" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterDispatchRisk(f => !f); setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
@@ -690,13 +690,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         transition-[background-color,border-color,color,box-shadow] duration-100
                                         ${filterDispatchRisk
                                             ? 'bg-rose-50/90 text-rose-700 font-bold border border-rose-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
-                                            : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
+                                            : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                     <motion.span
                                         className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterDispatchRisk ? 'bg-rose-400' : 'bg-rose-300'}`}
                                         animate={filterDispatchRisk ? { scale: [1, 1.5, 1] } : { scale: 1 }}
                                         transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                                     />
-                                    <span className={`tabular-nums font-black text-[11px] ${filterDispatchRisk ? '' : 'text-slate-700'}`}>{dispatchRiskCount}</span>
+                                    <span className={`tabular-nums font-black text-[11px] ${filterDispatchRisk ? '' : 'text-content-2'}`}>{dispatchRiskCount}</span>
                                     <span>Riesgo regla</span>
                                     <AnimatePresence>
                                     {filterDispatchRisk && (
@@ -731,11 +731,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <AnimatePresence>
                         {hiddenIds.size > 0 && (
                             <motion.div key="hidden-toggle" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.92 }}
                                     onClick={() => setFilterHidden(f => !f)}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterHidden ? 'bg-violet-50/90 text-violet-700 font-bold' : 'text-slate-500 hover:text-slate-600'}`}>
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterHidden ? 'bg-violet-50/90 text-violet-700 font-bold' : 'text-content-3 hover:text-content-2'}`}>
                                     <Eye size={10} className="shrink-0" />
                                     {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
                                     <AnimatePresence>
@@ -785,23 +785,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
                                 </span>
-                                <span className="text-[11px] font-black text-slate-800 tabular-nums">{draftCount}</span>
-                                <span className="text-[10px] text-slate-500 font-medium">borrador{draftCount !== 1 ? 'es' : ''}</span>
+                                <span className="text-[11px] font-black text-content tabular-nums">{draftCount}</span>
+                                <span className="text-[10px] text-content-3 font-medium">borrador{draftCount !== 1 ? 'es' : ''}</span>
                             </div>
-                            <div className="h-4 w-px bg-slate-200/70 shrink-0" />
+                            <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
                             {/* Solo borradores */}
                             <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                 onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
-                                className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterDraft ? 'bg-slate-100/80 text-slate-800 font-bold' : 'text-slate-600 hover:bg-slate-100/60 hover:text-slate-800'}`}>
+                                className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterDraft ? 'bg-surface-card-hover/80 text-content font-bold' : 'text-content-2 hover:bg-surface-card-hover/60 hover:text-content'}`}>
                                 {filterDraft ? <><X size={8} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : 'Solo borradores'}
                             </motion.button>
                             {/* Solo cambios */}
                             {hasPublishedData && changesCount > 0 && (
                                 <>
-                                    <div className="h-4 w-px bg-slate-200/70 shrink-0" />
+                                    <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
                                     <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                         onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
-                                        className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-100/70 text-violet-800 font-bold' : 'text-slate-600 hover:bg-slate-100/60 hover:text-slate-800'}`}>
+                                        className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-100/70 text-violet-800 font-bold' : 'text-content-2 hover:bg-surface-card-hover/60 hover:text-content'}`}>
                                         {filterChangesOnly ? <><X size={8} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : `Cambios (${changesCount})`}
                                     </motion.button>
                                 </>
@@ -809,7 +809,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {/* Ocultar filtrados (7A.6) */}
                             {hasActiveFilter && filtered.length > 0 && (
                                 <>
-                                    <div className="h-4 w-px bg-slate-200/70 shrink-0" />
+                                    <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
                                     <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                         onClick={() => setHideFilteredConfirm(true)}
                                         disabled={hidingFiltered}
@@ -821,7 +821,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             )}
                             {/* Descartar */}
                             <>
-                                <div className="h-4 w-px bg-slate-200/70 shrink-0" />
+                                <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
                                 <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                     onClick={() => setDiscardConfirm(true)}
                                     disabled={discardingAll}
@@ -898,17 +898,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                  boxShadow: '0 2px 10px rgba(109,40,217,0.05), inset 0 1px 0 rgba(255,255,255,0.92)',
                              }}>
                             <Info size={10} className="text-violet-500 shrink-0" />
-                            <span className="text-[10px] text-slate-600 whitespace-nowrap">MIN/MAX = Σ sucursales publicadas</span>
+                            <span className="text-[10px] text-content-2 whitespace-nowrap">MIN/MAX = Σ sucursales publicadas</span>
                             {bodegaPendingCount > 0 ? (
                                 <>
-                                    <div className="h-3.5 w-px bg-slate-200/70 mx-0.5 shrink-0" />
+                                    <div className="h-3.5 w-px bg-surface-card-hover/70 mx-0.5 shrink-0" />
                                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block shrink-0" />
                                     <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">{bodegaPendingCount} pendiente{bodegaPendingCount !== 1 ? 's' : ''}</span>
                                 </>
                             ) : hasPublishedData ? (
                                 <>
-                                    <div className="h-3.5 w-px bg-slate-200/70 mx-0.5 shrink-0" />
-                                    <CheckCircle2 size={9} className="text-emerald-500 shrink-0" />
+                                    <div className="h-3.5 w-px bg-surface-card-hover/70 mx-0.5 shrink-0" />
+                                    <CheckCircle2 size={9} className="text-success shrink-0" />
                                     <span className="text-[10px] font-bold text-emerald-700 whitespace-nowrap">Al día</span>
                                 </>
                             ) : null}
@@ -927,7 +927,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
                 >
                 {isSearchFuzzy && searchTerm && (
-                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                         Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                     </div>
@@ -982,26 +982,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         <div className="flex items-center gap-2 min-w-0">
                                             {/* Product photo — click to zoom; alert dot badge */}
                                             <div
-                                                className={`shrink-0 relative w-7 h-7 rounded-md overflow-visible bg-slate-50/80 border border-slate-100 flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
+                                                className={`shrink-0 relative w-7 h-7 rounded-md overflow-visible bg-surface-card-hover/80 border border-slate-100 flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
                                                 onClick={row.foto_url ? e => { e.stopPropagation(); setZoomPhoto(row.foto_url); } : undefined}
                                                 title={alert.label}
                                             >
                                                 {row.foto_url
                                                     ? <img src={row.foto_url} alt="" className="w-full h-full object-contain rounded-md" />
-                                                    : <Package size={13} className="text-slate-400" />}
+                                                    : <Package size={13} className="text-content-3" />}
                                                 {row.alert_status && row.alert_status !== 'ok' && (
                                                     <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white shadow-sm shrink-0 ${alert.dot}`} />
                                                 )}
                                             </div>
                                             <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
-                                                <ChevronRight size={12} className={`text-slate-500 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                <ChevronRight size={12} className={`text-content-3 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5 min-w-0">
-                                                    <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
+                                                    <span className="text-[13px] font-medium text-content truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
-                                                    {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
-                                                    {hasDraft && isBodega && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
+                                                    {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-content-3 bg-surface-card-hover border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {hasDraft && isBodega && <span className="shrink-0 text-[8px] font-black text-warning bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
                                                     {dispatchRisk && <span className="shrink-0 text-[8px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full" title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así">RIESGO REGLA</span>}
                                                     {isBodega && (
                                                         (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||
@@ -1017,8 +1017,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 {/* Stock actual inline */}
                                                 {/* Stock + velocity — single compact row */}
                                                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                                    <Package size={10} className="text-slate-400 shrink-0" />
-                                                    <span className="text-[11px] font-black tabular-nums text-slate-700">
+                                                    <Package size={10} className="text-content-3 shrink-0" />
+                                                    <span className="text-[11px] font-black tabular-nums text-content-2">
                                                         {formatUnits(stock, pres)}
                                                     </span>
                                                     {!dead && minN > 0 && stock < minN && (
@@ -1027,7 +1027,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {!dead && maxN > 0 && stock > maxN && (
                                                         <span className="text-[9px] font-bold text-blue-400">↑{(stock - maxN).toLocaleString()}</span>
                                                     )}
-                                                    <span className="text-slate-200 text-[10px] select-none mx-0.5">|</span>
+                                                    <span className="text-content-3 text-[10px] select-none mx-0.5">|</span>
                                                     {noHistory && (
                                                         <span className="text-[10px] text-yellow-600 font-semibold italic">Sin ventas</span>
                                                     )}
@@ -1044,26 +1044,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         </span>
                                                     )}
                                                     {!dead && !noHistory && !isSparse && (
-                                                        <span className="text-[10px] text-slate-500 flex items-center gap-0.5 font-medium">
-                                                            <BarChart2 size={9} className="text-slate-400 shrink-0" />
+                                                        <span className="text-[10px] text-content-3 flex items-center gap-0.5 font-medium">
+                                                            <BarChart2 size={9} className="text-content-3 shrink-0" />
                                                             {v6m.toFixed(2)}/día
-                                                            {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                            {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                            <span className="text-slate-500 mx-0.5">·</span>
+                                                            {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-success ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                            {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-danger ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                            <span className="text-content-3 mx-0.5">·</span>
                                                             {Math.round(v6m * 30)}/mes
-                                                            {Number(row.units_sold_6m) > 0 && <><span className="text-slate-500 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
-                                                            <span className="text-slate-500 mx-0.5">·</span>
+                                                            {Number(row.units_sold_6m) > 0 && <><span className="text-content-3 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
+                                                            <span className="text-content-3 mx-0.5">·</span>
                                                             {row.last_sale_date
-                                                                ? <span className="font-semibold text-slate-600">{isBodega && row.last_sale_sucursal_id ? <span className="font-normal text-slate-500">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                                                                : <span className="text-slate-500 italic">sin venta</span>
+                                                                ? <span className="font-semibold text-content-2">{isBodega && row.last_sale_sucursal_id ? <span className="font-normal text-content-3">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                                                : <span className="text-content-3 italic">sin venta</span>
                                                             }
                                                         </span>
                                                     )}
                                                     {(dead || noHistory) && (
-                                                        <span className="text-[10px] font-semibold text-slate-500">
+                                                        <span className="text-[10px] font-semibold text-content-3">
                                                             {row.last_sale_date
-                                                                ? <><span className="text-slate-500">Últ.</span> {isBodega && row.last_sale_sucursal_id ? <span className="text-slate-500">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
-                                                                : <span className="text-slate-500 italic">sin ventas</span>
+                                                                ? <><span className="text-content-3">Últ.</span> {isBodega && row.last_sale_sucursal_id ? <span className="text-content-3">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
+                                                                : <span className="text-content-3 italic">sin ventas</span>
                                                             }
                                                         </span>
                                                     )}
@@ -1074,8 +1074,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                                     {/* Laboratorio */}
                                     <DataCell align="left" className="!py-2.5">
-                                        <span className="text-[11px] text-slate-700 truncate block max-w-[160px]">
-                                            {row.laboratorio_nombre || <span className="text-slate-500">—</span>}
+                                        <span className="text-[11px] text-content-2 truncate block max-w-[160px]">
+                                            {row.laboratorio_nombre || <span className="text-content-3">—</span>}
                                         </span>
                                     </DataCell>
 
@@ -1091,7 +1091,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         normXyz(row.draft_demand_variability) !== normXyz(row.demand_variability)
                                                     ) && (
                                                         <div className="flex items-center gap-0.5">
-                                                            <span className="text-[8px] text-slate-500">→</span>
+                                                            <span className="text-[8px] text-content-3">→</span>
                                                             <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
                                                         </div>
                                                     )}
@@ -1106,7 +1106,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         {(() => {
                                             const isEditMin = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min';
                                             const isEditMax = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max';
-                                            const sep = <span className="text-slate-500 mx-1 select-none text-[11px]">·</span>;
+                                            const sep = <span className="text-content-3 mx-1 select-none text-[11px]">·</span>;
 
                                             if (isEditMin) return (
                                                 <div className="flex flex-col items-center">
@@ -1146,9 +1146,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-[16px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-[16px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-warning/10 border-amber-400' : 'text-emerald-800 bg-success/10 border-emerald-400'}`} />
                                                         {sep}
-                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-blue-500 bg-blue-50 border-blue-300' : 'text-slate-500 bg-slate-50 border-slate-300'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
+                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-blue-500 bg-blue-50 border-blue-300' : 'text-content-3 bg-surface-card-hover border-slate-300'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                     {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
@@ -1158,7 +1158,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (isEditMax) return (
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-1.5">
-                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-amber-600 bg-amber-50 border-amber-400' : 'text-emerald-700 bg-emerald-50 border-emerald-400'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : ((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—')}</div>
+                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-warning bg-warning/10 border-amber-400' : 'text-emerald-700 bg-success/10 border-emerald-400'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : ((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—')}</div>
                                                         {sep}
                                                         <input autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
@@ -1201,7 +1201,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-[16px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-[16px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-success/10 border-emerald-400'}`} />
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                 </div>
@@ -1224,16 +1224,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (hasDraft) return isBodega ? (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—', stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
+                                                        {box((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—', stock < minN ? 'text-orange-600 bg-orange-50' : 'text-content-2 bg-surface-card', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
                                                         {sep}
-                                                        {box(maxN > 0 ? maxN.toLocaleString() : '—', stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
+                                                        {box(maxN > 0 ? maxN.toLocaleString() : '—', stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
                                                     </div>
                                                     {row.has_manual && (row.pub_min > 0 || row.pub_max > 0 || (row.draft_min ?? 0) > 0 || (row.draft_max ?? 0) > 0) && (
                                                         <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString()}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString()}</div>
                                                     )}
                                                     <span
                                                         title="Hover para ver sucursales pendientes"
-                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 cursor-help select-none"
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-warning/10 border border-warning/80 cursor-help select-none"
                                                         onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                         onMouseLeave={closeBodegaTooltip}
                                                     >
@@ -1244,11 +1244,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             ) : (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box((row.draft_min > 0 || row.draft_max > 0) ? (row.draft_min ?? 0).toLocaleString() : '—', 'text-amber-700 bg-amber-50', 'border-amber-200', openMinEdit)}
+                                                        {box((row.draft_min > 0 || row.draft_max > 0) ? (row.draft_min ?? 0).toLocaleString() : '—', 'text-amber-700 bg-warning/10', 'border-warning/30', openMinEdit)}
                                                         {sep}
                                                         {box(row.draft_max > 0 ? row.draft_max.toLocaleString() : '—', 'text-blue-700 bg-blue-50', 'border-blue-200', openMaxEdit)}
                                                     </div>
-                                                    {(minN > 0 || maxN > 0) && <div className="text-[9px] text-slate-500 tabular-nums">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
+                                                    {(minN > 0 || maxN > 0) && <div className="text-[9px] text-content-3 tabular-nums">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
                                                 </div>
                                             );
 
@@ -1265,16 +1265,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                                             if ((minN === 0 && maxN === 0) || (row.effective_min === null && row.effective_max === null)) return (
                                                 <div className="flex items-center gap-1">
-                                                    {box('—', 'text-slate-500 bg-white/60', 'border-slate-100', openMinEdit)}
+                                                    {box('—', 'text-content-3 bg-surface-card', 'border-slate-100', openMinEdit)}
                                                     {sep}
-                                                    {box('—', 'text-slate-500 bg-white/60', 'border-slate-100', openMaxEdit)}
+                                                    {box('—', 'text-content-3 bg-surface-card', 'border-slate-100', openMaxEdit)}
                                                 </div>
                                             );
 
                                             const pendingBadge = isBodega && row.has_pending_branches ? (
                                                 <span
                                                     title="Hover para ver sucursales pendientes"
-                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 cursor-help select-none"
+                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-warning/10 border border-warning/80 cursor-help select-none"
                                                     onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                     onMouseLeave={closeBodegaTooltip}
                                                 >
@@ -1286,9 +1286,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (isBodega && row.has_manual && (row.pub_min > 0 || row.pub_max > 0)) return (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
+                                                        {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-content-2 bg-surface-card', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
                                                         {sep}
-                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
+                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
                                                     </div>
                                                     <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
                                                     {pendingBadge}
@@ -1298,9 +1298,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             return (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
+                                                        {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-content-2 bg-surface-card', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
                                                         {sep}
-                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
+                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
                                                     </div>
                                                     {pendingBadge}
                                                 </div>
@@ -1355,16 +1355,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                                             return (
                                                 <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-slate-100 text-slate-600 border-slate-200 gap-1 whitespace-nowrap">
+                                                    <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-surface-card-hover text-content-2 border-slate-200 gap-1 whitespace-nowrap">
                                                         {baseLabel}
                                                         {ruleNote && <>
-                                                            <span className="w-px h-2.5 bg-slate-300 inline-block" />
-                                                            <span className="text-[9px] font-semibold text-slate-500">{ruleNote}</span>
+                                                            <span className="w-px h-2.5 bg-content-3 inline-block" />
+                                                            <span className="text-[9px] font-semibold text-content-3">{ruleNote}</span>
                                                         </>}
                                                     </span>
                                                     {hasRule && hasPres && (
                                                         <span
-                                                            className="text-[9px] font-semibold text-slate-500 tabular-nums"
+                                                            className="text-[9px] font-semibold text-content-3 tabular-nums"
                                                             title="MIN · MAX ya redondeado a la regla de despacho">
                                                             {applyRule(dispMin).toLocaleString()} · {applyRule(dispMax).toLocaleString()}
                                                         </span>
@@ -1468,13 +1468,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         zIndex: 10001,
                         pointerEvents: 'none',
                     }}
-                    className="bg-white/95 backdrop-blur-md border border-amber-200 rounded-xl shadow-xl px-3 py-2 min-w-[148px]"
+                    className="bg-surface-card backdrop-blur-md border border-warning/30 rounded-xl shadow-xl px-3 py-2 min-w-[148px]"
                 >
-                    <div className="text-[9px] font-bold text-amber-500 uppercase tracking-wide mb-1.5">Sucursales pendientes</div>
+                    <div className="text-[9px] font-bold text-warning uppercase tracking-wide mb-1.5">Sucursales pendientes</div>
                     {bodegaTooltip.pending.map(b => (
                         <div key={b.erp_sucursal_id} className="flex items-center justify-between gap-3">
-                            <span className="text-[10px] text-slate-600 font-medium">{ERP_NAMES[b.erp_sucursal_id] ?? `Suc. ${b.erp_sucursal_id}`}</span>
-                            <span className="text-[10px] text-amber-500 tabular-nums font-semibold">{(b.draft_min ?? 0).toLocaleString()}·{(b.draft_max ?? 0).toLocaleString()}</span>
+                            <span className="text-[10px] text-content-2 font-medium">{ERP_NAMES[b.erp_sucursal_id] ?? `Suc. ${b.erp_sucursal_id}`}</span>
+                            <span className="text-[10px] text-warning tabular-nums font-semibold">{(b.draft_min ?? 0).toLocaleString()}·{(b.draft_max ?? 0).toLocaleString()}</span>
                         </div>
                     ))}
                 </div>,
@@ -1483,14 +1483,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
             {/* ── Toast notification (portal → fuera de backdrop-filter, siempre en viewport) ── */}
             {toast && createPortal(
-                <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-red-600' : 'bg-[#0052CC]'}`}>
+                <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-red-600' : 'bg-brand'}`}>
                     {currentEmployee?.photo_url
                         ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/40" />
                         : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>
                     {toast.action && (
                         <button onClick={toast.action.onClick}
-                            className="ml-1 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/35 text-[11px] font-bold transition-colors shrink-0">
+                            className="ml-1 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-card text-[11px] font-bold transition-colors shrink-0">
                             {toast.action.label}
                         </button>
                     )}
@@ -1507,7 +1507,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {/* Overlay */}
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
                     {/* Card */}
-                    <div className="relative z-10 w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-white/70 shadow-[0_32px_80px_rgba(0,0,0,0.18)] overflow-hidden"
+                    <div className="relative z-10 w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[0_32px_80px_rgba(0,0,0,0.18)] overflow-hidden"
                         style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(40px) saturate(200%)' }}
                         onClick={e => e.stopPropagation()}>
 
@@ -1517,14 +1517,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
                                 {historyRow.foto_url
                                     ? <img src={historyRow.foto_url} alt="" className="w-full h-full object-contain" />
-                                    : <Package size={22} className="text-slate-400" />}
+                                    : <Package size={22} className="text-content-3" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{historyRow.product_name}</p>
-                                <p className="text-[10px] text-slate-500 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
+                                <p className="text-[13px] font-black text-content truncate leading-tight">{historyRow.product_name}</p>
+                                <p className="text-[10px] text-content-3 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
                             </div>
                             <button onClick={() => setHistoryRow(null)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-600 transition-colors shrink-0">
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 hover:text-content-2 transition-colors shrink-0">
                                 <X size={14} />
                             </button>
                         </div>
@@ -1533,50 +1533,50 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
                             {historyLoading && (
                                 <div className="flex justify-center py-10">
-                                    <Loader2 size={22} className="animate-spin text-slate-400" />
+                                    <Loader2 size={22} className="animate-spin text-content-3" />
                                 </div>
                             )}
                             {!historyLoading && historyLogs.length === 0 && (
                                 <div className="flex flex-col items-center gap-2 py-10">
-                                    <History size={28} className="text-slate-400" />
-                                    <p className="text-[12px] text-slate-500">Sin cambios registrados aún</p>
+                                    <History size={28} className="text-content-3" />
+                                    <p className="text-[12px] text-content-3">Sin cambios registrados aún</p>
                                 </div>
                             )}
                             {!historyLoading && historyLogs.map(log => {
                                 const d = log.details || {};
                                 const empPhoto = empPhotoMap[log.user_name];
                                 const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Toda la red' : (ERP_NAMES[d.sucursal_id] || '');
-                                const meta = MINMAX_HISTORY_ACTION_META[log.action] || { label: log.action, badge: 'bg-slate-100 text-slate-500' };
+                                const meta = MINMAX_HISTORY_ACTION_META[log.action] || { label: log.action, badge: 'bg-surface-card-hover text-content-3' };
                                 const dt = new Date(log.created_at);
                                 const dateStr = dt.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
                                 const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
                                 const fmt = v => v == null ? '—' : v;
                                 return (
-                                    <div key={log.id} className="flex items-start gap-3 bg-white/70 border border-white/80 rounded-2xl px-3.5 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+                                    <div key={log.id} className="flex items-start gap-3 bg-surface-card border border-border-card rounded-2xl px-3.5 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
                                         {/* Employee avatar */}
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
+                                        <div className="w-8 h-8 rounded-full bg-surface-card-hover border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                             {empPhoto
                                                 ? <img src={empPhoto} alt="" className="w-full h-full object-cover" />
-                                                : <span className="text-[10px] font-black text-slate-500">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}
+                                                : <span className="text-[10px] font-black text-content-3">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                                                <span className="text-[11px] font-bold text-slate-700 truncate">{log.user_name || 'Sistema'}</span>
-                                                <span className="text-[9px] text-slate-500 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
+                                                <span className="text-[11px] font-bold text-content-2 truncate">{log.user_name || 'Sistema'}</span>
+                                                <span className="text-[9px] text-content-3 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${meta.badge}`}>{meta.label}</span>
-                                                <span className="text-[11px] text-slate-600 tabular-nums">
-                                                    <span className="text-[9px] text-slate-500 font-bold mr-0.5">MIN</span>
-                                                    {d.old_min !== d.new_min && <span className="text-slate-500">{fmt(d.old_min)} → </span>}
-                                                    <strong className="text-slate-800">{fmt(d.new_min)}</strong>
+                                                <span className="text-[11px] text-content-2 tabular-nums">
+                                                    <span className="text-[9px] text-content-3 font-bold mr-0.5">MIN</span>
+                                                    {d.old_min !== d.new_min && <span className="text-content-3">{fmt(d.old_min)} → </span>}
+                                                    <strong className="text-content">{fmt(d.new_min)}</strong>
                                                 </span>
-                                                <span className="text-[11px] text-slate-600 tabular-nums">
-                                                    <span className="text-[9px] text-slate-500 font-bold mr-0.5">MAX</span>
-                                                    {d.old_max !== d.new_max && <span className="text-slate-500">{fmt(d.old_max)} → </span>}
-                                                    <strong className="text-slate-800">{fmt(d.new_max)}</strong>
+                                                <span className="text-[11px] text-content-2 tabular-nums">
+                                                    <span className="text-[9px] text-content-3 font-bold mr-0.5">MAX</span>
+                                                    {d.old_max !== d.new_max && <span className="text-content-3">{fmt(d.old_max)} → </span>}
+                                                    <strong className="text-content">{fmt(d.new_max)}</strong>
                                                 </span>
-                                                {sucName && <span className="text-[9px] text-slate-500 ml-auto shrink-0">{sucName}</span>}
+                                                {sucName && <span className="text-[9px] text-content-3 ml-auto shrink-0">{sucName}</span>}
                                             </div>
                                         </div>
                                     </div>

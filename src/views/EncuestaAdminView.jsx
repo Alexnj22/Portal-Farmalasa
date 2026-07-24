@@ -51,31 +51,31 @@ function avgBlockScore(respuestas, indices, invertedSet = new Set()) {
 }
 
 function scoreColor(s) {
-    if (s == null) return 'text-slate-500';
-    if (s >= 85) return 'text-emerald-600';
+    if (s == null) return 'text-content-3';
+    if (s >= 85) return 'text-success';
     if (s >= 70) return 'text-blue-600';
-    if (s >= 55) return 'text-amber-600';
+    if (s >= 55) return 'text-warning';
     return 'text-rose-600';
 }
 
 function scoreBg(s) {
-    if (s == null) return 'bg-slate-50 text-slate-500';
-    if (s >= 85) return 'bg-emerald-50 text-emerald-700';
+    if (s == null) return 'bg-surface-card-hover text-content-3';
+    if (s >= 85) return 'bg-success/10 text-emerald-700';
     if (s >= 70) return 'bg-blue-50 text-blue-700';
-    if (s >= 55) return 'bg-amber-50 text-amber-700';
+    if (s >= 55) return 'bg-warning/10 text-amber-700';
     return 'bg-rose-50 text-rose-700';
 }
 
 const BAR_COLORS = {
     blue: 'bg-blue-500', emerald: 'bg-emerald-500', amber: 'bg-amber-500',
     indigo: 'bg-indigo-500', purple: 'bg-purple-500', teal: 'bg-teal-500',
-    rose: 'bg-rose-500', slate: 'bg-slate-400',
+    rose: 'bg-rose-500', slate: 'bg-content-3',
 };
 
 const OPT_COLORS = {
-    A: { on: 'bg-emerald-500 text-white shadow-sm shadow-emerald-200', off: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
+    A: { on: 'bg-emerald-500 text-white shadow-sm shadow-emerald-200', off: 'bg-success/10 text-success hover:bg-success/10' },
     B: { on: 'bg-blue-500 text-white shadow-sm shadow-blue-200',       off: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
-    C: { on: 'bg-amber-500 text-white shadow-sm shadow-amber-200',     off: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
+    C: { on: 'bg-amber-500 text-white shadow-sm shadow-amber-200',     off: 'bg-warning/10 text-warning hover:bg-warning/10' },
     D: { on: 'bg-rose-500 text-white shadow-sm shadow-rose-200',       off: 'bg-rose-50 text-rose-600 hover:bg-rose-100' },
 };
 
@@ -118,7 +118,7 @@ const TIPO_STYLE = {
     clima:        'bg-indigo-100 text-indigo-700',
     satisfaccion: 'bg-teal-100 text-teal-700',
     desempeno:    'bg-purple-100 text-purple-700',
-    adhoc:        'bg-amber-100 text-amber-700',
+    adhoc:        'bg-warning/10 text-amber-700',
 };
 
 const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Personalizada' };
@@ -143,8 +143,8 @@ function SegmentControl({ options, value, onChange, compact = false }) {
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
                     className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-[8px]' : 'h-8 text-[9px] md:text-[10px]'} ${
                         value === opt.id
-                            ? 'bg-white text-[#0052CC] border-white shadow-sm scale-[1.02]'
-                            : 'bg-transparent text-slate-500 border-transparent hover:bg-white/70 hover:text-slate-700 hover:-translate-y-0.5 hover:shadow-sm'
+                            ? 'bg-white text-brand border-white shadow-sm scale-[1.02]'
+                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5 hover:shadow-sm'
                     }`}>
                     {opt.label}
                 </button>
@@ -471,9 +471,9 @@ export default function EncuestaAdminView() {
 
     // ── Header ────────────────────────────────────────────────────────────────
     const filtersContent = (
-        <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
-                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-white text-slate-800 border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
+                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-white text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
                     <ClipboardList size={12} strokeWidth={2.5} />
                     <span className="hidden sm:inline">Encuestas</span>
                 </button>
@@ -496,15 +496,15 @@ export default function EncuestaAdminView() {
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && canManage && (
-                        <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
+                        <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
                             editingSurvey
                                 ? 'border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
-                                : 'border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                : 'border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                         }`}>
 
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[14px]">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-amber-500' : 'bg-[#0052CC]'}`}>
+                                <h3 className="font-bold text-content flex items-center gap-2 text-[14px]">
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-amber-500' : 'bg-brand'}`}>
                                         {editingSurvey ? <Edit3 size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-0.5">
@@ -513,15 +513,15 @@ export default function EncuestaAdminView() {
                                 </h3>
                                 {editingSurvey && (
                                     <button onClick={resetSurveyForm}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group">
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
                                 )}
                             </div>
 
                             {sfError && (
-                                <div className="mb-3 bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 text-amber-700 px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
-                                    <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <div className="mb-3 bg-warning/80 backdrop-blur-sm border border-warning/60 text-amber-700 px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
+                                    <AlertCircle size={14} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                     <span className="leading-tight">{sfError}</span>
                                 </div>
                             )}
@@ -529,55 +529,55 @@ export default function EncuestaAdminView() {
                             <div className="space-y-3">
                                 {/* Título */}
                                 <div>
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
+                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
                                     <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
                                         placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-amber-300' : ''}`} />
+                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-amber-300' : ''}`} />
                                 </div>
 
                                 {/* Año + Estado */}
                                 <div className="grid grid-cols-[100px_1fr] gap-3 items-end">
                                     <div>
-                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
+                                        <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
                                         <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
-                                            className="w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300" />
                                     </div>
                                     <div>
-                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
+                                        <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
                                         <SegmentControl options={ESTADO_TABS} value={sfEstado} onChange={setSfEstado} compact />
                                     </div>
                                 </div>
 
                                 {/* Tipo */}
                                 <div>
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1">Tipo de encuesta</label>
+                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Tipo de encuesta</label>
                                     <SegmentControl options={TIPO_TABS} value={sfTipo} onChange={setSfTipo} />
-                                    <p className="text-[10px] text-slate-500 mt-1.5 ml-1 leading-snug">{TIPO_DESC[sfTipo]}</p>
+                                    <p className="text-[10px] text-content-3 mt-1.5 ml-1 leading-snug">{TIPO_DESC[sfTipo]}</p>
                                 </div>
 
                                 {/* Descripción */}
                                 <div>
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
+                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
                                     <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
                                         rows={2} placeholder="Objetivo específico de esta encuesta…"
-                                        className="w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-medium text-slate-700 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
+                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
                                 </div>
 
                                 {/* Fechas */}
                                 <div>
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
-                                            <div className="h-[42px] bg-white/50 border border-white/60 rounded-2xl focus-within:bg-white focus-within:border-[#0052CC]/30 focus-within:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] hover:bg-white/70 hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
-                                            <div className="h-[42px] bg-white/50 border border-white/60 rounded-2xl focus-within:bg-white focus-within:border-[#0052CC]/30 focus-within:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] hover:bg-white/70 hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
@@ -586,7 +586,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Privacidad */}
                                 <div>
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <Lock size={10} strokeWidth={2.5} /> Privacidad
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
@@ -594,7 +594,7 @@ export default function EncuestaAdminView() {
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfAnonima
                                                     ? 'bg-violet-50/80 border-violet-300/60 text-violet-700 shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
-                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             {sfAnonima ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
                                             {sfAnonima ? 'Anónima' : 'No anónima'}
@@ -602,20 +602,20 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setSfCompartir(v => !v)}
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfCompartir
-                                                    ? 'bg-emerald-50/80 border-emerald-300/60 text-emerald-700 shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
-                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                                    ? 'bg-success/80 border-emerald-300/60 text-emerald-700 shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
+                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <Globe size={13} strokeWidth={2.5} />
                                             {sfCompartir ? 'Resultados públicos' : 'Privado'}
                                         </button>
                                     </div>
-                                    <p className={`text-[10px] mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-violet-500' : 'text-slate-500'}`}>
+                                    <p className={`text-[10px] mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-violet-500' : 'text-content-3'}`}>
                                         <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfAnonima
                                             ? 'Internamente se guarda quién respondió, pero el empleado no verá su propia atribución.'
                                             : 'Cada respuesta es visible con el nombre del empleado.'}
                                     </p>
-                                    <p className={`text-[10px] mt-1 ml-1 flex items-start gap-1.5 leading-snug ${sfCompartir ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                    <p className={`text-[10px] mt-1 ml-1 flex items-start gap-1.5 leading-snug ${sfCompartir ? 'text-success' : 'text-content-3'}`}>
                                         <Globe size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfCompartir
                                             ? 'Los resultados generales serán visibles para los empleados.'
@@ -625,7 +625,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Audiencia */}
                                 <div>
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <Users size={10} strokeWidth={2.5} /> Dirigida a
                                     </label>
                                     <SegmentControl options={SCOPE_TABS} value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
@@ -636,8 +636,8 @@ export default function EncuestaAdminView() {
                                                 <button key={b.id} type="button" onClick={() => toggleScopeId(b.id)}
                                                     className={`flex items-center gap-1.5 px-3 h-7 rounded-xl border text-[11px] font-black transition-all ${
                                                         sfScopeIds.includes(b.id)
-                                                            ? 'bg-[#0052CC] border-[#0052CC] text-white shadow-sm'
-                                                            : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white hover:border-[#0052CC]/30'
+                                                            ? 'bg-brand border-brand text-white shadow-sm'
+                                                            : 'bg-surface-card border-border-card text-content-3 hover:bg-white hover:border-brand/30'
                                                     }`}>
                                                     <Building2 size={9} strokeWidth={2.5} /> {b.name}
                                                 </button>
@@ -657,14 +657,14 @@ export default function EncuestaAdminView() {
                                         return (
                                             <div className="mt-2 space-y-2">
                                                 {selectedEmps.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-white/60 rounded-2xl border border-white/80">
+                                                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-surface-card rounded-2xl border border-border-card">
                                                         {selectedEmps.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
-                                                                <div key={e.id} className="flex items-center gap-1.5 bg-[#0052CC]/10 text-[#0052CC] px-2.5 py-1 rounded-lg text-[11px] font-bold border border-[#0052CC]/20">
+                                                                <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand px-2.5 py-1 rounded-lg text-[11px] font-bold border border-brand/20">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
                                                                     <span>{fn}</span>
-                                                                    <button type="button" onClick={() => toggleScopeId(e.id)} className="hover:text-red-500 transition-colors ml-0.5">
+                                                                    <button type="button" onClick={() => toggleScopeId(e.id)} className="hover:text-danger transition-colors ml-0.5">
                                                                         <X size={10} strokeWidth={2.5} />
                                                                     </button>
                                                                 </div>
@@ -673,40 +673,40 @@ export default function EncuestaAdminView() {
                                                     </div>
                                                 )}
                                                 <div className="relative">
-                                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={13} strokeWidth={2.5} />
+                                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-3" size={13} strokeWidth={2.5} />
                                                     <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
                                                         placeholder="Buscar por nombre…"
-                                                        className="w-full pl-9 pr-4 py-2.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
-                                                    {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-red-400 transition-colors"><X size={12} strokeWidth={2.5} /></button>}
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
+                                                    {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-3 hover:text-danger transition-colors"><X size={12} strokeWidth={2.5} /></button>}
                                                 </div>
                                                 {empResults.length > 0 && (
-                                                    <div className="bg-white/90 backdrop-blur-xl border border-white/90 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden">
+                                                    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden">
                                                         {empResults.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
                                                                 <button key={e.id} type="button"
                                                                     onClick={() => { toggleScopeId(e.id); setSfEmpSearch(''); }}
-                                                                    className="w-full px-4 py-2.5 hover:bg-[#0052CC]/10 text-left flex items-center gap-3 transition-colors border-b border-slate-50 last:border-0">
+                                                                    className="w-full px-4 py-2.5 hover:bg-brand/10 text-left flex items-center gap-3 transition-colors border-b border-slate-50 last:border-0">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={24} />
                                                                     <div className="flex-1 min-w-0">
-                                                                        <p className="text-[12px] font-bold text-slate-700">{fn}</p>
-                                                                        <p className="text-[10px] text-slate-500">{e.branch?.name}</p>
+                                                                        <p className="text-[12px] font-bold text-content-2">{fn}</p>
+                                                                        <p className="text-[10px] text-content-3">{e.branch?.name}</p>
                                                                     </div>
-                                                                    <Plus size={13} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+                                                                    <Plus size={13} className="text-brand shrink-0" strokeWidth={2.5} />
                                                                 </button>
                                                             );
                                                         })}
                                                     </div>
                                                 )}
                                                 {q && empResults.length === 0 && (
-                                                    <p className="text-[11px] text-slate-500 text-center py-2">Sin resultados para "{sfEmpSearch}"</p>
+                                                    <p className="text-[11px] text-content-3 text-center py-2">Sin resultados para "{sfEmpSearch}"</p>
                                                 )}
                                             </div>
                                         );
                                     })()}
 
                                     {sfScope === 'roles' && (
-                                        <p className="text-[11px] text-slate-500 mt-2 ml-1">
+                                        <p className="text-[11px] text-content-3 mt-2 ml-1">
                                             Solo aplicará a jefes/as de sala registrados en el sistema.
                                         </p>
                                     )}
@@ -717,7 +717,7 @@ export default function EncuestaAdminView() {
                                     className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingSurvey
                                             ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'
-                                            : 'bg-[#0052CC] hover:bg-[#003D99]'
+                                            : 'bg-brand hover:bg-brand-hover'
                                     }`}>
                                     {savingSurvey
                                         ? <><Loader2 size={15} className="animate-spin" /> Procesando…</>
@@ -731,10 +731,10 @@ export default function EncuestaAdminView() {
 
                     {/* ── Response form ────────────────────────────────────────── */}
                     {leftPanel === 'response-form' && canManage && (
-                        <div className="bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                        <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-amber-500' : 'bg-[#0052CC]'}`}>
+                                <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-amber-500' : 'bg-brand'}`}>
                                         {editingResponse ? <Edit3 size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-1">
@@ -742,7 +742,7 @@ export default function EncuestaAdminView() {
                                     </span>
                                 </h3>
                                 <button onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}
-                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group">
+                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                     <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                 </button>
                             </div>
@@ -750,18 +750,18 @@ export default function EncuestaAdminView() {
                             <div className="space-y-5">
                                 {/* Empleado */}
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">Empleado</label>
+                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Empleado</label>
                                     {editingResponse ? (
-                                        <div className="flex items-center gap-2.5 py-3 px-4 bg-white/50 border border-white/60 rounded-2xl">
+                                        <div className="flex items-center gap-2.5 py-3 px-4 bg-surface-card border border-border-card rounded-2xl">
                                             <PersonAvatar
                                                 src={editingResponse.employee?.photo_url}
                                                 name={`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
                                                 size={24} />
                                             <div>
-                                                <div className="text-[13px] font-bold text-slate-700">
+                                                <div className="text-[13px] font-bold text-content-2">
                                                     {`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
                                                 </div>
-                                                <div className="text-[10px] text-slate-500">{editingResponse.employee?.branch?.name}</div>
+                                                <div className="text-[10px] text-content-3">{editingResponse.employee?.branch?.name}</div>
                                             </div>
                                         </div>
                                     ) : (
@@ -774,21 +774,21 @@ export default function EncuestaAdminView() {
 
                                 {/* Rol */}
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">Rol en encuesta</label>
+                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Rol en encuesta</label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <button type="button" onClick={() => setRfIsJefe(false)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
                                                 !rfIsJefe
-                                                    ? 'bg-white/80 border-[#0052CC]/30 text-[#0052CC] shadow-[0_2px_10px_rgba(0,82,204,0.2)]'
-                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                                    ? 'bg-surface-card border-brand/30 text-brand shadow-[0_2px_10px_rgba(0,82,204,0.2)]'
+                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <Users size={14} strokeWidth={2.5} /> Empleado/a
                                         </button>
                                         <button type="button" onClick={() => setRfIsJefe(true)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
                                                 rfIsJefe
-                                                    ? 'bg-amber-50/80 border-amber-300/60 text-amber-700 shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
-                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                                    ? 'bg-warning/80 border-amber-300/60 text-amber-700 shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
+                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <UserCheck size={14} strokeWidth={2.5} /> Jefe/a de sala
                                         </button>
@@ -799,10 +799,10 @@ export default function EncuestaAdminView() {
                                 {formPreguntas.length > 0 && (
                                     <div className="flex items-center gap-3">
                                         <div className="flex-1 h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
-                                            <div className="h-full rounded-full bg-[#0052CC] transition-all duration-300"
+                                            <div className="h-full rounded-full bg-brand transition-all duration-300"
                                                 style={{ width: `${(rfAnsweredCount / formPreguntas.length) * 100}%` }} />
                                         </div>
-                                        <span className="text-[11px] font-black text-slate-500 shrink-0 tabular-nums">
+                                        <span className="text-[11px] font-black text-content-3 shrink-0 tabular-nums">
                                             {rfAnsweredCount}/{formPreguntas.length}
                                         </span>
                                     </div>
@@ -815,30 +815,30 @@ export default function EncuestaAdminView() {
                                     const isOpen = rfOpenBloques['general'];
                                     const answered = gqs.filter(p => rfAnswers[p.indice] !== null).length;
                                     return (
-                                        <div className="rounded-2xl border border-white/70 bg-white/30 backdrop-blur-sm overflow-hidden">
-                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-white/30 transition-colors"
+                                        <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
+                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-card transition-colors"
                                                 onClick={() => setRfOpenBloques(p => ({ ...p, general: !p.general }))}>
                                                 <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 bg-slate-500">
                                                     G
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <span className="text-[12px] font-black text-slate-800">Datos Generales</span>
-                                                    <span className="ml-2 text-[10px] text-slate-500 font-semibold">{answered}/{gqs.length}</span>
+                                                    <span className="text-[12px] font-black text-content">Datos Generales</span>
+                                                    <span className="ml-2 text-[10px] text-content-3 font-semibold">{answered}/{gqs.length}</span>
                                                 </div>
-                                                {answered === gqs.length && <Check size={13} className="text-emerald-500 shrink-0" strokeWidth={3} />}
-                                                {isOpen ? <ChevronUp size={13} className="text-slate-500 shrink-0" /> : <ChevronDown size={13} className="text-slate-500 shrink-0" />}
+                                                {answered === gqs.length && <Check size={13} className="text-success shrink-0" strokeWidth={3} />}
+                                                {isOpen ? <ChevronUp size={13} className="text-content-3 shrink-0" /> : <ChevronDown size={13} className="text-content-3 shrink-0" />}
                                             </button>
                                             {isOpen && (
-                                                <div className="border-t border-white/50">
+                                                <div className="border-t border-border-card">
                                                     {gqs.map((p, qi) => {
                                                         const val = rfAnswers[p.indice];
                                                         return (
                                                             <div key={p.id}
-                                                                className={`flex items-start gap-3 px-4 py-3 ${qi < gqs.length - 1 ? 'border-b border-white/40' : ''}`}>
-                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-white/60 flex items-center justify-center text-[8px] font-black text-slate-500 mt-0.5">
+                                                                className={`flex items-start gap-3 px-4 py-3 ${qi < gqs.length - 1 ? 'border-b border-border-card' : ''}`}>
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[8px] font-black text-content-3 mt-0.5">
                                                                     {p.numero}
                                                                 </span>
-                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug pt-0.5 min-w-0">{p.texto}</p>
+                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
                                                                 <div className="shrink-0 flex items-center gap-1 mt-0.5">
                                                                     {['A','B','C','D'].map(opt => {
                                                                         const oc = OPT_COLORS[opt];
@@ -866,32 +866,32 @@ export default function EncuestaAdminView() {
                                     if (!bqs.length) return null;
                                     const isOpen = rfOpenBloques[bloque.id];
                                     const answered = bqs.filter(p => rfAnswers[p.indice] !== null).length;
-                                    const barCls = BAR_COLORS[bloque.color] || 'bg-slate-400';
+                                    const barCls = BAR_COLORS[bloque.color] || 'bg-content-3';
                                     return (
-                                        <div key={bloque.id} className="rounded-2xl border border-white/70 bg-white/30 backdrop-blur-sm overflow-hidden">
-                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-white/30 transition-colors"
+                                        <div key={bloque.id} className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
+                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-card transition-colors"
                                                 onClick={() => setRfOpenBloques(p => ({ ...p, [bloque.id]: !p[bloque.id] }))}>
                                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 ${barCls}`}>
                                                     B{bloque.numero}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <span className="text-[12px] font-black text-slate-800">{bloque.nombre}</span>
-                                                    <span className="ml-2 text-[10px] text-slate-500 font-semibold">{answered}/{bqs.length}</span>
+                                                    <span className="text-[12px] font-black text-content">{bloque.nombre}</span>
+                                                    <span className="ml-2 text-[10px] text-content-3 font-semibold">{answered}/{bqs.length}</span>
                                                 </div>
-                                                {answered === bqs.length && <Check size={13} className="text-emerald-500 shrink-0" strokeWidth={3} />}
-                                                {isOpen ? <ChevronUp size={13} className="text-slate-500 shrink-0" /> : <ChevronDown size={13} className="text-slate-500 shrink-0" />}
+                                                {answered === bqs.length && <Check size={13} className="text-success shrink-0" strokeWidth={3} />}
+                                                {isOpen ? <ChevronUp size={13} className="text-content-3 shrink-0" /> : <ChevronDown size={13} className="text-content-3 shrink-0" />}
                                             </button>
                                             {isOpen && (
-                                                <div className="border-t border-white/50">
+                                                <div className="border-t border-border-card">
                                                     {bqs.map((p, qi) => {
                                                         const val = rfAnswers[p.indice];
                                                         return (
                                                             <div key={p.id}
-                                                                className={`flex items-start gap-3 px-4 py-3 ${qi < bqs.length - 1 ? 'border-b border-white/40' : ''}`}>
-                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-white/60 flex items-center justify-center text-[8px] font-black text-slate-500 mt-0.5">
+                                                                className={`flex items-start gap-3 px-4 py-3 ${qi < bqs.length - 1 ? 'border-b border-border-card' : ''}`}>
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[8px] font-black text-content-3 mt-0.5">
                                                                     {p.numero}
                                                                 </span>
-                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug pt-0.5 min-w-0">{p.texto}</p>
+                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
                                                                 {p.tipo === 'numerica' ? (
                                                                     <div className="shrink-0 flex items-center gap-0.5 mt-0.5 flex-wrap justify-end">
                                                                         {[1,2,3,4,5,6,7,8,9,10].map(n => {
@@ -935,17 +935,17 @@ export default function EncuestaAdminView() {
 
                                 {/* Comentario */}
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
+                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
                                     <textarea value={rfComentario} onChange={e => setRfComentario(e.target.value)} rows={3}
                                         placeholder="¿Qué mejorarías del ambiente de trabajo?"
-                                        className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-slate-700 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
+                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
                                 </div>
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveResponse}
                                     disabled={(!editingResponse && !rfEmployeeId) || savingResponse || !canManage}
                                     className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
-                                        editingResponse ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-[#0052CC] hover:bg-[#003D99]'
+                                        editingResponse ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'
                                     }`}>
                                     {savingResponse
                                         ? <><Loader2 size={16} className="animate-spin" /> Procesando…</>
@@ -963,19 +963,19 @@ export default function EncuestaAdminView() {
                     <div className="space-y-5 pt-4 px-3 md:px-4">
 
                         {loadingSurveys ? (
-                            <div className="flex items-center justify-center h-40 gap-2 text-slate-500">
+                            <div className="flex items-center justify-center h-40 gap-2 text-content-3">
                                 <Loader2 size={18} className="animate-spin" />
                                 <span className="text-[12px] font-semibold">Cargando…</span>
                             </div>
                         ) : surveys.length === 0 ? (
                             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                                 <div className="relative group flex flex-col items-center text-center">
-                                    <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-[#0052CC]" />
-                                    <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-[#0052CC] group-hover:-translate-y-2 transition-all duration-700">
+                                    <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-brand" />
+                                    <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-brand group-hover:-translate-y-2 transition-all duration-700">
                                         <BarChart2 size={40} strokeWidth={2} />
                                     </div>
-                                    <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">Sin encuestas aún</h3>
-                                    <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                                    <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">Sin encuestas aún</h3>
+                                    <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">
                                         Crea la primera encuesta usando el formulario de la izquierda.
                                     </p>
                                 </div>
@@ -989,10 +989,10 @@ export default function EncuestaAdminView() {
                             return (
                                 <div key={s.id} className={`rounded-[2.5rem] border flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
                                     isExpanded
-                                        ? 'border-[#0052CC]/20 shadow-[0_12px_50px_rgba(0,0,0,0.10)] bg-white/80 backdrop-blur-2xl z-10'
+                                        ? 'border-brand/20 shadow-[0_12px_50px_rgba(0,0,0,0.10)] bg-surface-card backdrop-blur-2xl z-10'
                                         : isEditing
-                                            ? 'bg-white/95 backdrop-blur-xl border-amber-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
-                                            : 'border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-white/60 backdrop-blur-2xl'
+                                            ? 'bg-surface-card backdrop-blur-xl border-amber-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
+                                            : 'border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
                                 }`}>
 
                                     {/* ── Card header ── */}
@@ -1003,13 +1003,13 @@ export default function EncuestaAdminView() {
                                         <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                             {isExpanded && (
                                                 <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/80 border border-white/60 text-slate-500 hover:bg-white hover:text-slate-700 shadow-sm transition-all active:scale-[0.97]">
+                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-surface-card border border-border-card text-content-3 hover:bg-white hover:text-content-2 shadow-sm transition-all active:scale-[0.97]">
                                                     <ChevronUp size={10} strokeWidth={2.5} /> Colapsar
                                                 </button>
                                             )}
                                             {canManage && (
                                             <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
-                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md'}`}
+                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-warning/10 text-warning border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md'}`}
                                                 title="Editar encuesta">
                                                 <Edit3 size={14} strokeWidth={2.5} />
                                             </button>
@@ -1019,42 +1019,42 @@ export default function EncuestaAdminView() {
                                         {/* Badges */}
                                         <div className="flex flex-wrap items-center gap-2 pr-28">
                                             <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                                s.estado === 'activa'    ? 'text-emerald-600 bg-emerald-50 border-emerald-200/50' :
+                                                s.estado === 'activa'    ? 'text-success bg-success/10 border-success/50' :
                                                 s.estado === 'cerrada'   ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
-                                                s.estado === 'borrador'  ? 'text-slate-500 bg-slate-50 border-slate-200/50' :
-                                                                           'text-slate-500 bg-slate-100 border-slate-200/50'
+                                                s.estado === 'borrador'  ? 'text-content-3 bg-surface-card-hover border-slate-200/50' :
+                                                                           'text-content-3 bg-surface-card-hover border-slate-200/50'
                                             }`}>{s.estado}</span>
                                             <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
                                                 s.tipo === 'clima'        ? 'text-indigo-600 bg-indigo-50 border-indigo-200/50' :
                                                 s.tipo === 'satisfaccion' ? 'text-teal-600 bg-teal-50 border-teal-200/50' :
                                                 s.tipo === 'desempeno'    ? 'text-purple-600 bg-purple-50 border-purple-200/50' :
-                                                                            'text-amber-600 bg-amber-50 border-amber-200/50'
+                                                                            'text-warning bg-warning/10 border-warning/50'
                                             }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
                                             {s.anonima && (
                                                 <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
                                                     <EyeOff size={10} strokeWidth={2.5} /> Anónima
                                                 </span>
                                             )}
-                                            <span className="text-[10px] font-bold text-slate-500 tracking-widest bg-white/50 border border-white/60 px-2 py-1 rounded-md">
+                                            <span className="text-[10px] font-bold text-content-3 tracking-widest bg-surface-card border border-border-card px-2 py-1 rounded-md">
                                                 {s.año}
                                             </span>
                                         </div>
 
                                         {/* Title */}
                                         <div>
-                                            <h4 className="font-black text-slate-800 text-[18px] leading-tight mb-1 tracking-tight">{s.nombre}</h4>
-                                            {s.descripcion && <p className="text-slate-500 text-[13px] leading-relaxed font-medium line-clamp-2">{s.descripcion}</p>}
+                                            <h4 className="font-black text-content text-[18px] leading-tight mb-1 tracking-tight">{s.nombre}</h4>
+                                            {s.descripcion && <p className="text-content-3 text-[13px] leading-relaxed font-medium line-clamp-2">{s.descripcion}</p>}
                                         </div>
 
                                         {/* Footer */}
-                                        <div className="flex items-center justify-between pt-3 border-t border-white/60">
-                                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                                        <div className="flex items-center justify-between pt-3 border-t border-border-card">
+                                            <div className="flex items-center gap-2 text-[11px] font-bold text-content-3">
                                                 <ClipboardList size={14} strokeWidth={2} />
                                                 {count} {count === 1 ? 'respuesta' : 'respuestas'}
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {(s.fecha_inicio || s.fecha_fin) && (
-                                                    <div className="flex items-center gap-1 text-[11px] text-slate-600 font-bold uppercase tracking-widest">
+                                                    <div className="flex items-center gap-1 text-[11px] text-content-2 font-bold uppercase tracking-widest">
                                                         <CalendarRange size={12} strokeWidth={2} />
                                                         {s.fecha_inicio}{s.fecha_fin ? ` → ${s.fecha_fin}` : ''}
                                                     </div>
@@ -1067,7 +1067,7 @@ export default function EncuestaAdminView() {
                                                 )}
                                                 {!isExpanded && (
                                                     <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#0052CC] px-3 h-7 rounded-full bg-[#0052CC]/10 hover:bg-[#0052CC]/20 transition-colors border border-[#0052CC]/20 active:scale-[0.97]">
+                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-brand px-3 h-7 rounded-full bg-brand/10 hover:bg-brand/20 transition-colors border border-brand/20 active:scale-[0.97]">
                                                         Ver detalle <ChevronDown size={10} strokeWidth={2.5} />
                                                     </button>
                                                 )}
@@ -1077,32 +1077,32 @@ export default function EncuestaAdminView() {
 
                                     {/* ── Expanded detail ── */}
                                     {isExpanded && (
-                                        <div className="border-t border-[#0052CC]/10 px-6 pb-6 pt-5 space-y-5">
+                                        <div className="border-t border-brand/10 px-6 pb-6 pt-5 space-y-5">
 
                                             {/* Stats + actions row */}
                                             <div className="flex items-center justify-between flex-wrap gap-3">
                                                 <div className="flex items-center gap-5">
                                                     <div className="text-center">
-                                                        <p className="text-[22px] font-black text-slate-800 leading-none">{respuestas.length}</p>
-                                                        <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-0.5">Respuestas</p>
+                                                        <p className="text-[22px] font-black text-content leading-none">{respuestas.length}</p>
+                                                        <p className="text-[9px] text-content-2 font-black uppercase tracking-widest mt-0.5">Respuestas</p>
                                                     </div>
                                                     {pendingEmployees.length > 0 && (
                                                         <div className="text-center">
-                                                            <p className="text-[22px] font-black text-amber-600 leading-none">{pendingEmployees.length}</p>
-                                                            <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-0.5">Pendientes</p>
+                                                            <p className="text-[22px] font-black text-warning leading-none">{pendingEmployees.length}</p>
+                                                            <p className="text-[9px] text-content-2 font-black uppercase tracking-widest mt-0.5">Pendientes</p>
                                                         </div>
                                                     )}
                                                     {globalAvg != null && (
                                                         <div className="text-center">
                                                             <p className={`text-[22px] font-black leading-none ${scoreColor(globalAvg)}`}>{globalAvg}%</p>
-                                                            <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-0.5">Promedio</p>
+                                                            <p className="text-[9px] text-content-2 font-black uppercase tracking-widest mt-0.5">Promedio</p>
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {canManage && (
                                                     <button onClick={() => openResponseForm()}
-                                                        className="flex items-center gap-2 px-4 py-2.5 bg-[#0052CC] hover:bg-[#003D99] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]">
+                                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]">
                                                         <Plus size={14} strokeWidth={2.5} /> Agregar
                                                     </button>
                                                     )}
@@ -1111,8 +1111,8 @@ export default function EncuestaAdminView() {
 
                                             {/* Pending employees */}
                                             {pendingEmployees.length > 0 && (
-                                                <div className="p-4 rounded-[1.5rem] border border-amber-200/60 bg-amber-50/60 backdrop-blur-xl flex flex-col gap-2.5">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
+                                                <div className="p-4 rounded-[1.5rem] border border-warning/60 bg-warning/60 backdrop-blur-xl flex flex-col gap-2.5">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-warning flex items-center gap-1.5">
                                                         <AlertCircle size={12} strokeWidth={2.5} />
                                                         Pendientes ({pendingEmployees.length})
                                                     </p>
@@ -1120,7 +1120,7 @@ export default function EncuestaAdminView() {
                                                         {pendingEmployees.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
-                                                                <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200/60">
+                                                                <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/60">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
                                                                     <span className="text-[10px] font-black text-amber-700">{fn}</span>
                                                                 </div>
@@ -1132,36 +1132,36 @@ export default function EncuestaAdminView() {
 
                                             {/* Responses */}
                                             {loadingDetail ? (
-                                                <div className="flex items-center justify-center h-32 gap-2 text-slate-500">
+                                                <div className="flex items-center justify-center h-32 gap-2 text-content-3">
                                                     <Loader2 size={16} className="animate-spin" />
                                                     <span className="text-[12px] font-semibold">Cargando…</span>
                                                 </div>
                                             ) : respuestas.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center min-h-[180px] text-center">
-                                                    <ClipboardList size={32} strokeWidth={1.5} className="text-slate-300 mb-3" />
-                                                    <p className="text-[13px] font-bold text-slate-500">Sin respuestas registradas</p>
-                                                    <p className="text-[11px] text-slate-500 mt-1">Usa el botón "Agregar" para comenzar.</p>
+                                                    <ClipboardList size={32} strokeWidth={1.5} className="text-content-3 mb-3" />
+                                                    <p className="text-[13px] font-bold text-content-3">Sin respuestas registradas</p>
+                                                    <p className="text-[11px] text-content-3 mt-1">Usa el botón "Agregar" para comenzar.</p>
                                                 </div>
                                             ) : (
                                                 responsesByBranch.map(([branchName, group]) => {
                                                     const allRows = [...group.jefes, ...group.colabs];
                                                     return (
-                                                        <div key={branchName} className="rounded-[1.75rem] border border-white/80 bg-white/40 backdrop-blur-xl overflow-hidden">
-                                                            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/50 bg-white/20">
-                                                                <Building2 size={13} strokeWidth={2.5} className="text-slate-400" />
-                                                                <span className="text-[12px] font-black text-slate-700">{branchName}</span>
-                                                                <span className="text-[11px] text-slate-500">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
+                                                        <div key={branchName} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden">
+                                                            <div className="flex items-center gap-2 px-5 py-3 border-b border-border-card bg-surface-card">
+                                                                <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
+                                                                <span className="text-[12px] font-black text-content-2">{branchName}</span>
+                                                                <span className="text-[11px] text-content-3">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
                                                             </div>
                                                             <div className="overflow-x-auto">
                                                                 <table className="w-full min-w-[520px]">
                                                                     <thead>
-                                                                        <tr className="border-b border-white/50">
-                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-slate-600">Empleado</th>
-                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-slate-600">Rol</th>
+                                                                        <tr className="border-b border-border-card">
+                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-content-2">Empleado</th>
+                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2">Rol</th>
                                                                             {bloques.map(b => (
-                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-[8px] font-black uppercase tracking-wider text-slate-600 cursor-help">B{b.numero}</th>
+                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-[8px] font-black uppercase tracking-wider text-content-2 cursor-help">B{b.numero}</th>
                                                                             ))}
-                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-slate-600">Global</th>
+                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2">Global</th>
                                                                             <th className="py-2.5 w-20 pr-3" />
                                                                         </tr>
                                                                     </thead>
@@ -1174,20 +1174,20 @@ export default function EncuestaAdminView() {
                                                                             const isRowExp = expandedResponseId === row.id;
                                                                             return (
                                                                                 <React.Fragment key={row.id}>
-                                                                                    <tr className={`border-b border-white/40 last:border-0 transition-colors group/row ${isRowExp ? 'bg-[#0052CC]/5' : 'hover:bg-white/20'}`}>
+                                                                                    <tr className={`border-b border-border-card last:border-0 transition-colors group/row ${isRowExp ? 'bg-brand/5' : 'hover:bg-surface-card'}`}>
                                                                                         <td className="py-2.5 pl-5 pr-3">
                                                                                             <button
                                                                                                 className="flex items-center gap-2 text-left w-full"
                                                                                                 onClick={() => setExpandedResponseId(isRowExp ? null : row.id)}>
                                                                                                 <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
-                                                                                                <span className="text-[12px] font-black text-slate-800">{nombre}</span>
+                                                                                                <span className="text-[12px] font-black text-content">{nombre}</span>
                                                                                                 {isRowExp
-                                                                                                    ? <ChevronUp size={10} className="text-[#0052CC] ml-1 shrink-0" strokeWidth={2.5} />
-                                                                                                    : <ChevronDown size={10} className="text-slate-300 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity" strokeWidth={2.5} />}
+                                                                                                    ? <ChevronUp size={10} className="text-brand ml-1 shrink-0" strokeWidth={2.5} />
+                                                                                                    : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity" strokeWidth={2.5} />}
                                                                                             </button>
                                                                                         </td>
                                                                                         <td className="py-2.5 px-2 text-center">
-                                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-warning/10 text-amber-700' : 'bg-surface-card-hover text-content-3'}`}>
                                                                                                 {row.is_jefe ? 'Jefe/a' : 'Colab.'}
                                                                                             </span>
                                                                                         </td>
@@ -1197,7 +1197,7 @@ export default function EncuestaAdminView() {
                                                                                                 <td key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="py-2.5 px-2 text-center cursor-help">
                                                                                                     {sc != null
                                                                                                         ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(sc)}`}>{sc}</span>
-                                                                                                        : <span className="text-slate-200 text-[10px]">—</span>}
+                                                                                                        : <span className="text-content-3 text-[10px]">—</span>}
                                                                                                 </td>
                                                                                             );
                                                                                         })}
@@ -1214,18 +1214,18 @@ export default function EncuestaAdminView() {
                                                                                                         <Check size={10} strokeWidth={3} />
                                                                                                     </button>
                                                                                                     <button onClick={() => setConfirmDelete(null)}
-                                                                                                        className="w-6 h-6 rounded-full bg-white/80 text-slate-500 flex items-center justify-center hover:bg-white transition-colors border border-white/60">
+                                                                                                        className="w-6 h-6 rounded-full bg-surface-card text-content-3 flex items-center justify-center hover:bg-white transition-colors border border-border-card">
                                                                                                         <X size={10} strokeWidth={3} />
                                                                                                     </button>
                                                                                                 </div>
                                                                                             ) : canManage ? (
                                                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-center">
                                                                                                     <button onClick={() => openResponseForm(row)}
-                                                                                                        className="p-1.5 rounded-full bg-white/80 text-amber-500 border border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
+                                                                                                        className="p-1.5 rounded-full bg-surface-card text-warning border border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
                                                                                                         <Edit3 size={11} strokeWidth={2.5} />
                                                                                                     </button>
                                                                                                     <button onClick={() => setConfirmDelete(row.id)}
-                                                                                                        className="p-1.5 rounded-full bg-white/80 text-red-400 border border-red-50 hover:bg-red-50 hover:text-red-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
+                                                                                                        className="p-1.5 rounded-full bg-surface-card text-danger border border-danger/30 hover:bg-danger/10 hover:text-danger hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
                                                                                                         <Trash2 size={11} strokeWidth={2.5} />
                                                                                                     </button>
                                                                                                 </div>
@@ -1236,17 +1236,17 @@ export default function EncuestaAdminView() {
                                                                                     {/* Expanded Q&A viewer */}
                                                                                     {isRowExp && (
                                                                                         <tr>
-                                                                                            <td colSpan={bloques.length + 4} className="px-5 pb-5 pt-2 bg-[#0052CC]/[0.03]">
+                                                                                            <td colSpan={bloques.length + 4} className="px-5 pb-5 pt-2 bg-brand/[0.03]">
                                                                                                 <div className="space-y-2.5">
                                                                                                     {/* Datos generales (P1 tiempo + P3 razón) */}
                                                                                                     {(() => {
                                                                                                         const gqs = preguntas.filter(p => p.bloque_id === null && p.tipo !== 'sucursal');
                                                                                                         if (!gqs.length) return null;
                                                                                                         return (
-                                                                                                            <div className="rounded-xl border border-white/70 bg-white/60 overflow-hidden">
-                                                                                                                <div className="flex items-center gap-2 px-4 py-2 border-b border-white/50 bg-slate-100/40">
+                                                                                                            <div className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
+                                                                                                                <div className="flex items-center gap-2 px-4 py-2 border-b border-border-card bg-surface-card-hover/40">
                                                                                                                     <div className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 bg-slate-500">G</div>
-                                                                                                                    <span className="text-[11px] font-black text-slate-700">Datos Generales</span>
+                                                                                                                    <span className="text-[11px] font-black text-content-2">Datos Generales</span>
                                                                                                                 </div>
                                                                                                                 <div className="divide-y divide-white/40">
                                                                                                                     {gqs.map(p => {
@@ -1256,11 +1256,11 @@ export default function EncuestaAdminView() {
                                                                                                                             : ans;
                                                                                                                         return (
                                                                                                                             <div key={p.id} className="flex items-center gap-3 px-4 py-2">
-                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-white/60 flex items-center justify-center text-[7px] font-black text-slate-500">{p.numero}</span>
-                                                                                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug min-w-0">{p.texto}</p>
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[7px] font-black text-content-3">{p.numero}</span>
+                                                                                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {ans
-                                                                                                                                    ? <span className="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{optLabel || ans}</span>
-                                                                                                                                    : <span className="shrink-0 text-[10px] text-slate-500">—</span>}
+                                                                                                                                    ? <span className="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2">{optLabel || ans}</span>
+                                                                                                                                    : <span className="shrink-0 text-[10px] text-content-3">—</span>}
                                                                                                                             </div>
                                                                                                                         );
                                                                                                                     })}
@@ -1271,16 +1271,16 @@ export default function EncuestaAdminView() {
                                                                                                     {bloques.map(bloque => {
                                                                                                         const bqs = preguntas.filter(p => p.bloque_id === bloque.id && p.tipo !== 'sucursal');
                                                                                                         if (!bqs.length) return null;
-                                                                                                        const barCls = BAR_COLORS[bloque.color] || 'bg-slate-400';
+                                                                                                        const barCls = BAR_COLORS[bloque.color] || 'bg-content-3';
                                                                                                         const bsc = blockScore(row.responses || [], bloque.indices || [], invertedIndices);
                                                                                                         return (
-                                                                                                            <div key={bloque.id} className="rounded-xl border border-white/70 bg-white/60 overflow-hidden">
-                                                                                                                <div className={`flex items-center justify-between px-4 py-2 border-b border-white/50 ${barCls} bg-opacity-10`}>
+                                                                                                            <div key={bloque.id} className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
+                                                                                                                <div className={`flex items-center justify-between px-4 py-2 border-b border-border-card ${barCls} bg-opacity-10`}>
                                                                                                                     <div className="flex items-center gap-2">
                                                                                                                         <div className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 ${barCls}`}>
                                                                                                                             B{bloque.numero}
                                                                                                                         </div>
-                                                                                                                        <span className="text-[11px] font-black text-slate-700">{bloque.nombre}</span>
+                                                                                                                        <span className="text-[11px] font-black text-content-2">{bloque.nombre}</span>
                                                                                                                     </div>
                                                                                                                     {bsc != null && (
                                                                                                                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${scoreBg(bsc)}`}>{bsc}%</span>
@@ -1291,8 +1291,8 @@ export default function EncuestaAdminView() {
                                                                                                                         const ans = row.responses?.[p.indice];
                                                                                                                         return (
                                                                                                                             <div key={p.id} className="flex items-start gap-3 px-4 py-2">
-                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-white/60 flex items-center justify-center text-[7px] font-black text-slate-500 mt-0.5">{p.numero}</span>
-                                                                                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug min-w-0">{p.texto}</p>
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[7px] font-black text-content-3 mt-0.5">{p.numero}</span>
+                                                                                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {p.tipo === 'numerica' ? (
                                                                                                                                     <div className="shrink-0 flex items-center gap-0.5 flex-wrap justify-end">
                                                                                                                                         {[1,2,3,4,5,6,7,8,9,10].map(n => {
@@ -1304,7 +1304,7 @@ export default function EncuestaAdminView() {
                                                                                                                                             const oc = n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D;
                                                                                                                                             return (
                                                                                                                                                 <span key={n}
-                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${isActive ? oc.on : 'bg-slate-50 text-slate-200'}`}>
+                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${isActive ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
                                                                                                                                                     {n}
                                                                                                                                                 </span>
                                                                                                                                             );
@@ -1317,7 +1317,7 @@ export default function EncuestaAdminView() {
                                                                                                                                             return (
                                                                                                                                                 <span key={opt}
                                                                                                                                                     title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-slate-50 text-slate-200'}`}>
+                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
                                                                                                                                                     {opt}
                                                                                                                                                 </span>
                                                                                                                                             );
@@ -1332,9 +1332,9 @@ export default function EncuestaAdminView() {
                                                                                                         );
                                                                                                     })}
                                                                                                     {row.comentario && (
-                                                                                                        <div className="rounded-xl border border-white/70 bg-white/60 px-4 py-3">
-                                                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-600 mb-1">Comentario</p>
-                                                                                                            <p className="text-[12px] text-slate-600 leading-relaxed">{row.comentario}</p>
+                                                                                                        <div className="rounded-xl border border-border-card bg-surface-card px-4 py-3">
+                                                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-content-2 mb-1">Comentario</p>
+                                                                                                            <p className="text-[12px] text-content-2 leading-relaxed">{row.comentario}</p>
                                                                                                         </div>
                                                                                                     )}
                                                                                                 </div>

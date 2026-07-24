@@ -12,14 +12,14 @@ import { supabase } from '../../supabaseClient';
 // ============================================================================
 const getThemeForAction = (action, isDoc, isSynthetic) => {
     if (isSynthetic) return { icon: Building2, bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-200', dot: 'bg-orange-500', shadow: 'shadow-[0_4px_20px_rgba(249,115,22,0.15)]' };
-    if (isDoc) return { icon: FileText, bg: 'bg-blue-50', text: 'text-[#0052CC]', border: 'border-[#0052CC]/20', dot: 'bg-[#0052CC]', shadow: 'shadow-[0_4px_20px_rgba(0,82,204,0.15)]' };
+    if (isDoc) return { icon: FileText, bg: 'bg-blue-50', text: 'text-brand', border: 'border-brand/20', dot: 'bg-brand', shadow: 'shadow-[0_4px_20px_rgba(0,82,204,0.15)]' };
 
     switch (action) {
         case 'PAGO_REGISTRADO':
-            return { icon: Wallet, bg: 'bg-emerald-50', text: 'text-emerald-500', border: 'border-emerald-200', dot: 'bg-emerald-500', shadow: 'shadow-[0_4px_20px_rgba(16,185,129,0.15)]' };
+            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-emerald-500', shadow: 'shadow-[0_4px_20px_rgba(16,185,129,0.15)]' };
         case 'ALERTA_SISTEMA':
         case 'INSPECTION_RECORDED':
-            return { icon: AlertTriangle, bg: 'bg-red-50', text: 'text-red-500', border: 'border-red-200', dot: 'bg-red-500', shadow: 'shadow-[0_4px_20px_rgba(239,68,68,0.15)]' };
+            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-red-500', shadow: 'shadow-[0_4px_20px_rgba(239,68,68,0.15)]' };
         case 'EDITAR_SUCURSAL':
         case 'APERTURA_OFICIAL':
         case 'VINCULAR_KIOSCO':
@@ -35,7 +35,7 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
         case 'REGISTRO_ASISTENCIA':
             return { icon: Users, bg: 'bg-purple-50', text: 'text-purple-500', border: 'border-purple-200', dot: 'bg-purple-500', shadow: 'shadow-[0_4px_20px_rgba(168,85,247,0.15)]' };
         default:
-            return { icon: CheckCircle2, bg: 'bg-slate-100', text: 'text-slate-500', border: 'border-slate-200', dot: 'bg-slate-400', shadow: 'shadow-sm' };
+            return { icon: CheckCircle2, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-slate-200', dot: 'bg-content-3', shadow: 'shadow-sm' };
     }
 };
 
@@ -233,15 +233,15 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
     const renderPrintPortal = () => {
         return createPortal(
-            <div id="print-report-container" className="hidden print:block w-full bg-white text-slate-900 font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
+            <div id="print-report-container" className="hidden print:block w-full bg-white text-content font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
                 <div className="border-b-[3px] border-slate-900 pb-3 mb-4 flex justify-between items-end">
-                    <div><h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900 leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-slate-600 uppercase tracking-widest leading-none">Sucursal: <span className="text-[#0052CC]">{liveBranch?.name || 'No especificada'}</span></h2></div>
-                    <div className="text-right"><p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-slate-900 leading-none">{new Date().toLocaleDateString('es-ES')}</p></div>
+                    <div><h1 className="text-2xl font-black uppercase tracking-tighter text-content leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-content-2 uppercase tracking-widest leading-none">Sucursal: <span className="text-brand">{liveBranch?.name || 'No especificada'}</span></h2></div>
+                    <div className="text-right"><p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-content leading-none">{new Date().toLocaleDateString('es-ES')}</p></div>
                 </div>
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-[#0052CC]/5">
-                        <tr className="border-b border-[#0052CC]/10 text-[10px] text-slate-500 font-black uppercase tracking-[0.15em]">
+                    <thead className="bg-brand/5">
+                        <tr className="border-b border-brand/10 text-[10px] text-content-3 font-black uppercase tracking-[0.15em]">
                             <th className="py-2 px-2 w-[120px]">Fecha / Hora</th><th className="py-2 px-2 w-[140px]">Acción</th><th className="py-2 px-2">Descripción del Evento</th><th className="py-2 px-2 w-[200px]">Realizado Por / Doc</th>
                         </tr>
                     </thead>
@@ -256,8 +256,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <tr key={idx} className="border-b border-slate-200 break-inside-avoid">
                                     <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-ES')}</td>
                                     <td className="py-2.5 px-2 text-[8px] uppercase tracking-widest">{getActionLabel(item)}</td>
-                                    <td className="py-2.5 px-2 font-bold text-slate-800">{itemTitle}</td>
-                                    <td className="py-2.5 px-2 font-bold text-slate-600">{item.isDoc ? 'DOCUMENTO' : (item.user_name || 'SISTEMA')}</td>
+                                    <td className="py-2.5 px-2 font-bold text-content">{itemTitle}</td>
+                                    <td className="py-2.5 px-2 font-bold text-content-2">{item.isDoc ? 'DOCUMENTO' : (item.user_name || 'SISTEMA')}</td>
                                 </tr>
                             );
                         })}
@@ -277,22 +277,22 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             {renderPrintPortal()}
             
             {/* HEADER CONTROLS */}
-            <div className="relative z-[100] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6 pb-6 border-b border-white/60 no-print">
+            <div className="relative z-[100] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6 pb-6 border-b border-border-card no-print">
                 <div>
-                    <h3 className="font-black text-slate-800 uppercase tracking-tight text-lg">Historia de Sucursal</h3>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Expediente Centralizado Interactivo</p>
+                    <h3 className="font-black text-content uppercase tracking-tight text-lg">Historia de Sucursal</h3>
+                    <p className="text-[11px] font-bold text-content-3 uppercase tracking-widest">Expediente Centralizado Interactivo</p>
                 </div>
 
                 {/* CONTENEDOR PRINCIPAL TIPO PÍLDORA */}
                 <div
-                    className={`flex items-center bg-white/40 backdrop-blur-[40px] backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
+                    className={`flex items-center bg-surface-card backdrop-blur-[40px] backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
                 >
                     {isSearchOpen ? (
                         <div className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}>
-                            <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
-                            <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 min-w-[200px] xl:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                            {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
-                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
+                            <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                            <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 min-w-[200px] xl:w-[600px] placeholder:text-content-3 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                            {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
+                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2">
                                 <ChevronRight size={18} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -314,51 +314,51 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     ) : (
                                         <>
                                             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                            <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-white/95 transition-colors duration-300"></div>
+                                            <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
                                             <div className="absolute inset-0 border border-purple-200/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
                                             <Sparkles size={18} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
                                         </>
                                     )}
                                 </button>
 
-                                <div className="w-px h-5 bg-slate-300/40 mx-1 shrink-0"></div>
+                                <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
 
                                 <div className="relative z-[9999]" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                                    <button className="h-9 px-3 flex items-center gap-2 text-slate-500 hover:bg-white hover:text-[#0052CC] rounded-full transition-all font-black text-[10px] uppercase tracking-widest shrink-0">
+                                    <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-white hover:text-brand rounded-full transition-all font-black text-[10px] uppercase tracking-widest shrink-0">
                                         <Download size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Exportar</span>
                                     </button>
                                     <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
-                                        <div className="w-[160px] bg-white/90 backdrop-blur-xl border border-white/90 shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
-                                            <button onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-[#0052CC]/10 hover:text-[#0052CC] rounded-xl transition-colors"><Printer size={14} strokeWidth={2.5} /> Reporte PDF</button>
-                                            <button onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-colors"><FileOutput size={14} strokeWidth={2.5} /> Datos CSV</button>
+                                        <div className="w-[160px] bg-surface-card backdrop-blur-xl border border-border-card shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
+                                            <button onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[10px] font-bold text-content-2 hover:bg-brand/10 hover:text-brand rounded-xl transition-colors"><Printer size={14} strokeWidth={2.5} /> Reporte PDF</button>
+                                            <button onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[10px] font-bold text-content-2 hover:bg-success/10 hover:text-success rounded-xl transition-colors"><FileOutput size={14} strokeWidth={2.5} /> Datos CSV</button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="w-px h-5 bg-slate-300/40 mx-1 shrink-0"></div>
+                                <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
 
-                                <Filter size={14} className="text-[#0052CC] ml-1 shrink-0 hidden sm:block" strokeWidth={2.5} />
+                                <Filter size={14} className="text-brand ml-1 shrink-0 hidden sm:block" strokeWidth={2.5} />
                                 <div className="w-[140px] sm:w-[160px] shrink-0">
                                     <div className="w-[140px] sm:w-[160px] shrink-0">
                                         <LiquidSelect value={typeFilter} onChange={(value) => setTypeFilter(value)} options={[{ value: 'ALL', label: 'Todo' }, { value: 'LEGAL', label: 'Legal' }, { value: 'HR', label: 'Personal' }, { value: 'OPERATIVE', label: 'Operativo' }, { value: 'FINANCE', label: 'Finanzas' }]} clearable={false} />
                                     </div>
                                 </div>
 
-                                <div className="w-px h-5 bg-slate-300/40 mx-1 shrink-0"></div>
+                                <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
 
                                 <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.start} onChange={(v) => setDateFilter({ ...dateFilter, start: v })} placeholder="Desde" compact /></div>
-                                <span className="text-slate-500 font-black shrink-0">-</span>
+                                <span className="text-content-3 font-black shrink-0">-</span>
                                 <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.end} onChange={(v) => setDateFilter({ ...dateFilter, end: v })} placeholder="Hasta" compact /></div>
 
                                 {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
-                                    <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-red-50 text-red-500 rounded-full ml-1 hover:bg-red-500 hover:text-white transition-colors shrink-0 shadow-sm">
+                                    <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-red-500 hover:text-white transition-colors shrink-0 shadow-sm">
                                         <X size={12} strokeWidth={3} />
                                     </button>
                                 )}
                             </div>
 
                             <div className={`flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-slate-300/30 shrink-0`}>
-                                <button onClick={() => setIsSearchOpen(true)} className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
+                                <button onClick={() => setIsSearchOpen(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
                                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                                 </button>
                             </div>
@@ -374,7 +374,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
-                    <div className="bg-white/80 backdrop-blur-3xl border border-indigo-100/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                    <div className="bg-surface-card backdrop-blur-3xl border border-indigo-100/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
                         
                         {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -387,7 +387,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             
                             <div className="relative w-16 h-16 flex items-center justify-center mb-6">
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[5px] opacity-70"></div>
-                                <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-white/30">
+                                <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-border-card">
                                     <Sparkles size={30} className="text-white" strokeWidth={2} />
                                 </div>
                             </div>
@@ -397,7 +397,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                             {isGeneratingAi ? (
                                 /* SKELETON DE CARGA NEURONAL */
-                                <div className="w-full max-w-3xl text-left bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-10">
+                                <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-10">
                                     <div className="flex flex-col items-center justify-center mb-8">
                                         <div className="relative w-12 h-12 flex items-center justify-center mb-3">
                                             <div className="absolute inset-0 border-2 border-indigo-200/50 rounded-full animate-ping [animation-duration:2s]"></div>
@@ -417,11 +417,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 </div>
                             ) : (
                                 /* RESULTADO DE LA IA */
-                                <div className="w-full max-w-3xl text-left bg-white/60 backdrop-blur-md border border-white/60 rounded-3xl p-6 md:p-8 shadow-sm relative z-10 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm relative z-10 animate-in slide-in-from-bottom-4 duration-500">
                                     {aiSummaryData?.split('\n').map((paragraph, index) => (
                                         <div key={index} className="relative mb-6 last:mb-0 group/p">
                                             <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
-                                            <p className="text-[13px] md:text-[15px] font-medium text-slate-700 leading-relaxed text-justify pl-5">
+                                            <p className="text-[13px] md:text-[15px] font-medium text-content-2 leading-relaxed text-justify pl-5">
                                                 {paragraph.split('**').map((text, i) => (
                                                     i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
                                                 ))}
@@ -433,7 +433,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                             <button 
                                 onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}
-                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 text-indigo-500 font-black text-[11px] uppercase tracking-widest border border-indigo-100 hover:bg-white hover:text-indigo-700 hover:shadow-[0_8px_20px_rgba(168,85,247,0.15)] transition-all active:scale-[0.97] z-10 relative"
+                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-indigo-500 font-black text-[11px] uppercase tracking-widest border border-indigo-100 hover:bg-white hover:text-indigo-700 hover:shadow-[0_8px_20px_rgba(168,85,247,0.15)] transition-all active:scale-[0.97] z-10 relative"
                             >
                                 <ArrowLeft size={16} strokeWidth={2.5} /> Regresar a línea de tiempo
                             </button>
@@ -445,7 +445,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
                     
                     {/* Línea Central Estética */}
-                    <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-[2px] bg-white/60 shadow-[0_0_10px_rgba(255,255,255,1)] md:-translate-x-1/2 rounded-full"></div>
+                    <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-[2px] bg-surface-card shadow-[0_0_10px_rgba(255,255,255,1)] md:-translate-x-1/2 rounded-full"></div>
 
                     {isLoadingHistory ? (
                         /* SKELETON DE LÍNEA DE TIEMPO */
@@ -457,7 +457,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     </div>
                                     <div className="absolute left-[20px] md:left-1/2 w-8 h-8 skeleton rounded-full border-4 border-white -translate-x-[20px] md:-translate-x-1/2 z-30" />
                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 ${i % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
-                                        <div className="h-32 bg-white/40 border border-white/50 rounded-[1.5rem] p-5 w-full space-y-3">
+                                        <div className="h-32 bg-surface-card border border-border-card rounded-[1.5rem] p-5 w-full space-y-3">
                                             <div className="h-3 skeleton rounded-full w-1/3" />
                                             <div className="h-5 skeleton rounded-full w-3/4" />
                                             <div className="h-3 skeleton rounded-full w-1/2 mt-2" />
@@ -467,11 +467,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             ))}
                         </div>
                     ) : filteredHistory.length === 0 ? (
-                        <div className="text-center py-20 opacity-60 relative z-10"><FileText className="text-slate-500 mx-auto mb-4" size={48} /> Sin registros en esta sucursal</div>
+                        <div className="text-center py-20 opacity-60 relative z-10"><FileText className="text-content-3 mx-auto mb-4" size={48} /> Sin registros en esta sucursal</div>
                     ) : (
                         <div className="relative z-10 w-full pt-2">
                             {isHistorySearchFuzzy && searchQuery && (
-                                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                     Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
                                 </div>
@@ -484,11 +484,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     <div key={yearGroup.year} className="w-full mb-4">
 
                                         <div className="relative flex justify-center items-center w-full mb-4 group">
-                                            <button onClick={() => toggleYear(yearGroup.year)} className={`relative z-20 flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[13px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border backdrop-blur-xl ${isYearOpen ? 'bg-[#0052CC]/10 text-[#0052CC] border-white shadow-[0_10px_30px_rgba(0,82,204,0.2)]' : 'bg-white/50 text-slate-600 border-white/60 shadow-[0_4px_15px_rgba(0,0,0,0.04)] hover:bg-[#0052CC]/5 hover:text-[#0052CC] hover:border-white hover:shadow-[0_8px_25px_rgba(0,82,204,0.15)]'}`}>
+                                            <button onClick={() => toggleYear(yearGroup.year)} className={`relative z-20 flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[13px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border backdrop-blur-xl ${isYearOpen ? 'bg-brand/10 text-brand border-white shadow-[0_10px_30px_rgba(0,82,204,0.2)]' : 'bg-surface-card text-content-2 border-border-card shadow-[0_4px_15px_rgba(0,0,0,0.04)] hover:bg-brand/5 hover:text-brand hover:border-white hover:shadow-[0_8px_25px_rgba(0,82,204,0.15)]'}`}>
                                                 <Calendar size={15} strokeWidth={2.5} /> AÑO {yearGroup.year}
-                                                <ChevronRight size={16} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isYearOpen ? 'rotate-90 text-[#0052CC]' : 'text-slate-400'}`} />
+                                                <ChevronRight size={16} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isYearOpen ? 'rotate-90 text-brand' : 'text-content-3'}`} />
                                             </button>
-                                            <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-slate-200/80 -z-10 md:hidden"></div>
+                                            <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-10 md:hidden"></div>
                                         </div>
 
                                         <div className={`grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isYearOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -502,11 +502,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                         <div key={monthGroup.id} className="w-full mt-2 mb-2">
 
                                                             <div className="relative flex justify-center items-center w-full mb-4 group">
-                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-white text-[#0052CC] border-white shadow-[0_8px_20px_rgba(0,82,204,0.15)]' : 'bg-white/50 backdrop-blur-md text-slate-500 border-white/60 hover:text-slate-700 shadow-sm'}`}>
+                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-white text-brand border-white shadow-[0_8px_20px_rgba(0,82,204,0.15)]' : 'bg-surface-card backdrop-blur-md text-content-3 border-border-card hover:text-content-2 shadow-sm'}`}>
                                                                     {monthGroup.name}
-                                                                    <ChevronRight size={12} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isMonthOpen ? 'rotate-90 text-[#0052CC]' : 'text-slate-400'}`} />
+                                                                    <ChevronRight size={12} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isMonthOpen ? 'rotate-90 text-brand' : 'text-content-3'}`} />
                                                                 </button>
-                                                                <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-slate-200/80 -z-10 md:hidden"></div>
+                                                                <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-10 md:hidden"></div>
                                                             </div>
 
                                                             <div className={`grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isMonthOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -563,8 +563,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 mb-3 md:mb-0 z-20 ${isLeftDesktop ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'}`}>
                                                                                         <div className="inline-flex items-center gap-2">
-                                                                                            <span className="text-[14px] font-black text-slate-700 drop-shadow-sm">{dateStr}</span>
-                                                                                            {timeStr !== '12:00 a. m.' && <span className="text-[10px] font-bold text-slate-500 bg-white/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white shadow-[0_2px_8px_rgba(0,0,0,0.05)]">{timeStr}</span>}
+                                                                                            <span className="text-[14px] font-black text-content-2 drop-shadow-sm">{dateStr}</span>
+                                                                                            {timeStr !== '12:00 a. m.' && <span className="text-[10px] font-bold text-content-3 bg-surface-card backdrop-blur-sm px-2.5 py-1 rounded-full border border-white shadow-[0_2px_8px_rgba(0,0,0,0.05)]">{timeStr}</span>}
                                                                                         </div>
                                                                                     </div>
 
@@ -574,7 +574,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     </div>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-20 ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
-                                                                                        <div className={`relative overflow-hidden bg-white/50 backdrop-blur-[50px] backdrop-saturate-[200%] border border-white/80 rounded-[1.5rem] p-5 transition-all duration-500 hover:bg-white hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,1)] shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.7)] text-left`}>
+                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-[1.5rem] p-5 transition-all duration-500 hover:bg-white hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,1)] shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.7)] text-left`}>
 
                                                                                             <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
 
@@ -585,20 +585,20 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                     </span>
                                                                                                 </div>
 
-                                                                                                <h4 className="text-[14px] md:text-[15px] font-black text-slate-800 leading-tight mb-2">
+                                                                                                <h4 className="text-[14px] md:text-[15px] font-black text-content leading-tight mb-2">
                                                                                                     {itemTitle}
                                                                                                 </h4>
 
                                                                                                 {(oldVal || newVal) && (
                                                                                                     <div className="flex flex-col gap-1 mt-2">
-                                                                                                        {oldVal && <span className="text-[10px] font-bold text-slate-500 line-through truncate">Antes: {oldVal}</span>}
-                                                                                                        {newVal && <span className={`text-[10px] font-bold truncate ${item.severity === 'CRITICAL' ? 'text-red-500' : 'text-[#0052CC]'}`}>Nuevo: {newVal}</span>}
+                                                                                                        {oldVal && <span className="text-[10px] font-bold text-content-3 line-through truncate">Antes: {oldVal}</span>}
+                                                                                                        {newVal && <span className={`text-[10px] font-bold truncate ${item.severity === 'CRITICAL' ? 'text-danger' : 'text-brand'}`}>Nuevo: {newVal}</span>}
                                                                                                     </div>
                                                                                                 )}
 
-                                                                                                <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/80">
+                                                                                                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-card">
                                                                                                     <div className="flex items-center gap-2">
-                                                                                                        <div className="w-6 h-6 rounded-full bg-slate-200/80 border border-white flex items-center justify-center text-slate-500 text-[10px] font-black shadow-inner uppercase overflow-hidden shrink-0">
+                                                                                                        <div className="w-6 h-6 rounded-full bg-surface-card-hover/80 border border-white flex items-center justify-center text-content-3 text-[10px] font-black shadow-inner uppercase overflow-hidden shrink-0">
                                                                                                             {actorPhotoUrl ? (
                                                                                                                 <img
                                                                                                                     src={actorPhotoUrl}
@@ -609,11 +609,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                                 actorName.charAt(0)
                                                                                                             )}
                                                                                                         </div>
-                                                                                                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none drop-shadow-sm truncate max-w-[120px] md:max-w-none">{actorName}</span>
+                                                                                                        <span className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none drop-shadow-sm truncate max-w-[120px] md:max-w-none">{actorName}</span>
                                                                                                     </div>
 
                                                                                                     {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-[#0052CC] bg-white/40 backdrop-blur-md border border-white/60 hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[0_2px_8px_rgba(0,82,204,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 shrink-0">
+                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand bg-surface-card backdrop-blur-md border border-border-card hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[0_2px_8px_rgba(0,82,204,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 shrink-0">
                                                                                                             <Eye size={12} strokeWidth={2.5} /> Ver Doc
                                                                                                         </button>
                                                                                                     ) : null}
@@ -640,7 +640,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                     {!showAllHistory && syntheticHistory.length > filteredHistory.length && !dateFilter.start && !dateFilter.end && searchQuery === '' && typeFilter === 'ALL' && (
                         <div className="pt-8 text-center animate-in fade-in duration-500 relative z-10">
-                            <button onClick={() => setShowAllHistory(true)} className="px-6 h-10 bg-white/80 backdrop-blur-md border border-white hover:border-[#0052CC]/30 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:text-[#0052CC] hover:shadow-[0_8px_20px_rgba(0,82,204,0.15)] hover:-translate-y-1 transition-all rounded-full active:scale-[0.97] shadow-sm inline-flex items-center justify-center gap-2">
+                            <button onClick={() => setShowAllHistory(true)} className="px-6 h-10 bg-surface-card backdrop-blur-md border border-white hover:border-brand/30 text-content-2 font-black text-[10px] uppercase tracking-widest hover:text-brand hover:shadow-[0_8px_20px_rgba(0,82,204,0.15)] hover:-translate-y-1 transition-all rounded-full active:scale-[0.97] shadow-sm inline-flex items-center justify-center gap-2">
                                 Cargar historial completo
                             </button>
                         </div>

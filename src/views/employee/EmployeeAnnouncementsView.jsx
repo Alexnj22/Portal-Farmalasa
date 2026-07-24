@@ -31,9 +31,9 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const meta = ann.metadata || null;
 
     const badgeEl = ann.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={11} strokeWidth={2} /> Global</span>
+        ? <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={11} strokeWidth={2} /> Global</span>
         : ann.targetType === 'BRANCH'
-        ? <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-emerald-200/50"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
+        ? <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/50"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
         : ann.targetType === 'ROLE'
         ? <span className="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-purple-200/50"><User size={11} strokeWidth={2} /> Cargo</span>
         : <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={11} strokeWidth={2} /> Personal</span>;
@@ -42,25 +42,25 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         <div
             className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1 ${
                 isUrgent && !isRead
-                    ? 'border-red-300 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-white/90 backdrop-blur-xl'
+                    ? 'border-red-300 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-surface-card backdrop-blur-xl'
                     : isUrgent && isRead
-                    ? 'border-red-200 shadow-sm hover:shadow-md bg-white/80 backdrop-blur-xl'
+                    ? 'border-danger/30 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
                     : isRead
-                    ? 'border-slate-200/70 shadow-sm hover:shadow-md bg-white/80 backdrop-blur-xl'
-                    : 'border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] bg-white/60 backdrop-blur-2xl'
+                    ? 'border-slate-200/70 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
+                    : 'border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] bg-surface-card backdrop-blur-2xl'
             }`}
             onClick={() => { if (!isRead) onRead(ann.id); }}
         >
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-slate-300' : isUrgent ? 'bg-red-500' : 'bg-[#0052CC]'}`} />
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-content-3' : isUrgent ? 'bg-red-500' : 'bg-brand'}`} />
                 {isUrgent && (
                     <span className={`flex items-center gap-1 text-white bg-red-500 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
                         <Flame size={11} strokeWidth={2.5} /> Urgente
                     </span>
                 )}
                 {wasReadBefore && (
-                    <span className="flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
+                    <span className="flex items-center gap-1 text-amber-700 bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
                         <Pencil size={10} strokeWidth={2.5} /> Actualización
                     </span>
                 )}
@@ -69,10 +69,10 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
 
             {/* Title + message */}
             <div>
-                <h4 className={`font-black text-[16px] leading-tight mb-1.5 tracking-tight ${isRead ? 'text-slate-600' : 'text-slate-800'}`}>
+                <h4 className={`font-black text-[16px] leading-tight mb-1.5 tracking-tight ${isRead ? 'text-content-2' : 'text-content'}`}>
                     {ann.title}
                 </h4>
-                <p className={`text-[13px] leading-relaxed font-medium whitespace-pre-wrap ${isRead ? 'text-slate-500' : 'text-slate-600'}`}>
+                <p className={`text-[13px] leading-relaxed font-medium whitespace-pre-wrap ${isRead ? 'text-content-3' : 'text-content-2'}`}>
                     {ann.message}
                 </p>
             </div>
@@ -80,7 +80,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
             {/* Detalle del metadata según tipo de solicitud */}
             {meta?.requestType && (
                 <div className={`rounded-2xl border p-3 space-y-2 ${
-                    meta.status === 'APPROVED' ? 'bg-emerald-50/60 border-emerald-200/60' : 'bg-red-50/60 border-red-200/60'
+                    meta.status === 'APPROVED' ? 'bg-success/60 border-success/60' : 'bg-danger/60 border-danger/60'
                 }`}>
                     {/* Cambio de turno */}
                     {meta.requestType === 'SHIFT_CHANGE' && (
@@ -88,24 +88,24 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                             {meta.targetEmployeeName && (
                                 <div className="flex items-center gap-2">
                                     <ArrowLeftRight size={12} className="text-cyan-500 flex-shrink-0" strokeWidth={2.5} />
-                                    <span className="text-[12px] font-black text-slate-700">Con: {meta.targetEmployeeName}</span>
+                                    <span className="text-[12px] font-black text-content-2">Con: {meta.targetEmployeeName}</span>
                                 </div>
                             )}
                             {meta.date && (
                                 <div className="flex items-center gap-2">
-                                    <CalendarDays size={12} className="text-slate-400 flex-shrink-0" strokeWidth={2} />
-                                    <span className="text-[12px] font-bold text-slate-600">{fmtDate(meta.date)}</span>
+                                    <CalendarDays size={12} className="text-content-3 flex-shrink-0" strokeWidth={2} />
+                                    <span className="text-[12px] font-bold text-content-2">{fmtDate(meta.date)}</span>
                                 </div>
                             )}
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2 pt-1">
-                                    <div className="bg-white/70 border border-slate-100 rounded-xl p-2">
-                                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Tu turno</p>
-                                        <p className="text-[11px] font-black text-slate-700">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
+                                    <div className="bg-surface-card border border-slate-100 rounded-xl p-2">
+                                        <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Tu turno</p>
+                                        <p className="text-[11px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                     </div>
                                     <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-2">
                                         <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
-                                        <p className="text-[11px] font-black text-slate-700">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
+                                        <p className="text-[11px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                     </div>
                                 </div>
                             )}
@@ -115,8 +115,8 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {/* Vacaciones */}
                     {meta.requestType === 'VACATION' && meta.startDate && (
                         <div className="flex items-center gap-2">
-                            <CalendarDays size={12} className="text-amber-500 flex-shrink-0" strokeWidth={2} />
-                            <span className="text-[12px] font-bold text-slate-700">
+                            <CalendarDays size={12} className="text-warning flex-shrink-0" strokeWidth={2} />
+                            <span className="text-[12px] font-bold text-content-2">
                                 {fmtDate(meta.startDate)}
                                 {meta.endDate && meta.endDate !== meta.startDate && <> — {fmtDate(meta.endDate)}</>}
                             </span>
@@ -137,11 +137,11 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {/* Incapacidad */}
                     {meta.requestType === 'DISABILITY' && meta.startDate && (
                         <div className="flex items-center gap-2">
-                            <CalendarDays size={12} className="text-red-400 flex-shrink-0" strokeWidth={2} />
-                            <span className="text-[12px] font-bold text-slate-700">
+                            <CalendarDays size={12} className="text-danger flex-shrink-0" strokeWidth={2} />
+                            <span className="text-[12px] font-bold text-content-2">
                                 {fmtDate(meta.startDate)}
                                 {meta.endDate && meta.endDate !== meta.startDate && <> — {fmtDate(meta.endDate)}</>}
-                                {meta.days && <span className="text-slate-500 ml-1">({meta.days} días)</span>}
+                                {meta.days && <span className="text-content-3 ml-1">({meta.days} días)</span>}
                             </span>
                         </div>
                     )}
@@ -149,8 +149,8 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {/* Anticipo */}
                     {meta.requestType === 'ADVANCE' && meta.amount && (
                         <div className="flex items-center gap-2">
-                            <DollarSign size={12} className="text-emerald-500 flex-shrink-0" strokeWidth={2} />
-                            <span className="text-[12px] font-bold text-slate-700">${Number(meta.amount).toLocaleString('es-VE')}</span>
+                            <DollarSign size={12} className="text-success flex-shrink-0" strokeWidth={2} />
+                            <span className="text-[12px] font-bold text-content-2">${Number(meta.amount).toLocaleString('es-VE')}</span>
                         </div>
                     )}
 
@@ -158,7 +158,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {meta.requestType === 'CERTIFICATE' && meta.certificateType && (
                         <div className="flex items-center gap-2">
                             <FileCheck size={12} className="text-blue-500 flex-shrink-0" strokeWidth={2} />
-                            <span className="text-[12px] font-bold text-slate-700">
+                            <span className="text-[12px] font-bold text-content-2">
                                 {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                             </span>
                         </div>
@@ -168,18 +168,18 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
 
             {/* Footer */}
             <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
+                <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                     <Clock size={11} />
                     {new Date(ann.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                     {ann.editedAt && (
-                        <span className="text-amber-500 flex items-center gap-1">
+                        <span className="text-warning flex items-center gap-1">
                             · <Pencil size={9} strokeWidth={2.5} />
                             editado {new Date(ann.editedAt).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                         </span>
                     )}
                 </p>
                 {isRead && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-success bg-success/10 border border-success/30 px-2 py-0.5 rounded-md">
                         <CheckCircle2 size={10} strokeWidth={2.5} /> Leído
                     </span>
                 )}
@@ -286,8 +286,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div className="relative z-10 w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-[0_20px_60px_rgba(16,185,129,0.45)] hover:scale-105 transition-transform duration-500">
                         <Sparkles size={44} strokeWidth={1.6} />
                     </div>
-                    <h3 className="font-black text-[26px] text-slate-800 tracking-tight mb-2">¡Todo al día!</h3>
-                    <p className="font-medium text-[14px] text-slate-500 max-w-[260px] leading-relaxed">
+                    <h3 className="font-black text-[26px] text-content tracking-tight mb-2">¡Todo al día!</h3>
+                    <p className="font-medium text-[14px] text-content-3 max-w-[260px] leading-relaxed">
                         Leíste todos tus avisos. Nada se te escapa.
                     </p>
                 </div>
@@ -318,9 +318,9 @@ const UnreadStack = memo(({ list, onRead }) => {
     })();
 
     const badgeEl = current.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
+        ? <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
         : current.targetType === 'BRANCH'
-        ? <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-200/60"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
+        ? <span className="flex items-center gap-1.5 text-emerald-700 bg-success/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-success/60"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
         : current.targetType === 'ROLE'
         ? <span className="flex items-center gap-1.5 text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-purple-200/60"><User size={10} strokeWidth={2.5}/> Cargo</span>
         : <span className="flex items-center gap-1.5 text-orange-700 bg-orange-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-orange-200/60"><User size={10} strokeWidth={2.5}/> Personal</span>;
@@ -336,7 +336,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="mb-10 flex flex-col items-center gap-3 select-none">
                 <div className="flex items-center gap-4">
                     <div className="text-center">
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-0.5">Sin leer</p>
+                        <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.3em] mb-0.5">Sin leer</p>
                         <span
                             className="text-[72px] font-black leading-none tracking-tighter transition-all duration-500"
                             style={{
@@ -365,12 +365,12 @@ const UnreadStack = memo(({ list, onRead }) => {
                             return (
                                 <div key={i} className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
                                     done ? 'w-2.5 h-2.5 bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
-                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-[#0052CC] shadow-[0_0_8px_rgba(0,82,204,0.5)]') :
-                                           'w-2.5 h-2.5 bg-slate-200'
+                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-brand shadow-[0_0_8px_rgba(0,82,204,0.5)]') :
+                                           'w-2.5 h-2.5 bg-surface-card-hover'
                                 }`} />
                             );
                         })}
-                        {total > 10 && <span className="text-[9px] font-black text-slate-500">+{total - 10}</span>}
+                        {total > 10 && <span className="text-[9px] font-black text-content-3">+{total - 10}</span>}
                     </div>
                 )}
             </div>
@@ -430,7 +430,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                             phase === 'check'
                                 ? 'border-emerald-300 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-white'
                                 : isUrgent
-                                ? 'border-red-200/70   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-white'
+                                ? 'border-danger/70   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-white'
                                 : 'border-slate-200/50 shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-white'
                         }`}
                     >
@@ -443,7 +443,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     </span>
                                 )}
                                 {badgeEl}
-                                <span className="ml-auto text-[10px] font-bold text-slate-500 flex items-center gap-1 flex-shrink-0">
+                                <span className="ml-auto text-[10px] font-bold text-content-3 flex items-center gap-1 flex-shrink-0">
                                     <Clock size={10} strokeWidth={2}/>
                                     {new Date(current.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </span>
@@ -451,10 +451,10 @@ const UnreadStack = memo(({ list, onRead }) => {
 
                             {/* Título + mensaje */}
                             <div>
-                                <h4 className="font-black text-[20px] leading-tight mb-2.5 tracking-tight text-slate-900">
+                                <h4 className="font-black text-[20px] leading-tight mb-2.5 tracking-tight text-content">
                                     {current.title}
                                 </h4>
-                                <p className="text-[13px] leading-relaxed text-slate-600 whitespace-pre-wrap">
+                                <p className="text-[13px] leading-relaxed text-content-2 whitespace-pre-wrap">
                                     {current.message}
                                 </p>
                             </div>
@@ -463,39 +463,39 @@ const UnreadStack = memo(({ list, onRead }) => {
                             {meta?.requestType && (
                                 <div className={`rounded-2xl border p-4 space-y-2.5 ${
                                     meta.status === 'APPROVED'
-                                        ? 'bg-gradient-to-br from-emerald-50 to-teal-50/40 border-emerald-200/70'
-                                        : 'bg-gradient-to-br from-red-50 to-orange-50/40 border-red-200/70'
+                                        ? 'bg-gradient-to-br from-emerald-50 to-teal-50/40 border-success/70'
+                                        : 'bg-gradient-to-br from-red-50 to-orange-50/40 border-danger/70'
                                 }`}>
                                     {meta.requestType === 'SHIFT_CHANGE' && (<>
                                         {meta.targetEmployeeName && (
                                             <div className="flex items-center gap-2">
                                                 <ArrowLeftRight size={12} className="text-cyan-500 flex-shrink-0" strokeWidth={2.5}/>
-                                                <span className="text-[12px] font-black text-slate-700">Con: {meta.targetEmployeeName}</span>
+                                                <span className="text-[12px] font-black text-content-2">Con: {meta.targetEmployeeName}</span>
                                             </div>
                                         )}
                                         {meta.date && (
                                             <div className="flex items-center gap-2">
-                                                <CalendarDays size={12} className="text-slate-400 flex-shrink-0" strokeWidth={2}/>
-                                                <span className="text-[12px] font-bold text-slate-600">{fmtDate(meta.date)}</span>
+                                                <CalendarDays size={12} className="text-content-3 flex-shrink-0" strokeWidth={2}/>
+                                                <span className="text-[12px] font-bold text-content-2">{fmtDate(meta.date)}</span>
                                             </div>
                                         )}
                                         {(meta.myShift || meta.targetShift) && (
                                             <div className="grid grid-cols-2 gap-2 pt-0.5">
-                                                <div className="bg-white/80 border border-slate-100 rounded-xl p-2.5">
-                                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Tu turno</p>
-                                                    <p className="text-[12px] font-black text-slate-700">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
+                                                <div className="bg-surface-card border border-slate-100 rounded-xl p-2.5">
+                                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
+                                                    <p className="text-[12px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>
                                                 <div className="bg-cyan-50/80 border border-cyan-100 rounded-xl p-2.5">
                                                     <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
-                                                    <p className="text-[12px] font-black text-slate-700">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
+                                                    <p className="text-[12px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                                 </div>
                                             </div>
                                         )}
                                     </>)}
                                     {meta.requestType === 'VACATION' && meta.startDate && (
                                         <div className="flex items-center gap-2">
-                                            <CalendarDays size={12} className="text-amber-500 flex-shrink-0" strokeWidth={2}/>
-                                            <span className="text-[12px] font-bold text-slate-700">
+                                            <CalendarDays size={12} className="text-warning flex-shrink-0" strokeWidth={2}/>
+                                            <span className="text-[12px] font-bold text-content-2">
                                                 {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate && <> — {fmtDate(meta.endDate)}</>}
                                             </span>
                                         </div>
@@ -509,23 +509,23 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     )}
                                     {meta.requestType === 'DISABILITY' && meta.startDate && (
                                         <div className="flex items-center gap-2">
-                                            <CalendarDays size={12} className="text-red-400 flex-shrink-0" strokeWidth={2}/>
-                                            <span className="text-[12px] font-bold text-slate-700">
+                                            <CalendarDays size={12} className="text-danger flex-shrink-0" strokeWidth={2}/>
+                                            <span className="text-[12px] font-bold text-content-2">
                                                 {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate && <> — {fmtDate(meta.endDate)}</>}
-                                                {meta.days && <span className="text-slate-500 ml-1.5">({meta.days} días)</span>}
+                                                {meta.days && <span className="text-content-3 ml-1.5">({meta.days} días)</span>}
                                             </span>
                                         </div>
                                     )}
                                     {meta.requestType === 'ADVANCE' && meta.amount && (
                                         <div className="flex items-center gap-2">
-                                            <DollarSign size={12} className="text-emerald-500 flex-shrink-0" strokeWidth={2}/>
-                                            <span className="text-[12px] font-bold text-slate-700">${Number(meta.amount).toLocaleString('es-VE')}</span>
+                                            <DollarSign size={12} className="text-success flex-shrink-0" strokeWidth={2}/>
+                                            <span className="text-[12px] font-bold text-content-2">${Number(meta.amount).toLocaleString('es-VE')}</span>
                                         </div>
                                     )}
                                     {meta.requestType === 'CERTIFICATE' && meta.certificateType && (
                                         <div className="flex items-center gap-2">
                                             <FileCheck size={12} className="text-blue-500 flex-shrink-0" strokeWidth={2}/>
-                                            <span className="text-[12px] font-bold text-slate-700">
+                                            <span className="text-[12px] font-bold text-content-2">
                                                 {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                                             </span>
                                         </div>
@@ -542,7 +542,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 className={`w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-[0.14em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 hover:-translate-y-0.5 hover:scale-[1.01] active:scale-[0.98] group/btn ${
                                     isUrgent
                                         ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_8px_28px_rgba(239,68,68,0.38)] hover:shadow-[0_14px_36px_rgba(239,68,68,0.52)]'
-                                        : 'bg-gradient-to-r from-[#0052CC] to-[#6929C4] text-white shadow-[0_8px_28px_rgba(0,82,204,0.35)] hover:shadow-[0_14px_36px_rgba(0,82,204,0.50)]'
+                                        : 'bg-gradient-to-r from-brand to-[#6929C4] text-white shadow-[0_8px_28px_rgba(0,82,204,0.35)] hover:shadow-[0_14px_36px_rgba(0,82,204,0.50)]'
                                 }`}
                             >
                                 <CheckCircle2 size={19} strokeWidth={2.5} className="group-hover/btn:scale-110 transition-transform duration-200"/>
@@ -556,16 +556,16 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div className="flex items-center justify-center flex-wrap gap-x-3 gap-y-1.5 mt-4 select-none opacity-40 hover:opacity-70 transition-opacity duration-300">
                         {[['↵', 'Enter'], ['→', ''], ['Space', '']].map(([key, label]) => (
                             <div key={key} className="flex items-center gap-1.5">
-                                <kbd className="px-2 py-0.5 rounded-md bg-white/80 border border-slate-200 text-[10px] font-black text-slate-600 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">
+                                <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-slate-200 text-[10px] font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">
                                     {key}
                                 </kbd>
-                                {label && <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{label}</span>}
+                                {label && <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">{label}</span>}
                             </div>
                         ))}
-                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">— confirmar</span>
-                        <span className="text-slate-500">·</span>
-                        <kbd className="px-2 py-0.5 rounded-md bg-white/80 border border-slate-200 text-[10px] font-black text-slate-600 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">←</kbd>
-                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">— retroceder</span>
+                        <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">— confirmar</span>
+                        <span className="text-content-3">·</span>
+                        <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-slate-200 text-[10px] font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">←</kbd>
+                        <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">— retroceder</span>
                     </div>
                 </div>
             </div>
@@ -575,12 +575,12 @@ const UnreadStack = memo(({ list, onRead }) => {
                 <div className="mt-5 flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <button
                         onClick={handleBack}
-                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-amber-200 bg-amber-50 text-amber-700 shadow-[0_4px_16px_rgba(245,158,11,0.18)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
+                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-warning/30 bg-warning/10 text-amber-700 shadow-[0_4px_16px_rgba(245,158,11,0.18)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
                     >
                         {/* barra de countdown que se encoge en 5s */}
                         <div
                             key={undoKey}
-                            className="absolute inset-0 bg-amber-100/80"
+                            className="absolute inset-0 bg-warning/80"
                             style={{ transformOrigin: 'left center', animation: 'undo-shrink 5s linear forwards' }}
                         />
                         <ChevronLeft size={14} strokeWidth={2.5} className="relative z-10 flex-shrink-0" />
@@ -686,24 +686,24 @@ const EmployeeAnnouncementsView = () => {
     };
 
     const filtersContent = (
-        <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
-                <Search size={16} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+                <Search size={16} className="text-brand shrink-0" strokeWidth={2.5} />
                 <input
                     ref={searchInputRef}
                     type="text"
                     placeholder="Buscar avisos..."
-                    className="bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 w-[200px] sm:w-[280px] placeholder:text-slate-400"
+                    className="bg-transparent border-none outline-none text-[16px] font-bold text-content-2 w-[200px] sm:w-[280px] placeholder:text-content-3"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                 />
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-500 hover:text-red-500 transition-all active:scale-[0.97] shrink-0">
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-content-3 hover:text-danger transition-all active:scale-[0.97] shrink-0">
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] ml-1">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand ml-1">
                     <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
             </div>
@@ -714,7 +714,7 @@ const EmployeeAnnouncementsView = () => {
                     return (
                         <button key={t.key} onClick={() => { setTab(t.key); setTypeFilter('ALL'); }}
                             className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border shrink-0 ${
-                                isActive ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                                isActive ? 'bg-white text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                             }`}
                         >
                             {t.label}
@@ -728,7 +728,7 @@ const EmployeeAnnouncementsView = () => {
                         ? 'max-w-[360px] opacity-100'
                         : 'max-w-0 opacity-0 pointer-events-none'
                 }`}>
-                    <div className="w-px h-6 bg-slate-200/60 mx-1 shrink-0" />
+                    <div className="w-px h-6 bg-surface-card-hover/60 mx-1 shrink-0" />
                     {readFilters.map(({ key, label, icon: Icon }) => {
                         const isActive = typeFilter === key;
                         return (
@@ -739,10 +739,10 @@ const EmployeeAnnouncementsView = () => {
                                     key === 'URGENT'
                                         ? isActive
                                             ? 'bg-red-500 text-white border-red-500 shadow-[0_3px_8px_rgba(239,68,68,0.35)] scale-[1.02]'
-                                            : 'bg-transparent text-red-500 border-red-200/60 hover:bg-red-50 hover:-translate-y-0.5'
+                                            : 'bg-transparent text-danger border-danger/60 hover:bg-danger/10 hover:-translate-y-0.5'
                                         : isActive
-                                        ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                        : 'bg-transparent text-slate-500 border-transparent hover:bg-white/70 hover:text-slate-700 hover:-translate-y-0.5'
+                                        ? 'bg-white text-content border-white shadow-md scale-[1.02]'
+                                        : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5'
                                 }`}
                             >
                                 {Icon && <Icon size={10} strokeWidth={2.5} />}
@@ -752,9 +752,9 @@ const EmployeeAnnouncementsView = () => {
                     })}
                 </div>
 
-                <div className="w-px h-6 bg-slate-200/60 mx-1 shrink-0" />
+                <div className="w-px h-6 bg-surface-card-hover/60 mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                    className={`relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
+                    className={`relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
                     <Search size={15} strokeWidth={2.5} />
                     {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>
@@ -768,7 +768,7 @@ const EmployeeAnnouncementsView = () => {
                 {isStoreLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="animate-stagger-child bg-white/60 backdrop-blur-md border border-white/60 rounded-[2.5rem] p-6 space-y-4" style={{ '--stagger-delay': `${i * 55}ms` }}>
+                            <div key={i} className="animate-stagger-child bg-surface-card backdrop-blur-md border border-border-card rounded-[2.5rem] p-6 space-y-4" style={{ '--stagger-delay': `${i * 55}ms` }}>
                                 <div className="flex gap-2">
                                     <div className="skeleton rounded-full h-4 w-4" />
                                     <div className="skeleton rounded-md h-4 w-20" />
@@ -779,7 +779,7 @@ const EmployeeAnnouncementsView = () => {
                                     <div className="skeleton rounded-full h-3 w-2/3" />
                                 </div>
                                 <div className="skeleton rounded-full h-2 w-full" />
-                                <div className="pt-3 border-t border-white/60 flex justify-between">
+                                <div className="pt-3 border-t border-border-card flex justify-between">
                                     <div className="skeleton rounded-full h-3 w-24" />
                                     <div className="skeleton rounded-full h-3 w-12" />
                                 </div>
@@ -791,7 +791,7 @@ const EmployeeAnnouncementsView = () => {
                     /* ── Mazo interactivo para Sin Leer ── */
                     <>
                     {isAnnFuzzy && searchQuery && (
-                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
                         </div>
@@ -800,11 +800,11 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                             <div className="relative flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-emerald-400" />
-                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-emerald-500">
+                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-success">
                                     <CheckCircle2 size={40} strokeWidth={1.5} />
                                 </div>
-                                <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">Todo al día</h3>
-                                <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">No tienes avisos sin leer. ¡Estás al día!</p>
+                                <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">Todo al día</h3>
+                                <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">No tienes avisos sin leer. ¡Estás al día!</p>
                             </div>
                         </div>
                     ) : (
@@ -819,7 +819,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex justify-end mb-4">
                             <button
                                 onClick={() => setShowOldRead(v => !v)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-card backdrop-blur-sm border border-border-card text-content-3 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shadow-sm"
                             >
                                 <Clock size={12} strokeWidth={2.5} />
                                 {showOldRead ? 'Solo este mes' : 'Ver anteriores'}
@@ -830,14 +830,14 @@ const EmployeeAnnouncementsView = () => {
                     {filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
-                                <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-slate-400" />
-                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/80 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] text-slate-500 transform-gpu overflow-hidden">
+                                <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-content-3" />
+                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] text-content-3 transform-gpu overflow-hidden">
                                     {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
                                 </div>
-                                <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
+                                <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">
                                     {searchQuery ? 'Sin resultados' : 'Sin leídos este mes'}
                                 </h3>
-                                <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                                <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">
                                     {searchQuery
                                         ? `Ningún aviso coincide con "${searchQuery}".`
                                         : hasOldRead

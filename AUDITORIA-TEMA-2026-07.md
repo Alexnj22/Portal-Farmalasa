@@ -677,15 +677,34 @@ Script en dos pasadas sobre `src/views/**/*.jsx` (~4,500 reemplazos):
 `border-white/N→border-border-card`, `#0052CC/#003D99→brand/brand-hover`
 (fix aplicado también a la variante minúscula `#003d99`, encontrada en
 `WidgetAnnulmentRequest.jsx`/`WidgetMinMaxRequest.jsx` — el regex original
-era case-sensitive), semánticos `red/emerald/amber→danger/success/warning`
-preservando la opacidad original del caller cuando existía (`bg-red-50/40`
-→`bg-danger/40`, no un `/10` fijo que perdería la intención). Segunda
-pasada cubrió `bg-slate-50/100/200/300/400` y `text-slate-200`, que la
-primera pasada no tocaba (gap real, encontrado al medir el gate).
+era case-sensitive), semánticos `red/emerald/amber→danger/success/warning`.
+Segunda pasada cubrió `bg-slate-50/100/200/300/400` y `text-slate-200`, que
+la primera pasada no tocaba (gap real, encontrado al medir el gate).
+
+**Bug encontrado y corregido en v2.47.2 (estuvo en prod desde v2.46.0)**:
+la primera versión del codemod preservaba el sufijo de opacidad original
+del caller al mapear `bg/border-{red,emerald,amber}-{50,100,200}/NN` a los
+tokens semánticos (`bg-amber-50/80` → `bg-warning/80`). Ese NN modulaba la
+opacidad de un color YA claro (compositing de vidrio sobre el fondo), no
+"qué tan saturado" debía verse — reenviarlo al token sólido producía un
+banner/badge mucho más intenso que el original (de tinte casi blanco a
+bloque ámbar sólido). Afectaba ~60 archivos ya en producción, invisible a
+build/test. `sem()` corregida para usar siempre la opacidad por defecto
+(`/10` bg, `/30` border en estado base; `/20`/`/50` en `hover:`/`focus:`/
+`group-hover:`, para no aplanar transiciones de hover legítimas — un
+primer intento de corrección global sí las aplanó por error en
+`PhotoEditorModal.jsx`, detectado y revertido antes de commitear). Pase
+correctivo aplicado a los ~60 archivos afectados de `src/views`.
+
+Extendido a `src/components/**/*.jsx` en v2.47.2 (84 archivos, 49
+migrados) — el gate de T7 siempre incluyó esta carpeta pero nunca se había
+auditado en esta sesión de continuación. Mismas reglas, mismo criterio de
+exclusión para contexto siempre-oscuro/fijo (ver §10.2).
 
 Gate de T7 (`grep -rl 'text-slate-[0-9]\|bg-white/\|bg-slate-[0-9]\|
-border-white/\|#[0-9a-fA-F]\{6\}' src/views`): **102 → 51 archivos** con al
-menos un match. De esos 51, el 100% de los matches de clase Tailwind
+border-white/\|#[0-9a-fA-F]\{6\}' src/views src/components`): **183 → 71
+archivos** con al menos un match (49 en `src/views`, 22 en
+`src/components`). De esos, el grueso de los matches de clase Tailwind
 restantes son `bg-slate-500..950` (confirmado por grep de contexto: son
 botones/chips neutros SIEMPRE oscuros a propósito — "Ver más", tooltips,
 badges de acción — mismo criterio que `ThemeToggle.jsx`/
@@ -694,8 +713,10 @@ restante es hex crudo — ver §10.2.
 
 Verificado con Playwright (liquid/solid/dark) en las vistas de mayor
 tráfico: `VentasView` (137→2 matches originales), `AttendanceMonitorView`,
-`DashboardView` — el salto es de cajas planas grises/blancas sin
-distinción en dark theme a superficies y acentos correctos por tema.
+`DashboardView`, y tras el fix de opacidad, `RolesView` (banner de error),
+`EmployeeProfileView` (stat card "Pendientes"), `FacturacionView` (chips
+de estado) — el salto es de cajas planas grises/blancas sin distinción en
+dark theme a superficies y acentos correctos por tema.
 
 ### 10.2 Excepciones documentadas (hex crudo restante, por categoría)
 
@@ -734,6 +755,17 @@ gate de T7 las excluya explícitamente en vez de perseguirlas a ciegas:
 - **`bg-slate-700/800/900/950`** en ~15 archivos (`pedidos/*`,
   `branch-tabs/TabStaff.jsx`, `BranchesView.jsx`, etc.): botones/chips
   neutros siempre-oscuros a propósito, no card surfaces — ver arriba.
+- **`src/components` — contexto siempre-oscuro/fondo fijo (excluidos del
+  codemod de v2.47.2, no solo "quedaron pendientes")**: `AppLayout.jsx`
+  (rail del sidebar — glass decorativo sobre fondo oscuro permanente,
+  mismo hallazgo ya documentado en T3), `SidebarSyncStatus.jsx`,
+  `ThemeToggle.jsx` (variante "sidebar", mismo host oscuro permanente que
+  el anterior), y los 6 archivos de `src/components/timeclock/` (pantalla
+  de reloj checador — `bg-[#0A0F1C]/80` fijo, kiosco). Migrar cualquiera
+  de estos a `bg-surface-card`/`border-border-card`/`text-content*` los
+  rompe: esos tokens resuelven a superficie CLARA en tema claro, pero el
+  fondo real ahí es oscuro sin importar el tema — confirmado por diff
+  antes de commitear (revertido dos veces esta sesión al aparecer).
 
 ### 10.3 Responsive/densidad — barrido de "sin scroll horizontal a 1024×768"
 

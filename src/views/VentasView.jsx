@@ -165,7 +165,7 @@ function FilterControls({
                 </div>
                 {filterBranch && (
                     <button onClick={() => setFilterBranch('')} title="Quitar sucursal"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -182,7 +182,7 @@ function FilterControls({
                 </div>
                 {filterLab && (
                     <button onClick={() => setFilterLab('')} title="Quitar laboratorio"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -198,7 +198,7 @@ function FilterControls({
                 </div>
                 {dateDirty && (
                     <button onClick={() => setMonthRange(defaultRange)} title="Quitar fecha"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -211,7 +211,7 @@ function FilterControls({
                 <button onClick={() => setFilterAnuladas(v => !v)}
                     className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                         filterAnuladas
-                            ? 'bg-danger/10 border-danger/30 text-red-700 shadow-sm'
+                            ? 'bg-danger/10 border-danger/30 text-danger-text shadow-sm'
                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
                     }`}>
                     Anuladas
@@ -236,7 +236,7 @@ function FilterControls({
                 <>
                     <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                     <button onClick={resetAll} title="Limpiar todos los filtros"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors duration-200 shrink-0">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -255,7 +255,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
                 ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-white' : 'cursor-default bg-white'}
                 ${active
-                    ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-warning/10'
+                    ? 'border-warning ring-2 ring-warning/30 shadow-md bg-warning/10'
                     : isFilter
                         ? 'border-warning/30 bg-warning/10 hover:bg-warning/10'
                         : 'border-slate-100 bg-white'
@@ -302,7 +302,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
             <button onClick={() => onSort(col)}
                 className={`group flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
                     active
-                        ? 'text-brand bg-blue-50'
+                        ? 'text-brand bg-brand/10'
                         : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover/70'
                 }`}>
                 {label}
@@ -636,10 +636,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
                     const pctPuntos = dailyPct(totalPuntos,  curDays, prevStats.puntos, prevDays);
                     return [
-                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
-                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
+                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
+                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-content-2',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
-                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
+                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
@@ -684,21 +684,21 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const tipoBadgeColor = r.tipo_documento === 'CCF'
                         ? 'bg-danger/10 text-danger'
                         : r.tipo_documento === 'FCF'
-                        ? 'bg-blue-50 text-blue-600'
+                        ? 'bg-chart-1/10 text-chart-1-text'
                         : 'bg-surface-card-hover text-content-3';
                     return (
                         <React.Fragment key={r.id}>
                             <DataRow
                                 index={i}
                                 onClick={() => toggleRow(r.id)}
-                                className={isCancelled ? 'opacity-50 bg-danger/10' : isExpanded ? 'bg-blue-50/50' : ''}
+                                className={isCancelled ? 'opacity-50 bg-danger/10' : isExpanded ? 'bg-chart-1/10' : ''}
                             >
                                 <DataCell>
                                     <p className={`text-[12px] font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
                                     {r.hora && <p className="text-[10px] text-content-3">{r.hora?.slice(0, 5)}</p>}
                                     {isCancelled
                                         ? <span className="text-[8px] font-black uppercase tracking-widest text-danger">ANULADA</span>
-                                        : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-orange-400">Pdte. MH</span>}
+                                        : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-content-3 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
@@ -760,24 +760,24 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 </div>
                                             } className="shrink-0">
                                                 <div onClick={e => e.stopPropagation()}
-                                                    className="w-4 h-4 rounded-full bg-warning/10 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
+                                                    className="w-4 h-4 rounded-full bg-warning/10 hover:bg-warning/20 flex items-center justify-center cursor-default transition-colors">
                                                     <span className="text-[9px] font-black text-warning leading-none">!</span>
                                                 </div>
                                             </LiquidTooltip>
                                         )}
                                         <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-content-3' : 'text-content'}`}>{fmt(r.total)}</p>
                                         <ChevronDown size={12}
-                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-content-3' : 'text-content-3'}`} />
+                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-chart-1-text' : noData ? 'text-content-3' : 'text-content-3'}`} />
                                     </div>
                                 </DataCell>
                             </DataRow>
                             {isExpanded && (
-                                <tr className="border-t border-blue-100/60">
+                                <tr className="border-t border-chart-1/30">
                                     <td colSpan={8}
-                                        className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20">
+                                        className="px-5 py-4 bg-gradient-to-br from-chart-1/10 via-surface-card to-surface-card-hover">
                                         {loadingItems && !cachedItems ? (
                                             <div className="flex items-center gap-2 text-[11px] py-1 text-content-3">
-                                                <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
+                                                <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando productos...
                                             </div>
                                         ) : noData ? (
                                             <div className="flex items-center gap-2 text-[11px] py-1 text-content-3">
@@ -842,7 +842,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                                                     {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>}
                                                                                     {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
-                                                                                    {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
+                                                                                    {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text font-mono">L:{it.lote}</span>}
                                                                                     {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}
                                                                                 </div>
                                                                             )}
@@ -867,8 +867,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 <tr className="border-t border-warning/30">
                                                                     <td className="pt-1.5 pb-1 pl-2 pr-2" colSpan={3}>
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
-                                                                            <span className="text-[11px] font-semibold text-amber-700">Descuento por puntos</span>
+                                                                            <span className="text-[9px] font-black uppercase tracking-widest bg-warning/20 text-warning-text px-1.5 py-0.5 rounded-md">PUNTOS</span>
+                                                                            <span className="text-[11px] font-semibold text-warning-text">Descuento por puntos</span>
                                                                         </div>
                                                                     </td>
                                                                     <td />
@@ -1091,8 +1091,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pctSum   = dailyPct(totalVentas,   curDaysV, prevVendStats.sum,   prevDaysV);
                     const pctCount = dailyPct(totalFacturas, curDaysV, prevVendStats.count, prevDaysV);
                     return [
-                        { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    pct: null,     sub: undefined },
-                        { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
+                        { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    pct: null,     sub: undefined },
+                        { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
                         { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
@@ -1101,7 +1101,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
             </div>
 
             {isVendSearchFuzzy && searchTerm && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -1129,13 +1129,13 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
                     const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
                     const expandBg     = 'bg-gradient-to-br from-blue-50/30 via-white/40 to-slate-50/20';
-                    const expandBorder = 'border-blue-100/60';
-                    const cardNormal   = 'bg-white border-slate-200';
-                    const cardCross    = 'bg-orange-50 border-orange-200';
+                    const expandBorder = 'border-chart-1/30';
+                    const cardNormal   = 'bg-surface-card border-border-card';
+                    const cardCross    = 'bg-warning/10 border-warning/30';
 
                     return (
                         <React.Fragment key={r.cod_vendedor}>
-                            <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-blue-50/30' : ''}>
+                            <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-chart-1/10' : ''}>
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
                                         {i === 0 ? <Trophy size={15} className="text-yellow-500" />
@@ -1165,7 +1165,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <DataCell hideBelow="md" className="text-[12px]">
                                     {getBranchName(baseBranchId)}
                                     {r.branchIds.filter(id => id !== baseBranchId).map(id => (
-                                        <span key={id} className="ml-1 text-[10px] text-orange-500 font-semibold">+{getBranchName(id)}</span>
+                                        <span key={id} className="ml-1 text-[10px] text-warning-text font-semibold">+{getBranchName(id)}</span>
                                     ))}
                                 </DataCell>
                                 <DataCell align="right" className="font-semibold text-[12px]">{fmtNum(r.count)}</DataCell>
@@ -1173,13 +1173,13 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                     <div className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                         <p className="font-black text-[13px]">{privacyMode ? '••••••' : fmt(r.total)}</p>
                                         <div className="mt-1 h-1 rounded-full bg-surface-card-hover">
-                                            <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: privacyMode ? '0%' : `${pct}%` }} />
+                                            <div className="h-1 rounded-full bg-chart-1 transition-all" style={{ width: privacyMode ? '0%' : `${pct}%` }} />
                                         </div>
                                     </div>
                                 </DataCell>
                                 <DataCell align="right" hideBelow="md" className="text-[12px]">{fmt(ticket)}</DataCell>
                                 <DataCell>
-                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-400' : 'text-content-3'}`} />
+                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
                                 </DataCell>
                             </DataRow>
                             {isOpen && !privacyMode && (
@@ -1200,7 +1200,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                                                 <p className="font-black text-content">{fmt(d.total)}</p>
                                                                 <p className="text-content-3">{d.count} fact.</p>
                                                                 {cross.map(b => (
-                                                                    <p key={b.branch_id} className="text-orange-500 font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
+                                                                    <p key={b.branch_id} className="text-warning-text font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
                                                                 ))}
                                                             </div>
                                                         );
@@ -1215,14 +1215,14 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     );
                 })}
                 {[...unknownByBranch.values()].map(u => (
-                    <DataRow key={`u-${u.branch_id}`} className="bg-orange-50/30">
-                        <DataCell><span className="text-[10px] text-orange-300 font-bold">—</span></DataCell>
+                    <DataRow key={`u-${u.branch_id}`} className="bg-warning/10">
+                        <DataCell><span className="text-[10px] text-warning-text/60 font-bold">—</span></DataCell>
                         <DataCell>
                             <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                                    <Users size={14} className="text-orange-400" />
+                                <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                                    <Users size={14} className="text-warning-text" />
                                 </div>
-                                <p className="font-semibold text-orange-600 text-[13px]">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
+                                <p className="font-semibold text-warning-text text-[13px]">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
                             </div>
                         </DataCell>
                         <DataCell hideBelow="md" className="text-[12px]">—</DataCell>
@@ -1240,22 +1240,22 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
 const DRILL_TIERS = [
-    { key: 'vip',         label: 'VIP',     color: 'bg-violet-100 text-violet-700',   num: 3 },
-    { key: 'clinica',     label: 'Clínica', color: 'bg-sky-100 text-sky-700',         num: 4 },
-    { key: 'mayoreo',     label: 'Mayoreo', color: 'bg-orange-100 text-orange-700',   num: 5 },
-    { key: 'premium',     label: 'Premium', color: 'bg-warning/10 text-amber-700',     num: 6 },
-    { key: 'descuento_1', label: 'Desc.',   color: 'bg-success/10 text-emerald-700', num: 2 },
-    { key: 'precio_7',    label: 'P7',      color: 'bg-teal-100 text-teal-700',       num: 7 },
+    { key: 'vip',         label: 'VIP',     color: 'bg-chart-3/10 text-chart-3-text',   num: 3 },
+    { key: 'clinica',     label: 'Clínica', color: 'bg-chart-7/10 text-chart-7-text',         num: 4 },
+    { key: 'mayoreo',     label: 'Mayoreo', color: 'bg-chart-4/10 text-chart-4-text',   num: 5 },
+    { key: 'premium',     label: 'Premium', color: 'bg-warning/10 text-warning-text',     num: 6 },
+    { key: 'descuento_1', label: 'Desc.',   color: 'bg-success/10 text-success-text', num: 2 },
+    { key: 'precio_7',    label: 'P7',      color: 'bg-chart-9/10 text-chart-9-text',       num: 7 },
     { key: 'vineta',      label: 'Viñeta',  color: 'bg-surface-card-hover text-content-2',     num: 1 },
 ];
 const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PAGO_STYLE = {
-    efectivo:      'bg-success/10 text-emerald-700',
-    tarjeta:       'bg-blue-50 text-blue-700',
-    credito:       'bg-warning/10 text-amber-700',
-    transferencia: 'bg-purple-50 text-purple-700',
-    cheque:        'bg-zinc-100 text-zinc-600',
-    bitcoin:       'bg-orange-50 text-orange-600',
+    efectivo:      'bg-success/10 text-success-text',
+    tarjeta:       'bg-chart-1/10 text-chart-1-text',
+    credito:       'bg-chart-3/10 text-chart-3-text',
+    transferencia: 'bg-chart-5/10 text-chart-5-text',
+    cheque:        'bg-chart-9/10 text-chart-9-text',
+    bitcoin:       'bg-chart-4/10 text-chart-4-text',
 };
 function detectTier(precioUnitario, preciosRow, tiers = DRILL_TIERS) {
     if (!preciosRow || !precioUnitario) return null;
@@ -1272,7 +1272,7 @@ function detectTier(precioUnitario, preciosRow, tiers = DRILL_TIERS) {
         .filter(Boolean);
     if (!candidates.length) return null;
     const best = candidates.reduce((a, b) => b.diff < a.diff ? b : a);
-    if (best.diff > 0.10) return { label: 'Especial', color: 'bg-rose-100 text-rose-600' };
+    if (best.diff > 0.10) return { label: 'Especial', color: 'bg-chart-6/10 text-chart-6-text' };
     return best;
 }
 
@@ -1316,7 +1316,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     }
 
     const days  = Math.floor((now - new Date(fecha + 'T12:00:00')) / 86_400_000);
-    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-orange-500' : 'text-content-2';
+    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-chart-4-text' : 'text-content-2';
     const label = fmtDate(fecha);
 
     if (filterBranch) {
@@ -1348,7 +1348,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
                 const d = Math.floor((now - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
-                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-orange-500' : 'text-brand';
+                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand';
                 return (
                     <div key={s.branch_id} className="flex items-center justify-between gap-6 whitespace-nowrap">
                         <span className="text-[12px] font-semibold text-content-2">{name}</span>
@@ -1805,10 +1805,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     // comparar un total acotado contra uno de todos los laboratorios.
                     const pctIngresos = filterLab ? null : dailyPct(totNeto, curDaysP, prevProdStats.sum, prevDaysP);
                     return [
-                        { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    pct: pctIngresos, sub: !filterLab && prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined, conIva: totNetoConIva },
-                        { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },
-                        { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
-                        { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
+                        { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-chart-1 to-chart-3',   text: 'text-chart-1-text',    pct: pctIngresos, sub: !filterLab && prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined, conIva: totNetoConIva },
+                        { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-danger to-chart-4',    text: 'text-danger-text',     pct: null,        sub: undefined },
+                        { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-success to-chart-9',  text: 'text-success-text', pct: null,        sub: undefined },
+                        { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-warning to-chart-7',  text: 'text-warning-text',   pct: null,        sub: undefined },
                         ...(hiddenCount > 0 || showHidden ? [
                             { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-slate-500 to-slate-400', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
                         ] : []),
@@ -1822,11 +1822,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 <div className="text-center py-16 text-danger">
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
-                    <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-blue-500 hover:underline">Reintentar</button>
+                    <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-brand hover:underline">Reintentar</button>
                 </div>
             )}
             {isProdFuzzy && searchTerm && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -1866,7 +1866,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 return (
                                     <React.Fragment key={rowKey}>
                                     <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
-                                        className={isExpanded ? 'bg-blue-50/40' : ''}>
+                                        className={isExpanded ? 'bg-chart-1/10' : ''}>
                                         <DataCell className="text-[11px] font-bold">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
                                                 : <span className="text-content-3">{globalIdx + 1}</span>}
@@ -1887,11 +1887,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     )}
                                                     {r.neto > 0 && (
                                                     <div className="mt-1.5 h-1 rounded-full bg-surface-card-hover">
-                                                        <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
+                                                        <div className="h-1 rounded-full bg-chart-1 transition-all" style={{ width: `${pct}%` }} />
                                                     </div>
                                                     )}
                                                 </div>
-                                                <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-content-3'}`} />
+                                                <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
                                             </div>
                                         </DataCell>
                                         <DataCell hideBelow="md" className="text-[11px] text-content-3 font-semibold truncate max-w-[140px]">
@@ -2007,7 +2007,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                             <span className="text-[11px] font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
                                                                             <span className="text-[11px] font-black text-content">{fmtQty(p.cantidad)} u</span>
                                                                             {p.factor > 1 && (
-                                                                                <span className="text-[10px] font-semibold text-blue-500">= {fmtQty(p.cantidad * p.factor)} base</span>
+                                                                                <span className="text-[10px] font-semibold text-chart-1-text">= {fmtQty(p.cantidad * p.factor)} base</span>
                                                                             )}
                                                                             <span className="text-[10px] text-content-3">{fmt(p.neto)}</span>
                                                                         </div>
@@ -2039,7 +2039,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             // Trend bar heights
                                                             const maxTrend = showTrend ? Math.max(...drillMonthly.map(m => m.neto), 1) : 1;
 
-                                                            const BRANCH_COLORS = ['bg-indigo-400','bg-blue-400','bg-violet-400','bg-sky-400','bg-purple-400','bg-cyan-400'];
+                                                            const BRANCH_COLORS = ['bg-chart-1','bg-chart-2','bg-chart-3','bg-chart-4','bg-chart-5','bg-chart-6'];
                                                             return (
                                                                 <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                                                     {/* Branch rotation */}
@@ -2059,7 +2059,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                 <div className="flex items-center gap-2 shrink-0 ml-2">
                                                                                                     <span className="text-[9px] text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
                                                                                                     <span className="text-[10px] font-black text-content-2">{fmt(neto)}</span>
-                                                                                                    <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-indigo-500">{pct.toFixed(0)}%</span>
+                                                                                                    <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-chart-3">{pct.toFixed(0)}%</span>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
@@ -2121,7 +2121,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillSortCol === col;
                                                                 return (
                                                                     <th onClick={() => handleDrillSort(col)}
-                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-blue-600' : 'text-content-2'} hover:text-content-2`}>
+                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-chart-1-text' : 'text-content-2'} hover:text-content-2`}>
                                                                         <span className="inline-flex items-center gap-0.5">
                                                                             {label}
                                                                             {active
@@ -2135,7 +2135,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillFilters[field] === val;
                                                                 return (
                                                                     <button key={val} onClick={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}
-                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] ${active ? 'bg-brand text-white border-brand' : 'bg-white text-content-3 border-slate-200 hover:border-blue-300 hover:text-blue-600'}`}>
+                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] ${active ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-3 border-border-card hover:border-chart-1/40 hover:text-chart-1-text'}`}>
                                                                         {label ?? val}
                                                                     </button>
                                                                 );
@@ -2153,14 +2153,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <>
                                                                                         {docOpts.length > 1 && <span className="text-content-3">|</span>}
                                                                                         <button onClick={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}
-                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-warning border-amber-300 hover:border-amber-500'}`}>
+                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-warning text-white border-warning' : 'bg-surface-card text-warning border-warning/40 hover:border-warning'}`}>
                                                                                             ⚠ precio cambió ({changedCount})
                                                                                         </button>
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
                                                                                     <button onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}
-                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-danger/10 text-danger hover:bg-red-500 hover:text-white border border-danger/30 transition-colors">
+                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-danger/10 text-danger hover:bg-danger hover:text-white border border-danger/30 transition-colors">
                                                                                         ✕ limpiar
                                                                                     </button>
                                                                                 )}
@@ -2176,7 +2176,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                         <span className="text-content-3">·</span>
                                                                         <p className="text-[10px] font-black text-content-2">{fmtQty(totCant)} <span className="font-medium text-content-3">unidades</span></p>
                                                                         <span className="text-content-3">·</span>
-                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-content-3">total</span></p>
+                                                                        <p className="text-[11px] font-black text-success-text">{fmt(totNeto)} <span className="text-[9px] font-medium text-content-3">total</span></p>
                                                                     </div>
 
                                                                     {/* Table */}
@@ -2206,9 +2206,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const empShort   = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
                                                                                     const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
                                                                                     const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-surface-card-hover text-content-3';
-                                                                                    const docStyle   = line.tipo_documento === 'CCF' ? 'bg-blue-100 text-blue-700' : 'bg-surface-card-hover text-content-2';
+                                                                                    const docStyle   = line.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-2';
                                                                                     return (
-                                                                                        <tr key={li} className="hover:bg-blue-50/30 transition-colors">
+                                                                                        <tr key={li} className="hover:bg-chart-1/10 transition-colors">
                                                                                             <td className="px-3 py-2 font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 <div className="flex flex-col leading-tight">
@@ -2235,12 +2235,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             <td className="px-3 py-2 text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 {line.lote
-                                                                                                    ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500">{line.lote}</span>
+                                                                                                    ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text">{line.lote}</span>
                                                                                                     : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap hidden lg:table-cell">
                                                                                                 {line.fecha_vencimiento
-                                                                                                    ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-600">{line.fecha_vencimiento}</span>
+                                                                                                    ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-9/10 text-chart-9-text">{line.fecha_vencimiento}</span>
                                                                                                     : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -2256,7 +2256,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                                 <>
                                                                                                                     <span className="text-warning text-[11px] cursor-help leading-none">⚠</span>
                                                                                                                     <div className="absolute bottom-full right-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
-                                                                                                                        <p className="font-black text-amber-300 mb-0.5">Precio cambió</p>
+                                                                                                                        <p className="font-black text-warning mb-0.5">Precio cambió</p>
                                                                                                                         {line.tierChangedAt && (
                                                                                                                             <p className="text-content-3">
                                                                                                                                 {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -2283,7 +2283,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                         Total {filteredDrill.length < drillData.length ? `(filtrado)` : ''}
                                                                                     </td>
                                                                                     <td className="px-3 py-2 text-right font-black text-content-2">{fmtQty(totCant)}</td>
-                                                                                    <td className="px-3 py-2 text-right font-black text-emerald-700">{fmt(totNeto)}</td>
+                                                                                    <td className="px-3 py-2 text-right font-black text-success-text">{fmt(totNeto)}</td>
                                                                                 </tr>
                                                                             </tfoot>
                                                                         </table>
@@ -2457,7 +2457,7 @@ export default function VentasView() {
                 <button onClick={openSearch}
                     className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
             </div>
         </div>

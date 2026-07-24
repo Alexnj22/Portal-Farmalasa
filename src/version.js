@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.8';
+export const APP_VERSION = '2.51.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.9 — refactor(theme): T7.1 — VentasView.jsx completo (v2.51.9).
+//
+// El archivo más grande tocado en esta fase (2,490 líneas, ~250
+// reemplazos): 3 sets de StatCards con gradientes crudos (Vendedores,
+// Ventas, Productos), tabla de vendedores (cross-branch → warning),
+// DRILL_TIERS (7 niveles de precio → paleta cat-N), PAGO_STYLE (mismo
+// criterio que FacturacionView.jsx para el mismo concepto), tabla de
+// drill-down con BRANCH_COLORS (6 colores por sucursal → cat-1..6
+// directo, coincidencia perfecta con la paleta), badges de lote/
+// vencimiento, CCF→danger (consistente con CotizacionesView).
 
 // v2.51.8 — refactor(theme): T7.1 — CotizacionesView/RolesView/
 // AttendanceAuditView/PayrollView + cierre real de pedidos/RequestsView

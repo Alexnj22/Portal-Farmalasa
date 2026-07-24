@@ -1036,3 +1036,37 @@ rendimiento. Auditoría en 3 partes:
    visual (mismo tipo de gate que usó T2), no un fix mecánico seguro.
    **Diferido a T7 por decisión del usuario** — ya estaba en el checklist
    de DESIGN.md v2.0 §8 ("elevación tokenizada"), no es alcance nuevo.
+
+## 12. T6 COMPLETADO (2026-07-24, v2.50.0)
+
+**Default**: sin preferencia guardada en `localStorage` (el caso de casi
+todo usuario real, dado que el `ThemeToggle` recién se montó en T5), el
+default deja de ser `liquid` fijo y pasa a **Solid Modern** — claro u
+oscuro según `prefers-color-scheme` del SO, resuelto una sola vez al
+montar. Cualquier usuario que ya haya tocado el toggle (localStorage con
+valor) conserva su elección — nunca se sobreescribe. Esto es
+independiente de la decisión pendiente sobre si Liquid Glass sobrevive
+como opción (§11) — el cambio de default ya estaba aprobado desde §0.3.
+
+**`<meta name="theme-color">` dinámico**: se actualiza en el mismo
+`useEffect` que fija `data-theme`, con el color real de `--bg-page` de
+cada tema (antes fijo en el tono de liquid claro). El valor estático de
+`index.html` se dejó intacto a propósito: cambiarlo comparte el gotcha ya
+documentado del shell móvil — iOS no siempre relee el status bar de una
+PWA agregada a inicio sin reinstalar el web clip. El dinámico cubre
+navegador normal/Android sin ese riesgo; el posible desajuste de un frame
+en standalone iOS es un límite conocido, no una regresión nueva.
+
+**Punto de montaje del selector**: confirmado como definitivo el mismo
+lugar donde se montó en T5 (footer del sidebar de `AppLayout.jsx`,
+expandido y colapsado) — comentarios actualizados para reflejar que ya no
+es un stopgap.
+
+Verificado con Playwright: sesión nueva + SO claro → `solid`; sesión nueva
++ SO oscuro → `solid-dark`; usuario con `liquid` ya guardado → no se
+sobreescribe; los 4 temas actualizan `theme-color` correctamente al
+ciclar.
+
+Siguiente paso: T7 (gate mecánico de cobertura + matriz de QA + shadows/
+elevación + DESIGN.md v2.0) — el cierre formal del plan, tras el cual se
+retoma la decisión de Liquid Glass.

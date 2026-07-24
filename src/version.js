@@ -5,8 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.49.1';
+export const APP_VERSION = '2.50.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.50.0 — feat(theme): Fase T6 — default Solid Modern + theme-color
+// dinámico.
+//
+// ThemeContext.jsx: sin preferencia guardada (localStorage vacío — el caso
+// de casi todo usuario real hoy, dado que el ThemeToggle recién se montó
+// en T5), el default deja de ser 'liquid' fijo y pasa a Solid Modern
+// (decisión §0.3 del plan, tomada 2026-07-22) — claro u oscuro según
+// `prefers-color-scheme` del SO, resuelto una sola vez al montar (no
+// reactivo a cambios de SO en caliente, igual que el resto de la app).
+// Cualquier usuario que YA haya tocado el ThemeToggle (localStorage con
+// valor) no se toca — su elección explícita gana siempre.
+//
+// <meta name="theme-color"> (status bar en PWA/standalone) ahora se
+// actualiza en el mismo useEffect que fija data-theme, con el color real
+// de --bg-page de cada tema (antes quedaba fijo en el tono de liquid
+// claro). El valor estático de index.html se deja intacto a propósito —
+// cambiarlo tiene el mismo gotcha ya documentado del shell móvil (ver
+// [[project_mobile_layout_broken_audit]]): iOS no siempre relee el status
+// bar de una PWA ya agregada a inicio sin reinstalar el web clip. El
+// update dinámico cubre navegador normal/Android sin ese riesgo; el
+// posible mismatch de un frame en standalone iOS es un límite conocido,
+// no una regresión nueva.
+//
+// ThemeToggle.jsx (montado en T5 como "temporal") queda confirmado como
+// punto de montaje final — comentarios actualizados en AppLayout.jsx. La
+// decisión sobre si Liquid Glass sobrevive como opción sigue diferida
+// (AUDITORIA-TEMA-2026-07.md §11); el cambio de DEFAULT no depende de esa
+// decisión — ya estaba aprobado desde el inicio del plan.
+//
+// Verificado con Playwright: sesión nueva + SO claro → solid; sesión
+// nueva + SO oscuro → solid-dark; usuario con 'liquid' ya guardado → no
+// se sobreescribe; los 4 temas actualizan theme-color correctamente al
+// ciclar.
 
 // v2.49.1 — refactor(theme): T5.3 — transition-all → props específicas en
 // componentes compartidos (Button, LiquidSelect ×3, TablePagination,

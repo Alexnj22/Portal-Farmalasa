@@ -886,9 +886,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     
                                     <SidebarSyncStatus />
 
-                                    {/* Temporal mientras dura AUDITORIA-TEMA-2026-07.md: única forma de
-                                        previsualizar los 4 temas en vivo hasta que T6 decida el default
-                                        y el punto de montaje final del selector. */}
+                                    {/* Punto de montaje final del selector (Fase T6). Los 4 temas
+                                        siguen expuestos aunque el default ya sea Solid Modern — si
+                                        Liquid Glass sobrevive como opción o se elimina sigue siendo
+                                        una decisión pendiente, ver AUDITORIA-TEMA-2026-07.md §11. */}
                                     <ThemeToggle />
 
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
@@ -988,8 +989,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
-                                    {/* Temporal mientras dura AUDITORIA-TEMA-2026-07.md — ver nota en el
-                                        estado expandido de arriba. */}
+                                    {/* Punto de montaje final (Fase T6) — ver nota en el estado
+                                        expandido de arriba. */}
                                     <ThemeToggle variant="compact" />
                                     <span className="text-[8px] font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
                                 </div>

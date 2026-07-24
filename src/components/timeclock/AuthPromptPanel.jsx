@@ -59,7 +59,7 @@ const AuthPromptPanel = ({
             {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : promptType === 'IN_EARLY_EXTRA' ? 'Autoriza para guardar la hora de llegada real (no ajustada).' : 'Solicite a su supervisor autorizar el movimiento.'}
           </p>
           {requiresSuPin && (
-            <div className="mt-2.5 flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl bg-chart-3/10 border border-purple-500/25">
+            <div className="mt-2.5 flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl bg-chart-3/10 border border-chart-3/25">
               <ShieldAlert size={11} className="text-chart-3-text shrink-0" />
               <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-chart-3-text">Requiere código SU (6 dígitos)</span>
             </div>
@@ -117,11 +117,11 @@ const AuthPromptPanel = ({
               </button>
             )}
             {skipPinHandler && (
-              <button type="button" onClick={skipPinHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-amber-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 rounded-full border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={skipPinHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-warning flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 rounded-full border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <SkipForward size={14} /> Omitir PIN — Notificar a TH
               </button>
             )}
-            <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+            <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-danger flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
               <XCircle size={14} /> Cancelar / Atrás
             </button>
           </div>

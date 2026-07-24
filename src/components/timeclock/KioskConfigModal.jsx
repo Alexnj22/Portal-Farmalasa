@@ -54,13 +54,13 @@ const KioskConfigModal = ({
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
             <div className="inline-flex p-4 rounded-[1.5rem] mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[0_0_40px_rgba(16,185,129,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(16,185,129,0.3)]">
-              <MonitorCheck size={42} className="text-emerald-400 drop-shadow-[0_2px_10px_rgba(16,185,129,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+              <MonitorCheck size={42} className="text-success drop-shadow-[0_2px_10px_rgba(16,185,129,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
               Kiosco Activo
             </h2>
-            <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-emerald-400/80 transition-colors px-2 mb-6">
+            <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-success/80 transition-colors px-2 mb-6">
               Dispositivo Autorizado
             </p>
 
@@ -78,7 +78,7 @@ const KioskConfigModal = ({
               type="button"
               onClick={onRevoke}
               disabled={isProcessing}
-              className="relative z-20 w-full text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="relative z-20 w-full text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={16} /> Revocar Permisos Locales
             </button>

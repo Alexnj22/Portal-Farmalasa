@@ -16,12 +16,12 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
 
                 <div className="flex flex-col items-center text-center mb-6">
                     <div className="inline-flex p-4 rounded-[1.5rem] mb-3 bg-warning/10 border border-warning/40 shadow-[0_0_40px_rgba(245,158,11,0.15)]">
-                        <Clock size={42} className="text-amber-400 drop-shadow-[0_2px_10px_rgba(245,158,11,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+                        <Clock size={42} className="text-warning drop-shadow-[0_2px_10px_rgba(245,158,11,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5">
                         Declara tu Horario
                     </h1>
-                    <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-amber-400/80">
+                    <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-warning/80">
                         Turno Extra — {employee?.name || 'Empleado'}
                     </p>
                     <p className="text-white/40 text-[10px] sm:text-xs leading-relaxed mt-2.5 px-2">
@@ -59,7 +59,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
 
                     <button
                         type="submit"
-                        className="relative z-20 pointer-events-auto w-full py-4 rounded-3xl bg-warning/20 border border-warning/40 text-amber-300 font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-warning/30 hover:border-warning/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.97] transition-all duration-300"
+                        className="relative z-20 pointer-events-auto w-full py-4 rounded-3xl bg-warning/20 border border-warning/40 text-warning font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-warning/30 hover:border-warning/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.97] transition-all duration-300"
                     >
                         <CheckCircle size={14} /> Confirmar Horario
                     </button>

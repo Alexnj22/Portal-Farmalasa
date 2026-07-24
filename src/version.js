@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.24';
+export const APP_VERSION = '2.52.25';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.25 — fix(theme): T7.1c — estandariza colores en 4 archivos del
+// kiosco/SRS (SelfDeclareShiftPanel, KioskConfigModal, AuthPromptPanel —
+// paneles fijos-oscuros del kiosco, tokens base; SrsEnriquecerModal —
+// violet crudo junto a bg-chart-3 ya tokenizado). FormAiSchedulerPreview.jsx
+// revisado: sus 3 restantes son el shimmer de IA ya documentado.
+
 
 // v2.52.24 — fix(theme): T7.1c — estandariza colores en 11 archivos más
 // (TabPromos, TabMinMax, TabCatalogo, StageAnims, LifecycleTimeline,

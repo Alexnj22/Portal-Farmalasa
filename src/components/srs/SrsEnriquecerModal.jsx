@@ -414,7 +414,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <span className="flex items-center gap-1.5 text-content-3"><span className="w-2.5 h-2.5 rounded-full bg-content-3 inline-block"/> Sin resultados SRS — descarta</span>
                             </div>
                             <button onClick={handleStart}
-                                className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-chart-3 hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200">
+                                className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-chart-3 hover:bg-chart-6 transition-colors shadow-lg shadow-chart-3/20">
                                 Iniciar escaneo
                             </button>
                         </div>
@@ -555,7 +555,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             onClick={() => handlePickCandidate(currentReview, ci)}
                                                             className={`w-full text-left rounded-xl border p-3 transition-all ${
                                                                 isSelected
-                                                                    ? 'border-violet-300 bg-chart-3/10'
+                                                                    ? 'border-chart-3/50 bg-chart-3/10'
                                                                     : 'border-slate-100 bg-white hover:border-chart-3/30 hover:bg-chart-3/10'
                                                             }`}>
                                                             <div className="flex items-start justify-between gap-2">
@@ -588,7 +588,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 pt-1 flex-wrap">
                                             <button onClick={() => handleReviewApply(currentReview)} disabled={reviewApplying || currentReview.principios.length === 0}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black text-white bg-chart-3 hover:bg-violet-700 transition-colors disabled:opacity-50">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black text-white bg-chart-3 hover:bg-chart-6 transition-colors disabled:opacity-50">
                                                 {reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                                                 Aplicar
                                             </button>

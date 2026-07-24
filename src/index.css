@@ -166,6 +166,26 @@
   /* backdrop-* sin cambios: mismo blur, el fondo oscuro se cuela a través del glass */
 }
 
+/* Fase T5: degrada el costo de blur de liquid/dark en móvil (blur(44px)→
+   blur(24px) aprox, menos saturate) — el hardware de gama baja es donde
+   más pesa el compositing del backdrop-filter. Solid/solid-dark no
+   necesitan esto (ya es "none"). IMPORTANTE — orden en el archivo: este
+   bloque debe ir ANTES de los bloques [data-theme="solid"/"solid-dark"]
+   de abajo. Los tres selectores (:root, [data-theme="solid"], este de
+   aquí) tienen la misma especificidad sobre el elemento <html>; en un
+   empate de especificidad gana el que aparece último en el documento —
+   así, en solid, el bloque de abajo pisa esto (queda en "none" sin
+   importar el viewport); en liquid/dark (que no redeclaran --backdrop-*
+   en su propio bloque), esta es la última regla que las toca y gana. */
+@media (max-width: 767.98px) {
+  :root {
+    --backdrop-card:      blur(24px) saturate(160%);
+    --backdrop-header:    blur(20px) saturate(200%);
+    --backdrop-modal:     blur(24px) saturate(140%);
+    --tab-track-backdrop: blur(20px) saturate(140%);
+  }
+}
+
 /* ─── Solid Light ("Solid Modern", Fase T2) ─── */
 [data-theme="solid"] {
   color-scheme: light;
@@ -364,6 +384,47 @@
 [data-theme="solid-dark"] .animate-ambient-drift,
 [data-theme="solid-dark"] .animate-ambient-drift-reverse {
   display: none;
+}
+
+/* Fase T5: en liquid/dark los blobs quedan vivos en móvil (arriba solo se
+   apagan en solid), pero son `filter: blur()` inline por instancia (5
+   globales de 22-40px + 3 de sidebar de 14-20px, AppLayout.jsx) sobre
+   elementos de hasta 80vw — el costo de compositing es real en hardware
+   de gama baja. Un valor plano con !important (única forma de pisar un
+   inline style desde una hoja de estilos) es más simple que replicar la
+   escala variable de cada blob; sacrifica algo de la variedad visual
+   original a cambio de menos GPU en el caso que más importa (móvil). No
+   aplica a solid: ahí ya están en `display:none` sin importar el ancho. */
+@media (max-width: 767.98px) {
+  .animate-ambient-drift,
+  .animate-ambient-drift-reverse {
+    filter: blur(16px) !important;
+  }
+}
+
+/* Fase T5: la promesa "cero backdrop-filter" de Solid Modern (arriba) solo
+   cubría los tokens (--backdrop-card/header/modal). Quedaban 466 usos
+   crudos de la utilidad Tailwind backdrop-blur-* en 106 archivos, pero NO
+   todos son residuales: 297 (95 archivos) coexisten con un fondo YA
+   migrado a --surface-* opaco (T3/T4) — ahí el blur es puro costo de
+   compositing sin ningún efecto visual, seguro de matar. El resto vive en
+   pantallas deliberadamente NUNCA migradas (LoginView.jsx, el rail del
+   sidebar de AppLayout.jsx, TimeClockView.jsx — mismas excepciones de
+   §10.2) que siguen con su propio fondo semitransparente crudo
+   (`bg-white/[0.20]` etc.): ahí el blur SÍ sostiene la legibilidad (sin
+   él, texto sobre un fondo translúcido sin difuminar). Encontrado
+   probando primero un selector amplio `[class*="backdrop-blur"]`: mataba
+   también el blur del sidebar y hubiera roto LoginView si compartiera
+   data-theme (verificado con Playwright antes de aplicar). El selector
+   exige AMBAS subcadenas en la misma clase para acotarse al caso seguro. */
+/* Solo la propiedad estándar: Lightning CSS autoprefija -webkit- sola
+   (confirmado en el bloque @media print de arriba). Declarar ambas a mano
+   causó que el minificador colisionara y descartara la estándar, dejando
+   SOLO -webkit-backdrop-filter en el build — bug real detectado con
+   Playwright (computed style seguía en blur(40px) pese a la regla). */
+[data-theme="solid"] [class*="bg-surface-"][class*="backdrop-blur"],
+[data-theme="solid-dark"] [class*="bg-surface-"][class*="backdrop-blur"] {
+  backdrop-filter: none !important;
 }
 
 /* .modal-glass-layer (LiquidModal.jsx) — capa extra de escarcha detrás del

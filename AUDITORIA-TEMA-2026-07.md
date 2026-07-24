@@ -957,3 +957,58 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   sub-tabs sobre `/pedidos` en sí (análogo al ya hecho para
   productos/schedules/ventas) queda como trabajo adicional no incluido
   en este pase, ya no bloqueado técnicamente para hacerse después.
+
+## 11. Estado de T5 (2026-07-24, v2.49.0) + ThemeToggle montado
+
+**T5 — hallazgos y fix aplicados**: la promesa "cero backdrop-filter" de
+Solid Modern (§T2/§7) solo cubría los tokens `--backdrop-card/header/modal`.
+Medido con grep: 466 usos crudos de la utilidad Tailwind `backdrop-blur-*`
+en 106 archivos, de los cuales 297 (95 archivos) coexisten con un fondo YA
+migrado a `--surface-*` opaco (T3/T4) — ahí el blur no tiene ningún efecto
+visual, es puro costo de compositing. Los ~170 restantes viven en pantallas
+deliberadamente sin migrar (`LoginView.jsx`, el rail del sidebar de
+`AppLayout.jsx`, `TimeClockView.jsx`) donde el fondo sigue siendo
+semitransparente crudo (`bg-white/[N]`) y el blur sostiene la legibilidad —
+matarlo ahí sí sería una regresión real. Nuevo selector en `index.css`
+(`[data-theme="solid"/"solid-dark"] [class*="bg-surface-"][class*="backdrop-blur"]`)
+acota el fix al caso seguro. Verificado con Playwright antes/después de
+acotar el selector (probar primero la versión amplia sí rompía LoginView y
+el sidebar, detectado antes de aplicar).
+
+Bug de build encontrado en el camino: declarar a mano
+`backdrop-filter: none !important` + `-webkit-backdrop-filter: none
+!important` hizo que Lightning CSS (minificador del pipeline de Tailwind
+v4) colisionara y descartara la propiedad estándar, dejando solo la
+prefijada en el bundle final — invisible hasta que se leyó el computed
+style real con Playwright (`backdrop-filter` seguía en `blur(40px)` pese a
+la regla). El bloque `@media print` ya existente en el archivo prueba que
+el autoprefixer agrega `-webkit-` solo; bastaba con declarar la estándar.
+
+Móvil: liquid/dark degradan `--backdrop-card/header/modal/tab-track` de
+~44px a ~24px de blur bajo `max-width:767.98px`, más un tope plano
+(`blur(16px) !important`) en los ambient blobs de `AppLayout.jsx`. El orden
+en el archivo importa — el bloque de degradación debe ir ANTES de los
+bloques `[data-theme="solid"/"solid-dark"]` para que estos últimos, al
+aparecer después, sigan ganando el empate de especificidad sobre `:root`
+sin importar el viewport (documentado inline en el CSS).
+
+**ThemeToggle montado (fuera de orden respecto al plan original)**: al
+llegar a este punto el usuario preguntó cómo probar visualmente los temas
+— `ThemeToggle.jsx` ya existía (cycleTheme de 4 temas) pero nunca se había
+montado en ningún lado, exactamente el hallazgo central de §1. Se montó en
+`AppLayout.jsx` (footer del sidebar, expandido y colapsado con
+`variant="compact"`), marcado explícitamente como temporal ("mientras dura
+AUDITORIA-TEMA-2026-07.md") — el punto de montaje definitivo, el default
+(Solid Modern claro) y `<meta name="theme-color">` dinámico siguen siendo
+trabajo de T6, no de esta sesión.
+
+**Decisión de Liquid Glass — sigue pendiente, explícitamente diferida**: el
+punto 5 de §0 decía que se decidía "después de ver el prototipo" (T2, ya
+pasado); al preguntarse directamente en esta sesión, el usuario pidió
+explícitamente NO decidir todavía — cerrar el resto del plan primero y
+tomar la decisión (mantener los 4 temas vs. eliminar liquid/dark) al
+final. T5.2 (degradar blur de liquid en móvil) se hizo de todos modos: es
+trabajo barato de revertir si Liquid se elimina, y necesario si sobrevive.
+Cualquier fase futura que asuma la eliminación de liquid/dark (borrar
+tokens, simplificar ThemeContext) NO debe ejecutarse sin confirmar esto
+primero.

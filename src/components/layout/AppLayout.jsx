@@ -20,6 +20,7 @@ import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
 import NotificationBell from '../common/NotificationBell';
 import SidebarSyncStatus from '../common/SidebarSyncStatus';
+import ThemeToggle from '../common/ThemeToggle';
 import MenuSearchModal from './MenuSearchModal';
 import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
@@ -885,6 +886,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     
                                     <SidebarSyncStatus />
 
+                                    {/* Temporal mientras dura AUDITORIA-TEMA-2026-07.md: única forma de
+                                        previsualizar los 4 temas en vivo hasta que T6 decida el default
+                                        y el punto de montaje final del selector. */}
+                                    <ThemeToggle />
+
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
                                         <button onClick={() => navigate('/profile')}
@@ -982,6 +988,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
+                                    {/* Temporal mientras dura AUDITORIA-TEMA-2026-07.md — ver nota en el
+                                        estado expandido de arriba. */}
+                                    <ThemeToggle variant="compact" />
                                     <span className="text-[8px] font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
                                 </div>
                             )}

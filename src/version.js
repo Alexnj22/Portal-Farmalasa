@@ -5,8 +5,48 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.48.2';
+export const APP_VERSION = '2.49.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.49.0 — feat(theme): Fase T5 (eficiencia de render) + ThemeToggle montado
+// en AppLayout para previsualizar los 4 temas en vivo.
+//
+// T5.1: la promesa "cero backdrop-filter" de Solid Modern (T2) solo cubría
+// los tokens (--backdrop-card/header/modal) — quedaban 297 usos crudos de
+// backdrop-blur-* (95 archivos) coexistiendo con un fondo YA migrado a
+// --surface-* opaco (T3/T4), donde el navegador seguía pagando el costo de
+// compositing sin ninguna diferencia visual. Nuevo selector en index.css
+// (`[class*="bg-surface-"][class*="backdrop-blur"]`) los anula en
+// solid/solid-dark sin tocar archivo por archivo.
+//
+// Intento inicial más amplio (matar TODO backdrop-blur en solid,
+// verificado con Playwright antes de aplicar) habría roto LoginView.jsx y
+// el rail del sidebar de AppLayout — ambos usan fondo semitransparente
+// crudo (bg-white/[N]) donde el blur sostiene la legibilidad, no es
+// residual. Acotado a los casos donde coexiste con un token ya opaco.
+//
+// Bug de build encontrado al verificar con Playwright (computed style
+// seguía en blur(40px) pese a la regla aplicada): declarar a mano
+// `backdrop-filter` + `-webkit-backdrop-filter: none !important` hizo que
+// el minificador (Lightning CSS) colisionara y descartara la propiedad
+// estándar, dejando solo la prefijada. El `@media print` existente prueba
+// que el autoprefixer ya agrega `-webkit-` solo — bastaba con declarar la
+// estándar.
+//
+// T5.2: liquid/dark degradan blur en móvil (blur(44px)->blur(24px) aprox
+// en los tokens --backdrop-*, más un tope plano en los ambient blobs de
+// AppLayout.jsx vía `filter` con !important) — el compositing de blur es
+// más caro en hardware de gama baja, que es justo el caso de uso de
+// móvil. Solid/solid-dark no lo necesitan (ya es "none").
+//
+// ThemeToggle.jsx (ya existía, nunca montado) ahora vive en el footer del
+// sidebar de AppLayout, expandido y colapsado — con nota "temporal
+// mientras dura AUDITORIA-TEMA-2026-07.md": es la única forma hoy de ver
+// los 4 temas en vivo, a pedido directo del usuario tras preguntar cómo
+// probar Solid Modern. El punto de montaje definitivo y el default
+// (Solid Modern claro) quedan para T6; la decisión de si Liquid Glass
+// sobrevive como tema opcional o se elimina queda pendiente hasta cerrar
+// el resto del plan (decisión explícita del usuario, 2026-07-24).
 
 // v2.48.2 — feat(layout): ThemeMigrationRibbon reemplaza SystemUpdateBanner +
 // UpdateIndicatorDot — a pedido directo del usuario tras ver el mockup de

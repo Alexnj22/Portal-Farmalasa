@@ -798,9 +798,26 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   primer nivel en `productos`/`schedules`/`ventas`, pero no abrió modales
   individuales (ej. `CrearRutaModal`, `PromoModal`, `RecepcionModal`) ni
   revisó cada tabla/drawer interno a 1024×768.
-- **Touch targets y tipografía ≥16px en inputs móviles** — no medido
-  sistemáticamente, solo verificado de forma incidental en las vistas de
-  tienda revisadas visualmente.
+- **Touch targets** — no medido sistemáticamente, solo verificado de forma
+  incidental en las vistas de tienda revisadas visualmente.
+- **Tipografía ≥16px en inputs móviles** — investigado (no solo pendiente):
+  `PortalInput.jsx`/`CatalogSelect.jsx` (los `<input>` de texto libre) ya
+  usan `text-[16px]` — correcto, sin zoom-on-focus de iOS. El input de
+  filtro interno de `LiquidSelect.jsx` (se abre y hace autofocus al 
+  desplegar, línea 194) y el `<input>` de `SearchInput.jsx` sí renderizan
+  bajo 16px (`text-[11-13px]` según variante). En teoría dispara
+  zoom-on-focus de iOS Safari — pero el `<meta viewport>`
+  (`index.html:9`, decisión "Bloque 5.7b") ya pone `user-scalable=no` en
+  el modo de uso real de este portal (PWA standalone instalada, build
+  nativo Capacitor, o `/kiosk`), que anula el zoom-on-focus por completo
+  ahí. Solo persiste en el modo pestaña-de-navegador-normal, donde el
+  propio Bloque 5.7b restaura el zoom deliberadamente por accesibilidad
+  (WCAG 1.4.4) — es decir, ese modo YA espera y permite zoom, no es una
+  regresión. Impacto real bajo; no se tocó `LiquidSelect`/`SearchInput`
+  para evitar el riesgo de romper el layout denso de `nano`/`compact`
+  (usados en `TimePicker12.jsx`, `FormAiSchedulerPreview.jsx` y decenas
+  de selects en toda la app) a cambio de un beneficio marginal en el modo
+  menos usado. Documentado como excepción deliberada, no un olvido.
 - **Revisión visual (no solo mecánica) por vista en iPhone 13** — el
   barrido móvil hecho fue solo a nivel de scroll horizontal por ruta; no
   hay revisión de screenshot vista-por-vista en viewport móvil como sí se

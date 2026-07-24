@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.22';
+export const APP_VERSION = '2.52.23';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.23 — fix(theme): T7.1c — estandariza colores en RecepcionModal.jsx
+// (ring-amber-400→ring-warning ×4), EncuestaAdminView.jsx (mismo
+// PersonAvatar de EncuestaView.jsx, botón "Ver análisis" clima→chart-3/
+// chart-6) e IdleScanPanel.jsx (ACTION_ITEMS del kiosco: Entrada→success,
+// Lactancia→chart-6, alertas rojas→danger — superficie fija-oscura, tokens
+// base). TabExpediente.jsx revisado: su indigo/purple/cyan es el shimmer de
+// IA ya documentado. TimeClockView.jsx revisado: sus washes blue-950/400
+// son iluminación ambiental decorativa sobre el lienzo fijo-oscuro del
+// kiosco — mismo tipo de excepción que el resto de superficies fijas,
+// dejado intacto (no aporta información, es parte de la identidad visual).
+
 
 // v2.52.22 — fix(theme): T7.1c — estandariza colores en 5 archivos más
 // (FinalizarCajasModal.jsx, FormServicePayment.jsx, FormRegisterPayment.jsx,

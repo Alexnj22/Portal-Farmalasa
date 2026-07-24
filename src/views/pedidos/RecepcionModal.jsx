@@ -843,7 +843,7 @@ export default function RecepcionModal({
                                                 {eBothZero && <p className="text-[10px] text-danger font-medium">Al menos uno &gt; 0</p>}
                                             </div>
 
-                                            <div className={eDiff ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                            <div className={eDiff ? 'ring-2 ring-warning ring-offset-0 rounded-2xl' : ''}>
                                                 <LiquidSelect
                                                     value={String(e.fPres)}
                                                     onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(v) } : x))}
@@ -865,7 +865,7 @@ export default function RecepcionModal({
                                                 )}
                                             </div>
 
-                                            <div className={eDiff ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                            <div className={eDiff ? 'ring-2 ring-warning ring-offset-0 rounded-2xl' : ''}>
                                                 <LiquidSelect
                                                     value={String(e.sPres)}
                                                     onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(v) } : x))}
@@ -1148,7 +1148,7 @@ export default function RecepcionModal({
                                     </span>
                                     <span className="text-[12px] font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
 
-                                    <div className={fPres !== sPres ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                    <div className={fPres !== sPres ? 'ring-2 ring-warning ring-offset-0 rounded-2xl' : ''}>
                                         <LiquidSelect
                                             value={String(fPres)}
                                             onChange={v => setFPresVals(p => ({ ...p, [r.id]: Number(v) }))}
@@ -1172,7 +1172,7 @@ export default function RecepcionModal({
                                         )}
                                     </div>
 
-                                    <div className={fPres !== sPres ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                    <div className={fPres !== sPres ? 'ring-2 ring-warning ring-offset-0 rounded-2xl' : ''}>
                                         <LiquidSelect
                                             value={String(sPres)}
                                             onChange={v => setSPresVals(p => ({ ...p, [r.id]: Number(v) }))}

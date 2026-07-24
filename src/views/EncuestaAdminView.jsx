@@ -127,10 +127,10 @@ const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: '
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function PersonAvatar({ src, name, isJefe, size = 28 }) {
-    const cls = `rounded-full object-cover object-top shrink-0 ${isJefe ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`;
+    const cls = `rounded-full object-cover object-top shrink-0 ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`;
     if (src) return <img src={src} alt={name} className={cls} style={{ width: size, height: size }} />;
     return (
-        <div className={`rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black shrink-0 ${isJefe ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
+        <div className={`rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black shrink-0 ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`}
             style={{ width: size, height: size, fontSize: size * 0.38 }}>
             {name?.charAt(0) || '?'}
         </div>
@@ -595,7 +595,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setSfAnonima(v => !v)}
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfAnonima
-                                                    ? 'bg-chart-3/10 border-violet-300/60 text-chart-3-text shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
+                                                    ? 'bg-chart-3/10 border-chart-3/40 text-chart-3-text shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             {sfAnonima ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
@@ -1063,7 +1063,7 @@ export default function EncuestaAdminView() {
                                                 )}
                                                 {s.tipo === 'clima' && (
                                                     <button onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}
-                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-[0.97]">
+                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-chart-3 to-chart-6 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-[0.97]">
                                                         <TrendingUp size={10} strokeWidth={2.5} /> Ver análisis
                                                     </button>
                                                 )}

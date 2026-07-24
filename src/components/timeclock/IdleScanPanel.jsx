@@ -2,9 +2,9 @@ import React, { useEffect } from 'react';
 import { ScanBarcode, ShieldAlert, LogIn, Utensils, Baby, LogOut, XCircle, Bell } from 'lucide-react';
 
 const ACTION_ITEMS = [
-  { icon: LogIn, glassColor: 'bg-green-500/10 border-green-500/30 text-green-400', glow: 'group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] group-hover:bg-green-500/20', label: 'Entrada' },
+  { icon: LogIn, glassColor: 'bg-success/10 border-success/30 text-success', glow: 'group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] group-hover:bg-success/20', label: 'Entrada' },
   { icon: Utensils, glassColor: 'bg-chart-4/10 border-chart-4/30 text-chart-4-text', glow: 'group-hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] group-hover:bg-chart-4/20', label: 'Almuerzo' },
-  { icon: Baby, glassColor: 'bg-pink-500/10 border-pink-500/30 text-pink-400', glow: 'group-hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:bg-pink-500/20', label: 'Lactancia' },
+  { icon: Baby, glassColor: 'bg-chart-6/10 border-chart-6/30 text-chart-6', glow: 'group-hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:bg-chart-6/20', label: 'Lactancia' },
   { icon: LogOut, glassColor: 'bg-slate-400/10 border-slate-400/30 text-slate-500', glow: 'group-hover:shadow-[0_0_20px_rgba(148,163,184,0.3)] group-hover:bg-slate-400/20', label: 'Salida' },
 ];
 
@@ -74,7 +74,7 @@ export default function IdleScanPanel({
 
           <div className="mt-5 flex flex-col items-center justify-center">
             {specialMode ? (
-              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <XCircle size={14} /> Cancelar Permiso
               </button>
             ) : (
@@ -121,7 +121,7 @@ export default function IdleScanPanel({
                   <span className="text-white/80 text-[11px] font-semibold truncate">
                     {alert.employee.name}
                   </span>
-                  <span className={`text-[10px] font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-red-400' : 'text-chart-4-text'}`}>
+                  <span className={`text-[10px] font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-danger' : 'text-chart-4-text'}`}>
                     {alert.minsOverdue > 0 ? `${alert.minsOverdue} min tarde` : `${alert.lunchTime}`}
                   </span>
                 </div>

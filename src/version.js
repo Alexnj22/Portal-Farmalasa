@@ -5,8 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.17';
+export const APP_VERSION = '2.52.18';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.18 — fix(theme): T7.1c — estandariza colores en
+// InlineDayEditor.jsx (checkboxes de Almuerzo/Lactancia con ring/text
+// crudos junto a bordes ya tokenizados; Lactancia→chart-6 consistente con
+// ScheduleCalendar/FormAiSchedulerPreview) y TabInventario.jsx (ERP_COLORS
+// con bordes violet/sky/rose sueltos junto a texto ya tokenizado, filtro
+// "Área de Vencidos" y tabla expandida de vencidos → danger consistente).
+
 
 // v2.52.17 — fix(theme): T7.1c — estandariza colores en
 // AttendanceMonitorView.jsx (fuera de la rama isDarkConcept, que sigue

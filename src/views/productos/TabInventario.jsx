@@ -21,10 +21,10 @@ const ERP_NAMES = {
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
 const ERP_COLORS = {
     1: 'text-chart-1-text bg-chart-1/10 border-chart-1/30',
-    2: 'text-chart-3-text bg-chart-3/10 border-violet-100',
+    2: 'text-chart-3-text bg-chart-3/10 border-chart-3/20',
     3: 'text-success bg-success/10 border-success/30',
-    4: 'text-chart-7-text bg-chart-7/10 border-sky-100',
-    5: 'text-danger-text bg-danger/10 border-rose-100',
+    4: 'text-chart-7-text bg-chart-7/10 border-chart-7/20',
+    5: 'text-danger-text bg-danger/10 border-danger/20',
     6: 'text-warning-text bg-warning/10 border-warning/30',
     7: 'text-chart-3-text bg-chart-3/10 border-chart-3/30',
 };
@@ -295,8 +295,8 @@ export default function TabInventario({ searchTerm = '' }) {
                             onClick={() => { setFilterAreaVenc(v => !v); setFilterVencidos(false); setFilterSixMonths(false); }}
                             className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                                 filterAreaVenc
-                                    ? 'bg-danger/10 border-rose-300 shadow-md shadow-rose-100/80 -translate-y-px'
-                                    : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10'
+                                    ? 'bg-danger/10 border-danger/50 shadow-md shadow-danger/20 -translate-y-px'
+                                    : 'bg-white border-border-card hover:border-danger/30 hover:bg-danger/10'
                             }`}>
                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-white' : 'bg-danger/10'}`}>
                                 <PackageX size={15} className="text-danger-text" />
@@ -541,7 +541,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 {isExpanded && (
                                     <tr>
                                         <td colSpan={colCount} className="p-0 border-b border-chart-1/30">
-                                            <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
+                                            <div className="bg-gradient-to-br from-chart-1/10 via-white/60 to-slate-50/30 px-10 py-3">
                                                 {expandLoading.has(key) ? (
                                                     <div className="flex items-center gap-2 text-content-3 py-2">
                                                         <Loader2 size={14} className="animate-spin" />
@@ -628,7 +628,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                         const factor   = parseFactor(row.detalle);
                                                                         const rowUnits = (row.cantidad || 0) * factor;
                                                                         return (
-                                                                            <tr key={j} className="border-t border-rose-100/60">
+                                                                            <tr key={j} className="border-t border-danger/20">
                                                                                 <td className="py-1.5 pr-6">
                                                                                     <span className="text-[12px] font-semibold text-danger-text">
                                                                                         {row.presentacion || '—'}

@@ -339,7 +339,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 )}
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-[9999]">
-                    <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : ''}`}>
+                    <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger shadow-[0_0_15px_rgba(244,63,94,0.3)]' : ''}`}>
                         <LiquidSelect 
                             value={shiftId} 
                             onChange={setShiftId} 
@@ -376,7 +376,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
+                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
                             
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                                 <span className="text-[9px] font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
@@ -415,7 +415,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                         type="checkbox" 
                                         checked={hasLunch} 
                                         readOnly 
-                                        className="w-4 h-4 rounded text-chart-4-text border-chart-4/30 focus:ring-orange-500 transition-transform group-hover/row:scale-110" 
+                                        className="w-4 h-4 rounded text-chart-4-text border-chart-4/30 focus:ring-chart-4/50 transition-transform group-hover/row:scale-110"
                                     />
                                     <span className="text-[12px] font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
@@ -428,16 +428,16 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div 
                                 onClick={() => setHasLactation(!hasLactation)}
-                                className="flex items-center justify-between bg-white/[0.4] border border-pink-200/50 p-3 rounded-2xl hover:border-pink-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.4] border border-chart-6/20 p-3 rounded-2xl hover:border-chart-6/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
                                         type="checkbox" 
                                         checked={hasLactation} 
                                         readOnly 
-                                        className="w-4 h-4 rounded text-pink-500 border-pink-200 focus:ring-pink-500 transition-transform group-hover/row:scale-110" 
+                                        className="w-4 h-4 rounded text-chart-6 border-chart-6/30 focus:ring-chart-6/50 transition-transform group-hover/row:scale-110" 
                                     />
-                                    <span className="text-[12px] font-bold text-pink-600 group-hover/row:text-pink-700 transition-colors">Lactancia</span>
+                                    <span className="text-[12px] font-bold text-chart-6-text group-hover/row:text-chart-6-text transition-colors">Lactancia</span>
                                 </div>
                                 {hasLactation && (
                                     <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" onClick={(e) => e.stopPropagation()}>

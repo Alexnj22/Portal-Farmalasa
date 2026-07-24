@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.46.2';
+export const APP_VERSION = '2.46.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.46.3 — docs: AUDITORIA-TEMA-2026-07.md §10.3/10.4 — barrido automático
+// de "sin scroll horizontal a 1024×768" con Playwright logueado sobre las
+// 37 rutas top-level reales de App.jsx (una por módulo). Resultado: 36/37
+// limpias; la única excepción (/pedidos) es el bug preexistente y no
+// relacionado de @capacitor-community/background-geolocation, no un
+// problema de layout. Documenta también qué NO cubre este barrido
+// (sub-tabs internas no route-level, touch targets, tipografía móvil,
+// verificación iPhone 13) como pendiente explícito de T4 — no se omite
+// en silencio, mismo criterio que las excepciones de color de v2.46.1.
 
 // v2.46.2 — fix(responsive): TabCatalogo.jsx, auditoría responsive de T4
 // arranca (mismo orden del plan: /monitor, /my-requests, /pedidos, /minmax,

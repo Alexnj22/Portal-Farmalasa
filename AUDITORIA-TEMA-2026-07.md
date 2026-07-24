@@ -735,13 +735,48 @@ gate de T7 las excluya explícitamente en vez de perseguirlas a ciegas:
   `branch-tabs/TabStaff.jsx`, `BranchesView.jsx`, etc.): botones/chips
   neutros siempre-oscuros a propósito, no card surfaces — ver arriba.
 
-### 10.3 Pendiente de T4
+### 10.3 Responsive/densidad — barrido de "sin scroll horizontal a 1024×768"
 
-- **Responsive/densidad** (la otra mitad de T4, aún no auditada): tablas
-  con overflow propio, filter pills en wrap, touch targets, tipografía
-  ≥16px en inputs móviles, verificación real a 1024×768 sin scroll
-  horizontal. Orden: vistas de tienda primero (/monitor, /my-requests,
-  /pedidos, /minmax, /ventas), luego el resto — mismo orden que el
-  codemod de tokens no siguió (el codemod corrió parejo en los 110 archivos
-  porque es mecánico y de bajo riesgo por lote; el audit responsive si
-  necesita ir vista por vista con verificación visual real).
+Hecho: Playwright logueado, recorre las 37 rutas top-level reales de
+`App.jsx` (una por módulo — no cada tab/sub-vista interna) a 1024×768,
+mide `scrollWidth` vs `clientWidth` del documento. **36/37 limpias, cero
+scroll horizontal.** La única excepción (`/pedidos`) es el bug preexistente
+y no relacionado del paquete `@capacitor-community/background-geolocation`
+(falla de resolución de import en el dev server, documentado varias veces
+en esta sesión — no es un problema de layout).
+
+Verificación visual manual (screenshots) en las 5 vistas de tienda del
+orden del plan (/monitor, /my-requests, /minmax→productos, /ventas — 
+/pedidos bloqueada por el bug de arriba): 4/5 limpias sin cambios
+(sidebar colapsa a rail, header en una línea, sin scroll). Una encontró
+un bug real, corregido:
+
+- **`productos/TabCatalogo.jsx`** — el wrapper de las 5 stat cards llevaba
+  `flex-1 min-w-0`, que siempre reclama el espacio "sobrante" del row en
+  vez de envolver como bloque completo. Con el cluster de filtros
+  (Activos/Todos + 2 LiquidSelect + Enriquecer SRS) ocupando ~500px de los
+  846px disponibles a 1024px, el wrapper de cards quedaba con solo ~330px
+  — 1 card por fila, hueco enorme a la derecha (confirmado con
+  `getBoundingClientRect` en cada nivel del árbol). Corregido quitando
+  `flex-1 min-w-0`: sin ellos, el ancho preferido del contenido hace que
+  el `flex-wrap` del padre baje el bloque completo a su propia línea
+  cuando no cabe — 5 cards en fila completa a 1024px y a 1440px (los
+  filtros quedan debajo en vez de al lado, layout alternativo válido).
+
+### 10.4 Pendiente de T4
+
+El barrido de arriba cubre el criterio más grave (scroll horizontal) en
+casi toda la superficie real de la app, pero NO sustituye una revisión
+vista-por-vista completa — quedan sin verificar explícitamente:
+- **Sub-tabs/vistas anidadas** no route-level (ej. cada tab dentro de
+  `/pedidos`, `/productos`, `/schedules`; modales; tablas internas) —
+  el barrido solo tocó la vista default de cada ruta.
+- **Touch targets y tipografía ≥16px en inputs móviles** — no medido
+  sistemáticamente, solo verificado de forma incidental en las 5 vistas
+  de tienda revisadas visualmente.
+- **iPhone 13 (vertical)** — el barrido de arriba fue solo desktop
+  1024×768; T4 pide también verificación móvil por vista.
+- **`/pedidos`** sigue bloqueada para cualquier auditoría (visual o
+  mecánica) hasta que se resuelva el bug preexistente de
+  `@capacitor-community/background-geolocation` — no es parte de T4,
+  pero es un bloqueador transversal a tener en cuenta.

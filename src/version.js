@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.47.0';
+export const APP_VERSION = '2.47.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.47.1 — fix(responsive): 2 ocurrencias más del bug de stat cards
+// (v2.46.2/v2.47.0), encontradas ampliando la búsqueda de
+// `flex items-center gap-3 flex-wrap flex-1 min-w-0` a variantes con otro
+// gap/orden (`flex-wrap flex-1 min-w-0` sin exigir el `gap-3` exacto).
+// Aparece en VentasView.jsx (`flex items-center gap-2 flex-wrap flex-1
+// min-w-0`, 3 veces — una por cada una de sus 3 tabs internas: Ventas,
+// Vendedores, Productos) y purchases/FacturasCompraView.jsx (`flex
+// items-stretch gap-3 flex-wrap flex-1 min-w-0`, 1 vez). Mismo fix:
+// quitar flex-1/min-w-0 del wrapper de stat cards. Verificado con
+// Playwright logueado a 1024×768 en las 4 superficies (3 tabs de
+// /ventas + /facturas-compra): filas de cards completas, sin columna
+// angosta ni hueco desperdiciado. Build + tests (15) verdes.
 
 // v2.47.0 — fix(responsive): mismo bug de TabCatalogo.jsx (v2.46.2)
 // encontrado copiado en otros 4 archivos — auditoría de sub-tabs internas

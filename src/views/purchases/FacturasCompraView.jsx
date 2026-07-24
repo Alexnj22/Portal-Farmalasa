@@ -778,7 +778,7 @@ function TabDocumentos({
                 VentasView/StaffManagementView. */}
             <div className={`flex items-stretch gap-3 flex-wrap ${showCards ? '' : 'justify-end'}`}>
                 {showCards && (
-                <div className="flex items-stretch gap-3 flex-wrap flex-1 min-w-0">
+                <div className="flex items-stretch gap-3 flex-wrap">
                     <StatCard
                         icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
                         sub={`${rows.length.toLocaleString()} documento${rows.length !== 1 ? 's' : ''}`}

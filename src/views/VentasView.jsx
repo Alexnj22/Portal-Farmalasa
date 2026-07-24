@@ -617,7 +617,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         <div className="p-5 md:p-6 space-y-5">
             {/* Stats strip + inline filters */}
             <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
                         <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
@@ -1082,7 +1082,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats + inline filters */}
             <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const periodLabel = `${fmtShort(prevFini)}→${fmtShort(prevFfin)}`;
@@ -1795,7 +1795,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats + inline filters */}
             <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const curDaysP  = countDays(fini, ffin);

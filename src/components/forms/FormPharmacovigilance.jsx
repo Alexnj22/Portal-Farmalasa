@@ -39,7 +39,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
                 </div>
-                <h3 className="text-[16px] font-black text-amber-900 mb-2 tracking-tight">Ningún Referente Disponible</h3>
+                <h3 className="text-[16px] font-black text-warning-text mb-2 tracking-tight">Ningún Referente Disponible</h3>
                 <p className="text-[12px] font-bold text-warning-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Referente de Farmacovigilancia en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>
@@ -65,7 +65,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">
-                    <div className="w-10 h-10 rounded-xl bg-chart-3/10 text-chart-3-text border border-purple-100 flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-chart-3/10 text-chart-3-text border border-chart-3/20 flex items-center justify-center shadow-sm">
                         <ShieldCheck size={20} strokeWidth={2.5}/>
                     </div>
                     <div>
@@ -94,9 +94,9 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     </div>
                     
                     {/* NOTA INFORMATIVA */}
-                    <div className="mt-3 flex items-start gap-2.5 bg-chart-3/10 p-3.5 rounded-2xl border border-purple-100/60 shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)]">
+                    <div className="mt-3 flex items-start gap-2.5 bg-chart-3/10 p-3.5 rounded-2xl border border-chart-3/20 shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)]">
                          <FileText size={14} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5}/>
-                         <p className="text-[10px] text-purple-800 font-bold leading-relaxed">
+                         <p className="text-[10px] text-chart-3-text font-bold leading-relaxed">
                             El referente elabora y envía los reportes semestrales a la Dirección General de Medicamentos.
                          </p>
                     </div>
@@ -107,7 +107,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
                         Autorización de la SRS (PDF/IMG)
                     </label>
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10 border-purple-300 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10 hover:border-purple-300/60'}`}>
+                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-slate-300 hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
                         <input 
                             type="file"
                             accept="application/pdf,image/jpeg,image/png,image/webp"

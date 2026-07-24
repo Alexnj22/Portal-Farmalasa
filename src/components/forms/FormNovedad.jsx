@@ -269,7 +269,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <MapPin className="text-brand shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-chart-1-text">Cambio de Sucursal</p>
-                        <p className="text-[12px] text-blue-800/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
+                        <p className="text-[12px] text-chart-1-text/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
                     </div>
                 </div>
             )}
@@ -279,7 +279,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <Info className="text-chart-4-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-chart-4-text">Apoyo Temporal</p>
-                        <p className="text-[12px] text-orange-800/80 font-medium leading-tight mt-1">El empleado apoyará en otra sucursal temporalmente. Seguirá apareciendo en la planilla actual.</p>
+                        <p className="text-[12px] text-chart-4-text/80 font-medium leading-tight mt-1">El empleado apoyará en otra sucursal temporalmente. Seguirá apareciendo en la planilla actual.</p>
                     </div>
                 </div>
             )}
@@ -307,7 +307,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <CalendarClock className="text-chart-3-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-chart-3-text">Acción Programada</p>
-                        <p className="text-[12px] text-indigo-800/80 font-medium leading-tight mt-1">
+                        <p className="text-[12px] text-chart-3-text/80 font-medium leading-tight mt-1">
                             La fecha efectiva es futura: el evento se registra hoy pero el cambio se aplicará automáticamente el <b>{formatDate(formData.date)}</b> a las 5:00 a.m. Puedes cancelarlo antes desde el historial.
                         </p>
                     </div>
@@ -328,7 +328,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-chart-4-text shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-success shrink-0 mt-0.5" size={18}/>}
                     <div>
                         <p className={`text-[11px] font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success'}`}>Auditoría Legal</p>
-                        <p className={`text-[12px] font-medium leading-tight mt-1 ${getHolidayInfo ? 'text-danger-text' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-orange-800' : 'text-success-text'}`}>
+                        <p className={`text-[12px] font-medium leading-tight mt-1 ${getHolidayInfo ? 'text-danger-text' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success-text'}`}>
                             {getHolidayInfo ? <b>¡Día Inhábile: {getHolidayInfo.name}!</b> : <b>Días calculados: {periodDaysCount}.</b>}
                             {getHolidayInfo ? " La ley prohíbe iniciar este tipo de licencia en asueto." : 
                              isVacation && periodDaysCount !== 15 && formData?.endDate ? " Precaución: El código de trabajo dicta 15 días continuos." : 
@@ -656,7 +656,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <div className="flex items-center gap-3">
                                     <div className="relative flex-1 max-w-xs">
                                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-success" size={16} strokeWidth={3}/>
-                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-white border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-white border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
                                     </div>
                                     {diff !== null && !isNaN(diff) && (
                                         <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>

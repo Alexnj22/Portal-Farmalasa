@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.21';
+export const APP_VERSION = '2.52.22';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.22 — fix(theme): T7.1c — estandariza colores en 5 archivos más
+// (FinalizarCajasModal.jsx, FormServicePayment.jsx, FormRegisterPayment.jsx,
+// FormPharmacovigilance.jsx, FormNovedad.jsx). Todos el mismo patrón de
+// "media migración": bg/text ya tokenizados de una pasada anterior, con
+// border/ring/hover crudos sueltos al lado del mismo color. Sin decisiones
+// de mapeo nuevas — cada caso ya tenía su identidad categórica establecida
+// en el propio archivo (chart-1/3/4/5, success, warning, danger).
+
 
 // v2.52.21 — fix(theme): T7.1c — estandariza colores en VentasView.jsx
 // (trofeo 1er lugar yellow-500→chart-7, exact match dorado; expansiones de

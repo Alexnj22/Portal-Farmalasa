@@ -142,7 +142,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-3/10 border border-chart-3/30">
                     <RotateCcw size={12} className="text-chart-3-text shrink-0" />
                     <span className="text-[11px] text-chart-3-text flex-1">Tenés un borrador guardado</span>
-                    <button onClick={handleRestoreDraft} className="text-[11px] font-bold text-chart-3-text hover:text-violet-900 underline underline-offset-2">
+                    <button onClick={handleRestoreDraft} className="text-[11px] font-bold text-chart-3-text hover:text-chart-3-text underline underline-offset-2">
                         Restaurar
                     </button>
                     <button onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} className="text-chart-3-text hover:text-chart-3-text">
@@ -155,7 +155,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {screen === 1 && (
                 <div className="px-5 py-5 space-y-5">
                     {/* Page count card */}
-                    <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-chart-3/10 border border-violet-100/80">
+                    <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-chart-3/10 border border-chart-3/20">
                         <div className="w-12 h-12 rounded-2xl bg-chart-3 shadow-[0_4px_14px_rgba(139,92,246,0.4)] flex items-center justify-center shrink-0">
                             {loadingPages
                                 ? <Loader2 size={19} className="animate-spin text-white" />
@@ -191,7 +191,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 onChange={e => setTotalCajasInput(e.target.value)}
                                 placeholder="Ej. 4"
                                 autoFocus
-                                className="w-full text-[22px] font-black text-content rounded-2xl border-2 border-slate-200 bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all"
+                                className="w-full text-[22px] font-black text-content rounded-2xl border-2 border-slate-200 bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-chart-3 focus:ring-4 focus:ring-chart-3/20 transition-all"
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-3 pointer-events-none">
                                 cajas
@@ -259,8 +259,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 <button key={box} onClick={() => toggleBox(idx, box)}
                                                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
                                                         sel
-                                                            ? 'bg-chart-3 border-violet-500 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
-                                                            : 'bg-surface-card border-slate-200 text-content-3 hover:border-violet-300 hover:text-chart-3-text hover:bg-chart-3/10'
+                                                            ? 'bg-chart-3 border-chart-3 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
+                                                            : 'bg-surface-card border-slate-200 text-content-3 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10'
                                                     }`}>
                                                     Caja {box}
                                                 </button>

@@ -115,14 +115,14 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
 
             {/* 🎨 HEADER LIQUID GLASS */}
-            <div className="relative overflow-hidden rounded-[2rem] p-5 border border-success/30 bg-gradient-to-br from-emerald-50/80 to-emerald-100/40 backdrop-blur-xl shadow-[0_8px_30px_rgba(16,185,129,0.06)]">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-300/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+            <div className="relative overflow-hidden rounded-[2rem] p-5 border border-success/30 bg-gradient-to-br from-success/10 to-success/20 backdrop-blur-xl shadow-[0_8px_30px_rgba(16,185,129,0.06)]">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-success/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
                 <div className="relative z-10 flex items-center gap-4">
                     <div className="w-14 h-14 bg-surface-card backdrop-blur-md rounded-2xl flex items-center justify-center text-success shadow-sm border border-success/30 shrink-0">
                         <Receipt size={26} strokeWidth={2} />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-emerald-950 tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
+                        <h3 className="text-xl font-black text-success-text tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
                         <div className="flex items-center gap-2">
                             <span className="px-2.5 py-1 bg-surface-card rounded-md text-[9px] font-black text-success-text uppercase tracking-widest border border-success/30">
                                 Sede: {formData.name}
@@ -168,7 +168,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
                             <Calendar size={12} className={isConflict ? "text-danger" : "text-brand"} /> Mes que Cubre
                         </label>
-                        <div className={isConflict ? "ring-2 ring-red-400/50 rounded-2xl transition-all" : ""}>
+                        <div className={isConflict ? "ring-2 ring-danger/50 rounded-2xl transition-all" : ""}>
                             <LiquidDatePicker
                                 type="month"
                                 value={paymentData.billing_month}
@@ -211,7 +211,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     </label>
 
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
-                            ? 'bg-success/10 border-emerald-300 hover:bg-success/10'
+                            ? 'bg-success/10 border-success/50 hover:bg-success/10'
                             : 'bg-surface-card-hover/50 border-slate-300 hover:bg-brand/5 hover:border-brand/50'
                         }`}>
                         <input

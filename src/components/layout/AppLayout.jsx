@@ -26,6 +26,7 @@ import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
 import OfflineBanner from '../common/OfflineBanner';
 import SystemUpdateBanner from '../common/SystemUpdateBanner';
+import UpdateIndicatorDot from '../common/UpdateIndicatorDot';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -276,6 +277,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     // diferencia de OfflineBanner/PushPromptBanner (transitorios), este
     // aviso puede quedar en pantalla toda la sesión y no debe tapar contenido.
     const [updateBannerVisible, setUpdateBannerVisible] = useState(false);
+    // El aviso se puede cerrar sin dejar rastro visual — este dot en el logo
+    // es la forma de volver a abrirlo sin esperar a la siguiente sesión.
+    const [updateBannerDismissed, setUpdateBannerDismissed] = useState(false);
+    const [forceShowUpdateBanner, setForceShowUpdateBanner] = useState(0);
     useEffect(() => {
         const onKeyDown = (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -772,19 +777,24 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
 
                             <div className="flex items-center gap-3 relative z-10">
-                                <button type="button" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-[1.25rem] ${focusRing}`} onClick={() => navigate('/')}>
-                                    <div className="absolute -inset-2 rounded-[1.75rem] blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
-                                    <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
-                                        transition-all duration-300 group-hover/logo:scale-105
-                                        bg-white/12 border border-logo-magenta/20
-                                        shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.2)]
-                                        group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-white/18
-                                        ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
-                                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
-                                        <img src="/Logo192.png" alt="FLS"
-                                            className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
-                                    </div>
-                                </button>
+                                <div className="relative flex-shrink-0">
+                                    <button type="button" aria-label="Ir al inicio" className={`relative group/logo cursor-pointer rounded-[1.25rem] ${focusRing}`} onClick={() => navigate('/')}>
+                                        <div className="absolute -inset-2 rounded-[1.75rem] blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
+                                        <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
+                                            transition-all duration-300 group-hover/logo:scale-105
+                                            bg-white/12 border border-logo-magenta/20
+                                            shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.2)]
+                                            group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-white/18
+                                            ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
+                                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
+                                            <img src="/Logo192.png" alt="FLS"
+                                                className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
+                                        </div>
+                                    </button>
+                                    {updateBannerDismissed && !updateBannerVisible && (
+                                        <UpdateIndicatorDot onClick={() => setForceShowUpdateBanner(c => c + 1)} />
+                                    )}
+                                </div>
 
                                 {isExpanded && (
                                     <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
@@ -1236,7 +1246,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             <PushPromptBanner />
             <OfflineBanner />
-            <SystemUpdateBanner onVisibleChange={setUpdateBannerVisible} />
+            <SystemUpdateBanner
+                onVisibleChange={setUpdateBannerVisible}
+                onDismissedChange={setUpdateBannerDismissed}
+                forceShowSignal={forceShowUpdateBanner}
+            />
 
             <MenuSearchModal
                 isOpen={searchOpen}

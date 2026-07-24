@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.48.0';
+export const APP_VERSION = '2.48.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.48.1 — feat(layout): UpdateIndicatorDot — reabre SystemUpdateBanner
+// tras cerrarlo, sin esperar a la siguiente sesión.
+//
+// v2.48.0 dejó el prop `forceShowSignal` preparado en SystemUpdateBanner
+// pero sin nada que lo dispare ni el archivo commiteado — quedó a medias.
+// Cierra eso: nuevo `src/components/common/UpdateIndicatorDot.jsx`, un dot
+// magenta (ping) sobre el logo del sidebar en AppLayout, visible solo
+// cuando el aviso fue cerrado (`updateBannerDismissed`, alimentado por el
+// nuevo prop `onDismissedChange` del banner) y no está visible ahora
+// mismo. Click incrementa `forceShowUpdateBanner`, que SystemUpdateBanner
+// consume vía `forceShowSignal` para reabrirse. El dot vive fuera del
+// `<button>` del logo (hermano posicionado con un wrapper `relative`) para
+// no anidar un botón dentro de otro.
 
 // v2.48.0 — feat(layout): aviso global "Portal en actualización visual"
 // (SystemUpdateBanner) mientras dura la migración de tema T1-T7.

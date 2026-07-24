@@ -7,15 +7,28 @@ const DISMISSED_KEY = 'system_update_notice_dismissed_v1';
 // para empujar el contenido hacia abajo (#main-scroll) y así nunca taparlo —
 // a diferencia de OfflineBanner/PushPromptBanner (transitorios, riesgo bajo
 // de solapar contenido), este aviso puede quedar visible toda la sesión.
-export default function SystemUpdateBanner({ onVisibleChange }) {
+// forceShowSignal: valor que cambia (ej. contador) cuando el usuario hace
+// clic en el indicador persistente del logo (UpdateIndicatorDot) — vuelve
+// a mostrar el aviso aunque ya se haya cerrado en esta sesión.
+// onDismissedChange: le avisa a AppLayout que el aviso está cerrado (ya sea
+// porque el usuario le dio X ahora, o porque ya estaba cerrado desde una
+// interacción previa en esta sesión) para que muestre UpdateIndicatorDot.
+export default function SystemUpdateBanner({ onVisibleChange, forceShowSignal, onDismissedChange }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem(DISMISSED_KEY)) return;
+    if (sessionStorage.getItem(DISMISSED_KEY)) {
+      onDismissedChange?.(true);
+      return;
+    }
     // Pequeño delay para que no aparezca antes de que el resto de la UI asiente
     const t = setTimeout(() => setVisible(true), 800);
     return () => clearTimeout(t);
-  }, []);
+  }, [onDismissedChange]);
+
+  useEffect(() => {
+    if (forceShowSignal) setVisible(true);
+  }, [forceShowSignal]);
 
   useEffect(() => { onVisibleChange?.(visible); }, [visible, onVisibleChange]);
 
@@ -24,6 +37,7 @@ export default function SystemUpdateBanner({ onVisibleChange }) {
   const dismiss = () => {
     sessionStorage.setItem(DISMISSED_KEY, '1');
     setVisible(false);
+    onDismissedChange?.(true);
   };
 
   return (

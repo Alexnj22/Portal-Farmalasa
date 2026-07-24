@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.56.0';
+export const APP_VERSION = '2.56.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.56.1 — chore(layout): retira ThemeMigrationRibbon.jsx.
+//
+// Hallazgo de la auditoría UI/UX del menú (a pedido del usuario): el banner
+// "Portal en construcción visual — algunas pantallas se ven distintas
+// mientras avanza la migración de tema" seguía visible en TODA página, para
+// todo usuario, en producción — su propio comentario decía explícitamente
+// "cuando el plan termine, se retira... en vez de agregar una condición
+// aquí". El plan (T1-T7 + T7.5 backfill) cerró en esta misma sesión —
+// mensaje quedó stale, no una decisión de diseño nueva. Componente + import
+// + spacer removidos de AppLayout.jsx. Verificado con Playwright desktop y
+// mobile: sin gap, header sticky sigue igual.
 
 // v2.56.0 — feat(layout): consolida el footer del sidebar en un panel de
 // Ajustes + unifica el toggle expandir/contraer.

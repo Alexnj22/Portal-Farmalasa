@@ -42,7 +42,6 @@ const RequestsView = lazy(() => import("./views/RequestsView"));
 const VacationPlanView = lazy(() => import("./views/VacationPlanView"));
 const PayrollView = lazy(() => import("./views/PayrollView"));
 const VentasView = lazy(() => import("./views/VentasView"));
-const MetasView = lazy(() => import("./views/MetasView"));
 const ProductosView = lazy(() => import("./views/ProductosView"));
 const LaboratoriosView = lazy(() => import("./views/LaboratoriosView"));
 const PedidosView = lazy(() => import("./views/PedidosView"));
@@ -602,7 +601,6 @@ function MainApp() {
                                     <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
-                                    <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
@@ -693,7 +691,6 @@ const ROUTE_TITLES = {
     '/payroll':           'Planilla',
     '/announcements':     'Comunicados',
     '/ventas':            'Ventas',
-    '/metas':             'Metas',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/productos':         'Productos',

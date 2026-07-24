@@ -77,7 +77,7 @@ const MODULE_GROUPS = [
                 { key: 'facturacion_tab_no_efectivo',  label: 'No Efectivo'  },
             ]},
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true },
-            { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas',                icon: Target,        hasApprove: false },
+            { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas (próximamente)', icon: Target,        hasApprove: false, comingSoon: true },
             { key: 'promociones',    label: 'Promociones',   desc: 'Gestión de promociones activas, bonificaciones y cierre por stock o fecha',          icon: Gift,          hasApprove: false, tabs: [
                 { key: 'promociones_tab_activas',        label: 'Promociones'    },
                 { key: 'promociones_tab_bonificaciones', label: 'Bonificaciones' },

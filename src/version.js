@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.27';
+export const APP_VERSION = '2.53.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.53.0 — feat(metas): retira el módulo Metas (dashboard de metas de
+// ventas) del frontend — la vista MetasView.jsx se elimina, se cerrará y
+// rehará más adelante. Se preserva la entrada en menú/permisos como
+// "Próximamente" (comingSoon: true, mismo patrón que Bonificaciones/
+// Entrevistas) para no perder el lugar reservado en Comercial. Limpieza de
+// backend (migración 20260724191840_drop_metas_module_artifacts): se
+// elimina el RPC get_branch_monthly_sales (usado solo por esta vista) y
+// las 3 filas huérfanas de role_permissions con module_key='metas'.
+
 
 // v2.52.27 — fix(theme): T7.1c CIERRA el gate mecánico — últimos 19
 // archivos (EarlyExitForm, NuevoConteoModal, FormPharmacyRegent,

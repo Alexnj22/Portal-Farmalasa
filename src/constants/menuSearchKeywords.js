@@ -23,7 +23,6 @@ export const MODULE_SEARCH_KEYWORDS = {
     sync_health:        ['estado de sincronizacion', 'cron', 'erp sync', 'salud del sistema'],
     orphan_objects:     ['archivos huerfanos', 'storage sin usar', 'limpieza'],
     ventas:             ['venta de productos', 'ingresos', 'facturacion diaria', 'ventas por sucursal'],
-    metas:              ['objetivos', 'kpis de ventas', 'target de ventas'],
     facturacion:        ['dte', 'documentos tributarios electronicos', 'anulaciones', 'no efectivo'],
     cotizaciones:       ['presupuestos', 'ofertas a clientes'],
     encuesta:           ['clima laboral', 'satisfaccion del empleado'],

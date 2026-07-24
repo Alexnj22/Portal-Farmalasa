@@ -52,7 +52,7 @@ const MODULE_MAP = {
     orphan_objects:    { path: '/orphan-objects',  label: 'Objetos Huérfanos',        icon: Ghost         },
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
-    metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
+    metas:             { path: '/metas',            label: 'Metas',                    icon: Target,       comingSoon: true },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
     encuesta:          { path: '/encuesta',         label: 'Clima Organizacional',     icon: BarChart2  },

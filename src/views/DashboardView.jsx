@@ -1484,7 +1484,7 @@ const DashboardView = ({ openModal }) => {
               ))
             ) : displayBranchAlerts.length===0?(
               <div className="flex flex-col items-center justify-center py-6 gap-2">
-                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"><CheckCircle2 size={20} className="text-green-500"/></div>
+                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center"><CheckCircle2 size={20} className="text-success"/></div>
                 <p className="text-[12px] font-bold text-content-3">Todo en orden</p>
                 <p className="text-[10px] text-content-3">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
               </div>
@@ -2149,7 +2149,7 @@ const DashboardView = ({ openModal }) => {
           {calTooltip.holidays?.length>0&&(
             <div className="px-3 py-2 border-b border-slate-700/60">
               {calTooltip.holidays.map((h,i)=>(
-                <div key={i} className="flex items-center gap-1.5 text-[11px] font-medium text-red-300">
+                <div key={i} className="flex items-center gap-1.5 text-[11px] font-medium text-danger">
                   <span>📅</span><span>{h}</span>
                 </div>
               ))}

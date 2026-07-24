@@ -170,7 +170,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         >
                             {employee.photo_url
                                 ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow" alt="" />
-                                : <div className="w-12 h-12 rounded-full bg-emerald-200 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
+                                : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>
                                 <p className="font-bold text-success-text text-[14px]">{employee.name}</p>
@@ -205,7 +205,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             </button>
                             {employee && (
                                 <button onClick={confirmApoyo} disabled={loading}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1 text-white font-semibold hover:bg-blue-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1 text-white font-semibold hover:bg-brand text-[13px] transition-colors disabled:opacity-50 shadow-sm"
                                 >
                                     {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
                                     Confirmar

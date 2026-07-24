@@ -364,8 +364,8 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
             className={`relative rounded-xl overflow-hidden transition-shadow duration-200 ${
                 editing
                     ? isBodegaBranch
-                        ? 'shadow-lg shadow-amber-100/60 ring-1 ring-amber-200'
-                        : 'shadow-lg shadow-teal-100/60 ring-1 ring-teal-200'
+                        ? 'shadow-lg shadow-warning/10 ring-1 ring-warning/30'
+                        : 'shadow-lg shadow-chart-9/10 ring-1 ring-chart-9/30'
                     : 'shadow-sm hover:shadow-md cursor-pointer'
             } bg-surface-card backdrop-blur-md border border-border-card`}
             onClick={editing ? undefined : () => setEditing(true)}

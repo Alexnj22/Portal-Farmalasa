@@ -10,7 +10,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     const hasActive   = (!isBranch && filterSuc !== '') || filterStatus !== 'all' || dateDirty;
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
 
-    const statusBtn = (key, label, activeClass = 'bg-blue-600 text-white border-blue-600') => (
+    const statusBtn = (key, label, activeClass = 'bg-chart-1 text-white border-chart-1') => (
         <button
             onClick={() => setFilterStatus(v => v === key ? 'all' : key)}
             className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
@@ -63,7 +63,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                 {statusBtn('enviado',    'En ruta')}
                 <div className="h-3.5 w-px bg-surface-card-hover mx-0.5 shrink-0" />
                 {statusBtn('observacion','Con observación', 'bg-warning text-white border-warning')}
-                {statusBtn('completado', 'Completados',     'bg-success text-white border-emerald-600')}
+                {statusBtn('completado', 'Completados',     'bg-success text-white border-success')}
             </div>
 
             {hasActive && (

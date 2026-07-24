@@ -299,7 +299,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     <div className="grid grid-cols-2 gap-3">
                         {[
                             { label: 'Fecha de Ingreso',    value: emp.hire_date  ? formatDate(emp.hire_date)  : '—', icon: Calendar,  color: 'text-chart-1-text',   bg: 'bg-chart-1/10'   },
-                            { label: 'Fecha de Nacimiento', value: emp.birth_date ? formatDate(emp.birth_date) : '—', icon: Sparkles,  color: 'text-pink-500',   bg: 'bg-pink-50/80',  extra: birthdayCountdown },
+                            { label: 'Fecha de Nacimiento', value: emp.birth_date ? formatDate(emp.birth_date) : '—', icon: Sparkles,  color: 'text-chart-6',   bg: 'bg-chart-6/10',  extra: birthdayCountdown },
                             { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10' },
                             { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
@@ -307,7 +307,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">{label}</p>
                                 <p className="text-[13px] font-black text-content-2 leading-tight">{value}</p>
-                                {extra && <p className="text-[10px] font-bold text-pink-500 mt-0.5">{extra}</p>}
+                                {extra && <p className="text-[10px] font-bold text-chart-6 mt-0.5">{extra}</p>}
                             </div>
                         ))}
                     </div>

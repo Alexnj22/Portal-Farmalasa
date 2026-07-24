@@ -115,7 +115,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Revisar items del reenvío (después de confirmar la segunda llegada) */}
             {llegadaOk && todosReenviosResueltos && !hasFaltaPendiente && hasFaltaItems && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-violet-100 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-[11px]">
                     <Database size={13} className="text-chart-3-text" />
                     <span className="text-chart-3-text">Revisar caja del reenvío en Sistema de Ventas</span>
                     <button onClick={onOpenReenvioModal} disabled={!!busy}
@@ -127,7 +127,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Paso 2: Confirmar en Sistema de Ventas */}
             {llegadaOk && !erpOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-violet-100 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-[11px]">
                     <Database size={13} className="text-chart-3-text" />
                     <span className="text-chart-3-text">
                         Paso 2 — Confirmar en Sistema de Ventas {pendientesCount > 0 ? `(${pendientesCount})` : ''}

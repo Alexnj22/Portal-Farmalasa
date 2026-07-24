@@ -209,7 +209,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja 3 aplastada, caja 4 nunca fue cargada…"
-                            className="mt-1 w-full text-[16px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            className="mt-1 w-full text-[16px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-chart-1/30"
                         />
                     </div>
                 )}
@@ -377,7 +377,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             </span>
                         )}
                         {cajasExtra > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-chart-7/10 text-chart-7-text border border-sky-200">
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-chart-7/10 text-chart-7-text border border-chart-7/20">
                                 + {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}
                             </span>
                         )}

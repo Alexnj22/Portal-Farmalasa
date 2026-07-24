@@ -98,7 +98,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                     <button
                         onClick={handlePay}
                         disabled={saving}
-                        className="px-4 py-1.5 text-[11px] font-semibold bg-success text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5"
+                        className="px-4 py-1.5 text-[11px] font-semibold bg-success text-white rounded-lg hover:bg-success/90 disabled:opacity-50 flex items-center gap-1.5"
                     >
                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
                         Confirmar pago
@@ -233,7 +233,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                                     {canEdit && pending > 0 && (
                                         <button
                                             onClick={() => setPayModal(b)}
-                                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold bg-success text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold bg-success text-white rounded-lg hover:bg-success/90 transition-colors"
                                         >
                                             <Wallet size={9} /> Pagar
                                         </button>

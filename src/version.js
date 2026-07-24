@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.25';
+export const APP_VERSION = '2.52.26';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.26 — fix(theme): T7.1c — estandariza colores en 12 archivos más
+// (TabBonificaciones, TabLaboratorios, ReceptionActions, FilterPill,
+// ApoioScanModal, TabPedidos, LlegadaModal, EmployeeProfileView,
+// WidgetSrsInventory, WidgetMinMaxRequest, WidgetAnnulmentRequest,
+// DashboardView). Mismo patrón de media-migración en casi todos; cumpleaños
+// pink→chart-6 en EmployeeProfileView (mismo criterio que StaffManagementView/
+// AppLayout); tooltip de feriados en DashboardView es fijo-oscuro (tokens base).
+
 
 // v2.52.25 — fix(theme): T7.1c — estandariza colores en 4 archivos del
 // kiosco/SRS (SelfDeclareShiftPanel, KioskConfigModal, AuthPromptPanel —

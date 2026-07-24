@@ -271,7 +271,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
     {
       key: 'pay_change', icon: CreditCard, label: 'Cambio de Forma de Pago',
       desc: `Actual: ${PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || 'N/A'}`,
-      color: 'text-chart-7-text',    bg: 'bg-chart-7/10 border-sky-200/70',     iconBg: 'bg-chart-7/10',
+      color: 'text-chart-7-text',    bg: 'bg-chart-7/10 border-chart-7/20',     iconBg: 'bg-chart-7/10',
     },
     {
       key: 'vendor_change', icon: UserCog, label: 'Cambio de Vendedor',
@@ -427,7 +427,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
             className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:ring-2 transition-all resize-none ${
-              commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger focus:ring-red-100' : 'border-slate-200 focus:border-brand focus:ring-brand/10'
+              commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger focus:ring-danger/20' : 'border-slate-200 focus:border-brand focus:ring-brand/10'
             }`}
           />
         </div>

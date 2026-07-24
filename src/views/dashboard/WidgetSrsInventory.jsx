@@ -72,7 +72,7 @@ export default function WidgetSrsInventory() {
       <div className="relative shrink-0">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
           {loading
-            ? <Loader2 size={14} className="text-violet-500 animate-spin" />
+            ? <Loader2 size={14} className="text-chart-3-text animate-spin" />
             : <Search size={14} className="text-content-3" />}
         </div>
         <input
@@ -130,12 +130,12 @@ export default function WidgetSrsInventory() {
                 </p>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasStock && (
-                    <span className="flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-emerald-700">
+                    <span className="flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-success-text">
                       <CheckCircle2 size={9} strokeWidth={3} /> En stock
                     </span>
                   )}
                   <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                    activo ? 'bg-success/10 text-emerald-700' : 'bg-surface-card-hover text-content-3'
+                    activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
                   }`}>
                     {activo ? 'ACTIVO' : 'INACTIVO'}
                   </span>
@@ -150,10 +150,10 @@ export default function WidgetSrsInventory() {
               )}
 
               {principio && (
-                <div className="flex items-start gap-1.5 bg-violet-50 rounded-xl px-3 py-2">
-                  <FlaskConical size={11} className="text-violet-400 shrink-0 mt-0.5" />
-                  <div className="text-[11px] text-violet-700 font-medium leading-snug">
-                    {principio}{conc && <span className="ml-1.5 text-violet-500 font-bold">{conc}</span>}
+                <div className="flex items-start gap-1.5 bg-chart-3/10 rounded-xl px-3 py-2">
+                  <FlaskConical size={11} className="text-chart-3-text shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-chart-3-text font-medium leading-snug">
+                    {principio}{conc && <span className="ml-1.5 text-chart-3-text font-bold">{conc}</span>}
                   </div>
                 </div>
               )}

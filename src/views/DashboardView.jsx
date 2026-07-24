@@ -1303,10 +1303,10 @@ const DashboardView = ({ openModal }) => {
                         ):(
                           <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / promedio</p>
                         )}
-                        {salesView==='DAYS'&&<p className="text-[7px] text-brand font-black uppercase tracking-widest mt-1 bg-blue-500/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
+                        {salesView==='DAYS'&&<p className="text-[7px] text-brand font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
                       <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
-                      <span className="text-[7px] font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-cyan-500 transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
+                      <span className="text-[7px] font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-5-text transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
                     </div>
                   ));
                 })()}
@@ -1360,7 +1360,7 @@ const DashboardView = ({ openModal }) => {
                     <div key={h} className="flex-1 flex flex-col justify-end relative h-full"
                       onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
                       onMouseLeave={()=>setSalesBarTip(null)}>
-                      {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
+                      {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
                       <div className="w-full rounded-t-[2px] transition-[height,opacity]" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
                     </div>
                   );
@@ -1546,7 +1546,7 @@ const DashboardView = ({ openModal }) => {
                       onMouseLeave={()=>setCalTooltip(null)}
                       className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-[background-color] duration-150 ${isToday?'bg-brand':hasH?'bg-danger/10 hover:bg-danger/10':'hover:bg-surface-card-hover/80'}`}>
                       <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-danger':'text-content-2'}`}>{day}</span>
-                      {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-red-400"/></div>}
+                      {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-danger"/></div>}
                     </div>
                   );
                 })}
@@ -1577,8 +1577,8 @@ const DashboardView = ({ openModal }) => {
               :recentAnnouncements.map(a=>(
                 <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
                   className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left ${canManage('dash_announcements')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
-                  <div className={`w-7 h-7 rounded-[0.6rem] flex items-center justify-center shrink-0 mt-0.5 ${a.priority==='URGENT'?'bg-danger/10 border border-danger/30':'bg-blue-50 border border-blue-100'}`}>
-                    {a.priority==='URGENT'?<Flame size={13} className="text-danger"/>:<Megaphone size={13} className="text-blue-500"/>}
+                  <div className={`w-7 h-7 rounded-[0.6rem] flex items-center justify-center shrink-0 mt-0.5 ${a.priority==='URGENT'?'bg-danger/10 border border-danger/30':'bg-chart-1/10 border border-chart-1/30'}`}>
+                    {a.priority==='URGENT'?<Flame size={13} className="text-danger"/>:<Megaphone size={13} className="text-chart-1-text"/>}
                   </div>
                   <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-content truncate">{a.title}</p><p className="text-[10px] text-content-3 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
                   {a.priority==='URGENT'&&<span className="text-[9px] font-black text-danger bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full shrink-0 mt-1">URGENTE</span>}
@@ -1656,15 +1656,15 @@ const DashboardView = ({ openModal }) => {
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
-                          ?<img src={e.photo||e.photo_url} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-brand/30':e.isTomorrow?'border-amber-300':'border-white'}`}/>
-                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-amber-500 text-white border-amber-300':'bg-surface-card-hover text-content-3 border-white'}`}>{initials}</div>
+                          ?<img src={e.photo||e.photo_url} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-brand/30':e.isTomorrow?'border-warning/40':'border-white'}`}/>
+                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning text-white border-warning/40':'bg-surface-card-hover text-content-3 border-white'}`}>{initials}</div>
                         }
                         {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-white shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
-                        {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-white shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
+                        {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-white shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-brand':e.isTomorrow?'text-amber-700':'text-content'}`}>{e.name}</p>
+                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-brand':e.isTomorrow?'text-warning-text':'text-content'}`}>{e.name}</p>
                         <p className="text-[9px] text-content-3 font-medium truncate">{e.branchName}</p>
                       </div>
                       {/* Badges */}
@@ -1736,7 +1736,7 @@ const DashboardView = ({ openModal }) => {
                 <div className="flex flex-col items-center justify-center py-8 text-content-3"><Receipt size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin cotizaciones activas</p></div>
               ) : cotizStats.recent.map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-chart-1/10 border border-chart-1/30 flex items-center justify-center shrink-0">
                     <Receipt size={11} className="text-brand"/>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1791,15 +1791,15 @@ const DashboardView = ({ openModal }) => {
                 <p className="text-[10px] font-semibold text-content-3 mt-1">documentos</p>
               </div>
               <div className="bg-success/10 rounded-2xl p-3">
-                <p className="text-[16px] font-black text-emerald-700 leading-none">{fmt(factStats.total)}</p>
+                <p className="text-[16px] font-black text-success-text leading-none">{fmt(factStats.total)}</p>
                 <p className="text-[10px] font-semibold text-success mt-1">total emitido</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2 bg-danger/10 rounded-xl px-3 py-2">
-                <span className="w-2 h-2 rounded-full bg-red-400 shrink-0"/>
+                <span className="w-2 h-2 rounded-full bg-danger shrink-0"/>
                 <div>
-                  <p className="text-[14px] font-black text-red-700">{factStats.ccf}</p>
+                  <p className="text-[14px] font-black text-danger-text">{factStats.ccf}</p>
                   <p className="text-[9px] font-bold text-danger uppercase tracking-wide">CCF</p>
                 </div>
               </div>
@@ -2122,7 +2122,7 @@ const DashboardView = ({ openModal }) => {
                 pointerEvents:   'none',
                 zIndex: 25,
               }}
-              className={`rounded-[1.75rem] border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-amber-400/60 bg-warning/10'}`}
+              className={`rounded-[1.75rem] border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-warning/60 bg-warning/10'}`}
             />
           )}
         </div>

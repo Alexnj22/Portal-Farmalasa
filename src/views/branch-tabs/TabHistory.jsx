@@ -11,29 +11,29 @@ import { supabase } from '../../supabaseClient';
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)
 // ============================================================================
 const getThemeForAction = (action, isDoc, isSynthetic) => {
-    if (isSynthetic) return { icon: Building2, bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-200', dot: 'bg-orange-500', shadow: 'shadow-[0_4px_20px_rgba(249,115,22,0.15)]' };
-    if (isDoc) return { icon: FileText, bg: 'bg-blue-50', text: 'text-brand', border: 'border-brand/20', dot: 'bg-brand', shadow: 'shadow-[0_4px_20px_rgba(0,82,204,0.15)]' };
+    if (isSynthetic) return { icon: Building2, bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30', dot: 'bg-chart-4', shadow: 'shadow-[0_4px_20px_rgba(249,115,22,0.15)]' };
+    if (isDoc) return { icon: FileText, bg: 'bg-chart-1/10', text: 'text-brand', border: 'border-brand/20', dot: 'bg-brand', shadow: 'shadow-[0_4px_20px_rgba(0,82,204,0.15)]' };
 
     switch (action) {
         case 'PAGO_REGISTRADO':
-            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-emerald-500', shadow: 'shadow-[0_4px_20px_rgba(16,185,129,0.15)]' };
+            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success', shadow: 'shadow-[0_4px_20px_rgba(16,185,129,0.15)]' };
         case 'ALERTA_SISTEMA':
         case 'INSPECTION_RECORDED':
-            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-red-500', shadow: 'shadow-[0_4px_20px_rgba(239,68,68,0.15)]' };
+            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-danger', shadow: 'shadow-[0_4px_20px_rgba(239,68,68,0.15)]' };
         case 'EDITAR_SUCURSAL':
         case 'APERTURA_OFICIAL':
         case 'VINCULAR_KIOSCO':
         case 'REVOCAR_KIOSCO':
         case 'CREAR_TURNO_CATALOGO':
         case 'ELIMINAR_TURNO':
-            return { icon: Settings, bg: 'bg-indigo-50', text: 'text-indigo-500', border: 'border-indigo-200', dot: 'bg-indigo-500', shadow: 'shadow-[0_4px_20px_rgba(99,102,241,0.15)]' };
+            return { icon: Settings, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[0_4px_20px_rgba(99,102,241,0.15)]' };
         case 'PERSONAL_ASIGNADO':
         case 'EDITAR_EMPLEADO':
         case 'ELIMINAR_EMPLEADO':
         case 'ACCION_RRHH':
         case 'ASIGNAR_TURNO_SEMANAL':
         case 'REGISTRO_ASISTENCIA':
-            return { icon: Users, bg: 'bg-purple-50', text: 'text-purple-500', border: 'border-purple-200', dot: 'bg-purple-500', shadow: 'shadow-[0_4px_20px_rgba(168,85,247,0.15)]' };
+            return { icon: Users, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[0_4px_20px_rgba(168,85,247,0.15)]' };
         default:
             return { icon: CheckCircle2, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-slate-200', dot: 'bg-content-3', shadow: 'shadow-sm' };
     }
@@ -308,15 +308,15 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     title={aiMode ? "Cerrar Resumen IA" : "Resumen Inteligente del Historial"}
                                 >
                                     {aiMode ? (
-                                        <div className="absolute inset-[1px] bg-indigo-50 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-indigo-200">
-                                            <X size={16} strokeWidth={3} className="text-indigo-400 group-hover/ai-btn:text-indigo-600 transition-colors" />
+                                        <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
+                                            <X size={16} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
                                         </div>
                                     ) : (
                                         <>
                                             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
                                             <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
-                                            <div className="absolute inset-0 border border-purple-200/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
-                                            <Sparkles size={18} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
+                                            <div className="absolute inset-0 border border-chart-3/30/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
+                                            <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-20 relative" />
                                         </>
                                     )}
                                 </button>
@@ -351,7 +351,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.end} onChange={(v) => setDateFilter({ ...dateFilter, end: v })} placeholder="Hasta" compact /></div>
 
                                 {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
-                                    <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-red-500 hover:text-white transition-colors shrink-0 shadow-sm">
+                                    <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-danger hover:text-white transition-colors shrink-0 shadow-sm">
                                         <X size={12} strokeWidth={3} />
                                     </button>
                                 )}
@@ -374,13 +374,13 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
-                    <div className="bg-surface-card backdrop-blur-3xl border border-indigo-100/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                    <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
                         
                         {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                            <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-indigo-500/20 blur-[80px] rounded-full animate-pulse [animation-duration:4s]"></div>
-                            <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-purple-500/20 blur-[80px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
-                            <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-cyan-400/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
+                            <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:4s]"></div>
+                            <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
+                            <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-5/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
                         </div>
 
                         <div className="relative z-10 flex flex-col items-center justify-center text-center">
@@ -393,18 +393,18 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             </div>
                             
                             <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico Operativo Inteligente</h2>
-                            <p className="text-sm font-bold text-indigo-400/80 uppercase tracking-widest mb-10">Análisis basado en {printHistory.length} registros del historial</p>
+                            <p className="text-sm font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis basado en {printHistory.length} registros del historial</p>
 
                             {isGeneratingAi ? (
                                 /* SKELETON DE CARGA NEURONAL */
                                 <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-10">
                                     <div className="flex flex-col items-center justify-center mb-8">
                                         <div className="relative w-12 h-12 flex items-center justify-center mb-3">
-                                            <div className="absolute inset-0 border-2 border-indigo-200/50 rounded-full animate-ping [animation-duration:2s]"></div>
+                                            <div className="absolute inset-0 border-2 border-chart-3/30/50 rounded-full animate-ping [animation-duration:2s]"></div>
                                             <div className="absolute inset-1 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
                                             <div className="absolute inset-3 border-l-2 border-r-2 border-cyan-400 rounded-full animate-spin [animation-duration:2.5s] direction-reverse"></div>
                                         </div>
-                                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">Sintetizando Historial...</p>
+                                        <p className="text-[10px] font-black text-chart-3-text uppercase tracking-widest animate-pulse">Sintetizando Historial...</p>
                                     </div>
                                     <div className="space-y-4">
                                         <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
@@ -433,7 +433,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                             <button 
                                 onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}
-                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-indigo-500 font-black text-[11px] uppercase tracking-widest border border-indigo-100 hover:bg-white hover:text-indigo-700 hover:shadow-[0_8px_20px_rgba(168,85,247,0.15)] transition-all active:scale-[0.97] z-10 relative"
+                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-chart-3-text font-black text-[11px] uppercase tracking-widest border border-chart-3/30 hover:bg-white hover:text-chart-3-text hover:shadow-[0_8px_20px_rgba(168,85,247,0.15)] transition-all active:scale-[0.97] z-10 relative"
                             >
                                 <ArrowLeft size={16} strokeWidth={2.5} /> Regresar a línea de tiempo
                             </button>
@@ -471,7 +471,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     ) : (
                         <div className="relative z-10 w-full pt-2">
                             {isHistorySearchFuzzy && searchQuery && (
-                                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                     Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
                                 </div>

@@ -330,9 +330,9 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 </div>
 
                 {coverageMeta && (
-                    <div className="mx-4 mt-3 px-3 py-2 bg-indigo-50/80 border border-indigo-200/80 rounded-2xl flex gap-2 items-start shrink-0">
-                        <Building2 size={13} className="text-indigo-500 shrink-0 mt-0.5" strokeWidth={2.5} />
-                        <p className="text-[10px] font-bold text-indigo-600 leading-snug">
+                    <div className="mx-4 mt-3 px-3 py-2 bg-chart-3/10/80 border border-chart-3/30/80 rounded-2xl flex gap-2 items-start shrink-0">
+                        <Building2 size={13} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <p className="text-[10px] font-bold text-chart-3-text leading-snug">
                             Este turno sobreescribirá el horario de <strong>{coverageMeta.homeBranchName}</strong> para este día.
                         </p>
                     </div>
@@ -354,20 +354,20 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 <div className="px-4 pb-4 space-y-4 overflow-y-auto editor-scrollbar flex-1 relative z-10">
                     
                     {shiftId === 'NO_SHIFTS' && (
-                        <div className="bg-rose-50 border border-rose-200 p-3 rounded-2xl flex gap-2.5 animate-in zoom-in duration-300">
-                            <Bot size={16} className="text-rose-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in zoom-in duration-300">
+                            <Bot size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div>
-                                <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Auditoría Saly</h4>
+                                <h4 className="text-[10px] font-black text-danger-text uppercase tracking-widest mb-1">Auditoría Saly</h4>
                                 {branchLimits.isClosedToday ? (
-                                    <p className="text-[11px] font-medium text-rose-600/80 leading-snug">
+                                    <p className="text-[11px] font-medium text-danger-text/80 leading-snug">
                                         La sucursal está configurada como <strong>cerrada</strong> este día. Selecciona "Libre" o ajusta el horario en Configuración.
                                     </p>
                                 ) : !branchLimits.hasValidHours ? (
-                                    <p className="text-[11px] font-medium text-rose-600/80 leading-snug">
+                                    <p className="text-[11px] font-medium text-danger-text/80 leading-snug">
                                         Faltan los horarios operativos de {branchLimits.branchName}.
                                     </p>
                                 ) : (
-                                    <p className="text-[11px] font-medium text-rose-600/80 leading-snug">
+                                    <p className="text-[11px] font-medium text-danger-text/80 leading-snug">
                                         El horario de hoy es de {formatHourAMPM(Math.floor(branchLimits.minOpen/60))} a {formatHourAMPM(Math.floor(branchLimits.maxClose/60))}. Ningún turno del catálogo encaja aquí.
                                     </p>
                                 )}
@@ -408,16 +408,16 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             
                             <div 
                                 onClick={() => setHasLunch(!hasLunch)}
-                                className="flex items-center justify-between bg-white/[0.4] border border-orange-200/50 p-3 rounded-2xl hover:border-orange-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.4] border border-chart-4/30/50 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
                                         type="checkbox" 
                                         checked={hasLunch} 
                                         readOnly 
-                                        className="w-4 h-4 rounded text-orange-500 border-orange-200 focus:ring-orange-500 transition-transform group-hover/row:scale-110" 
+                                        className="w-4 h-4 rounded text-chart-4-text border-chart-4/30 focus:ring-orange-500 transition-transform group-hover/row:scale-110" 
                                     />
-                                    <span className="text-[12px] font-bold text-orange-600 group-hover/row:text-orange-700 transition-colors">Almuerzo</span>
+                                    <span className="text-[12px] font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
                                 {hasLunch && (
                                     <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" onClick={(e) => e.stopPropagation()}>
@@ -450,12 +450,12 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {timeAuditErrors.length > 0 && (
-                        <div className="bg-rose-50 border border-rose-200 p-3 rounded-2xl flex gap-2.5 animate-in slide-in-from-bottom-2 duration-300 shadow-sm mt-2">
-                            <AlertTriangle size={16} className="text-rose-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in slide-in-from-bottom-2 duration-300 shadow-sm mt-2">
+                            <AlertTriangle size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div className="flex flex-col gap-1.5">
-                                <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-0.5">Error de Lógica</h4>
+                                <h4 className="text-[10px] font-black text-danger-text uppercase tracking-widest mb-0.5">Error de Lógica</h4>
                                 {timeAuditErrors.map((err, i) => (
-                                    <p key={i} className="text-[11px] font-medium text-rose-600/90 leading-snug">
+                                    <p key={i} className="text-[11px] font-medium text-danger-text/90 leading-snug">
                                         {err}
                                     </p>
                                 ))}

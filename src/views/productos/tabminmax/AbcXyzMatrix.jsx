@@ -73,7 +73,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                     <motion.button
                         whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                         onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-[9px] font-bold text-content-3 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-rose-50/70">
+                        className="text-[9px] font-bold text-content-3 hover:text-danger-text flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-danger/10/70">
                         <X size={8} strokeWidth={2.5} /> limpiar
                     </motion.button>
                 )}

@@ -19,7 +19,7 @@ export default function DraftCostCard({ draftCost, isBodega }) {
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-border-card backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}
             title={tooltip}>
-            <Target size={13} className={`shrink-0 ${isBodega ? 'text-warning' : 'text-violet-400'}`} />
+            <Target size={13} className={`shrink-0 ${isBodega ? 'text-warning' : 'text-chart-3-text'}`} />
             <div className="flex flex-col leading-snug gap-0.5">
                 <span className="text-[10px] font-semibold text-content-3">
                     {label}

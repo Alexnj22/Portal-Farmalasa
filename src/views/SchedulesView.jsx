@@ -82,7 +82,7 @@ const HolidaysPanel = ({
                 </div>
                 {canEdit && (
                     <button onClick={() => setShowForm(v => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-slate-200 text-content-2' : 'bg-amber-500 hover:bg-amber-600 border-amber-500 text-white shadow-[0_4px_12px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_18px_rgba(234,179,8,0.4)] hover:-translate-y-0.5'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-slate-200 text-content-2' : 'bg-warning hover:bg-warning-hover border-warning text-white shadow-[0_4px_12px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_18px_rgba(234,179,8,0.4)] hover:-translate-y-0.5'}`}>
                         {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
                         {showForm ? 'Cancelar' : 'Agregar feriado'}
                     </button>
@@ -97,12 +97,12 @@ const HolidaysPanel = ({
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
                             <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
@@ -112,21 +112,21 @@ const HolidaysPanel = ({
                                 <Globe size={11} strokeWidth={2} /> Nacional
                             </button>
                             <button onClick={() => setHType('MUNICIPAL')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-white text-blue-600 shadow-sm' : 'text-content-3 hover:text-blue-600'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-white text-chart-1-text shadow-sm' : 'text-content-3 hover:text-chart-1-text'}`}>
                                 <MapPin size={11} strokeWidth={2} /> Municipal
                             </button>
                         </div>
                         {hType === 'MUNICIPAL' && (
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
-                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[16px] font-bold text-content outline-none focus:border-blue-400 transition-all" />
+                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[16px] font-bold text-content outline-none focus:border-chart-1 transition-all" />
                         )}
                         <button onClick={() => setHRecurring(v => !v)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-emerald-300 text-emerald-700' : 'bg-white border-slate-200 text-content-3 hover:border-emerald-300 hover:text-success'}`}>
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-emerald-300 text-success-text' : 'bg-white border-slate-200 text-content-3 hover:border-emerald-300 hover:text-success'}`}>
                             <RefreshCw size={11} strokeWidth={2} /> Recurrente
                         </button>
                     </div>
                     <button onClick={onSave} disabled={hSaving || !hDate || !hName.trim()}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-widest rounded-[1rem] shadow-[0_4px_12px_rgba(234,179,8,0.3)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-widest rounded-[1rem] shadow-[0_4px_12px_rgba(234,179,8,0.3)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                         {hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
                         {hSaving ? 'Guardando...' : 'Guardar feriado'}
                     </button>
@@ -174,25 +174,25 @@ const HolidaysPanel = ({
                                             <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-amber-400 to-orange-400' : 'bg-gradient-to-b from-blue-400 to-indigo-400'}`} />
                                             <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
                                                 {/* Date badge */}
-                                                <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-blue-50 border border-blue-100'}`}>
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-blue-400'}`}>{dayName}</span>
-                                                    <span className={`text-[17px] font-black leading-tight ${isNat ? 'text-amber-700' : 'text-blue-700'}`}>{dayNum}</span>
+                                                <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-chart-1/10 border border-chart-1/30'}`}>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-chart-1-text'}`}>{dayName}</span>
+                                                    <span className={`text-[17px] font-black leading-tight ${isNat ? 'text-warning-text' : 'text-chart-1-text'}`}>{dayNum}</span>
                                                 </div>
                                                 {/* Info */}
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-[13px] font-black text-content truncate">{h.name}</p>
                                                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                                         {isNat ? (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-warning-text bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">
                                                                 <Globe size={8} strokeWidth={2} /> Nacional
                                                             </span>
                                                         ) : (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-chart-1-text bg-chart-1/10 border border-chart-1/30 px-1.5 py-0.5 rounded-full">
                                                                 <MapPin size={8} strokeWidth={2} /> Municipal{h.municipality ? ` · ${h.municipality}` : ''}
                                                             </span>
                                                         )}
                                                         {h.is_recurring && (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
                                                                 <RefreshCw size={8} strokeWidth={2} /> Recurrente
                                                             </span>
                                                         )}
@@ -758,7 +758,7 @@ const SchedulesView = ({ openModal, setView }) => {
                 <>
                     <div className="h-5 w-px bg-surface-card shrink-0" />
                     <button onClick={handleResetFilters} title="Volver a semana actual"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-10">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-10">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -773,7 +773,7 @@ const SchedulesView = ({ openModal, setView }) => {
                         disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
                         className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
                             ${weekIsPublished
-                                ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-700 cursor-default'
+                                ? 'bg-success/20 border-success/50 text-success-text cursor-default'
                                 : 'bg-brand border-brand-hover/60 text-white shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:bg-brand-hover hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
                             ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
                         {isPublishing ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />

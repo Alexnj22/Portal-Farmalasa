@@ -211,8 +211,8 @@ const EmployeeProfileView = ({ openModal }) => {
     );
 
     const VAC_STATUS = {
-        PLANNED:   { label: 'Planificado', bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'    },
-        CONFIRMED: { label: 'Confirmado',  bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30' },
+        PLANNED:   { label: 'Planificado', bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30'    },
+        CONFIRMED: { label: 'Confirmado',  bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' },
         TAKEN:     { label: 'Completado',  bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-slate-200'   },
     };
 
@@ -227,7 +227,7 @@ const EmployeeProfileView = ({ openModal }) => {
                           </div>
                     }
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white shadow-sm" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-white shadow-sm" />
             </div>
             <div className="min-w-0">
                 <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">Mi Perfil</p>
@@ -284,7 +284,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     {/* Stats 2-col */}
                     <div className="grid grid-cols-2 gap-3">
                         {[
-                            { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-blue-600',  bg: 'bg-blue-50/80'  },
+                            { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-chart-1-text',  bg: 'bg-chart-1/10/80'  },
                             { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-warning', bg: 'bg-warning/10' },
                         ].map(({ label, value, icon: Icon, color, bg }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
@@ -298,9 +298,9 @@ const EmployeeProfileView = ({ openModal }) => {
                     {/* Quick info 2×2 */}
                     <div className="grid grid-cols-2 gap-3">
                         {[
-                            { label: 'Fecha de Ingreso',    value: emp.hire_date  ? formatDate(emp.hire_date)  : '—', icon: Calendar,  color: 'text-blue-600',   bg: 'bg-blue-50/80'   },
+                            { label: 'Fecha de Ingreso',    value: emp.hire_date  ? formatDate(emp.hire_date)  : '—', icon: Calendar,  color: 'text-chart-1-text',   bg: 'bg-chart-1/10/80'   },
                             { label: 'Fecha de Nacimiento', value: emp.birth_date ? formatDate(emp.birth_date) : '—', icon: Sparkles,  color: 'text-pink-500',   bg: 'bg-pink-50/80',  extra: birthdayCountdown },
-                            { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-50/80' },
+                            { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10/80' },
                             { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
@@ -318,7 +318,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             <Palmtree size={14} className="text-success shrink-0" strokeWidth={1.8} />
                             <div className="min-w-0">
                                 <p className="text-[9px] font-black text-success uppercase tracking-widest">Próximas vacaciones</p>
-                                <p className="text-[12px] font-black text-emerald-800 truncate">
+                                <p className="text-[12px] font-black text-success-text truncate">
                                     {new Date(nextVacation.start_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     {nextVacation.status === 'CONFIRMED' && <span className="ml-1.5 text-success font-bold">· Confirmadas</span>}
                                 </p>
@@ -419,7 +419,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 </>
                                             ) : d.shift ? (
                                                 <>
-                                                    <Coffee size={10} className={isToday ? 'text-orange-300' : 'text-orange-400'} strokeWidth={2} />
+                                                    <Coffee size={10} className={isToday ? 'text-chart-4-text' : 'text-chart-4-text'} strokeWidth={2} />
                                                     <p className={`text-[9px] font-black mt-1 text-center leading-tight ${isToday ? 'text-white' : 'text-content-2'}`}>
                                                         {formatTime12h(d.shift.start).replace(' AM','a').replace(' PM','p').replace(' am','a').replace(' pm','p')}
                                                     </p>

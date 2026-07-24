@@ -37,16 +37,16 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
                 : 'border-cyan-500/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]'}`}>
 
             <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
-                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-rose-500' : 'bg-cyan-500'}`} />
+                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-danger' : 'bg-chart-5'}`} />
             </div>
 
             <div className="flex items-center justify-between relative z-10 pr-8">
                 <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border
-                    ${isError ? 'text-rose-300 bg-rose-500/10 border-rose-500/20' : 'text-cyan-300 bg-cyan-500/10 border-cyan-500/20'}`}>
+                    ${isError ? 'text-rose-300 bg-danger/10 border-rose-500/20' : 'text-cyan-300 bg-chart-5/10 border-cyan-500/20'}`}>
                     <Bot size={12} strokeWidth={2} /> {isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}
                 </span>
                 {isError
-                    ? <AlertTriangle size={16} className="text-rose-400 animate-pulse" />
+                    ? <AlertTriangle size={16} className="text-danger-text animate-pulse" />
                     : <Sparkles size={16} className="text-cyan-400 animate-pulse" />}
             </div>
 
@@ -61,7 +61,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
 
             {insight.action && (
                 <div className="mt-auto pt-4 relative z-10">
-                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-content rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
+                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-chart-5 hover:bg-chart-5 text-content rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
                         <Zap size={14} strokeWidth={2.5} /> Crear este turno
                     </button>
                 </div>
@@ -98,7 +98,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
     return (
         <div className={`p-5 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
             isEditingThis
-                ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-amber-300/80 shadow-[0_8px_30px_rgba(245,158,11,0.15),inset_0_2px_10px_rgba(255,255,255,0.9)] animate-subtle-shake z-30'
+                ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-warning/40/80 shadow-[0_8px_30px_rgba(245,158,11,0.15),inset_0_2px_10px_rgba(255,255,255,0.9)] animate-subtle-shake z-30'
                 : isArchived
                     ? 'border-border-card opacity-80 hover:opacity-100 shadow-[0_4px_16px_rgba(0,0,0,0.03)] bg-surface-card backdrop-blur-xl hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] z-10'
                     : 'border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_6px_20px_rgba(0,0,0,0.04)] hover:shadow-[inset_0_1px_6px_rgba(255,255,255,0.8),0_15px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] z-10 hover:z-20'
@@ -121,7 +121,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-white shadow-sm border border-slate-200 text-content-2 text-[10px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
                             Cancelar
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-danger hover:bg-danger-hover' : 'bg-success hover:bg-success-hover'}`}>
                             {confirmAction === 'archive' ? 'Archivar' : 'Reactivar'}
                         </button>
                     </div>
@@ -134,7 +134,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-brand/60 hover:bg-white hover:text-brand transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
                             <Copy size={12} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-warning/10 text-warning border-amber-300' : 'bg-surface-card text-warning border-white hover:bg-white hover:text-warning'}`} title="Editar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40' : 'bg-surface-card text-warning border-white hover:bg-white hover:text-warning'}`} title="Editar">
                             <Edit3 size={12} strokeWidth={2.5} />
                         </button>
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-content-3 hover:bg-white hover:text-danger transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Archivar">
@@ -154,7 +154,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                     <Globe size={10} strokeWidth={2} /> Catálogo Global
                 </span>
                 {hours > 9 && (
-                    <span className="flex items-center gap-1 text-white bg-red-500 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shadow-[0_2px_10px_rgba(239,68,68,0.3)] animate-pulse">
+                    <span className="flex items-center gap-1 text-white bg-danger px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shadow-[0_2px_10px_rgba(239,68,68,0.3)] animate-pulse">
                         <AlertTriangle size={10} strokeWidth={2.5} /> +8H
                     </span>
                 )}
@@ -418,17 +418,17 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
             {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
             <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-[50] transform-gpu">
-                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-amber-300/80 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.03)]'}`}>
+                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-warning/40/80 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.03)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-10">
                         <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-amber-500' : 'bg-brand'}`}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-warning' : 'bg-brand'}`}>
                                 {editingGroup ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                             </div>
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
                         </h3>
                         {editingGroup && (
-                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                 <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                             </button>
                         )}
@@ -482,7 +482,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         {currentForm.start && currentForm.end && (
                             <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                                 <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-cyan-500/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_10px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500 rounded-full blur-[50px] opacity-20 pointer-events-none" />
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-chart-5 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-10">
                                         <div className="flex items-center gap-1.5 text-[10px] font-black text-cyan-400 uppercase tracking-widest">
                                             <Bot size={13} /> SALY AI AUDITOR
@@ -495,8 +495,8 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                         {activeAlerts.length > 0 ? (
                                             <div className="flex flex-col gap-2.5">
                                                 {activeAlerts.map((alert, idx) => (
-                                                    <div key={idx} className={`p-3 rounded-xl flex items-start gap-2.5 border ${alert.type === 'error' ? 'bg-rose-500/20 border-rose-500/30 text-rose-200' : 'bg-amber-500/20 border-amber-500/30 text-amber-200'}`}>
-                                                        {alert.type === 'error' ? <AlertCircle size={15} className="shrink-0 mt-0.5 text-rose-400" /> : <AlertTriangle size={15} className="shrink-0 mt-0.5 text-warning" />}
+                                                    <div key={idx} className={`p-3 rounded-xl flex items-start gap-2.5 border ${alert.type === 'error' ? 'bg-danger/20 border-rose-500/30 text-rose-200' : 'bg-warning/20 border-warning/30 text-amber-200'}`}>
+                                                        {alert.type === 'error' ? <AlertCircle size={15} className="shrink-0 mt-0.5 text-danger-text" /> : <AlertTriangle size={15} className="shrink-0 mt-0.5 text-warning" />}
                                                         <span className="text-[11px] font-bold leading-snug">{alert.text}</span>
                                                     </div>
                                                 ))}
@@ -515,7 +515,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <button
                             type="submit"
                             disabled={isLoading || hasBlockingError || !currentForm.start || !currentForm.end}
-                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[12px] transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_8px_20px_rgba(245,158,11,0.3)]' : 'bg-brand hover:bg-brand-hover shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)]'}`}
+                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[12px] transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-warning hover:bg-warning-hover shadow-[0_8px_20px_rgba(245,158,11,0.3)]' : 'bg-brand hover:bg-brand-hover shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)]'}`}
                         >
                             {isLoading
                                 ? <><Loader2 size={18} className="animate-spin" /> Procesando...</>
@@ -548,7 +548,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                     {isEmpty ? (
                         <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
-                                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${searchTerm ? 'bg-brand' : shiftTab === 'ACTIVE' ? 'bg-emerald-500' : 'bg-content-3'}`} />
+                                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${searchTerm ? 'bg-brand' : shiftTab === 'ACTIVE' ? 'bg-success' : 'bg-content-3'}`} />
                                 <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${searchTerm ? 'text-brand' : shiftTab === 'ACTIVE' ? 'text-success' : 'text-content-3'}`}>
                                     {searchTerm ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                                 </div>

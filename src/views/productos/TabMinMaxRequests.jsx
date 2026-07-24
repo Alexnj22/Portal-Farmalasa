@@ -11,8 +11,8 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 
 const STATUS_CFG = {
-  pending:  { label: 'Pendiente', cls: 'bg-warning/10 text-amber-700 border-warning/30' },
-  approved: { label: 'Aprobada',  cls: 'bg-success/10 text-emerald-700 border-success/30' },
+  pending:  { label: 'Pendiente', cls: 'bg-warning/10 text-warning-text border-warning/30' },
+  approved: { label: 'Aprobada',  cls: 'bg-success/10 text-success-text border-success/30' },
   rejected: { label: 'Rechazada', cls: 'bg-danger/10 text-danger border-danger/30' },
 };
 
@@ -81,8 +81,8 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         </div>
         <ArrowRight size={15} className="text-content-3" />
         <div className="text-left text-[12px] font-black tabular-nums">
-          <div className="text-orange-600">MIN {r.requested_min}</div>
-          <div className="text-blue-600">MAX {r.requested_max}</div>
+          <div className="text-chart-4-text">MIN {r.requested_min}</div>
+          <div className="text-chart-1-text">MAX {r.requested_max}</div>
         </div>
       </div>
 
@@ -103,11 +103,11 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       {isPending && !rejecting && (
         <div className="flex items-center gap-2 mt-auto">
           <button onClick={() => onApprove(r)} disabled={busy}
-            className="flex-1 h-9 rounded-xl text-[12px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
+            className="flex-1 h-9 rounded-xl text-[12px] font-bold text-white bg-success hover:bg-success-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar
           </button>
           <button onClick={() => setRejecting(true)} disabled={busy}
-            className="h-9 px-3 rounded-xl text-[12px] font-bold text-danger bg-danger/10 hover:bg-red-500 hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
+            className="h-9 px-3 rounded-xl text-[12px] font-bold text-danger bg-danger/10 hover:bg-danger hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
             <X size={14} /> Rechazar
           </button>
         </div>
@@ -118,10 +118,10 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         <div className="flex flex-col gap-2 mt-auto">
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} autoFocus
             placeholder="Motivo del rechazo (opcional)…"
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-surface-card text-[16px] text-content-2 placeholder-slate-400 outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 resize-none" />
+            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-surface-card text-[16px] text-content-2 placeholder-slate-400 outline-none focus:border-danger/40 focus:ring-2 focus:ring-red-100 resize-none" />
           <div className="flex items-center gap-2">
             <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
-              className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
+              className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-danger hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
               {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo
             </button>
             <button onClick={() => { setRejecting(false); setNote(''); }} disabled={busy}
@@ -345,7 +345,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           </div>
           {sucFilter !== 'all' && (
             <button onClick={() => setSucFilter('all')} title="Quitar sucursal"
-              className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
+              className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
               <X size={9} strokeWidth={3} />
             </button>
           )}
@@ -353,7 +353,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
             <>
               <div className="h-5 w-px bg-surface-card-hover shrink-0" />
               <button onClick={approveAll} disabled={bulkBusy}
-                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-black text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 transition-colors shrink-0">
+                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-black text-white bg-success hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
                 {bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
                 Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})
               </button>

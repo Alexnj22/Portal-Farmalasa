@@ -8,14 +8,14 @@ const safeParse = (obj) => {
 };
 
 const COLOR_MAP = {
-    blue: "bg-gradient-to-br from-blue-100 to-blue-200 border-blue-300 text-blue-700",
-    indigo: "bg-gradient-to-br from-indigo-100 to-indigo-200 border-indigo-300 text-indigo-700",
-    emerald: "bg-gradient-to-br from-emerald-100 to-emerald-200 border-emerald-300 text-emerald-700",
-    rose: "bg-gradient-to-br from-rose-100 to-rose-200 border-rose-300 text-rose-700",
-    cyan: "bg-gradient-to-br from-cyan-100 to-cyan-200 border-cyan-300 text-cyan-700",
-    amber: "bg-gradient-to-br from-amber-100 to-amber-200 border-amber-300 text-amber-700",
+    blue: "bg-gradient-to-br from-blue-100 to-blue-200 border-chart-1/40 text-chart-1-text",
+    indigo: "bg-gradient-to-br from-indigo-100 to-indigo-200 border-indigo-300 text-chart-3-text",
+    emerald: "bg-gradient-to-br from-emerald-100 to-emerald-200 border-emerald-300 text-success-text",
+    rose: "bg-gradient-to-br from-rose-100 to-rose-200 border-rose-300 text-danger-text",
+    cyan: "bg-gradient-to-br from-cyan-100 to-cyan-200 border-cyan-300 text-chart-5-text",
+    amber: "bg-gradient-to-br from-amber-100 to-amber-200 border-warning/40 text-warning-text",
     slate: "bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 text-content-2",
-    violet: "bg-gradient-to-br from-violet-100 to-violet-200 border-violet-300 text-violet-700",
+    violet: "bg-gradient-to-br from-violet-100 to-violet-200 border-violet-300 text-chart-3-text",
 };
 
 const EMPTY_EMPLOYEES = [];

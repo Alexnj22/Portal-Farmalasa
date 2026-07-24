@@ -54,7 +54,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
 
 const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
     const isOrange = theme === 'orange';
-    const activeBg = isOrange ? 'bg-orange-500' : 'bg-pink-500';
+    const activeBg = isOrange ? 'bg-chart-4' : 'bg-pink-500';
     const shadowHover = isOrange ? 'hover:shadow-[0_2px_8px_rgba(249,115,22,0.3)]' : 'hover:shadow-[0_2px_8px_rgba(236,72,153,0.3)]';
 
     return (
@@ -166,7 +166,7 @@ const DayRow = memo(({
                             {isMultiBranch && (
                                 <div className="lg:col-span-1 overflow-visible">
                                     <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
-                                        <Building2 size={12} className="text-indigo-500"/> Ubicación
+                                        <Building2 size={12} className="text-chart-3-text"/> Ubicación
                                     </label>
                                     <LiquidSelect 
                                         value={String(config.branchId || empBaseBranchId || '')}
@@ -189,7 +189,7 @@ const DayRow = memo(({
                                     options={shiftOptions}
                                     placeholder={!config.shiftId ? "FALTA TURNO" : "SELECCIONE..."}
                                     clearable={false}
-                                    className={!config.shiftId ? "[&>div]:border-red-300 [&>div]:bg-danger/10" : ""}
+                                    className={!config.shiftId ? "[&>div]:border-danger/40 [&>div]:bg-danger/10" : ""}
                                 />
                             </div>
 
@@ -197,13 +197,13 @@ const DayRow = memo(({
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
-                                        <Utensils size={12} className="text-orange-500"/> Almuerzo (-1h)
+                                        <Utensils size={12} className="text-chart-4-text"/> Almuerzo (-1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lunchTime} onChange={handleLunchToggle} theme="orange" />
                                 </div>
                                 {config.lunchTime ? (
                                     <div className="flex flex-col gap-1">
-                                        <div className={`h-[34px] ${lunchWarning ? '[&_input]:border-red-400 [&_input]:bg-danger/10 [&_input]:text-red-700' : ''}`}>
+                                        <div className={`h-[34px] ${lunchWarning ? '[&_input]:border-danger [&_input]:bg-danger/10 [&_input]:text-danger-text' : ''}`}>
                                             <TimePicker12 value={config.lunchTime} onChange={(v) => onChange(day.id, 'lunchTime', v)} />
                                         </div>
                                         {lunchWarning && (
@@ -228,7 +228,7 @@ const DayRow = memo(({
                                 </div>
                                 {config.lactationTime ? (
                                     <div className="flex flex-col gap-1">
-                                        <div className={`h-[34px] ${lactationWarning ? '[&_input]:border-red-400 [&_input]:bg-danger/10 [&_input]:text-red-700' : ''}`}>
+                                        <div className={`h-[34px] ${lactationWarning ? '[&_input]:border-danger [&_input]:bg-danger/10 [&_input]:text-danger-text' : ''}`}>
                                             <TimePicker12 value={config.lactationTime} onChange={(v) => onChange(day.id, 'lactationTime', v)} />
                                         </div>
                                         {lactationWarning && (
@@ -309,10 +309,10 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         if (!event) return null;
         
         const configs = {
-            VACATION: { label: 'Vacaciones', icon: Palmtree, bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning', textDark: 'text-amber-800', iconBg: 'bg-warning/10' },
-            DISABILITY: { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-danger/10', border: 'border-danger/30', text: 'text-danger', textDark: 'text-red-800', iconBg: 'bg-danger/10' },
-            PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-purple-50/70', border: 'border-purple-200/60', text: 'text-purple-600', textDark: 'text-purple-800', iconBg: 'bg-purple-100' },
-            HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-indigo-50/70', border: 'border-indigo-200/60', text: 'text-indigo-600', textDark: 'text-indigo-800', iconBg: 'bg-indigo-100' }
+            VACATION: { label: 'Vacaciones', icon: Palmtree, bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning', textDark: 'text-warning-text', iconBg: 'bg-warning/10' },
+            DISABILITY: { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-danger/10', border: 'border-danger/30', text: 'text-danger', textDark: 'text-danger-text', iconBg: 'bg-danger/10' },
+            PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-chart-3/10/70', border: 'border-chart-3/30/60', text: 'text-chart-3-text', textDark: 'text-purple-800', iconBg: 'bg-chart-3/10' },
+            HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-chart-3/10/70', border: 'border-chart-3/30/60', text: 'text-chart-3-text', textDark: 'text-indigo-800', iconBg: 'bg-chart-3/10' }
         };
         return { ...configs[event.type], note: event.note };
     }, [history, getDateOfDay]);
@@ -406,7 +406,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                         </div>
                     </div>
                     <div className="h-1.5 bg-surface-card rounded-full overflow-hidden shadow-inner border border-border-card">
-                        <div className={`h-full rounded-full transition-all duration-500 ease-out ${currentStats.isExcess ? 'bg-red-500' : 'bg-brand'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
+                        <div className={`h-full rounded-full transition-all duration-500 ease-out ${currentStats.isExcess ? 'bg-danger' : 'bg-brand'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
                     </div>
                 </div>
 

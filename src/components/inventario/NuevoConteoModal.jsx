@@ -106,7 +106,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
         <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-2xl" className="max-h-[90vh] h-fit" ariaLabel="Nuevo Conteo de Inventario">
             <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-10 shrink-0">
                 <div className="flex items-center gap-4">
-                    <div className={`${squircleClass} text-teal-600`}><ClipboardCheck size={22} strokeWidth={2.5} /></div>
+                    <div className={`${squircleClass} text-chart-9-text`}><ClipboardCheck size={22} strokeWidth={2.5} /></div>
                     <div>
                         <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">Nuevo Conteo de Inventario</h3>
                         <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">Auditoría Física</p>
@@ -121,7 +121,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 <div className="flex flex-col min-h-full w-full px-6 md:px-10 py-6 gap-4">
                     <div className={islandClass}>
                         <label className={fieldLabel}><span>Sucursal</span>{!branchId && reqBadge}</label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!branchId ? '!border-red-400 !bg-danger/10' : ''}`}>
+                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!branchId ? '!border-danger !bg-danger/10' : ''}`}>
                             <LiquidSelect value={branchId} onChange={setBranchId} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} disabled={isBranchScoped} />
                         </div>
 
@@ -146,7 +146,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         {scopeType === 'LABORATORIO' && (
                             <div className="mt-4">
                                 <label className={fieldLabel}><span>Laboratorio</span>{institucionMissing && reqBadge}</label>
-                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${institucionMissing ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${institucionMissing ? '!border-danger !bg-danger/10' : ''}`}>
                                     <LiquidSelect value={laboratorioId} onChange={setLaboratorioId} options={laboratorioOpts} placeholder="Seleccionar laboratorio..." icon={FlaskConical} clearable={false} />
                                 </div>
                             </div>
@@ -162,7 +162,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 {manualSelected.length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-2">
                                         {manualSelected.map((p) => (
-                                            <span key={p.id} className="flex items-center gap-1 text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 px-2 py-1 rounded-full">
+                                            <span key={p.id} className="flex items-center gap-1 text-[10px] font-semibold bg-chart-9/10 text-chart-9-text border border-chart-9/30 px-2 py-1 rounded-full">
                                                 {p.nombre}
                                                 <button type="button" onClick={() => setManualSelected((prev) => prev.filter((x) => x.id !== p.id))} className="hover:text-danger"><X size={10} /></button>
                                             </span>

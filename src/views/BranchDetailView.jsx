@@ -250,7 +250,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 {showProfile ? (
                     <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-blue-50 text-brand flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-full bg-chart-1/10 text-brand flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
                                 <span className="text-[8px] font-black text-content-2 uppercase tracking-widest">Ubicación</span>
                                 <span className="text-[11px] font-bold text-content-2 truncate max-w-[150px]">{liveBranch.address || "No registrada"}</span>
@@ -278,7 +278,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         </div>
                         <div className="w-px h-6 bg-surface-card-hover/50 shrink-0"></div>
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0"><CircleUserRound size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-full bg-chart-3/10 text-chart-3-text flex items-center justify-center shrink-0"><CircleUserRound size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
                                 <span className="text-[8px] font-black text-content-2 uppercase tracking-widest">Personal</span>
                                 <span className="text-[11px] font-bold text-content-2 truncate max-w-[150px]">{currentStaff.length} Activos</span>
@@ -313,8 +313,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                             <Icon size={14} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-brand' : ''} />
                                             <span className="hidden xl:inline">{tab.label}</span>
 
-                                            {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse border ${isActive ? 'border-white' : 'border-transparent'}`}></span>}
-                                            {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)] border ${isActive ? 'border-white' : 'border-transparent'}`}></span>}
+                                            {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-danger rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse border ${isActive ? 'border-white' : 'border-transparent'}`}></span>}
+                                            {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-warning rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)] border ${isActive ? 'border-white' : 'border-transparent'}`}></span>}
                                         </button>
                                     );
                                 })}
@@ -326,9 +326,9 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
                                 <button onClick={() => openModal && openModal('editBranch', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-content hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Edit3 size={13} /> General</button>
                                 <button onClick={() => openModal && openModal('editBranchHorarios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-warning hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><CalendarClock size={13} /> Horarios</button>
-                                <button onClick={() => openModal && openModal('editBranchInmueble', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-orange-500 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Building2 size={13} /> Local</button>
+                                <button onClick={() => openModal && openModal('editBranchInmueble', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-chart-4-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Building2 size={13} /> Local</button>
                                 {hasServices && <button onClick={() => openModal && openModal('editBranchServicios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-success hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Zap size={13} /> Serv.</button>}
-                                {hasLegal && <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-purple-600 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>}
+                                {hasLegal && <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-chart-3-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>}
                                 {hasKiosk && <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-brand-hover hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>}
                             </div>
                         </div>
@@ -339,7 +339,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {canEdit && <button
                             onClick={() => setIsEditMode(!isEditMode)}
                             className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-full transition-all duration-300 transform-gpu active:scale-[0.97] shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
-                                    ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-red-500 hover:text-white'
+                                    ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger hover:text-white'
                                     : 'bg-white text-brand border border-white hover:border-brand/30'
                                 }`}
                             title={isEditMode ? "Cerrar edición" : "Configurar sucursal"}
@@ -379,7 +379,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         >
                             <div className="flex items-center gap-3">
                                 <span className="text-[20px] md:text-[22px] font-black text-content leading-none tracking-tight">{liveBranch?.name || "Detalle de Sucursal"}</span>
-                                <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-content-3'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
+                                <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-content-3'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
 
                                 <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-brand border-brand text-white translate-x-1' : 'bg-brand/10 border-brand/20 text-brand group-hover/title:translate-x-0.5'}`}>
                                     <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />

@@ -185,9 +185,9 @@ async function applyPrincipios(productId, principios) {
 function ConfBadge({ score }) {
     const pct = Math.round(score * 100);
     const cls = score >= AUTO_MIN
-        ? 'bg-success/10 text-emerald-700'
+        ? 'bg-success/10 text-success-text'
         : score >= REVIEW_MIN
-            ? 'bg-warning/10 text-amber-700'
+            ? 'bg-warning/10 text-warning-text'
             : 'bg-danger/10 text-danger';
     return (
         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full tabular-nums ${cls}`}>
@@ -379,8 +379,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                 <LiquidModal.Header>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center">
-                                <FlaskConical size={15} className="text-violet-600" />
+                            <div className="w-8 h-8 rounded-xl bg-chart-3/10 flex items-center justify-center">
+                                <FlaskConical size={15} className="text-chart-3-text" />
                             </div>
                             <div>
                                 <p className="text-[14px] font-black text-content">Enriquecer desde SRS</p>
@@ -398,8 +398,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                     {/* ── IDLE ── */}
                     {phase === PHASE.IDLE && (
                         <div className="flex flex-col items-center gap-4 py-6 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-violet-50 flex items-center justify-center">
-                                <Zap size={28} className="text-violet-500" />
+                            <div className="w-16 h-16 rounded-2xl bg-chart-3/10 flex items-center justify-center">
+                                <Zap size={28} className="text-chart-3-text" />
                             </div>
                             <div>
                                 <p className="text-[15px] font-black text-content">Matching automático con SRS</p>
@@ -409,12 +409,12 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 </p>
                             </div>
                             <div className="flex gap-4 text-[11px] font-bold">
-                                <span className="flex items-center gap-1.5 text-success"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> ≥ 70% — auto-aplica</span>
-                                <span className="flex items-center gap-1.5 text-warning"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> {'< 70%'} — te consulta</span>
+                                <span className="flex items-center gap-1.5 text-success"><span className="w-2.5 h-2.5 rounded-full bg-success inline-block"/> ≥ 70% — auto-aplica</span>
+                                <span className="flex items-center gap-1.5 text-warning"><span className="w-2.5 h-2.5 rounded-full bg-warning inline-block"/> {'< 70%'} — te consulta</span>
                                 <span className="flex items-center gap-1.5 text-content-3"><span className="w-2.5 h-2.5 rounded-full bg-content-3 inline-block"/> Sin resultados SRS — descarta</span>
                             </div>
                             <button onClick={handleStart}
-                                className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-violet-600 hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200">
+                                className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-chart-3 hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200">
                                 Iniciar escaneo
                             </button>
                         </div>
@@ -424,7 +424,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                     {phase === PHASE.SCANNING && (
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
-                                <Loader2 size={18} className="text-violet-500 animate-spin shrink-0" />
+                                <Loader2 size={18} className="text-chart-3-text animate-spin shrink-0" />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[13px] font-black text-content-2">Escaneando productos…</p>
                                     <p className="text-[11px] text-content-3">{scanned} de {total} procesados</p>
@@ -433,7 +433,7 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                             {/* Progress bar */}
                             <div className="h-2 bg-surface-card-hover rounded-full overflow-hidden">
-                                <div className="h-full bg-violet-500 rounded-full transition-all duration-300"
+                                <div className="h-full bg-chart-3 rounded-full transition-all duration-300"
                                     style={{ width: total ? `${(scanned / total) * 100}%` : '0%' }} />
                             </div>
 
@@ -482,14 +482,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <div className="rounded-2xl border border-success/30 overflow-hidden">
                                     <div className="bg-success/10 px-4 py-2.5 border-b border-success/30 flex items-center justify-between gap-3 shrink-0">
                                         <div>
-                                            <p className="text-[12px] font-black text-emerald-800">Alta confianza</p>
+                                            <p className="text-[12px] font-black text-success-text">Alta confianza</p>
                                             <p className="text-[10px] text-success">
                                                 {autoQueue.length - autoRejected.size} de {autoQueue.length} seleccionados · toca ✗ para excluir
                                             </p>
                                         </div>
                                         <button onClick={handleApplyAuto}
                                             disabled={applying || autoQueue.length === autoRejected.size}
-                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-black text-white bg-success hover:bg-success-hover transition-colors disabled:opacity-50">
                                             {applying ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                                             Aplicar {autoQueue.length - autoRejected.size}
                                         </button>
@@ -503,7 +503,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-[11px] font-bold text-content-2 truncate">{entry.product.nombre}</p>
                                                         {entry.principios.length > 0 && (
-                                                            <p className="text-[10px] text-violet-600 truncate">
+                                                            <p className="text-[10px] text-chart-3-text truncate">
                                                                 {entry.principios.map(p => [p.nombre, p.concentracion].filter(Boolean).join(' ')).join(' + ')}
                                                             </p>
                                                         )}
@@ -555,8 +555,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             onClick={() => handlePickCandidate(currentReview, ci)}
                                                             className={`w-full text-left rounded-xl border p-3 transition-all ${
                                                                 isSelected
-                                                                    ? 'border-violet-300 bg-violet-50'
-                                                                    : 'border-slate-100 bg-white hover:border-violet-200 hover:bg-violet-50/40'
+                                                                    ? 'border-violet-300 bg-chart-3/10'
+                                                                    : 'border-slate-100 bg-white hover:border-chart-3/30 hover:bg-chart-3/10/40'
                                                             }`}>
                                                             <div className="flex items-start justify-between gap-2">
                                                                 <p className="text-[11px] font-bold text-content-2 leading-snug flex-1">
@@ -565,7 +565,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 <ConfBadge score={cand.score} />
                                                             </div>
                                                             {pios.length > 0 && (
-                                                                <p className="text-[10px] text-violet-600 font-medium mt-1">
+                                                                <p className="text-[10px] text-chart-3-text font-medium mt-1">
                                                                     {pios.map(p => [p.nombre, p.concentracion].filter(Boolean).join(' ')).join(' + ')}
                                                                 </p>
                                                             )}
@@ -577,9 +577,9 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                                         {/* Selected principios preview */}
                                         {currentReview.principios.length > 0 && (
-                                            <div className="bg-violet-50 rounded-xl px-3 py-2 flex items-start gap-2">
-                                                <FlaskConical size={11} className="text-violet-400 shrink-0 mt-0.5" />
-                                                <p className="text-[11px] text-violet-700 font-medium">
+                                            <div className="bg-chart-3/10 rounded-xl px-3 py-2 flex items-start gap-2">
+                                                <FlaskConical size={11} className="text-chart-3-text shrink-0 mt-0.5" />
+                                                <p className="text-[11px] text-chart-3-text font-medium">
                                                     {currentReview.principios.map(p => [p.nombre, p.concentracion].filter(Boolean).join(' ')).join(' + ')}
                                                 </p>
                                             </div>
@@ -588,12 +588,12 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 pt-1 flex-wrap">
                                             <button onClick={() => handleReviewApply(currentReview)} disabled={reviewApplying || currentReview.principios.length === 0}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black text-white bg-violet-600 hover:bg-violet-700 transition-colors disabled:opacity-50">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black text-white bg-chart-3 hover:bg-violet-700 transition-colors disabled:opacity-50">
                                                 {reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                                                 Aplicar
                                             </button>
                                             <button onClick={() => handleReviewMarkSinPA(currentReview)} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-content-3 border border-slate-200 hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
                                                 <Package size={12} /> Insumo/Equipo
                                             </button>
                                             <button onClick={handleReviewSkip} disabled={reviewApplying}
@@ -722,7 +722,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             </button>
                                                         ) : (
                                                             <button onClick={() => handleMarkSinPA(p.id)}
-                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-content-3 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
+                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-content-3 border border-slate-200 hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
                                                                 <Package size={9} /> Insumo
                                                             </button>
                                                         )}

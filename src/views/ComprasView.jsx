@@ -103,7 +103,7 @@ function ItemsExpand({ receiptId }) {
                         {items.map((it) => {
                             const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
                             return (
-                                <tr key={it.linea_num} className="hover:bg-blue-50/30 transition-colors">
+                                <tr key={it.linea_num} className="hover:bg-chart-1/10/30 transition-colors">
                                     <td className="px-3 py-2 text-content-3 tabular-nums">{it.linea_num}</td>
                                     <td className="px-3 py-2 text-content-3 tabular-nums font-mono">{it.erp_product_id ?? '—'}</td>
                                     <td className="px-3 py-2 text-content-2 font-medium">{it.descripcion || '—'}</td>
@@ -112,7 +112,7 @@ function ItemsExpand({ receiptId }) {
                                     <td className="px-3 py-2 text-right font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</td>
                                     <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
                                         {lote
-                                            ? <span className="bg-violet-50 text-violet-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{lote}</span>
+                                            ? <span className="bg-chart-3/10 text-chart-3-text text-[10px] font-bold px-2 py-0.5 rounded-full">{lote}</span>
                                             : <span className="text-content-3">—</span>
                                         }
                                     </td>
@@ -204,7 +204,7 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
                                 <span className="tabular-nums font-bold text-content">{fmt$(row.total)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <button className="text-content-3 hover:text-brand transition-colors p-1 rounded-lg hover:bg-blue-50">
+                                <button className="text-content-3 hover:text-brand transition-colors p-1 rounded-lg hover:bg-chart-1/10">
                                     {expandedId === row.id
                                         ? <ChevronDown size={14} strokeWidth={2.5} />
                                         : <ChevronRight size={14} strokeWidth={2.5} />
@@ -273,7 +273,7 @@ function TabProductos({ searchTerm }) {
                             <span className="tabular-nums text-content-2 font-medium text-[11px]">{fmtDate(row.last_purchase_date)}</span>
                         </DataCell>
                         <DataCell align="center" hideBelow="md">
-                            <span className="tabular-nums text-sky-600 font-bold text-[11px]">{row.days_since_first_purchase ?? '—'}d</span>
+                            <span className="tabular-nums text-chart-7-text font-bold text-[11px]">{row.days_since_first_purchase ?? '—'}d</span>
                         </DataCell>
                         <DataCell align="center">
                             <span className="tabular-nums text-content-2">{row.total_receipts}</span>
@@ -336,8 +336,8 @@ export default function ComprasView() {
                     onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
                     className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors w-fit ${
                         sinProveedor
-                            ? 'bg-warning/10 border-amber-300 text-amber-800'
-                            : 'bg-warning/10 border-warning/30 text-amber-700 hover:bg-warning/10'
+                            ? 'bg-warning/10 border-warning/40 text-warning-text'
+                            : 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
                     }`}
                 >
                     <AlertTriangle size={12} className="text-warning" />

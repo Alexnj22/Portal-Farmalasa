@@ -137,7 +137,7 @@ export default function ViewTabBar({
               bg-brand text-white shadow-[0_3px_8px_rgba(0,82,204,0.4)] hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchValue && (
-              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />
+              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />
             )}
           </button>
         )}

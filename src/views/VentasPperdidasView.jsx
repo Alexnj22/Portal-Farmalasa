@@ -138,12 +138,12 @@ export default function VentasPperdidasView() {
                             {summary.map(s => (
                                 <div
                                     key={s.nombre}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-danger/10 border border-danger/30"
                                 >
-                                    <TrendingDown size={11} className="text-rose-500" strokeWidth={2.5} />
+                                    <TrendingDown size={11} className="text-danger-text" strokeWidth={2.5} />
                                     <span className="text-[11px] font-black text-rose-800 max-w-[180px] truncate">{s.nombre}</span>
-                                    <span className="text-[10px] font-bold text-rose-600 tabular-nums">{s.total} uds</span>
-                                    <span className="text-[9px] font-semibold text-rose-400">({s.veces}×)</span>
+                                    <span className="text-[10px] font-bold text-danger-text tabular-nums">{s.total} uds</span>
+                                    <span className="text-[9px] font-semibold text-danger-text">({s.veces}×)</span>
                                 </div>
                             ))}
                         </div>
@@ -186,7 +186,7 @@ export default function VentasPperdidasView() {
                                     className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden"
                                 >
                                     {/* Colored top stripe */}
-                                    <div className={`h-1 w-full ${activeTab === 'pendiente' ? 'bg-rose-400' : 'bg-emerald-400'}`} />
+                                    <div className={`h-1 w-full ${activeTab === 'pendiente' ? 'bg-danger' : 'bg-success'}`} />
 
                                     <div className="flex items-start gap-3 px-4 py-3">
                                         {/* Quantity bubble */}
@@ -207,8 +207,8 @@ export default function VentasPperdidasView() {
                                             {/* Principio activo */}
                                             {r.principio_activo && (
                                                 <div className="flex items-center gap-1 mt-1.5">
-                                                    <FlaskConical size={9} className="text-violet-500 shrink-0" strokeWidth={2} />
-                                                    <span className="text-[10px] font-semibold text-violet-700">{r.principio_activo}</span>
+                                                    <FlaskConical size={9} className="text-chart-3-text shrink-0" strokeWidth={2} />
+                                                    <span className="text-[10px] font-semibold text-chart-3-text">{r.principio_activo}</span>
                                                 </div>
                                             )}
 
@@ -252,7 +252,7 @@ export default function VentasPperdidasView() {
                                             <button
                                                 onClick={() => markProcessed(r.id)}
                                                 disabled={processing === r.id}
-                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 hover:bg-success/10 border border-success/30 text-emerald-700 text-[10px] font-black transition-colors disabled:opacity-40 self-start mt-0.5"
+                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 hover:bg-success/10 border border-success/30 text-success-text text-[10px] font-black transition-colors disabled:opacity-40 self-start mt-0.5"
                                             >
                                                 <CheckCircle2 size={11} strokeWidth={2.5} />
                                                 {processing === r.id ? '...' : 'Listo'}

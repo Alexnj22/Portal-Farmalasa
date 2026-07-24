@@ -23,8 +23,8 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
     switch (ann.badgeType) {
       case 'GLOBAL': return <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'BRANCH': return <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={12} strokeWidth={2} /> {ann.badgeText}</span>;
-      case 'ROLE': return <span className="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-purple-200/50"><Users size={12} strokeWidth={2} /> {ann.badgeText}</span>;
-      case 'EMPLOYEE': return <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={12} strokeWidth={2} /> {ann.badgeText}</span>;
+      case 'ROLE': return <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-3/30/50"><Users size={12} strokeWidth={2} /> {ann.badgeText}</span>;
+      case 'EMPLOYEE': return <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-4/30/50"><User size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       default: return null;
     }
   };
@@ -35,13 +35,13 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
     <div
       className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
         isEditingThis
-          ? 'bg-surface-card backdrop-blur-xl border border-amber-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-subtle-shake z-10'
+          ? 'bg-surface-card backdrop-blur-xl border border-warning/40/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)] animate-subtle-shake z-10'
           : ann.isCompleted
             ? 'border-border-card opacity-80 hover:opacity-100 shadow-sm bg-surface-card backdrop-blur-md hover:-translate-y-1 hover:shadow-md'
             : isScheduled
-              ? 'border-indigo-200/60 shadow-[0_4px_20px_rgba(99,102,241,0.05)] bg-indigo-50/40 backdrop-blur-2xl hover:-translate-y-1'
+              ? 'border-chart-3/30/60 shadow-[0_4px_20px_rgba(99,102,241,0.05)] bg-chart-3/10/40 backdrop-blur-2xl hover:-translate-y-1'
               : ann.priority === 'URGENT'
-                ? 'border-red-300 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-surface-card backdrop-blur-xl hover:-translate-y-1'
+                ? 'border-danger/40 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-surface-card backdrop-blur-xl hover:-translate-y-1'
                 : 'border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
         }`}
     >
@@ -51,7 +51,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             {ann.readIds.length === 0 && (
               <button
                 onClick={() => onEdit(ann)}
-                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditingThis ? 'bg-warning/10 text-warning border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md'}`}
+                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md'}`}
                 title="Editar aviso"
               >
                 <Edit3 size={14} strokeWidth={2.5} />
@@ -79,12 +79,12 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 
       <div className="flex flex-wrap items-center gap-3">
         {isScheduled && (
-          <span className="flex items-center gap-1 text-indigo-600 bg-indigo-100 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-indigo-500/20 border border-indigo-200">
+          <span className="flex items-center gap-1 text-chart-3-text bg-chart-3/10 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-indigo-500/20 border border-chart-3/30">
             <Timer size={12} strokeWidth={2.5} className="animate-pulse" /> Programado
           </span>
         )}
         {!isScheduled && ann.priority === 'URGENT' && (
-          <span className="flex items-center gap-1 text-white bg-red-500 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 animate-pulse">
+          <span className="flex items-center gap-1 text-white bg-danger px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 animate-pulse">
             <Flame size={12} strokeWidth={2.5} /> Urgente
           </span>
         )}
@@ -114,13 +114,13 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
       <div className="mt-2 space-y-2">
         <div className={`flex justify-between items-end text-[10px] font-bold uppercase tracking-widest ${ann.priority === 'URGENT' && !isScheduled ? 'text-danger' : 'text-content-3'}`}>
           <span>{isScheduled ? 'Progreso Bloqueado' : 'Progreso de Lectura'}</span>
-          <span className={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'text-danger' : ann.readPercentage === 100 ? 'text-success' : isScheduled ? 'text-indigo-400' : 'text-brand'}>
+          <span className={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'text-danger' : ann.readPercentage === 100 ? 'text-success' : isScheduled ? 'text-chart-3-text' : 'text-brand'}>
             {ann.readPercentage}%
           </span>
         </div>
         <div className={`w-full rounded-full h-2.5 overflow-hidden border ${ann.priority === 'URGENT' && !isScheduled ? 'bg-danger/10 border-danger/30' : 'bg-surface-card border-border-card'}`}>
           <div
-            className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'bg-red-500' : ann.readPercentage === 100 ? 'bg-emerald-500' : isScheduled ? 'bg-indigo-300' : 'bg-brand'}`}
+            className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'bg-danger' : ann.readPercentage === 100 ? 'bg-success' : isScheduled ? 'bg-indigo-300' : 'bg-brand'}`}
             style={{ width: `${ann.readPercentage}%` }}
           ></div>
         </div>
@@ -135,7 +135,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 && !isScheduled
               ? 'text-success border-success/30'
               : isScheduled
-                ? 'text-indigo-400 border-indigo-100'
+                ? 'text-chart-3-text border-chart-3/30'
                 : 'text-brand border-white'
             }`}
         >
@@ -149,7 +149,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 
         <div className="flex flex-col items-end">
           {isScheduled ? (
-            <p className="text-[11px] text-indigo-500 font-bold tracking-widest uppercase flex items-center gap-1.5">
+            <p className="text-[11px] text-chart-3-text font-bold tracking-widest uppercase flex items-center gap-1.5">
               <CalendarClock size={12} /> Para: {new Date(ann.scheduledFor).toLocaleDateString()}
             </p>
           ) : (
@@ -565,10 +565,10 @@ const AnnouncementsView = ({ openModal }) => {
             Activos
           </button>
           
-          <button onClick={() => setListTab('SCHEDULED')} className={`relative px-4 md:px-5 h-9 md:h-10 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'SCHEDULED' ? 'bg-indigo-50 text-indigo-600 border-indigo-200 shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-indigo-50 hover:text-indigo-600 hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-100'}`}>
+          <button onClick={() => setListTab('SCHEDULED')} className={`relative px-4 md:px-5 h-9 md:h-10 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'SCHEDULED' ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30 shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-chart-3/10 hover:text-chart-3-text hover:-translate-y-0.5 hover:shadow-md hover:border-chart-3/30'}`}>
             <span className="flex items-center gap-1.5"><CalendarClock size={14} /> Programados</span>
             {scheduledCount > 0 && (
-                <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center text-[9px] font-black text-white rounded-full shadow-sm border-2 border-white transition-all ${listTab === 'SCHEDULED' ? 'bg-indigo-500' : 'bg-content-3'}`}>
+                <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center text-[9px] font-black text-white rounded-full shadow-sm border-2 border-white transition-all ${listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}>
                     {scheduledCount}
                 </span>
             )}
@@ -582,7 +582,7 @@ const AnnouncementsView = ({ openModal }) => {
         <div className="w-px h-6 md:h-8 bg-surface-card-hover/60 mx-1 md:mx-2 shrink-0"></div>
         <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar avisos">
           <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-          {announcementSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
+          {announcementSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
         </button>
       </div>
     </div>
@@ -599,38 +599,38 @@ const AnnouncementsView = ({ openModal }) => {
         <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
           <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
-            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
+            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-warning/40/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-amber-500' : 'bg-brand'}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-warning' : 'bg-brand'}`}>
                     {editingAnnId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                   </div>
                   <span className="font-black uppercase tracking-tight ml-1">{editingAnnId ? 'Editar Aviso' : 'Nuevo Aviso'}</span>
                 </h3>
                 {editingAnnId && (
-                  <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"><X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar</button>
+                  <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"><X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar</button>
                 )}
               </div>
 
-              {error && <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2"><AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} /><span className="leading-tight">{error}</span></div>}
+              {error && <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2"><AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} /><span className="leading-tight">{error}</span></div>}
 
               <form onSubmit={handlePublish} className="space-y-5 relative z-10">
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-surface-card border-brand/30 text-brand shadow-[0_2px_10px_rgba(0,82,204,0.2)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
-                    <button type="button" onClick={() => setPriority('URGENT')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'URGENT' ? 'bg-danger/10 border-red-300 text-danger shadow-[0_2px_10px_rgba(239,68,68,0.2)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Flame size={14} className={priority === 'URGENT' ? 'animate-pulse' : ''} /> Urgente</button>
+                    <button type="button" onClick={() => setPriority('URGENT')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'URGENT' ? 'bg-danger/10 border-danger/40 text-danger shadow-[0_2px_10px_rgba(239,68,68,0.2)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Flame size={14} className={priority === 'URGENT' ? 'animate-pulse' : ''} /> Urgente</button>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
-                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
+                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-warning/40 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
-                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
+                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-warning/40 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div className="pt-3 border-t border-border-card">
@@ -705,7 +705,7 @@ const AnnouncementsView = ({ openModal }) => {
                       <button
                         type="button"
                         onClick={() => setPublishImmediately(!publishImmediately)}
-                        className={`relative w-10 h-5 rounded-full transition-colors duration-300 ease-in-out ${publishImmediately ? 'bg-emerald-400' : 'bg-content-3'}`}
+                        className={`relative w-10 h-5 rounded-full transition-colors duration-300 ease-in-out ${publishImmediately ? 'bg-success' : 'bg-content-3'}`}
                       >
                         <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-300 ease-in-out shadow-sm ${publishImmediately ? 'translate-x-5' : 'translate-x-0'}`}></span>
                       </button>
@@ -727,7 +727,7 @@ const AnnouncementsView = ({ openModal }) => {
                    )}
                 </div>
 
-                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] ${editingAnnId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'}`}>
+                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] ${editingAnnId ? 'bg-warning hover:bg-warning-hover shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'}`}>
                   {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Procesando...</> : editingAnnId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : publishImmediately ? <><Send size={16} strokeWidth={2.5} /> Publicar Aviso</> : <><CalendarClock size={16} strokeWidth={2.5} /> Programar Aviso</>}
                 </button>
               </form>
@@ -739,9 +739,9 @@ const AnnouncementsView = ({ openModal }) => {
               {paginatedList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                   <div className="relative group flex flex-col items-center text-center">
-                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-emerald-500' : listTab === 'SCHEDULED' ? 'bg-indigo-500' : 'bg-content-3'}`}></div>
+                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}></div>
                     
-                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${announcementSearch ? 'text-brand' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-indigo-500' : 'text-content-3'}`}>
+                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${announcementSearch ? 'text-brand' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
                       {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                     </div>
                     
@@ -756,7 +756,7 @@ const AnnouncementsView = ({ openModal }) => {
               ) : (
                 <>
                 {isAnnFuzzy && debouncedSearchTerm && (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
                   </div>

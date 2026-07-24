@@ -109,7 +109,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.05)] ${isSelected ? 'border-brand text-brand bg-blue-50' : 'border-white text-content-3 bg-surface-card'}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.05)] ${isSelected ? 'border-brand text-brand bg-chart-1/10' : 'border-white text-content-3 bg-surface-card'}`}>
                                         {emp.photo ? <img src={emp.photo} alt="" className="w-full h-full object-cover"/> : emp.name.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -119,7 +119,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     {isSelected && <CheckCircle2 size={18} className="text-brand shrink-0" strokeWidth={2.5}/>}
                                 </div>
                                 {isCurrentJefe && (
-                                    <div className="bg-warning/10 backdrop-blur-sm text-amber-700 text-[8px] font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
+                                    <div className="bg-warning/10 backdrop-blur-sm text-warning-text text-[8px] font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
                                         Titular Actual
                                     </div>
                                 )}
@@ -151,7 +151,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="flex-1">
                                     <h3 className="text-lg font-black text-content leading-tight">{selectedEmp.name}</h3>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="bg-blue-50 text-brand border border-blue-100 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">{selectedEmp.role || 'Sin Rol'}</span>
+                                        <span className="bg-chart-1/10 text-brand border border-chart-1/30 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">{selectedEmp.role || 'Sin Rol'}</span>
                                         <span className="text-[10px] font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
                                     </div>
                                 </div>
@@ -180,8 +180,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                         {isCurrentJefeSelected ? (
                             <div className="bg-warning/10 backdrop-blur-md border border-warning/30 rounded-[1.5rem] p-6 text-center shadow-sm">
                                 <ShieldCheck size={32} className="text-warning mx-auto mb-3" strokeWidth={2}/>
-                                <h4 className="text-[14px] font-black text-amber-800 uppercase tracking-widest">Titular Actual</h4>
-                                <p className="text-[11px] font-bold text-amber-700/80 mt-2 max-w-sm mx-auto leading-relaxed">
+                                <h4 className="text-[14px] font-black text-warning-text uppercase tracking-widest">Titular Actual</h4>
+                                <p className="text-[11px] font-bold text-warning-text/80 mt-2 max-w-sm mx-auto leading-relaxed">
                                     Este empleado ocupa actualmente el cargo de {formData.targetRole}. Para efectuar un relevo o cambio, selecciona a un candidato diferente en la lista.
                                 </p>
                             </div>
@@ -193,7 +193,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     <div className="flex items-center gap-3">
                                         {moveType === 'PROMOTION' && <TrendingUp size={20} className="text-brand shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-brand shrink-0" strokeWidth={2.5}/>}
-                                        {moveType === 'TRANSFER_PROMOTION' && <Award size={20} className="text-purple-500 shrink-0" strokeWidth={2.5}/>}
+                                        {moveType === 'TRANSFER_PROMOTION' && <Award size={20} className="text-chart-3-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'LATERAL' && <Briefcase size={20} className="text-content-3 shrink-0" strokeWidth={2.5}/>}
                                         <p className="text-[11px] font-bold text-content-2 leading-tight">
                                             Asumirá como <strong className="text-brand">{formData.targetRole}</strong>. 
@@ -212,8 +212,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                                             <UserMinus size={16} className="text-danger" strokeWidth={2.5}/>
                                             <span className="text-[11px] font-black uppercase tracking-widest text-danger">Relevo de Personal</span>
                                         </div>
-                                        <p className="text-[11px] font-bold text-red-800/80 leading-relaxed mb-4">
-                                            <strong className="text-red-700 font-black">{currentAssigneeObj.name}</strong> dejará la jefatura. ¿Qué deseas hacer con su perfil operativo?
+                                        <p className="text-[11px] font-bold text-danger-text/80 leading-relaxed mb-4">
+                                            <strong className="text-danger-text font-black">{currentAssigneeObj.name}</strong> dejará la jefatura. ¿Qué deseas hacer con su perfil operativo?
                                         </p>
                                         
                                         <div className="space-y-3">
@@ -261,7 +261,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                 </div>
                                             </label>
 
-                                            <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'UNASSIGN' ? 'bg-surface-card border-amber-400 shadow-md ring-1 ring-amber-400/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
+                                            <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'UNASSIGN' ? 'bg-surface-card border-warning shadow-md ring-1 ring-amber-400/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
                                                 <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-warning accent-amber-500" checked={formData.outgoingAction === 'UNASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'UNASSIGN'})} />
                                                 <div className="flex flex-col">
                                                     <span className="text-[11px] font-black text-content uppercase tracking-widest leading-none">Quitar Asignación (Flotante)</span>
@@ -280,14 +280,14 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-white text-content shadow-[0_4px_15px_rgba(0,0,0,0.08)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <ShieldCheck size={14}/> Permanente
                                         </button>
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-amber-500 text-white shadow-[0_4px_15px_rgba(245,158,11,0.3)]' : 'text-content-3 hover:bg-surface-card'}`}>
+                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning text-white shadow-[0_4px_15px_rgba(245,158,11,0.3)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <Clock size={14}/> Interinato
                                         </button>
                                     </div>
 
                                     {formData.isPermanent === false && (
                                         <div className="bg-surface-card backdrop-blur-md border border-warning/30 rounded-[1.5rem] p-5 shadow-sm animate-in slide-in-from-top-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-2 flex items-center gap-1.5 ml-1">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-warning-text mb-2 flex items-center gap-1.5 ml-1">
                                                 <AlertCircle size={12} strokeWidth={3}/> Fecha de Fin de Interinato
                                             </label>
                                             <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl">

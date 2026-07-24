@@ -754,7 +754,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     if (type === "editBranchHorarios") return <div className={`${squircleClass} text-brand`}><Clock size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLeadership") return <div className={`${squircleClass} text-warning`}><Star size={22} strokeWidth={2.5} /></div>;
                                     if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-brand`}><FilePlus size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-chart-3-text`}><Sparkles size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand`}><DollarSign size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Edit2 size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editProveedor") return <div className={`${squircleClass} text-brand`}><Truck size={22} strokeWidth={2.5} /></div>;

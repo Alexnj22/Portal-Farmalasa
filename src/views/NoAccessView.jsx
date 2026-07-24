@@ -36,7 +36,7 @@ const NoAccessView = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-[#E6F0FF] z-50 overflow-hidden">
 
             {/* Ambient blobs */}
-            <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] bg-red-400/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
+            <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] bg-danger/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
             <div className="absolute bottom-[-20%] right-[-10%] w-[55vw] h-[55vw] bg-rose-300/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
 
             {/* Card */}
@@ -44,7 +44,7 @@ const NoAccessView = () => {
 
                 {/* Pulsing rings + icon */}
                 <div className="relative mb-10">
-                    <span className="absolute inset-0 m-auto w-28 h-28 rounded-full bg-red-400/15 animate-ping" style={{ animationDuration: '2.5s' }} />
+                    <span className="absolute inset-0 m-auto w-28 h-28 rounded-full bg-danger/15 animate-ping" style={{ animationDuration: '2.5s' }} />
                     <span className="absolute -inset-6 rounded-full bg-red-300/8 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.6s' }} />
                     <div className="relative w-28 h-28 rounded-[2.5rem] bg-white border border-danger/30 shadow-[0_20px_60px_rgba(239,68,68,0.15)] flex items-center justify-center">
                         <ShieldOff size={48} className="text-red-300" strokeWidth={1.2} />

@@ -178,7 +178,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
             {/* Header con última actualización */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Activity size={14} className="text-blue-500" />
+                    <Activity size={14} className="text-chart-1-text" />
                     <span className="text-[12px] font-semibold text-content-2">Pedidos en curso</span>
                     {lastSync && (
                         <span className="text-[10px] text-content-3">
@@ -189,7 +189,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                 <button
                     onClick={load}
                     disabled={refreshing}
-                    className="flex items-center gap-1 text-[11px] text-content-3 hover:text-blue-600 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 text-[11px] text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
                 >
                     <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
                     Refrescar
@@ -244,7 +244,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                 </span>
                             )}
                             {allReady && pedido.status === 'confirmado' && (
-                                <span className="flex items-center gap-1 text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">
+                                <span className="flex items-center gap-1 text-[10px] font-semibold text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full">
                                     <Play size={10} />
                                     Listo para enviar
                                 </span>
@@ -312,7 +312,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                     </div>
                                     <div className="h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                                            className="h-full bg-success rounded-full transition-all duration-500"
                                             style={{ width: `${pctDone}%` }}
                                         />
                                     </div>

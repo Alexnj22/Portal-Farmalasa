@@ -116,7 +116,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
         <PedidoModal open={open} onClose={onClose}>
                 <PedidoModal.Header>
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-chart-1 flex items-center justify-center shadow-sm shrink-0">
                             <Users size={20} className="text-white" />
                         </div>
                         <div>
@@ -129,16 +129,16 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                 <PedidoModal.Body className="space-y-4">
                     {!employee && (
                         <div className="flex flex-col items-center gap-3 py-3">
-                            <div className="relative w-16 h-16 rounded-2xl bg-blue-50 border-2 border-blue-200 flex items-center justify-center">
+                            <div className="relative w-16 h-16 rounded-2xl bg-chart-1/10 border-2 border-chart-1/30 flex items-center justify-center">
                                 <motion.div
-                                    className="absolute inset-0 rounded-2xl border-2 border-blue-400 pointer-events-none"
+                                    className="absolute inset-0 rounded-2xl border-2 border-chart-1 pointer-events-none"
                                     animate={{ opacity: [0.3, 1, 0.3] }}
                                     transition={{ duration: 1.6, repeat: Infinity }}
                                 />
-                                <ScanLine size={28} className="text-blue-500" />
+                                <ScanLine size={28} className="text-chart-1-text" />
                                 {loading && (
                                     <div className="absolute inset-0 rounded-2xl bg-surface-card flex items-center justify-center">
-                                        <Loader2 size={18} className="animate-spin text-blue-500" />
+                                        <Loader2 size={18} className="animate-spin text-chart-1-text" />
                                     </div>
                                 )}
                             </div>
@@ -147,13 +147,13 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 <div className="flex gap-1.5 h-3 items-center">
                                     {Array.from({ length: Math.min(displayDots, 10) }).map((_, i) => (
                                         <motion.div key={i}
-                                            className="w-2 h-2 rounded-full bg-blue-400"
+                                            className="w-2 h-2 rounded-full bg-chart-1"
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             transition={{ type: 'spring', stiffness: 600, delay: i * 0.02 }}
                                         />
                                     ))}
-                                    {displayDots > 10 && <span className="text-[10px] text-blue-400">+{displayDots - 10}</span>}
+                                    {displayDots > 10 && <span className="text-[10px] text-chart-1-text">+{displayDots - 10}</span>}
                                 </div>
                             )}
 
@@ -173,20 +173,20 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 : <div className="w-12 h-12 rounded-full bg-emerald-200 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>
-                                <p className="font-bold text-emerald-800 text-[14px]">{employee.name}</p>
+                                <p className="font-bold text-success-text text-[14px]">{employee.name}</p>
                                 <p className="text-[11px] text-success mt-0.5">Confirma para registrar como apoyo</p>
                             </div>
                         </motion.div>
                     )}
 
                     {manualWarn && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-red-700">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger-text">
                             <ShieldAlert size={14} className="shrink-0 text-danger" />
                             Solo se acepta escaneo. No se permite ingreso manual del teclado.
                         </div>
                     )}
                     {error && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-red-700">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger-text">
                             <AlertTriangle size={14} className="shrink-0 text-danger" />
                             {error}
                         </div>
@@ -205,7 +205,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             </button>
                             {employee && (
                                 <button onClick={confirmApoyo} disabled={loading}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1 text-white font-semibold hover:bg-blue-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
                                 >
                                     {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
                                     Confirmar

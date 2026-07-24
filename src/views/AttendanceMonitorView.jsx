@@ -359,7 +359,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "BUSINESS_OUT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-sky-500/10 text-sky-700 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-sky-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-7/10 text-chart-7-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-sky-500/20">
             <MapPin size={14} /> Gestión Externa
           </div>
         );
@@ -469,7 +469,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <h1 className="text-white font-black text-[15px] leading-none">Monitor en Tiempo Real</h1>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.22)" }}>
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                 <span className="text-[8px] font-black uppercase tracking-widest text-success">En vivo</span>
               </div>
             </div>
@@ -635,7 +635,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                           {scheduleDetails.lunch && (
                             <div className="flex items-center gap-2 text-[10px] font-semibold"
                               style={{ color: "rgba(255,255,255,0.45)" }}>
-                              <Utensils size={12} className="text-orange-400" />
+                              <Utensils size={12} className="text-chart-4-text" />
                               {formatTime12h(scheduleDetails.lunch)} (Almuerzo)
                             </div>
                           )}
@@ -877,7 +877,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
                       {scheduleDetails.lunch && (
                         <div className="flex items-center gap-2 text-[10px] font-semibold text-content-3">
-                          <Utensils size={12} className="text-orange-500" />
+                          <Utensils size={12} className="text-chart-4-text" />
                           <span>{formatTime12h(scheduleDetails.lunch)} (Almuerzo)</span>
                         </div>
                       )}

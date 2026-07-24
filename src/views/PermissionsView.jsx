@@ -32,7 +32,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Personal',
-        color: 'text-indigo-600',
+        color: 'text-chart-3-text',
         modules: [
             { key: 'staff_list',   label: 'Listado de Personal',    desc: 'Ver y buscar empleados, datos básicos y estado',            icon: User,          hasApprove: false, hasScope: true },
             { key: 'staff_detail', label: 'Expediente Completo',    desc: 'Perfil, historial, eventos y documentos del empleado',      icon: User,          hasApprove: false, hasScope: true },
@@ -49,7 +49,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Operaciones',
-        color: 'text-blue-600',
+        color: 'text-chart-1-text',
         modules: [
             { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false, hasScope: true, tabs: [
                 { key: 'schedules_tab_calendar', label: 'Calendario' },
@@ -88,7 +88,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Inventario',
-        color: 'text-teal-600',
+        color: 'text-chart-9-text',
         modules: [
             { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
                 { key: 'productos_tab_catalogo',        label: 'Catálogo'   },
@@ -121,7 +121,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'RRHH',
-        color: 'text-violet-600',
+        color: 'text-chart-3-text',
         modules: [
             { key: 'encuesta',       label: 'Clima Organizacional', desc: 'Dashboard de resultados de encuesta de clima 2026 con análisis por bloque, sucursal y empleado', icon: BarChart2,   hasApprove: false },
             { key: 'encuesta_admin', label: 'Gestión de Encuesta',  desc: 'Agregar y eliminar respuestas de encuestas de clima organizacional',                              icon: BarChart2,   hasApprove: false },
@@ -130,7 +130,7 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Estructura',
-        color: 'text-teal-600',
+        color: 'text-chart-9-text',
         modules: [
             { key: 'branches',     label: 'Sucursales',             desc: 'Gestión de sucursales, contratos y datos operativos',       icon: Building2,     hasApprove: false },
             { key: 'roles',        label: 'Cargos / Organigrama',   desc: 'Estructura organizacional, jerarquías y cargos',            icon: ShieldCheck,   hasApprove: false },
@@ -138,14 +138,14 @@ const MODULE_GROUPS = [
     },
     {
         group: 'Comunicación',
-        color: 'text-rose-600',
+        color: 'text-danger-text',
         modules: [
             { key: 'announcements',label: 'Avisos',                 desc: 'Publicación y gestión de comunicados internos',             icon: Megaphone,     hasApprove: false, hasScope: true },
         ],
     },
     {
         group: 'Dashboard',
-        color: 'text-violet-600',
+        color: 'text-chart-3-text',
         modules: [
             { key: 'overview',          label: 'Inicio',                     desc: 'Acceso a la vista general del portal con widgets configurables',           icon: Home, hasApprove: false, hasScope: true },
             { key: 'dash_kpi',          label: 'Widget: Estadísticas clave', desc: 'Ver métricas generales: empleados, asistencia, solicitudes y sucursales',  icon: TrendingUp,      hasApprove: false, hasScope: true },
@@ -195,32 +195,32 @@ const ROLE_META = {
     SUPERADMIN: {
         label: 'Super Admin', locked: true,
         desc: 'Acceso total e irrestricto al sistema. No modificable.',
-        color: 'from-yellow-400 to-amber-500', textColor: 'text-amber-700',
+        color: 'from-yellow-400 to-amber-500', textColor: 'text-warning-text',
         bg: 'bg-warning/10', border: 'border-warning/30',
     },
     ADMIN: {
         label: 'Administrador', locked: false,
         desc: 'Gestión completa del sistema y del personal.',
-        color: 'from-violet-500 to-indigo-600', textColor: 'text-indigo-700',
-        bg: 'bg-indigo-50', border: 'border-indigo-200',
+        color: 'from-violet-500 to-indigo-600', textColor: 'text-chart-3-text',
+        bg: 'bg-chart-3/10', border: 'border-chart-3/30',
     },
     JEFE: {
         label: 'Jefe', locked: false,
         desc: 'Aprobaciones, horarios y gestión de su equipo.',
-        color: 'from-blue-400 to-blue-600', textColor: 'text-blue-700',
-        bg: 'bg-blue-50', border: 'border-blue-200',
+        color: 'from-blue-400 to-blue-600', textColor: 'text-chart-1-text',
+        bg: 'bg-chart-1/10', border: 'border-chart-1/30',
     },
     SUBJEFE: {
         label: 'Sub-Jefe', locked: false,
         desc: 'Apoyo en aprobaciones y gestión operativa.',
-        color: 'from-cyan-400 to-cyan-600', textColor: 'text-cyan-700',
-        bg: 'bg-cyan-50', border: 'border-cyan-200',
+        color: 'from-cyan-400 to-cyan-600', textColor: 'text-chart-5-text',
+        bg: 'bg-chart-5/10', border: 'border-chart-5/30',
     },
     SUPERVISOR: {
         label: 'Supervisor', locked: false,
         desc: 'Supervisión de asistencia y aprobaciones.',
-        color: 'from-emerald-400 to-teal-500', textColor: 'text-teal-700',
-        bg: 'bg-teal-50', border: 'border-teal-200',
+        color: 'from-emerald-400 to-teal-500', textColor: 'text-chart-9-text',
+        bg: 'bg-chart-9/10', border: 'border-chart-9/30',
     },
     EMPLEADO: {
         label: 'Empleado', locked: false,
@@ -235,24 +235,24 @@ const ROLE_ORDER = ['SUPERADMIN', 'ADMIN', 'JEFE', 'SUBJEFE', 'SUPERVISOR', 'EMP
 
 // Paleta de colores para roles organizacionales (cíclica por índice)
 const ROLE_COLORS = [
-    { color: 'from-violet-500 to-indigo-600', textColor: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' },
-    { color: 'from-blue-400 to-blue-600',     textColor: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-200'   },
-    { color: 'from-emerald-400 to-teal-500',  textColor: 'text-teal-700',   bg: 'bg-teal-50',   border: 'border-teal-200'   },
+    { color: 'from-violet-500 to-indigo-600', textColor: 'text-chart-3-text', bg: 'bg-chart-3/10', border: 'border-chart-3/30' },
+    { color: 'from-blue-400 to-blue-600',     textColor: 'text-chart-1-text',   bg: 'bg-chart-1/10',   border: 'border-chart-1/30'   },
+    { color: 'from-emerald-400 to-teal-500',  textColor: 'text-chart-9-text',   bg: 'bg-chart-9/10',   border: 'border-chart-9/30'   },
     { color: 'from-rose-400 to-pink-600',     textColor: 'text-pink-700',   bg: 'bg-pink-50',   border: 'border-pink-200'   },
-    { color: 'from-amber-400 to-orange-500',  textColor: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200' },
-    { color: 'from-cyan-400 to-cyan-600',     textColor: 'text-cyan-700',   bg: 'bg-cyan-50',   border: 'border-cyan-200'   },
+    { color: 'from-amber-400 to-orange-500',  textColor: 'text-chart-4-text', bg: 'bg-chart-4/10', border: 'border-chart-4/30' },
+    { color: 'from-cyan-400 to-cyan-600',     textColor: 'text-chart-5-text',   bg: 'bg-chart-5/10',   border: 'border-chart-5/30'   },
     { color: 'from-slate-400 to-slate-600',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-slate-200'  },
 ];
 
 const PERMISSION_TYPES = [
-    { key: 'can_view',    label: 'Ver',                          icon: Eye,          activeColor: 'bg-blue-500'    },
-    { key: 'can_edit',    label: 'Gestionar',                    icon: Pencil,       activeColor: 'bg-violet-500'  },
-    { key: 'can_approve', label: 'Aprobar',                      icon: CheckCircle2, activeColor: 'bg-emerald-500' },
+    { key: 'can_view',    label: 'Ver',                          icon: Eye,          activeColor: 'bg-chart-1'    },
+    { key: 'can_edit',    label: 'Gestionar',                    icon: Pencil,       activeColor: 'bg-chart-3'  },
+    { key: 'can_approve', label: 'Aprobar',                      icon: CheckCircle2, activeColor: 'bg-success' },
 ];
 
 const SCOPE_OPTIONS = [
-    { value: 'ALL',    label: 'Todos',        color: 'bg-indigo-500 text-white', ring: 'ring-indigo-200' },
-    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-teal-500 text-white',   ring: 'ring-teal-200'   },
+    { value: 'ALL',    label: 'Todos',        color: 'bg-chart-3 text-white', ring: 'ring-indigo-200' },
+    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-chart-9 text-white',   ring: 'ring-teal-200'   },
 ];
 
 // Tooltip descriptivo por tipo de permiso
@@ -263,7 +263,7 @@ const PERM_DESC = {
 };
 
 // ─── Toggle component ───────────────────────────────────────────────────────
-const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false, size = 'md' }) => {
+const Toggle = ({ value, onChange, color = 'bg-chart-1', disabled = false, size = 'md' }) => {
     const w = size === 'lg' ? 'w-12 h-6' : 'w-9 h-5';
     const knob = size === 'lg' ? 'w-4 h-4 top-1' : 'w-3.5 h-3.5 top-[3px]';
     const on = size === 'lg' ? 'left-[28px]' : 'left-[18px]';
@@ -346,7 +346,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                 title={PERM_DESC[pt.key]}
                                 className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-300 ${
                                     needsView ? 'opacity-20 pointer-events-none' : ''
-                                } ${isFlashing ? (val ? 'bg-blue-50/70 scale-[1.02]' : 'bg-danger/10 scale-[0.99]') : ''}`}
+                                } ${isFlashing ? (val ? 'bg-chart-1/10/70 scale-[1.02]' : 'bg-danger/10 scale-[0.99]') : ''}`}
                             >
                                 <div className="flex items-center gap-2">
                                     <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
@@ -411,7 +411,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                 return (
                                     <div key={tab.key} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${
                                         tabPerm.can_view
-                                            ? 'bg-blue-50/50 border-blue-200/40'
+                                            ? 'bg-chart-1/10/50 border-chart-1/30/40'
                                             : 'bg-surface-card border-border-card'
                                     }`}>
                                         <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
@@ -422,7 +422,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                             <Toggle
                                                 value={!!tabPerm.can_view}
                                                 onChange={v => onTabChange(tab.key, 'can_view', v)}
-                                                color="bg-blue-500"
+                                                color="bg-chart-1"
                                                 disabled={locked}
                                             />
                                         </div>
@@ -747,7 +747,7 @@ const PermissionsView = () => {
                     className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar cargo">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                    {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
             </div>
         </div>
@@ -814,7 +814,7 @@ const PermissionsView = () => {
                         </p>
                         <div className="space-y-2">
                         {isPermRoleFuzzy && searchQuery && (
-                            <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-amber-700 font-semibold">
+                            <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-warning-text font-semibold">
                                 <Search size={11} strokeWidth={2.5} className="shrink-0" />
                                 Similares a &ldquo;{searchQuery}&rdquo;
                             </div>
@@ -848,9 +848,9 @@ const PermissionsView = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
                                                 <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-amber-900' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
-                                                {isSURol && <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
+                                                {isSURol && <span className="text-[7px] font-black uppercase tracking-widest bg-warning text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
                                             </div>
-                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-amber-700/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
+                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-warning-text/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
@@ -896,7 +896,7 @@ const PermissionsView = () => {
                                 return (
                                 <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
                                     isRoleSU
-                                        ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-300/5 backdrop-blur-xl border-amber-300/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
+                                        ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-300/5 backdrop-blur-xl border-warning/40/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
                                         : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_2px_12px_rgba(0,0,0,0.04)]'
                                 }`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-amber-300/30 blur-xl pointer-events-none" />}
@@ -918,7 +918,7 @@ const PermissionsView = () => {
                                             <Toggle
                                                 value={isRoleSU}
                                                 onChange={v => canEdit && handleSuToggle(v)}
-                                                color="bg-amber-400"
+                                                color="bg-warning"
                                                 disabled={!canEdit}
                                             />
                                         </div>
@@ -929,18 +929,18 @@ const PermissionsView = () => {
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
-                                                    <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
+                                                    <span className="text-[7px] font-black uppercase tracking-widest bg-warning text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
                                                 )}
                                             </div>
-                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-amber-700/70' : 'text-content-3'}`}>
+                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>
                                                 {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso irrestricto al sistema'}
                                             </p>
                                         </div>
                                         {/* Warning badge */}
                                         {isRoleSU && (
-                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-amber-400/12 border border-amber-300/30 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning/12 border border-warning/40/30 animate-in fade-in slide-in-from-bottom-1 duration-300">
                                                 <Zap size={8} className="text-warning flex-shrink-0" strokeWidth={2.5} />
-                                                <p className="text-[8px] font-black text-amber-700 uppercase tracking-wide">Permisos ignorados</p>
+                                                <p className="text-[8px] font-black text-warning-text uppercase tracking-wide">Permisos ignorados</p>
                                             </div>
                                         )}
                                     </div>

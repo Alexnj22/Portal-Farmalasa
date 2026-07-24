@@ -20,9 +20,9 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
 
     const servicesList = [
         { id: 'light', icon: Zap, label: 'Energía Eléctrica', placeholder: 'Ej. CAESS', accountLabel: 'Nº de NIC / NPE', color: 'text-warning', bgIcon: 'bg-warning/10' },
-        { id: 'water', icon: Droplet, label: 'Agua Potable', placeholder: 'Ej. ANDA', accountLabel: 'Nº de Cuenta', color: 'text-cyan-500', bgIcon: 'bg-cyan-50' },
-        { id: 'internet', icon: Wifi, label: 'Internet Fijo', placeholder: 'Ej. Tigo / Claro', accountLabel: 'Nº de Contrato / Teléfono', color: 'text-brand', bgIcon: 'bg-blue-50' },
-        { id: 'mobile', icon: Smartphone, label: 'Telefonía Móvil (Flota)', placeholder: 'Ej. Claro', accountLabel: 'Nº de Teléfono', color: 'text-purple-500', bgIcon: 'bg-purple-50' },
+        { id: 'water', icon: Droplet, label: 'Agua Potable', placeholder: 'Ej. ANDA', accountLabel: 'Nº de Cuenta', color: 'text-chart-5-text', bgIcon: 'bg-chart-5/10' },
+        { id: 'internet', icon: Wifi, label: 'Internet Fijo', placeholder: 'Ej. Tigo / Claro', accountLabel: 'Nº de Contrato / Teléfono', color: 'text-brand', bgIcon: 'bg-chart-1/10' },
+        { id: 'mobile', icon: Smartphone, label: 'Telefonía Móvil (Flota)', placeholder: 'Ej. Claro', accountLabel: 'Nº de Teléfono', color: 'text-chart-3-text', bgIcon: 'bg-chart-3/10' },
     ];
 
     return (
@@ -75,7 +75,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                             <label className="text-[10px] font-black uppercase tracking-widest text-success ml-1 mb-2 flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado
                             </label>
-                            <div className="bg-success/10 rounded-[1rem] border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-400/20">
+                            <div className="bg-success/10 rounded-[1rem] border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-success focus-within:ring-4 focus-within:ring-emerald-400/20">
                                 <LiquidDatePicker
                                     mode="month" 
                                     value={services[srv.id]?.paidThrough || ""} 

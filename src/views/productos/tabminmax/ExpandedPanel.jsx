@@ -166,7 +166,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 <div key={erpId}
                                     className={`rounded-xl px-2 py-2 border transition-colors ${
                                         isCurrent
-                                            ? 'border-brand/40 bg-blue-50/60 ring-1 ring-brand/20'
+                                            ? 'border-brand/40 bg-chart-1/10/60 ring-1 ring-brand/20'
                                             : 'border-border-card bg-surface-card'
                                     } ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
@@ -178,7 +178,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                     <div className={`text-[12px] font-black tabular-nums leading-none ${
                                         !hasData ? 'text-content-3' :
                                         bStock === 0 ? 'text-danger' :
-                                        bStock < bMin ? 'text-orange-600' : 'text-content'
+                                        bStock < bMin ? 'text-chart-4-text' : 'text-content'
                                     }`}>
                                         {!hasData ? '—' : bStock === 0 ? '0' : bStock.toLocaleString()}
                                     </div>
@@ -187,15 +187,15 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                         <div className="flex flex-col gap-0.5 mt-0.5">
                                             {(bMin > 0 || bMax > 0) && (
                                                 <div className="flex items-center gap-0.5 text-[9px] tabular-nums leading-tight">
-                                                    <span className={`font-black ${hasDraft ? 'text-orange-400/70' : 'text-orange-500'}`}>{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
+                                                    <span className={`font-black ${hasDraft ? 'text-chart-4-text/70' : 'text-chart-4-text'}`}>{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
                                                     <span className="text-content-3">·</span>
-                                                    <span className={`font-black ${hasDraft ? 'text-blue-400/70' : 'text-blue-500'}`}>{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                                    <span className={`font-black ${hasDraft ? 'text-chart-1-text/70' : 'text-chart-1-text'}`}>{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                                 </div>
                                             )}
                                             {hasDraft && (
                                                 <div className="flex flex-col items-start gap-0.5 mt-0.5">
                                                     <span className="text-[7px] font-black uppercase tracking-wide text-warning leading-none">Borrador</span>
-                                                    <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-amber-300 bg-warning/10">
+                                                    <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-warning/40 bg-warning/10">
                                                         <span className="text-warning font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
                                                         <span className="text-amber-300">·</span>
                                                         <span className="text-warning font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
@@ -234,22 +234,22 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     {minN > 0 && (
                         <>
                             <span className="flex items-center gap-1.5 text-[11px]">
-                                <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />
+                                <span className="w-2 h-2 rounded-full bg-chart-4 shrink-0" />
                                 <span className="text-content-3 font-semibold">MIN</span>
-                                <span className="font-black text-orange-600">{hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString()} und`}</span>
+                                <span className="font-black text-chart-4-text">{hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString()} und`}</span>
                                 {hasDominant && <span className="text-content-3 text-[10px]">({minN.toLocaleString()} und)</span>}
                             </span>
                             <span className="flex items-center gap-1.5 text-[11px]">
-                                <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                                <span className="w-2 h-2 rounded-full bg-chart-1 shrink-0" />
                                 <span className="text-content-3 font-semibold">MAX</span>
-                                <span className="font-black text-blue-600">{hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString()} und`}</span>
+                                <span className="font-black text-chart-1-text">{hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString()} und`}</span>
                                 {hasDominant && <span className="text-content-3 text-[10px]">({maxN.toLocaleString()} und)</span>}
                             </span>
                         </>
                     )}
                     {pedir !== null && (
                         <span className="flex items-center gap-1.5 text-[11px]">
-                            <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-danger shrink-0" />
                             <span className="text-content-3 font-semibold">Pedir</span>
                             <span className="font-black text-danger">{hasDominant ? formatDominant(pedir, pres) : `${pedir.toLocaleString()} und`}</span>
                             {hasDominant && <span className="text-content-3 text-[10px]">({pedir.toLocaleString()} und)</span>}
@@ -266,7 +266,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         {transferSuggestions.map(s => (
                             <div key={s.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
                                 <Building2 size={9} className="text-warning shrink-0" />
-                                <span className="text-[10px] font-black text-amber-800">{s.name}</span>
+                                <span className="text-[10px] font-black text-warning-text">{s.name}</span>
                                 <span className="text-[10px] font-bold text-warning tabular-nums">{s.transferable.toLocaleString()} und disponibles</span>
                             </div>
                         ))}
@@ -298,11 +298,11 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     {expiryData.length > 0 && (
                         <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(251,146,60,0.25)', background: 'rgba(255,247,237,0.35)' }}>
                             <div className="flex items-center justify-between flex-wrap gap-1.5">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-orange-500">Vencimientos próximos (60 días)</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-chart-4-text">Vencimientos próximos (60 días)</span>
                                 {policyData && (
                                     <span className="flex items-center gap-1 text-[9px] font-bold text-content-3">
                                         {policyData.es_cofarsal && (
-                                            <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                                            <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
                                         )}
                                         {policyData.proveedor_nombre}
                                         {policyData.es_devolutivo
@@ -323,7 +323,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                     return (
                                         <div key={i} className="flex flex-col gap-0.5">
                                             <div className="flex items-center gap-3 text-[10px]">
-                                                <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-danger' : 'text-orange-600'}`}>{daysLeft}d</span>
+                                                <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-danger' : 'text-chart-4-text'}`}>{daysLeft}d</span>
                                                 <span className="text-content-3 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
                                                 <span className="text-content-2 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
                                                 <span className="text-content-3 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
@@ -394,7 +394,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className="text-[8px] font-bold text-content-3 shrink-0 bg-surface-card-hover/80 rounded px-1">
                                                             {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                         </span>
-                                                        <span className="font-bold text-emerald-700 tabular-nums shrink-0">
+                                                        <span className="font-bold text-success-text tabular-nums shrink-0">
                                                             {Number(s.cantidad).toLocaleString()} und
                                                         </span>
                                                         {s.total_linea > 0 && (
@@ -410,7 +410,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                     </div>
                                     {/* MIN · MAX por sucursal */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">MIN · MAX red</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text">MIN · MAX red</span>
                                         {!branchReady
                                             ? <Loader2 size={10} className="animate-spin text-content-3" />
                                             : <div className="flex flex-col gap-1">
@@ -427,11 +427,11 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             <span className="text-content-3 shrink-0 w-9 text-[8px] truncate">
                                                                 {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                             </span>
-                                                            <span className="text-orange-500 font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
+                                                            <span className="text-chart-4-text font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
                                                             <span className="text-content-3">·</span>
-                                                            <span className="text-blue-500 font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                                            <span className="text-chart-1-text font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                                             {hasDraft && (
-                                                                <span className="inline-flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wide text-warning bg-warning/10 border border-amber-300 border-dashed rounded px-1 py-px whitespace-nowrap">
+                                                                <span className="inline-flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wide text-warning bg-warning/10 border border-warning/40 border-dashed rounded px-1 py-px whitespace-nowrap">
                                                                     Borrador {dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
                                                                 </span>
                                                             )}
@@ -443,7 +443,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                     if (!bd) return true;
                                                     return Number(bd.effective_min ?? 0) === 0 && Number(bd.effective_max ?? 0) === 0 && bd.draft_status !== 'pending';
                                                 }) && (
-                                                    <span className="text-[9px] text-rose-400 font-semibold italic">Sin MIN·MAX en ninguna sala</span>
+                                                    <span className="text-[9px] text-danger-text font-semibold italic">Sin MIN·MAX en ninguna sala</span>
                                                 )}
                                             </div>
                                         }
@@ -491,7 +491,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className="text-[9px] text-content-3 shrink-0 w-14 tabular-nums">
                                                             {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
-                                                        <span className="font-bold text-emerald-700 tabular-nums shrink-0">
+                                                        <span className="font-bold text-success-text tabular-nums shrink-0">
                                                             {Number(s.cantidad).toLocaleString()} und
                                                         </span>
                                                         {s.total_linea > 0 && (
@@ -523,7 +523,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                 const projected = Math.max(0, Math.round(stock - row.daily_velocity * days));
                                                 const depleted  = projected === 0;
                                                 const low       = projected > 0 && projected < minN;
-                                                const color     = depleted ? 'text-danger' : low ? 'text-orange-600' : 'text-success';
+                                                const color     = depleted ? 'text-danger' : low ? 'text-chart-4-text' : 'text-success';
                                                 return (
                                                     <div key={days} className="flex flex-col items-center gap-0.5">
                                                         <span className="text-[9px] text-content-3 font-semibold">+{days}d</span>
@@ -555,9 +555,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                     <span className="text-[9px] text-content-3 shrink-0 w-14 tabular-nums">
                                                         {new Date(h.captured_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
                                                     </span>
-                                                    <span className="font-bold text-orange-500">{(h.min_units ?? 0).toLocaleString()}</span>
+                                                    <span className="font-bold text-chart-4-text">{(h.min_units ?? 0).toLocaleString()}</span>
                                                     <span className="text-content-3">→</span>
-                                                    <span className="font-bold text-blue-500">{(h.max_units ?? 0).toLocaleString()}</span>
+                                                    <span className="font-bold text-chart-1-text">{(h.max_units ?? 0).toLocaleString()}</span>
                                                     <span className="text-content-3">{Number(h.daily_velocity || 0).toFixed(1)}/d</span>
                                                     {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
                                                 </div>
@@ -574,18 +574,18 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         <div className="px-4 py-2.5 flex flex-col gap-2" style={glassSection}>
                             <span className="text-[9px] font-black uppercase tracking-widest text-content-2">Opciones</span>
                             {deadAction ? (
-                                <div className="flex items-center gap-2 text-[11px] text-emerald-700 font-semibold">
+                                <div className="flex items-center gap-2 text-[11px] text-success-text font-semibold">
                                     <CheckCircle2 size={12} />
                                     {deadAction === 'transfer' ? 'Marcado para traslado' : 'Marcado para liquidación'} — registrado en auditoría
                                 </div>
                             ) : (
                                 <div className="flex flex-wrap gap-2">
                                     <button onClick={() => logDeadStockAction('transfer')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-amber-700 bg-warning/10 border border-warning/30 rounded-xl hover:bg-warning/10 transition-colors">
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-warning-text bg-warning/10 border border-warning/30 rounded-xl hover:bg-warning/10 transition-colors">
                                         <Building2 size={11} /> Marcar para traslado
                                     </button>
                                     <button onClick={() => logDeadStockAction('liquidate')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50/80 border border-blue-200/80 rounded-xl hover:bg-blue-100/80 transition-colors">
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-chart-1-text bg-chart-1/10/80 border border-chart-1/30/80 rounded-xl hover:bg-chart-1/10/80 transition-colors">
                                         <TrendingDown size={11} /> Marcar para liquidación
                                     </button>
                                 </div>

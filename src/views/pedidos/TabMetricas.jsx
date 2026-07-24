@@ -35,12 +35,12 @@ function avg(arr) {
 
 function StatCard({ icon: Icon, label, value, color = 'blue', sub = null }) {
     const colors = {
-        blue:    'text-blue-600 bg-blue-50 border-blue-100',
-        teal:    'text-teal-600 bg-teal-50 border-teal-100',
-        indigo:  'text-indigo-600 bg-indigo-50 border-indigo-100',
+        blue:    'text-chart-1-text bg-chart-1/10 border-chart-1/30',
+        teal:    'text-chart-9-text bg-chart-9/10 border-teal-100',
+        indigo:  'text-chart-3-text bg-chart-3/10 border-chart-3/30',
         amber:   'text-warning bg-warning/10 border-warning/30',
         emerald: 'text-success bg-success/10 border-success/30',
-        violet:  'text-violet-600 bg-violet-50 border-violet-100',
+        violet:  'text-chart-3-text bg-chart-3/10 border-violet-100',
     };
     return (
         <div className={`${GLASS} px-4 py-3 flex items-center gap-3`}>
@@ -143,13 +143,13 @@ export default function TabMetricas({ searchTerm = '' }) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <BarChart2 size={14} className="text-blue-500" />
+                    <BarChart2 size={14} className="text-chart-1-text" />
                     <span className="text-[12px] font-semibold text-content-2">Métricas de eficiencia</span>
                 </div>
                 <button
                     onClick={() => load(RANGES.find(r => r.key === range)?.days ?? 30)}
                     disabled={refreshing}
-                    className="flex items-center gap-1 text-[11px] text-content-3 hover:text-blue-600 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 text-[11px] text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
                 >
                     <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
                     Refrescar
@@ -204,10 +204,10 @@ export default function TabMetricas({ searchTerm = '' }) {
                                     <tr className="border-b border-slate-100">
                                         <th className="text-left px-4 py-2.5 font-semibold text-content-3">Sucursal</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-content-3">Pedidos</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-violet-600">Prep. neto</th>
+                                        <th className="text-center px-3 py-2.5 font-semibold text-chart-3-text">Prep. neto</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-warning">Pausa</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-indigo-600">Tránsito</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-teal-600">Recuento</th>
+                                        <th className="text-center px-3 py-2.5 font-semibold text-chart-3-text">Tránsito</th>
+                                        <th className="text-center px-3 py-2.5 font-semibold text-chart-9-text">Recuento</th>
                                         <th className="text-center px-3 py-2.5 font-semibold text-content-3">Pausas</th>
                                     </tr>
                                 </thead>
@@ -216,10 +216,10 @@ export default function TabMetricas({ searchTerm = '' }) {
                                         <tr key={s.id} className="border-b border-slate-50 hover:bg-surface-card-hover/50 transition-colors">
                                             <td className="px-4 py-2.5 font-semibold text-content-2">{s.nombre}</td>
                                             <td className="px-3 py-2.5 text-center text-content-2 tabular-nums">{s.pedidos}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-violet-700 tabular-nums">{fmtMin(s.avgPrep)}</td>
+                                            <td className="px-3 py-2.5 text-center font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgPrep)}</td>
                                             <td className="px-3 py-2.5 text-center font-medium text-warning tabular-nums">{fmtMin(s.avgPausado)}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-indigo-700 tabular-nums">{fmtMin(s.avgTransito)}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-teal-700 tabular-nums">{fmtMin(s.avgRecuento)}</td>
+                                            <td className="px-3 py-2.5 text-center font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgTransito)}</td>
+                                            <td className="px-3 py-2.5 text-center font-medium text-chart-9-text tabular-nums">{fmtMin(s.avgRecuento)}</td>
                                             <td className="px-3 py-2.5 text-center tabular-nums">
                                                 {s.numPausas > 0 ? (
                                                     <span className="inline-flex items-center gap-0.5 text-warning font-semibold">
@@ -254,7 +254,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                                             <span className="text-[11px] font-bold text-warning tabular-nums w-6 text-right">{r.conteo}</span>
                                             <div className="w-24 h-2 bg-surface-card-hover rounded-full overflow-hidden">
                                                 <div
-                                                    className="h-full bg-amber-400 rounded-full"
+                                                    className="h-full bg-warning rounded-full"
                                                     style={{ width: `${Math.min(100, (r.conteo / razones[0].conteo) * 100)}%` }}
                                                 />
                                             </div>

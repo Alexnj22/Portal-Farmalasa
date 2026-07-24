@@ -96,7 +96,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                         <FlaskConical size={14} className="text-brand" />
                         <span className="text-[12px] font-black text-content">Visibilidad de laboratorios</span>
                         {hiddenCount > 0 && (
-                            <span className="text-[9px] font-black text-brand bg-blue-50/80 border border-blue-200/70 px-1.5 py-0.5 rounded-full leading-none">
+                            <span className="text-[9px] font-black text-brand bg-chart-1/10/80 border border-chart-1/30/70 px-1.5 py-0.5 rounded-full leading-none">
                                 {hiddenCount} oculto{hiddenCount !== 1 ? 's' : ''}
                             </span>
                         )}
@@ -159,7 +159,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                                 className="flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all duration-200 disabled:opacity-60 hover:scale-[1.01] active:scale-[0.99]"
                                 style={hidden ? glass.rowOff : glass.row}>
                                 <div className="flex-1 min-w-0">
-                                    <div className={`text-[11px] font-semibold truncate ${hidden ? 'text-red-700' : 'text-content-2'}`}>
+                                    <div className={`text-[11px] font-semibold truncate ${hidden ? 'text-danger-text' : 'text-content-2'}`}>
                                         {lab.nombre}
                                     </div>
                                     {count > 0 && (
@@ -172,7 +172,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                                     {saving === lab.id ? (
                                         <Loader2 size={12} className="animate-spin text-content-3" />
                                     ) : (
-                                        <div className={`w-8 h-4 rounded-full transition-all duration-300 relative ${hidden ? 'bg-red-400' : 'bg-surface-card-hover'}`}
+                                        <div className={`w-8 h-4 rounded-full transition-all duration-300 relative ${hidden ? 'bg-danger' : 'bg-surface-card-hover'}`}
                                             style={hidden ? { boxShadow: '0 0 8px rgba(248,113,113,0.35)' } : {}}>
                                             <div className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-all duration-300 ${hidden ? 'left-[18px]' : 'left-0.5'}`} />
                                         </div>

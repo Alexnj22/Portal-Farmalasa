@@ -91,14 +91,14 @@ export const FileUploader = ({ label, file, url, onChange }) => {
             
             <div className={`relative flex items-center gap-3 rounded-[1.25rem] p-2 transition-all duration-300 border transform-gpu ${
                 !hasFile 
-                    ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:bg-warning/10 hover:border-amber-300 hover:shadow-md cursor-pointer group' 
+                    ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:bg-warning/10 hover:border-warning/40 hover:shadow-md cursor-pointer group' 
                     : 'bg-success/10 backdrop-blur-sm border-success/30 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:shadow-md'
             }`}
             onClick={() => !hasFile && fileInputRef.current?.click()}
             >
                 {/* Ícono Izquierdo */}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-sm ${
-                    !hasFile ? 'bg-warning/10 text-warning group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white' : 'bg-emerald-500 text-white shadow-emerald-500/30'
+                    !hasFile ? 'bg-warning/10 text-warning group-hover:scale-110 group-hover:bg-warning group-hover:text-white' : 'bg-success text-white shadow-emerald-500/30'
                 }`}>
                     {!hasFile ? <UploadCloud size={18} strokeWidth={2.5}/> : <CheckCircle2 size={18} strokeWidth={2.5} />}
                 </div>
@@ -106,13 +106,13 @@ export const FileUploader = ({ label, file, url, onChange }) => {
                 {/* Textos */}
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                     {file ? (
-                        <><p className="text-[12px] text-emerald-700 font-bold truncate leading-none mb-1">{file.name}</p>
+                        <><p className="text-[12px] text-success-text font-bold truncate leading-none mb-1">{file.name}</p>
                         <p className="text-[9px] text-success/70 font-black uppercase tracking-widest leading-none">Archivo Listo</p></>
                     ) : url ? (
-                        <><p className="text-[12px] text-emerald-700 font-bold truncate leading-none mb-1">Documento Guardado</p>
+                        <><p className="text-[12px] text-success-text font-bold truncate leading-none mb-1">Documento Guardado</p>
                         <p className="text-[9px] text-success/70 font-black uppercase tracking-widest leading-none">En el sistema</p></>
                     ) : (
-                        <><p className="text-[11px] text-amber-700 font-bold leading-none mb-1">Documento Pendiente</p>
+                        <><p className="text-[11px] text-warning-text font-bold leading-none mb-1">Documento Pendiente</p>
                         <p className="text-[9px] text-warning/80 font-black uppercase tracking-widest leading-none">Tocar para adjuntar</p></>
                     )}
                 </div>
@@ -120,10 +120,10 @@ export const FileUploader = ({ label, file, url, onChange }) => {
                 {/* BOTONES DE ACCIÓN (Solo si hay archivo) */}
                 {hasFile && (
                     <div className="flex items-center gap-1.5 pr-1 shrink-0">
-                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-white border border-success/30 rounded-lg text-success shadow-sm hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.97] z-20" title="Ver Documento">
+                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-white border border-success/30 rounded-lg text-success shadow-sm hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.97] z-20" title="Ver Documento">
                             <Eye size={16} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-white border border-danger/30 rounded-lg text-danger shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-[0.97] z-20" title="Quitar Documento">
+                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-white border border-danger/30 rounded-lg text-danger shadow-sm hover:bg-danger hover:text-white hover:border-danger transition-all active:scale-[0.97] z-20" title="Quitar Documento">
                             <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>
@@ -146,7 +146,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
     return (
         <div className="relative group flex items-center w-full">
             {Icon && (
-                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-surface-card flex items-center justify-center text-content-3 shadow-[0_2px_5px_rgba(0,0,0,0.02)] transition-colors duration-300 group-focus-within:text-brand group-focus-within:bg-blue-50 pointer-events-none">
+                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-surface-card flex items-center justify-center text-content-3 shadow-[0_2px_5px_rgba(0,0,0,0.02)] transition-colors duration-300 group-focus-within:text-brand group-focus-within:bg-chart-1/10 pointer-events-none">
                     <Icon size={16} strokeWidth={2.5}/>
                 </div>
             )}

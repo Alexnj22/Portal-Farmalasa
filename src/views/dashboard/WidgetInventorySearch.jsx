@@ -23,7 +23,7 @@ const ERP_BRANCH_MAP = {
 const BRANCH_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 const NEUTRAL_THEME = { dot: '#64748B', pill: 'bg-surface-card-hover border-slate-200/70', label: 'text-content-2' };
-const VENCIDOS_THEME = { dot: '#E11D48', pill: 'bg-rose-50 border-rose-200/70', label: 'text-rose-700' };
+const VENCIDOS_THEME = { dot: '#E11D48', pill: 'bg-danger/10 border-danger/30/70', label: 'text-danger-text' };
 const DEFAULT_THEME = NEUTRAL_THEME;
 
 /* ─── SRS helpers ──────────────────────────────────────────────────────────── */
@@ -114,7 +114,7 @@ function ExpiryBadge({ date }) {
   return (
     <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${
       isExpired ? 'bg-danger/10 text-danger' :
-      isNear    ? 'bg-warning/10 text-amber-700' :
+      isNear    ? 'bg-warning/10 text-warning-text' :
                   'bg-surface-card-hover text-content-3'
     }`}>
       {isExpired
@@ -224,7 +224,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
       <div className="flex items-start gap-1.5">
         <p className="text-[11px] font-black text-content leading-tight flex-1">{nombre || '—'}</p>
         <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-full ${
-          activo ? 'bg-success/10 text-emerald-700' : 'bg-surface-card-hover text-content-3'
+          activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
         }`}>
           {activo ? 'ACTIVO' : 'INACTIVO'}
         </span>
@@ -243,7 +243,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
             <button
               onClick={submit}
               disabled={rState === 'saving'}
-              className="px-1.5 py-0.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-[8px] font-black transition-colors disabled:opacity-50"
+              className="px-1.5 py-0.5 rounded-full bg-danger hover:bg-rose-600 text-white text-[8px] font-black transition-colors disabled:opacity-50"
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>
@@ -254,7 +254,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
         ) : (
           <button
             onClick={() => setFormOpen(true)}
-            className="shrink-0 flex items-center gap-0.5 text-[8px] font-black text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 px-1.5 py-0.5 rounded-full transition-colors"
+            className="shrink-0 flex items-center gap-0.5 text-[8px] font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30/80 px-1.5 py-0.5 rounded-full transition-colors"
           >
             <PackageMinus size={8} strokeWidth={2.5} />
             Reportar
@@ -262,9 +262,9 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
         )}
       </div>
       {principio && (
-        <div className="flex items-center gap-1.5 bg-violet-50 rounded-lg px-2 py-1">
-          <FlaskConical size={9} className="text-violet-400 shrink-0" />
-          <p className="text-[10px] text-violet-700 font-semibold leading-tight">
+        <div className="flex items-center gap-1.5 bg-chart-3/10 rounded-lg px-2 py-1">
+          <FlaskConical size={9} className="text-chart-3-text shrink-0" />
+          <p className="text-[10px] text-chart-3-text font-semibold leading-tight">
             {principio}{conc ? ` ${conc}` : ''}
           </p>
         </div>
@@ -320,7 +320,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-black text-content leading-tight">{prod.descripcion}</p>
                         {prod.principioActivo && (
-                          <p className="text-[9px] text-violet-500 font-semibold mt-0.5 truncate">{prod.principioActivo}</p>
+                          <p className="text-[9px] text-chart-3-text font-semibold mt-0.5 truncate">{prod.principioActivo}</p>
                         )}
                         {prod.presentacion && (
                           <p className="text-[9px] text-content-3 font-medium mt-0.5">{prod.presentacion}</p>
@@ -349,7 +349,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] font-bold text-content truncate leading-tight">{prod.descripcion}</p>
                       {prod.principioActivo && (
-                        <p className="text-[9px] text-violet-500 font-semibold truncate">{prod.principioActivo}</p>
+                        <p className="text-[9px] text-chart-3-text font-semibold truncate">{prod.principioActivo}</p>
                       )}
                       {prod.presentacion && (
                         <p className="text-[9px] text-content-3">{prod.presentacion}</p>
@@ -533,7 +533,7 @@ export default function WidgetInventorySearch() {
           <div className="flex-1 min-w-0">
             <p className="text-[12px] font-black text-content leading-tight truncate">{drillProduct.descripcion}</p>
             {drillProduct.principioActivo && (
-              <p className="text-[9px] text-violet-500 font-semibold truncate">{drillProduct.principioActivo}</p>
+              <p className="text-[9px] text-chart-3-text font-semibold truncate">{drillProduct.principioActivo}</p>
             )}
             {drillProduct.presentacion && (
               <p className="text-[10px] text-content-3 font-medium">{drillProduct.presentacion}</p>
@@ -563,7 +563,7 @@ export default function WidgetInventorySearch() {
                     <div className={`h-px flex-1 bg-gradient-to-r from-transparent ${branch.isVencidos ? 'to-rose-200/80' : 'to-slate-200/80'}`} />
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
                       {branch.isVencidos
-                        ? <AlertTriangle size={9} className="text-rose-500 shrink-0" strokeWidth={2.5} />
+                        ? <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                         : <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />}
                       <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
                       <span className="w-px h-3 bg-surface-card-hover mx-1" />
@@ -583,7 +583,7 @@ export default function WidgetInventorySearch() {
                       <div className="flex items-center gap-2 px-3 py-2">
                         <span className="text-[9px] font-mono text-content-3 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
-                        <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-rose-600' : 'text-content-2'}`}>{prod.lots[0].cantidad} uds</span>
+                        <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{prod.lots[0].cantidad} uds</span>
                       </div>
                     ) : (
                       <div className="divide-y divide-white/40">
@@ -591,7 +591,7 @@ export default function WidgetInventorySearch() {
                           <div key={li} className="flex items-center gap-2 px-3 py-1.5">
                             <span className="text-[9px] font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                             <ExpiryBadge date={row.fecha_vencimiento} />
-                            <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-rose-600' : 'text-content-2'}`}>{row.cantidad} uds</span>
+                            <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{row.cantidad} uds</span>
                           </div>
                         ))}
                       </div>
@@ -674,14 +674,14 @@ export default function WidgetInventorySearch() {
           <div className="mt-1">
             <div className="flex items-center gap-2 mb-2 mt-1">
               <div className="h-px flex-1 bg-rose-200/60" />
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200/70 backdrop-blur-sm shadow-sm">
-                <AlertTriangle size={9} className="text-rose-500 shrink-0" strokeWidth={2.5} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700">Bodega · Área de Vencidos</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30/70 backdrop-blur-sm shadow-sm">
+                <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
                 <span className="w-px h-3 bg-rose-200 mx-1" />
-                <span className="text-[12px] font-black tabular-nums text-rose-700">
+                <span className="text-[12px] font-black tabular-nums text-danger-text">
                   {vencidosProds.reduce((s, p) => s + p.lots.reduce((ss, r) => ss + r.cantidad, 0), 0)}
                 </span>
-                <span className="text-[9px] font-semibold text-rose-400 ml-0.5">uds</span>
+                <span className="text-[9px] font-semibold text-danger-text ml-0.5">uds</span>
               </div>
               <div className="h-px flex-1 bg-rose-200/60" />
             </div>
@@ -703,7 +703,7 @@ export default function WidgetInventorySearch() {
                             <div key={li} className="flex items-center gap-1.5">
                               <span className="text-[8px] font-mono text-content-3 truncate">{r.lote || '—'}</span>
                               <ExpiryBadge date={r.fecha_vencimiento} />
-                              <span className="text-[9px] font-black text-rose-600 tabular-nums ml-auto">{r.cantidad}</span>
+                              <span className="text-[9px] font-black text-danger-text tabular-nums ml-auto">{r.cantidad}</span>
                             </div>
                           ))}
                         </div>
@@ -715,7 +715,7 @@ export default function WidgetInventorySearch() {
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
                       </>
                     )}
-                    <span className="text-[10px] font-black text-rose-600 shrink-0 tabular-nums w-14 text-right">{lotTotal} uds</span>
+                    <span className="text-[10px] font-black text-danger-text shrink-0 tabular-nums w-14 text-right">{lotTotal} uds</span>
                   </div>
                 );
               })}
@@ -730,7 +730,7 @@ export default function WidgetInventorySearch() {
             {/* No stock banner */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30">
               <Package size={13} className="text-warning shrink-0" strokeWidth={2} />
-              <p className="text-[11px] text-amber-700 font-semibold flex-1">
+              <p className="text-[11px] text-warning-text font-semibold flex-1">
                 Sin stock para <span className="font-black">"{query}"</span>
               </p>
             </div>
@@ -738,7 +738,7 @@ export default function WidgetInventorySearch() {
             {/* SRS loading */}
             {srsLoading && (
               <div className="flex items-center gap-2 px-1">
-                <Loader2 size={11} className="text-violet-400 animate-spin shrink-0" />
+                <Loader2 size={11} className="text-chart-3-text animate-spin shrink-0" />
                 <p className="text-[10px] text-content-3 font-medium">Consultando Registro SRS...</p>
               </div>
             )}
@@ -746,7 +746,7 @@ export default function WidgetInventorySearch() {
             {/* SRS results — each card has its own report button */}
             {!srsLoading && srsResults !== null && srsResults.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <SectionLabel icon={FlaskConical} label="Registro SRS" color="text-violet-600" bg="bg-violet-50" />
+                <SectionLabel icon={FlaskConical} label="Registro SRS" color="text-chart-3-text" bg="bg-chart-3/10" />
                 {srsResults.map((p, i) => (
                   <SrsCompactCard key={p.id ?? i} product={p} searchQuery={query} user={user} />
                 ))}

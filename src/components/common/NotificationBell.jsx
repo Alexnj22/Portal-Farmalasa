@@ -20,13 +20,13 @@ const iconForType = (type = '') => {
 
 const tintForType = (type = '', metadata = {}, isDark = false) => {
     if (isDark) {
-        if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-amber-400/10 text-amber-300 border-amber-300/20';
+        if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-amber-300 border-warning/40/20';
         if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
             return metadata?.status === 'REJECTED'
-                ? 'bg-red-400/10 text-red-300 border-red-300/20'
-                : 'bg-emerald-400/10 text-emerald-300 border-emerald-300/20';
+                ? 'bg-danger/10 text-red-300 border-danger/40/20'
+                : 'bg-success/10 text-emerald-300 border-emerald-300/20';
         }
-        if (type.startsWith('PEDIDO')) return 'bg-blue-400/10 text-blue-300 border-blue-300/20';
+        if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-blue-300 border-chart-1/40/20';
         return 'bg-surface-card text-white/60 border-border-card';
     }
     if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning border-warning/30';
@@ -35,7 +35,7 @@ const tintForType = (type = '', metadata = {}, isDark = false) => {
             ? 'bg-danger/10 text-danger border-danger/30'
             : 'bg-success/10 text-success border-success/30';
     }
-    if (type.startsWith('PEDIDO')) return 'bg-blue-50 text-brand border-blue-100';
+    if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-brand border-chart-1/30';
     return 'bg-surface-card-hover text-content-3 border-slate-200/70';
 };
 
@@ -264,7 +264,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         headerBorder: 'border-white/[0.07]',
         title: 'text-white/90',
         rowHover: 'hover:bg-white/[0.06]',
-        rowUnread: 'bg-blue-400/[0.07]',
+        rowUnread: 'bg-chart-1/[0.07]',
         rowTitle: 'text-white/90', rowTitleRead: 'text-white/60',
         rowBody: 'text-white/50',
         rowTime: 'text-white/40',
@@ -274,12 +274,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         chipMuted: 'text-white/40',
         undoStrip: 'bg-white/[0.05]',
         undoText: 'text-white/60',
-        undoBtn: 'text-blue-300 hover:bg-blue-400/10 border-blue-300/25',
+        undoBtn: 'text-blue-300 hover:bg-chart-1/10 border-chart-1/40/25',
     } : {
         headerBorder: 'border-slate-200/60',
         title: 'text-content',
         rowHover: 'hover:bg-surface-card',
-        rowUnread: 'bg-blue-50/50',
+        rowUnread: 'bg-chart-1/10/50',
         rowTitle: 'text-content', rowTitleRead: 'text-content-2',
         rowBody: 'text-content-3',
         rowTime: 'text-content-3',
@@ -289,7 +289,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         chipMuted: 'text-content-3',
         undoStrip: 'bg-surface-card-hover/80',
         undoText: 'text-content-2',
-        undoBtn: 'text-brand hover:bg-blue-50 border-blue-200/70',
+        undoBtn: 'text-brand hover:bg-chart-1/10 border-chart-1/30/70',
     };
 
     const undoButton = (key, label = 'Deshacer') => (
@@ -305,7 +305,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     return (
         <div ref={rootRef} className="relative">
             {isDesktop && totalBadge > 0 && (
-                <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none ${hasUrgentAnn ? 'bg-red-500/30' : 'bg-brand/20'}`} />
+                <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none ${hasUrgentAnn ? 'bg-danger/30' : 'bg-brand/20'}`} />
             )}
 
             {/* ── Botón campana ── */}
@@ -317,11 +317,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                     hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-200
                     ${isDark
                         ? `shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)]
-                           ${hasUrgentAnn ? 'bg-red-400/15 border-red-300/30' : 'bg-white/[0.08] border-white/[0.14] hover:bg-white/[0.14]'}`
+                           ${hasUrgentAnn ? 'bg-danger/15 border-danger/40/30' : 'bg-white/[0.08] border-white/[0.14] hover:bg-white/[0.14]'}`
                         : `shadow-[0_8px_32px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.06)]
                            ${hasUrgentAnn
-                               ? 'bg-danger/10 border-red-300/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
-                               : 'bg-surface-card border-blue-200/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
+                               ? 'bg-danger/10 border-danger/40/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
+                               : 'bg-surface-card border-chart-1/30/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
             >
                 {!isDark && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-[1.25rem] pointer-events-none" />}
                 {totalBadge > 0 ? (
@@ -334,10 +334,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 )}
                 {totalBadge > 0 && (
                     <>
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center z-20 shadow-[0_2px_8px_rgba(239,68,68,0.5)]">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center z-20 shadow-[0_2px_8px_rgba(239,68,68,0.5)]">
                             {totalBadge > 9 ? '9+' : totalBadge}
                         </span>
-                        <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-red-400" />
+                        <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-danger" />
                     </>
                 )}
             </button>
@@ -365,7 +365,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 <div className="flex items-center gap-2">
                                     <span className={`text-[14px] font-black tracking-tight ${cx.title}`}>Notificaciones</span>
                                     {unreadNotifs.length > 0 && (
-                                        <span className="min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                                        <span className="min-w-[20px] h-5 px-1.5 bg-danger text-white text-[10px] font-black rounded-full flex items-center justify-center">
                                             {unreadNotifs.length > 99 ? '99+' : unreadNotifs.length}
                                         </span>
                                     )}
@@ -375,7 +375,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <button
                                             onClick={() => markAllNotificationsRead()}
                                             title="Marcar todas como leídas"
-                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-blue-300 hover:bg-blue-400/10' : 'text-brand hover:bg-blue-50'}`}
+                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-blue-300 hover:bg-chart-1/10' : 'text-brand hover:bg-chart-1/10'}`}
                                         >
                                             <CheckCheck size={13} strokeWidth={2.5} />
                                             Leídas
@@ -385,7 +385,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         confirmClear ? (
                                             <button
                                                 onClick={handleClearAll}
-                                                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors animate-in fade-in zoom-in-95 duration-150"
+                                                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl bg-danger text-white hover:bg-danger-hover transition-colors animate-in fade-in zoom-in-95 duration-150"
                                             >
                                                 <Trash2 size={12} strokeWidth={2.5} />
                                                 ¿Borrar todo?
@@ -394,7 +394,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                             <button
                                                 onClick={handleClearAll}
                                                 title="Borrar todas"
-                                                className={`p-1.5 rounded-xl transition-colors ${isDark ? 'text-white/40 hover:text-red-300 hover:bg-red-400/10' : 'text-content-3 hover:text-danger hover:bg-danger/10'}`}
+                                                className={`p-1.5 rounded-xl transition-colors ${isDark ? 'text-white/40 hover:text-red-300 hover:bg-danger/10' : 'text-content-3 hover:text-danger hover:bg-danger/10'}`}
                                             >
                                                 <Trash2 size={14} strokeWidth={2} />
                                             </button>
@@ -420,13 +420,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     onClick={() => { setIsOpen(false); navigate('/my-announcements'); }}
                                     className={`w-full flex items-center gap-3 px-5 py-3 text-left border-b transition-colors group/ann
                                         ${hasUrgentAnn
-                                            ? (isDark ? 'bg-red-400/[0.08] border-red-300/15 hover:bg-red-400/[0.14]' : 'bg-danger/10 border-danger/30 hover:bg-danger/10')
-                                            : (isDark ? 'bg-blue-400/[0.06] border-blue-300/10 hover:bg-blue-400/[0.12]' : 'bg-blue-50/50 border-blue-100/60 hover:bg-blue-50')}`}
+                                            ? (isDark ? 'bg-danger/[0.08] border-danger/40/15 hover:bg-danger/[0.14]' : 'bg-danger/10 border-danger/30 hover:bg-danger/10')
+                                            : (isDark ? 'bg-chart-1/[0.06] border-chart-1/40/10 hover:bg-chart-1/[0.12]' : 'bg-chart-1/10/50 border-chart-1/30/60 hover:bg-chart-1/10')}`}
                                 >
                                     <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0
                                         ${hasUrgentAnn
-                                            ? (isDark ? 'bg-red-400/10 text-red-300 border-red-300/20' : 'bg-danger/10 text-danger border-danger/30')
-                                            : (isDark ? 'bg-blue-400/10 text-blue-300 border-blue-300/20' : 'bg-blue-100/70 text-brand border-blue-200/70')}`}>
+                                            ? (isDark ? 'bg-danger/10 text-red-300 border-danger/40/20' : 'bg-danger/10 text-danger border-danger/30')
+                                            : (isDark ? 'bg-chart-1/10 text-blue-300 border-chart-1/40/20' : 'bg-chart-1/10/70 text-brand border-chart-1/30/70')}`}>
                                         <Megaphone size={16} strokeWidth={2} />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -489,7 +489,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
                                                         className={`relative group transition-colors duration-500
                                                             ${inPendingAll ? 'pointer-events-none' : ''}
-                                                            ${isFlash ? (isDark ? 'bg-blue-400/[0.14]' : 'bg-blue-100/70') : unread ? cx.rowUnread : ''}`}
+                                                            ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10/70') : unread ? cx.rowUnread : ''}`}
                                                     >
                                                         <button
                                                             onClick={() => handleNotifClick(n)}

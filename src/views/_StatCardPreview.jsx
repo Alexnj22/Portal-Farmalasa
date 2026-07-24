@@ -25,18 +25,18 @@ export default function StatCardPreview() {
                         iconCls="text-success"
                         label="Total Ventas"
                         value="$12,450"
-                        valueCls="text-emerald-700"
+                        valueCls="text-success-text"
                         sub="vs mes anterior"
                     />
 
                     {/* 2. Sin sub-texto — debe tener EXACTAMENTE la misma altura que #1 */}
                     <StatCard
                         icon={FileText}
-                        iconBg="bg-blue-50"
-                        iconCls="text-blue-500"
+                        iconBg="bg-chart-1/10"
+                        iconCls="text-chart-1-text"
                         label="Facturas"
                         value="847"
-                        valueCls="text-blue-700"
+                        valueCls="text-chart-1-text"
                     />
 
                     {/* 3. Estado activo */}
@@ -49,7 +49,7 @@ export default function StatCardPreview() {
                         valueCls="text-danger"
                         sub="precio < costo"
                         active={true}
-                        activeBg="bg-danger/10 border-red-300 shadow-md"
+                        activeBg="bg-danger/10 border-danger/40 shadow-md"
                         onClick={() => {}}
                     />
 
@@ -60,9 +60,9 @@ export default function StatCardPreview() {
                         iconCls="text-warning"
                         label="Pts. Canjeados"
                         value="$3,200"
-                        valueCls="text-amber-700"
+                        valueCls="text-warning-text"
                         sub="este período"
-                        activeBg="bg-warning/10 border-amber-300 shadow-md"
+                        activeBg="bg-warning/10 border-warning/40 shadow-md"
                         inactiveBg="bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10"
                         onClick={() => alert('click')}
                     />
@@ -81,16 +81,16 @@ export default function StatCardPreview() {
                         iconCls="text-success"
                         label="Con sub-texto"
                         value="$12,450"
-                        valueCls="text-emerald-700"
+                        valueCls="text-success-text"
                         sub="vs mes anterior"
                     />
                     <StatCard
                         icon={FileText}
-                        iconBg="bg-blue-50"
-                        iconCls="text-blue-500"
+                        iconBg="bg-chart-1/10"
+                        iconCls="text-chart-1-text"
                         label="Sin sub-texto"
                         value="847"
-                        valueCls="text-blue-700"
+                        valueCls="text-chart-1-text"
                     />
                     {/* Guía visual — barra de referencia al mismo height */}
                     <div className="flex items-stretch">
@@ -106,7 +106,7 @@ export default function StatCardPreview() {
                 </p>
                 <div className="flex items-stretch gap-3">
                     <StatCard icon={TrendingUp} iconBg="bg-success/10" label="Total Ventas" value="" loading />
-                    <StatCard icon={FileText}   iconBg="bg-blue-50"    label="Facturas"     value="" loading />
+                    <StatCard icon={FileText}   iconBg="bg-chart-1/10"    label="Facturas"     value="" loading />
                     <StatCard icon={Star}       iconBg="bg-warning/10"   label="Pts. Canjeados" value="" sub="este período" loading />
                 </div>
             </section>

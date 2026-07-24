@@ -194,7 +194,7 @@ const BranchTabLegal = ({
                                                     key={emp.id}
                                                     type="button"
                                                     onClick={() => toggleNurse(emp.id)}
-                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-[11px] font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-sm' : 'bg-white text-content-3 border border-slate-100 hover:border-brand/30 hover:shadow-sm'}`}
+                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-[11px] font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-white text-content-3 border border-slate-100 hover:border-brand/30 hover:shadow-sm'}`}
                                                 >
                                                     {emp.name.split(' ')[0]} {isSelected && '✓'}
                                                 </button>

@@ -127,7 +127,7 @@ const PdfZoomViewer = ({ src }) => {
                     href={src}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-[10px] font-bold text-brand hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-brand hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-chart-1/10 transition-colors"
                 >
                     <ExternalLink size={12} /> Abrir en pestaña nueva
                 </a>
@@ -237,7 +237,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
             <div className="p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-[1.25rem] bg-blue-50 text-brand flex items-center justify-center shadow-inner shrink-0">
+                        <div className="w-12 h-12 rounded-[1.25rem] bg-chart-1/10 text-brand flex items-center justify-center shadow-inner shrink-0">
                             <Receipt size={24} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0">
@@ -302,10 +302,10 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     <p className="mt-2 text-[10px] font-bold text-danger">{downloadAllError}</p>
                 )}
                 {document?.invalidado && (
-                    <div className="mt-3 flex items-start gap-2.5 rounded-[1rem] border border-red-500/25 bg-red-500/10 px-4 py-3">
+                    <div className="mt-3 flex items-start gap-2.5 rounded-[1rem] border border-danger/25 bg-danger/10 px-4 py-3">
                         <AlertTriangle size={16} className="text-danger shrink-0 mt-0.5" strokeWidth={2} />
                         <div className="min-w-0">
-                            <p className="text-[11px] font-bold text-red-700 leading-snug">
+                            <p className="text-[11px] font-bold text-danger-text leading-snug">
                                 Este documento está invalidado
                                 {document.invalidado_motivo ? `: ${document.invalidado_motivo}` : ''}
                                 {document.invalidado_at ? ` (${document.invalidado_at.slice(0, 10)})` : ''}.
@@ -316,7 +316,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                     type="button"
                                     onClick={openInvalidacionPdf}
                                     disabled={openingInvalidacionPdf}
-                                    className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-black text-red-700 hover:text-red-800 underline disabled:opacity-50"
+                                    className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-black text-danger-text hover:text-danger-text underline disabled:opacity-50"
                                 >
                                     <ExternalLink size={11} strokeWidth={2} />
                                     {openingInvalidacionPdf ? 'Abriendo…' : 'Ver PDF de anulación'}

@@ -75,7 +75,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Nueva Fecha de Ingreso {reqBadge}
                         </label>
-                        <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-red-400 bg-danger/10' : 'border-slate-200/80'}`}>
+                        <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-danger bg-danger/10' : 'border-slate-200/80'}`}>
                             <LiquidDatePicker value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} placeholder="DD / MM / AAAA" />
                         </div>
                     </div>
@@ -94,7 +94,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Sucursal {reqBadge}
                         </label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_branch_id ? 'border border-red-400 bg-danger/10 rounded-[1rem]' : ''}`}>
+                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_branch_id ? 'border border-danger bg-danger/10 rounded-[1rem]' : ''}`}>
                             <LiquidSelect value={formData.rehire_branch_id || ''} onChange={v => set('rehire_branch_id', v)}
                                 options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalProps} />
                         </div>
@@ -105,7 +105,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Cargo Principal {reqBadge}
                         </label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_role_id ? 'border border-red-400 bg-danger/10 rounded-[1rem]' : ''}`}>
+                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_role_id ? 'border border-danger bg-danger/10 rounded-[1rem]' : ''}`}>
                             <LiquidSelect value={formData.rehire_role_id || ''} onChange={v => set('rehire_role_id', v)}
                                 options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalProps} />
                         </div>

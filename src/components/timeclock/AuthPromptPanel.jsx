@@ -46,22 +46,22 @@ const AuthPromptPanel = ({
         
         {/* TOP */}
         <div className="flex flex-col items-center text-center w-full mb-5 sm:mb-6 shrink-0 group/icon">
-          <div className="inline-flex p-4 rounded-[1.5rem] mb-3 sm:mb-4 transition-all duration-300 border backdrop-blur-md bg-orange-500/10 border-orange-500/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
-            <ShieldAlert size={42} className="text-orange-400 drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+          <div className="inline-flex p-4 rounded-[1.5rem] mb-3 sm:mb-4 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
+            <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
             {promptType === 'IN_AFTER_SHIFT' ? 'Turno Finalizado' : promptType === 'IN_EARLY' ? 'Entrada Anticipada' : promptType === 'OUT_LATE' ? 'Fuera de Tiempo' : promptType === 'IN_EARLY_EXTRA' ? 'Registrar Tiempo Extra' : 'Autorización Requerida'}
           </h1>
-          <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-orange-400/80 transition-colors px-2">
+          <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
             {promptType === 'IN_AFTER_SHIFT' ? `Tu turno concluyó a las ${shiftEnd ? formatTime(shiftEnd) : '--:--'}` : promptType === 'IN_EARLY' ? `Tu turno inicia a las ${expectedIn ? formatTime(expectedIn) : '--:--'}` : promptType === 'OUT_LATE' && authPrompt.extraMins >= 25 ? `+${authPrompt.extraMins} min de tu salida oficial` : promptType === 'SPECIAL_OUT_REQUEST' ? `Permiso: ${employeeName}` : promptType === 'IN_EARLY_EXTRA' ? `Tiempo extra: ${employeeName}` : `Turno Extra: ${employeeName}`}
           </p>
           <p className="text-white/40 text-[10px] sm:text-xs leading-relaxed mt-2.5 px-2">
             {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : promptType === 'IN_EARLY_EXTRA' ? 'Autoriza para guardar la hora de llegada real (no ajustada).' : 'Solicite a su supervisor autorizar el movimiento.'}
           </p>
           {requiresSuPin && (
-            <div className="mt-2.5 flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-500/10 border border-purple-500/25">
-              <ShieldAlert size={11} className="text-purple-400 shrink-0" />
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-purple-400">Requiere código SU (6 dígitos)</span>
+            <div className="mt-2.5 flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl bg-chart-3/10 border border-purple-500/25">
+              <ShieldAlert size={11} className="text-chart-3-text shrink-0" />
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-chart-3-text">Requiere código SU (6 dígitos)</span>
             </div>
           )}
         </div>
@@ -89,7 +89,7 @@ const AuthPromptPanel = ({
     /* 🚨 ESTABILIZACIÓN: Tamaño y espaciado fijo para el valor */
     text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em]
     /* 🚨 PLACEHOLDER: Estilo independiente para evitar saltos */
-    placeholder:text-[16px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-orange-400/60
+    placeholder:text-[16px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-chart-4-text/60
     /* 🚨 CARET VIRTUAL: Oculta el cursor nativo y activa la animación del CSS */
     caret-transparent virtual-caret-orange focus:outline-none"
 />
@@ -117,11 +117,11 @@ const AuthPromptPanel = ({
               </button>
             )}
             {skipPinHandler && (
-              <button type="button" onClick={skipPinHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-amber-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-amber-500/10 px-5 py-3.5 rounded-full border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={skipPinHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-amber-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 rounded-full border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <SkipForward size={14} /> Omitir PIN — Notificar a TH
               </button>
             )}
-            <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-red-500/10 px-5 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+            <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
               <XCircle size={14} /> Cancelar / Atrás
             </button>
           </div>

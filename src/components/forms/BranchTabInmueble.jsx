@@ -51,7 +51,7 @@ const BranchTabInmueble = ({
                     </h4>
 
                     <div className="flex items-center gap-4 bg-surface-card backdrop-blur-md border border-white shadow-sm px-5 py-2.5 rounded-2xl transition-[box-shadow,background-color] duration-300 hover:shadow-md">
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-purple-600' : 'text-content-2'}`}>Propio</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
                         <Switch on={isRented} onToggle={() => {
                             const nextState = isRented ? "OWNED" : "RENTED";
                             setFormData(prev => ({
@@ -78,7 +78,7 @@ const BranchTabInmueble = ({
                                 required
                                 icon={User}
                                 placeholder="Ej: Juan Perez"
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordName ? '!border-red-400 !bg-danger/10 hover:!border-red-500' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordName ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
                                 value={rent.landlordName ?? ""}
                                 onChange={(val) => updateNestedSetting('rent', 'landlordName', val)}
                             />
@@ -96,7 +96,7 @@ const BranchTabInmueble = ({
                                 value={rent.landlordPhone ?? ""}
                                 onChange={(val) => updateNestedSetting('rent', 'landlordPhone', formatPhoneMask(val))}
                                 maxLength={9}
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordPhone ? '!border-red-400 !bg-danger/10 hover:!border-red-500' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.landlordPhone ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
                             />
 
                         </div>
@@ -109,7 +109,7 @@ const BranchTabInmueble = ({
                                 type="number"
                                 icon={DollarSign}
                                 placeholder="0.00"
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.amount ? '!border-red-400 !bg-danger/10 hover:!border-red-500' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rent.amount ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
                                 value={rent.amount ?? ""}
                                 onChange={(val) => updateNestedSetting('rent', 'amount', val === "" ? null : Number(val))}
                             />
@@ -119,7 +119,7 @@ const BranchTabInmueble = ({
                             <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
-                            <div className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.startDate ? '!border-red-400 bg-danger/10' : ''}`}>
+                            <div className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.startDate ? '!border-danger bg-danger/10' : ''}`}>
                                 <LiquidDatePicker
                                     value={rentContract.startDate ?? ""}
                                     onChange={(val) => handleContractChange('startDate', val || null)}
@@ -137,7 +137,7 @@ const BranchTabInmueble = ({
                                 type="number"
                                 icon={CalendarDays}
                                 placeholder="Ej: 12"
-                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.termMonths ? '!border-red-400 !bg-danger/10 hover:!border-red-500' : 'border-slate-200/80'}`}
+                                className={`!bg-white shadow-sm ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.termMonths ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
                                 value={rentContract.termMonths ?? ""}
                                 onChange={(val) => handleContractChange('termMonths', val === "" ? null : clampInt(val, 1, 240))}
                             />
@@ -146,7 +146,7 @@ const BranchTabInmueble = ({
                         {rentContract.endDate && (
                             <div className="md:col-span-2 flex items-center gap-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl">
                                 <AlertCircle size={18} className="text-warning shrink-0" />
-                                <p className="text-[11px] font-black uppercase tracking-widest text-amber-700">
+                                <p className="text-[11px] font-black uppercase tracking-widest text-warning-text">
                                     Vencimiento calculado del contrato: <span className="text-amber-900 bg-white px-3 py-1 rounded-lg shadow-sm ml-2">{new Date(rentContract.endDate).toLocaleDateString()}</span>
                                 </p>
                             </div>
@@ -167,7 +167,7 @@ const BranchTabInmueble = ({
                     </div>
                 ) : (
                     <div className="py-10 text-center bg-surface-card rounded-[1.5rem] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
-                        <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                        <div className="w-16 h-16 bg-chart-3/10 text-chart-3-text rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                             <Building2 size={28} strokeWidth={2} />
                         </div>
                         <p className="text-content-3 font-black uppercase tracking-widest text-[12px]">
@@ -244,7 +244,7 @@ const BranchTabInmueble = ({
                             />
                         </div>
                         {hasInjections && (
-                            <p className="text-[9px] font-bold text-blue-500/80 mt-2 flex items-center gap-1 ml-6">
+                            <p className="text-[9px] font-bold text-chart-1-text/80 mt-2 flex items-center gap-1 ml-6">
                                 <Info size={10} /> Obligatorio por área de inyecciones activa.
                             </p>
                         )}
@@ -294,7 +294,7 @@ const BranchTabInmueble = ({
 
                 {/* ISLA 4: EXTINTORES */}
                 <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-orange-600 mb-5 flex items-center gap-2">
+                    <h4 className="text-[12px] font-black uppercase tracking-widest text-chart-4-text mb-5 flex items-center gap-2">
                         <Flame size={16} strokeWidth={2.5} /> Extintores
                     </h4>
 

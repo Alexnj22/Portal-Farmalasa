@@ -16,7 +16,7 @@ const getDocStatus = (url, expDate) => {
     if (expDate) {
         const diff = Math.ceil((new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24));
         if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', color: 'text-danger bg-danger/10 border-danger/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]', icon: AlertTriangle };
-        if (diff <= 45) return { type: 'WARNING', label: `Vence en ${diff}d`, color: 'text-orange-600 bg-orange-50 border-orange-200', icon: Clock };
+        if (diff <= 45) return { type: 'WARNING', label: `Vence en ${diff}d`, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', icon: Clock };
     }
 
     return { type: 'OK', label: 'Al Día', color: 'text-success bg-success/10 border-success/30', icon: CheckCircle2 };
@@ -92,8 +92,8 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 title="Ver Análisis de IA del Documento"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-10 group-hover/ai:opacity-100 transition-all duration-500 group-hover/ai:animate-spin [animation-duration:3s]"></div>
-                                <div className="absolute inset-[1px] bg-indigo-50/80 backdrop-blur-sm rounded-full z-0 group-hover/ai:bg-surface-card transition-colors duration-300 border border-indigo-200/50"></div>
-                                <Sparkles size={14} strokeWidth={2.5} className="text-purple-500 group-hover/ai:text-purple-600 group-hover/ai:animate-pulse z-20 relative transition-colors" />
+                                <div className="absolute inset-[1px] bg-chart-3/10/80 backdrop-blur-sm rounded-full z-0 group-hover/ai:bg-surface-card transition-colors duration-300 border border-chart-3/30/50"></div>
+                                <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai:text-chart-3-text group-hover/ai:animate-pulse z-20 relative transition-colors" />
                             </button>
 
                             {/* 🔮 EL TOOLTIP HOLOGRÁFICO */}
@@ -102,23 +102,23 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>
 
-                                <div className="bg-surface-card backdrop-blur-2xl border border-indigo-100/50 p-4 rounded-[1.25rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
+                                <div className="bg-surface-card backdrop-blur-2xl border border-chart-3/30/50 p-4 rounded-[1.25rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
 
                                     {/* Fondo de luz sutil interno (Estilo holográfico) */}
                                     <div className="absolute inset-0 pointer-events-none z-0">
-                                        <div className="absolute -top-[20%] -left-[20%] w-[60%] h-[60%] bg-indigo-500/10 blur-[30px] rounded-full"></div>
-                                        <div className="absolute top-[40%] -right-[20%] w-[60%] h-[60%] bg-purple-500/10 blur-[30px] rounded-full"></div>
+                                        <div className="absolute -top-[20%] -left-[20%] w-[60%] h-[60%] bg-chart-3/10 blur-[30px] rounded-full"></div>
+                                        <div className="absolute top-[40%] -right-[20%] w-[60%] h-[60%] bg-chart-3/10 blur-[30px] rounded-full"></div>
                                     </div>
 
                                     {/* Flechita decorativa del tooltip */}
-                                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-white border-l border-t border-indigo-100/50 transform rotate-45 shadow-[-2px_-2px_4px_rgba(0,0,0,0.02)]"></div>
+                                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-white border-l border-t border-chart-3/30/50 transform rotate-45 shadow-[-2px_-2px_4px_rgba(0,0,0,0.02)]"></div>
 
                                     {/* Header del Tooltip */}
-                                    <div className="flex items-center gap-2 mb-3 relative z-10 border-b border-indigo-100/50 pb-2.5">
+                                    <div className="flex items-center gap-2 mb-3 relative z-10 border-b border-chart-3/30/50 pb-2.5">
                                         <div className="relative w-5 h-5 flex items-center justify-center">
                                             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:3s] blur-[2px] opacity-60"></div>
-                                            <div className="relative w-full h-full bg-white rounded-full flex items-center justify-center border border-indigo-200">
-                                                <Sparkles size={10} strokeWidth={2.5} className="text-purple-600" />
+                                            <div className="relative w-full h-full bg-white rounded-full flex items-center justify-center border border-chart-3/30">
+                                                <Sparkles size={10} strokeWidth={2.5} className="text-chart-3-text" />
                                             </div>
                                         </div>
                                         <h5 className="text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Análisis de Documento</h5>
@@ -173,7 +173,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="mt-4 relative z-10">
                     <button
                         onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                        className="w-full h-10 rounded-xl bg-blue-50/50 text-brand font-black text-[10px] uppercase tracking-widest border border-blue-200/60 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[0_6px_20px_rgba(0,82,204,0.35)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
+                        className="w-full h-10 rounded-xl bg-chart-1/10/50 text-brand font-black text-[10px] uppercase tracking-widest border border-chart-1/30/60 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[0_6px_20px_rgba(0,82,204,0.35)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
                     >
                         <UploadCloud size={16} strokeWidth={2.5} /> Subir Archivo
                     </button>
@@ -360,7 +360,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                                 <span className={`text-[9px] font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand'}`}>{progress}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
-                                <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-emerald-500' : 'bg-brand'}`} style={{ width: `${progress}%` }}></div>
+                                <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-success' : 'bg-brand'}`} style={{ width: `${progress}%` }}></div>
                             </div>
                         </div>
                     </div>
@@ -436,7 +436,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <CheckCircle2 size={40} className="text-success mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-success">Expediente impecable</p>
                             <p className="text-[11px] font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand bg-white border border-brand/20 shadow-[0_2px_10px_rgba(0,82,204,0.05)] hover:border-brand/50 hover:bg-blue-50 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
+                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand bg-white border border-brand/20 shadow-[0_2px_10px_rgba(0,82,204,0.05)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
                                 Ver Documentos Al Día
                             </button>
                         </>
@@ -461,7 +461,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {(personalDocs.length > 0 || customDocsByCategory['Recursos Humanos']?.length > 0) && (
                 <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
-                        <Users size={12} className="text-purple-500" strokeWidth={3} /> Credenciales de Personal
+                        <Users size={12} className="text-chart-3-text" strokeWidth={3} /> Credenciales de Personal
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {personalDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}

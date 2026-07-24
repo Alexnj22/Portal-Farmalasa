@@ -37,7 +37,7 @@ const getSeverityInfo = (severity) => {
 };
 
 const getSourceIcon = (source) => {
-    if (source === 'KIOSK') return <MonitorSmartphone size={10} className="md:w-3 md:h-3 text-purple-500" />;
+    if (source === 'KIOSK') return <MonitorSmartphone size={10} className="md:w-3 md:h-3 text-chart-3-text" />;
     if (source === 'SYSTEM') return <Database size={10} className="md:w-3 md:h-3 text-content-3" />;
     return <Globe size={10} className="md:w-3 md:h-3 text-brand" />; // ADMIN_PANEL
 };
@@ -428,7 +428,7 @@ const filtersContent = (
                     >
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                         {rawSearchTerm && (
-                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>
+                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>
                         )}
                     </button>
                 </div>
@@ -451,7 +451,7 @@ const filtersContent = (
                 <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-slate-200/60 hover:bg-white hover:text-brand'}`}
+                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger text-white border-red-600 hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-slate-200/60 hover:bg-white hover:text-brand'}`}
                     >
                         {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
                         <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>
@@ -515,7 +515,7 @@ const filtersContent = (
                 ) : null}
             >
                 {isLogSearchFuzzy && debouncedSearchTerm && (
-                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                         Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
                     </div>

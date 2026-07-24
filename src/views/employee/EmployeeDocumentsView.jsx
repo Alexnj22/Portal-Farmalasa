@@ -15,32 +15,32 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 const DOC_CFG = {
     DISABILITY: {
         label: 'Incapacidad', Icon: Stethoscope,
-        bg: 'bg-danger/10', text: 'text-red-700', border: 'border-danger/30',
-        iconBg: 'bg-danger/10', accent: 'bg-red-500',
+        bg: 'bg-danger/10', text: 'text-danger-text', border: 'border-danger/30',
+        iconBg: 'bg-danger/10', accent: 'bg-danger',
         glow: 'hover:shadow-[0_8px_24px_rgba(239,68,68,0.12)]',
     },
     CERTIFICATE: {
         label: 'Constancia', Icon: FileCheck,
-        bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200',
-        iconBg: 'bg-blue-100', accent: 'bg-blue-500',
+        bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30',
+        iconBg: 'bg-chart-1/10', accent: 'bg-chart-1',
         glow: 'hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]',
     },
     VACATION: {
         label: 'Vacaciones', Icon: Palmtree,
-        bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30',
-        iconBg: 'bg-success/10', accent: 'bg-emerald-500',
+        bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30',
+        iconBg: 'bg-success/10', accent: 'bg-success',
         glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]',
     },
     PERMIT: {
         label: 'Permiso', Icon: FileText,
-        bg: 'bg-warning/10', text: 'text-amber-700', border: 'border-warning/30',
-        iconBg: 'bg-warning/10', accent: 'bg-amber-500',
+        bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30',
+        iconBg: 'bg-warning/10', accent: 'bg-warning',
         glow: 'hover:shadow-[0_8px_24px_rgba(245,158,11,0.12)]',
     },
     SHIFT_CHANGE: {
         label: 'Cambio Turno', Icon: RefreshCw,
-        bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200',
-        iconBg: 'bg-cyan-100', accent: 'bg-cyan-500',
+        bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30',
+        iconBg: 'bg-chart-5/10', accent: 'bg-chart-5',
         glow: 'hover:shadow-[0_8px_24px_rgba(6,182,212,0.12)]',
     },
 };
@@ -52,8 +52,8 @@ const DEFAULT_CFG = {
 };
 
 const STATUS_CFG = {
-    APPROVED:  { label: 'Aprobada',  Icon: CheckCircle2, cls: 'bg-success/10 text-emerald-700 border-success/30' },
-    PENDING:   { label: 'Pendiente', Icon: Clock,         cls: 'bg-warning/10  text-amber-700  border-warning/30'   },
+    APPROVED:  { label: 'Aprobada',  Icon: CheckCircle2, cls: 'bg-success/10 text-success-text border-success/30' },
+    PENDING:   { label: 'Pendiente', Icon: Clock,         cls: 'bg-warning/10  text-warning-text  border-warning/30'   },
     REJECTED:  { label: 'Rechazada', Icon: XCircle,       cls: 'bg-danger/10    text-danger    border-danger/30'     },
     CANCELLED: { label: 'Cancelada', Icon: X,             cls: 'bg-surface-card-hover  text-content-3  border-slate-200'   },
 };
@@ -280,7 +280,7 @@ const EmployeeDocumentsView = () => {
                     className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar documentos">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                    {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
             </div>
         </div>
@@ -304,7 +304,7 @@ const EmployeeDocumentsView = () => {
                                 <Filter size={10} /> Filtros avanzados
                             </p>
                             {hasFilters && (
-                                <button onClick={clearFilters} className="flex items-center gap-1 text-[10px] font-black text-danger hover:text-red-700 transition-colors">
+                                <button onClick={clearFilters} className="flex items-center gap-1 text-[10px] font-black text-danger hover:text-danger-text transition-colors">
                                     <X size={10} strokeWidth={2.5} /> Limpiar
                                 </button>
                             )}
@@ -348,7 +348,7 @@ const EmployeeDocumentsView = () => {
                         {[
                             { label: 'Total',         value: allDocs.length,                                               color: 'text-content-2',    bg: 'bg-surface-card'       },
                             { label: 'Incapacidades', value: allDocs.filter(d => d.type === 'DISABILITY').length,           color: 'text-danger',      bg: 'bg-danger/10'      },
-                            { label: 'Constancias',   value: allDocs.filter(d => d.type === 'CERTIFICATE').length,          color: 'text-blue-600',     bg: 'bg-blue-50/80'     },
+                            { label: 'Constancias',   value: allDocs.filter(d => d.type === 'CERTIFICATE').length,          color: 'text-chart-1-text',     bg: 'bg-chart-1/10/80'     },
                             { label: 'Con Archivo',   value: allDocs.filter(d => d.meta?.docUrl).length,                   color: 'text-success',  bg: 'bg-success/10'  },
                         ].map(s => (
                             <div key={s.label} className={`${s.bg} backdrop-blur-sm border border-border-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.03)]`}>

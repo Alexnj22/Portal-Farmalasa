@@ -34,7 +34,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                             <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
                         </div>
                         {filterSuc !== '' && (
-                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
+                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
@@ -49,7 +49,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                     <PeriodPicker value={filterDate} onChange={setFilterDate} />
                 </div>
                 {dateDirty && (
-                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
+                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -62,14 +62,14 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado',    'En ruta')}
                 <div className="h-3.5 w-px bg-surface-card-hover mx-0.5 shrink-0" />
-                {statusBtn('observacion','Con observación', 'bg-amber-500 text-white border-amber-500')}
-                {statusBtn('completado', 'Completados',     'bg-emerald-600 text-white border-emerald-600')}
+                {statusBtn('observacion','Con observación', 'bg-warning text-white border-warning')}
+                {statusBtn('completado', 'Completados',     'bg-success text-white border-emerald-600')}
             </div>
 
             {hasActive && (
                 <>
                     <div className="h-5 w-px bg-surface-card-hover shrink-0" />
-                    <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all duration-200 shrink-0">
+                    <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>

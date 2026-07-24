@@ -23,7 +23,7 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-content-3 text-content-2';
+const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-content-3 text-content-2';
 const lbl = 'text-[10px] font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
@@ -79,7 +79,7 @@ function StepInfo({ form, set, branches }) {
                         className={`px-3 py-1.5 text-[11px] font-bold rounded-full border transition-all ${
                             form.branch_ids.length === branches.length
                                 ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white shadow-sm shadow-blue-200'
-                                : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
+                                : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                         }`}
                     >
                         Todas
@@ -96,7 +96,7 @@ function StepInfo({ form, set, branches }) {
                                 className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                     active
                                         ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
-                                        : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
+                                        : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                 }`}
                             >
                                 {b.name}
@@ -139,7 +139,7 @@ function ProductRow({ pp, onRemove }) {
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                     {pp.factor_descripcion && (
-                        <span className="text-[10px] text-violet-600 font-medium">Factor: {pp.factor_descripcion}</span>
+                        <span className="text-[10px] text-chart-3-text font-medium">Factor: {pp.factor_descripcion}</span>
                     )}
                     {pp.stock_inicial && (
                         <span className="text-[10px] text-content-3">Stock: {pp.stock_inicial} und</span>
@@ -154,7 +154,7 @@ function ProductRow({ pp, onRemove }) {
                         <span className="text-[10px] text-success">Vendedor: ${parseFloat(pp.bono_vendedor).toFixed(2)}/trigger</span>
                     )}
                     {parseFloat(pp.bono_admin_pool) > 0 && (
-                        <span className="text-[10px] text-blue-600">Admin pool: ${parseFloat(pp.bono_admin_pool).toFixed(2)}/trigger</span>
+                        <span className="text-[10px] text-chart-1-text">Admin pool: ${parseFloat(pp.bono_admin_pool).toFixed(2)}/trigger</span>
                     )}
                     {parseFloat(pp.bono_bodega_pool) > 0 && (
                         <span className="text-[10px] text-warning">Bodega pool: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}/trigger</span>
@@ -235,7 +235,7 @@ function AddProductInline({ onAdd }) {
             <button
                 type="button"
                 onClick={() => setShow(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-blue-200/60 rounded-2xl text-[11px] font-semibold text-blue-400 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-chart-1/30/60 rounded-2xl text-[11px] font-semibold text-chart-1-text hover:border-chart-1 hover:text-chart-1-text hover:bg-chart-1/10/50 transition-all"
             >
                 <Plus size={12} /> Agregar producto a la promoción
             </button>
@@ -276,7 +276,7 @@ function AddProductInline({ onAdd }) {
     const numInp = `${inp} text-center`;
 
     return (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-100 rounded-2xl p-4 space-y-3.5 shadow-sm">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-chart-1/30 rounded-2xl p-4 space-y-3.5 shadow-sm">
             <div>
                 <label className={lbl}>Producto *</label>
                 <LiquidSelect
@@ -307,7 +307,7 @@ function AddProductInline({ onAdd }) {
                                     className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                         presentacionId === opt.value
                                             ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
-                                            : 'bg-white border-slate-200 text-content-3 hover:border-blue-300 hover:text-blue-600'
+                                            : 'bg-white border-slate-200 text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                     }`}
                                 >
                                     {opt.label}
@@ -340,7 +340,7 @@ function AddProductInline({ onAdd }) {
                     </div>
 
                     <div className="bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-success/30 rounded-xl p-3 space-y-2.5">
-                        <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <p className="text-[10px] font-bold text-success-text uppercase tracking-wider flex items-center gap-1.5">
                             <Gift size={10} /> Bonificaciones por trigger
                         </p>
                         <div className="grid grid-cols-3 gap-2">
@@ -349,7 +349,7 @@ function AddProductInline({ onAdd }) {
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_vendedor')} onChange={e => s('bono_vendedor', e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1.5 block">Admin pool ($)</label>
+                                <label className="text-[10px] font-bold text-chart-1-text uppercase tracking-widest mb-1.5 block">Admin pool ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_admin_pool')} onChange={e => s('bono_admin_pool', e.target.value)} />
                             </div>
                             <div>
@@ -541,8 +541,8 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                         className="flex items-center gap-2 shrink-0"
                                     >
                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                                            isActive ? 'bg-white border-white text-blue-600 scale-110 shadow-lg shadow-blue-900/30'
-                                            : isDone  ? 'bg-emerald-400 border-emerald-300 text-white'
+                                            isActive ? 'bg-white border-white text-chart-1-text scale-110 shadow-lg shadow-blue-900/30'
+                                            : isDone  ? 'bg-success border-emerald-300 text-white'
                                             : 'bg-surface-card border-border-card text-white/50'
                                         }`}>
                                             {isDone ? <Check size={13} /> : <StepIcon size={12} />}

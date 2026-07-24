@@ -39,7 +39,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                     </div>
                     <div className="flex-1 min-w-0">
                         {legalData.srsPermitFile ? (
-                            <p className="text-[13px] text-emerald-700 font-bold truncate">{legalData.srsPermitFile.name}</p>
+                            <p className="text-[13px] text-success-text font-bold truncate">{legalData.srsPermitFile.name}</p>
                         ) : legalData.srsPermitUrl ? (
                             <p className="text-[13px] text-content-2 font-bold truncate">Reemplazar archivo actual...</p>
                         ) : (

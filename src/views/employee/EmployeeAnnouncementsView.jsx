@@ -35,14 +35,14 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         : ann.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
         : ann.targetType === 'ROLE'
-        ? <span className="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-purple-200/50"><User size={11} strokeWidth={2} /> Cargo</span>
-        : <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={11} strokeWidth={2} /> Personal</span>;
+        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-3/30/50"><User size={11} strokeWidth={2} /> Cargo</span>
+        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-4/30/50"><User size={11} strokeWidth={2} /> Personal</span>;
 
     return (
         <div
             className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1 ${
                 isUrgent && !isRead
-                    ? 'border-red-300 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-surface-card backdrop-blur-xl'
+                    ? 'border-danger/40 shadow-[0_8px_30px_rgba(239,68,68,0.12)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.2)] bg-surface-card backdrop-blur-xl'
                     : isUrgent && isRead
                     ? 'border-danger/30 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
                     : isRead
@@ -53,14 +53,14 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         >
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-content-3' : isUrgent ? 'bg-red-500' : 'bg-brand'}`} />
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-content-3' : isUrgent ? 'bg-danger' : 'bg-brand'}`} />
                 {isUrgent && (
-                    <span className={`flex items-center gap-1 text-white bg-red-500 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
+                    <span className={`flex items-center gap-1 text-white bg-danger px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
                         <Flame size={11} strokeWidth={2.5} /> Urgente
                     </span>
                 )}
                 {wasReadBefore && (
-                    <span className="flex items-center gap-1 text-amber-700 bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
+                    <span className="flex items-center gap-1 text-warning-text bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
                         <Pencil size={10} strokeWidth={2.5} /> Actualización
                     </span>
                 )}
@@ -87,7 +87,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                         <>
                             {meta.targetEmployeeName && (
                                 <div className="flex items-center gap-2">
-                                    <ArrowLeftRight size={12} className="text-cyan-500 flex-shrink-0" strokeWidth={2.5} />
+                                    <ArrowLeftRight size={12} className="text-chart-5-text flex-shrink-0" strokeWidth={2.5} />
                                     <span className="text-[12px] font-black text-content-2">Con: {meta.targetEmployeeName}</span>
                                 </div>
                             )}
@@ -103,8 +103,8 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                                         <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Tu turno</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                     </div>
-                                    <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-2">
-                                        <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                                    <div className="bg-chart-5/10 border border-cyan-100 rounded-xl p-2">
+                                        <p className="text-[8px] font-black text-chart-5-text uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                     </div>
                                 </div>
@@ -127,7 +127,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {meta.requestType === 'PERMIT' && meta.permissionDates?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                             {meta.permissionDates.map(d => (
-                                <span key={d} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 border border-purple-200 text-purple-700">
+                                <span key={d} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text">
                                     {fmtDate(d)}
                                 </span>
                             ))}
@@ -157,7 +157,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {/* Constancia */}
                     {meta.requestType === 'CERTIFICATE' && meta.certificateType && (
                         <div className="flex items-center gap-2">
-                            <FileCheck size={12} className="text-blue-500 flex-shrink-0" strokeWidth={2} />
+                            <FileCheck size={12} className="text-chart-1-text flex-shrink-0" strokeWidth={2} />
                             <span className="text-[12px] font-bold text-content-2">
                                 {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                             </span>
@@ -282,7 +282,7 @@ const UnreadStack = memo(({ list, onRead }) => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
-                    <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-emerald-400 -translate-y-10" />
+                    <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-success -translate-y-10" />
                     <div className="relative z-10 w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-[0_20px_60px_rgba(16,185,129,0.45)] hover:scale-105 transition-transform duration-500">
                         <Sparkles size={44} strokeWidth={1.6} />
                     </div>
@@ -320,10 +320,10 @@ const UnreadStack = memo(({ list, onRead }) => {
     const badgeEl = current.targetType === 'GLOBAL'
         ? <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
         : current.targetType === 'BRANCH'
-        ? <span className="flex items-center gap-1.5 text-emerald-700 bg-success/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
+        ? <span className="flex items-center gap-1.5 text-success-text bg-success/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
         : current.targetType === 'ROLE'
-        ? <span className="flex items-center gap-1.5 text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-purple-200/60"><User size={10} strokeWidth={2.5}/> Cargo</span>
-        : <span className="flex items-center gap-1.5 text-orange-700 bg-orange-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-orange-200/60"><User size={10} strokeWidth={2.5}/> Personal</span>;
+        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-chart-3/30/60"><User size={10} strokeWidth={2.5}/> Cargo</span>
+        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-chart-4/30/60"><User size={10} strokeWidth={2.5}/> Personal</span>;
 
     return (
         <div className="flex flex-col items-center w-full">
@@ -352,7 +352,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         </span>
                     </div>
                     {urgentLeft > 0 && (
-                        <span className="flex items-center gap-1.5 text-[10px] font-black text-white bg-red-500 px-3 py-1.5 rounded-full shadow-[0_4px_14px_rgba(239,68,68,0.4)] animate-pulse self-center">
+                        <span className="flex items-center gap-1.5 text-[10px] font-black text-white bg-danger px-3 py-1.5 rounded-full shadow-[0_4px_14px_rgba(239,68,68,0.4)] animate-pulse self-center">
                             <Flame size={11} strokeWidth={2.5} /> {urgentLeft} urgente{urgentLeft !== 1 ? 's' : ''}
                         </span>
                     )}
@@ -364,8 +364,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                             const cur  = i === doneCount;
                             return (
                                 <div key={i} className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-                                    done ? 'w-2.5 h-2.5 bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
-                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-brand shadow-[0_0_8px_rgba(0,82,204,0.5)]') :
+                                    done ? 'w-2.5 h-2.5 bg-success shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
+                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-brand shadow-[0_0_8px_rgba(0,82,204,0.5)]') :
                                            'w-2.5 h-2.5 bg-surface-card-hover'
                                 }`} />
                             );
@@ -417,11 +417,11 @@ const UnreadStack = memo(({ list, onRead }) => {
                 >
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
-                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] bg-emerald-500/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-[0_12px_40px_rgba(16,185,129,0.55)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>
-                            <p className="mt-3 text-[11px] font-black text-emerald-700 uppercase tracking-widest animate-in fade-in slide-in-from-bottom-1 duration-200 delay-75">Leído</p>
+                            <p className="mt-3 text-[11px] font-black text-success-text uppercase tracking-widest animate-in fade-in slide-in-from-bottom-1 duration-200 delay-75">Leído</p>
                         </div>
                     )}
 
@@ -469,7 +469,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     {meta.requestType === 'SHIFT_CHANGE' && (<>
                                         {meta.targetEmployeeName && (
                                             <div className="flex items-center gap-2">
-                                                <ArrowLeftRight size={12} className="text-cyan-500 flex-shrink-0" strokeWidth={2.5}/>
+                                                <ArrowLeftRight size={12} className="text-chart-5-text flex-shrink-0" strokeWidth={2.5}/>
                                                 <span className="text-[12px] font-black text-content-2">Con: {meta.targetEmployeeName}</span>
                                             </div>
                                         )}
@@ -485,8 +485,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                                                     <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>
-                                                <div className="bg-cyan-50/80 border border-cyan-100 rounded-xl p-2.5">
-                                                    <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                                                <div className="bg-chart-5/10/80 border border-cyan-100 rounded-xl p-2.5">
+                                                    <p className="text-[8px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                                 </div>
                                             </div>
@@ -503,7 +503,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     {meta.requestType === 'PERMIT' && meta.permissionDates?.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5">
                                             {meta.permissionDates.map(d => (
-                                                <span key={d} className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 border border-purple-200 text-purple-700">{fmtDate(d)}</span>
+                                                <span key={d} className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text">{fmtDate(d)}</span>
                                             ))}
                                         </div>
                                     )}
@@ -524,7 +524,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     )}
                                     {meta.requestType === 'CERTIFICATE' && meta.certificateType && (
                                         <div className="flex items-center gap-2">
-                                            <FileCheck size={12} className="text-blue-500 flex-shrink-0" strokeWidth={2}/>
+                                            <FileCheck size={12} className="text-chart-1-text flex-shrink-0" strokeWidth={2}/>
                                             <span className="text-[12px] font-bold text-content-2">
                                                 {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                                             </span>
@@ -575,7 +575,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                 <div className="mt-5 flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <button
                         onClick={handleBack}
-                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-warning/30 bg-warning/10 text-amber-700 shadow-[0_4px_16px_rgba(245,158,11,0.18)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
+                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-warning/30 bg-warning/10 text-warning-text shadow-[0_4px_16px_rgba(245,158,11,0.18)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
                     >
                         {/* barra de countdown que se encoge en 5s */}
                         <div
@@ -738,7 +738,7 @@ const EmployeeAnnouncementsView = () => {
                                 className={`flex items-center gap-1 px-2.5 h-8 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap border shrink-0 ${
                                     key === 'URGENT'
                                         ? isActive
-                                            ? 'bg-red-500 text-white border-red-500 shadow-[0_3px_8px_rgba(239,68,68,0.35)] scale-[1.02]'
+                                            ? 'bg-danger text-white border-danger shadow-[0_3px_8px_rgba(239,68,68,0.35)] scale-[1.02]'
                                             : 'bg-transparent text-danger border-danger/30 hover:bg-danger/10 hover:-translate-y-0.5'
                                         : isActive
                                         ? 'bg-white text-content border-white shadow-md scale-[1.02]'
@@ -756,7 +756,7 @@ const EmployeeAnnouncementsView = () => {
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
                     className={`relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
                     <Search size={15} strokeWidth={2.5} />
-                    {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                    {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                 </button>
             </div>
         </div>
@@ -791,7 +791,7 @@ const EmployeeAnnouncementsView = () => {
                     /* ── Mazo interactivo para Sin Leer ── */
                     <>
                     {isAnnFuzzy && searchQuery && (
-                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-amber-700 font-semibold">
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
                         </div>
@@ -799,7 +799,7 @@ const EmployeeAnnouncementsView = () => {
                     {filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                             <div className="relative flex flex-col items-center text-center">
-                                <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-emerald-400" />
+                                <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-success" />
                                 <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-success">
                                     <CheckCircle2 size={40} strokeWidth={1.5} />
                                 </div>

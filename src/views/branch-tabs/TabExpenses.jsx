@@ -28,18 +28,18 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const ptMonth = parseInt(ptMonthStr, 10);
 
     if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al Día', colorClass: 'border-emerald-400 bg-success/10 text-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400' };
+        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400' };
     }
 
     if (ptYear === currentYear && ptMonth === currentMonth - 1) {
         if (currentDay > dueDay) {
-            return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/10 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+            return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
         } else {
-            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-amber-400 bg-warning/10 text-amber-700 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-400' };
+            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-400' };
         }
     }
 
-    return { state: 'expired', label: 'Vencido', colorClass: 'border-red-400 bg-danger/10 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+    return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
 };
 
 // ============================================================================
@@ -51,10 +51,10 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
     const isPendingReceipt = statusObj.state === 'pending_receipt';
 
     const colorMap = {
-        blue: 'text-brand bg-blue-50 border-blue-100',
-        orange: 'text-orange-500 bg-orange-50 border-orange-100',
-        cyan: 'text-cyan-500 bg-cyan-50 border-cyan-100',
-        purple: 'text-purple-500 bg-purple-50 border-purple-100',
+        blue: 'text-brand bg-chart-1/10 border-chart-1/30',
+        orange: 'text-chart-4-text bg-chart-4/10 border-chart-4/30',
+        cyan: 'text-chart-5-text bg-chart-5/10 border-cyan-100',
+        purple: 'text-chart-3-text bg-chart-3/10 border-purple-100',
         emerald: 'text-success bg-success/10 border-success/30',
         slate: 'text-content-3 bg-surface-card-hover border-slate-200'
     };
@@ -106,7 +106,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-slate-200 text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand hover:border-blue-200 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-slate-200 text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand hover:border-chart-1/30 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>

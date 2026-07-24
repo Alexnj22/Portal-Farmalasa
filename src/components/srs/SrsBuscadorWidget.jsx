@@ -198,7 +198,7 @@ function SrsResultCard({ product: p, onSelect }) {
                     {nombre || <span className="text-content-3 font-normal italic">Sin nombre</span>}
                 </p>
                 <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full ${
-                    activo ? 'bg-success/10 text-emerald-700' : 'bg-surface-card-hover text-content-3'
+                    activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
                 }`}>
                     {activo ? 'ACTIVO' : 'INACTIVO'}
                 </span>
@@ -224,11 +224,11 @@ function SrsResultCard({ product: p, onSelect }) {
 
             {/* Principio activo + concentración */}
             {principio && (
-                <div className="flex items-start gap-1.5 bg-violet-50 rounded-xl px-3 py-2">
-                    <FlaskConical size={11} className="text-violet-400 shrink-0 mt-0.5" />
-                    <div className="text-[11px] text-violet-700 font-medium leading-snug">
+                <div className="flex items-start gap-1.5 bg-chart-3/10 rounded-xl px-3 py-2">
+                    <FlaskConical size={11} className="text-chart-3-text shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-chart-3-text font-medium leading-snug">
                         <span>{principio}</span>
-                        {conc && <span className="ml-1.5 text-violet-500 font-bold">{conc}</span>}
+                        {conc && <span className="ml-1.5 text-chart-3-text font-bold">{conc}</span>}
                     </div>
                 </div>
             )}

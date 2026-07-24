@@ -201,14 +201,14 @@ const FormTurnos = ({ branches }) => {
                             ) : isBeingDeleted ? (
                                 <>
                                     <button onClick={() => setConfirmingArchiveId(null)} className="w-7 h-7 rounded-full flex items-center justify-center bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-colors"><X size={14} strokeWidth={3}/></button>
-                                    <button onClick={() => handleArchiveShift(shift)} className="w-7 h-7 rounded-full flex items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-colors shadow-md"><Check size={14} strokeWidth={3}/></button>
+                                    <button onClick={() => handleArchiveShift(shift)} className="w-7 h-7 rounded-full flex items-center justify-center bg-danger text-white hover:bg-danger-hover transition-colors shadow-md"><Check size={14} strokeWidth={3}/></button>
                                 </>
                             ) : isArchived ? (
-                                <button onClick={() => handleRestoreShift(shift)} title="Restaurar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-success/10 text-success hover:bg-emerald-500 hover:text-white transition-colors"><Plus size={16} strokeWidth={2.5}/></button>
+                                <button onClick={() => handleRestoreShift(shift)} title="Restaurar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-success/10 text-success hover:bg-success hover:text-white transition-colors"><Plus size={16} strokeWidth={2.5}/></button>
                             ) : (
                                 <>
                                     <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-card-hover text-content-2 hover:bg-brand hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Pencil size={15} strokeWidth={2.5}/></button>
-                                    <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-danger/10 text-danger hover:bg-red-500 hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Package size={15} strokeWidth={2.5}/></button>
+                                    <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-danger/10 text-danger hover:bg-danger hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Package size={15} strokeWidth={2.5}/></button>
                                 </>
                             )}
                         </div>
@@ -238,7 +238,7 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             <div className="flex flex-col h-full bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.03)] rounded-[2rem] p-6 sticky top-0">
                 <div className="flex items-center gap-3 mb-6 shrink-0 border-b border-slate-100 pb-5">
-                    <div className={`w-11 h-11 flex items-center justify-center rounded-2xl shrink-0 border ${editingShiftId ? 'bg-warning/10 text-warning border-warning/30' : 'bg-indigo-50 text-indigo-500 border-indigo-100'}`}>
+                    <div className={`w-11 h-11 flex items-center justify-center rounded-2xl shrink-0 border ${editingShiftId ? 'bg-warning/10 text-warning border-warning/30' : 'bg-chart-3/10 text-chart-3-text border-chart-3/30'}`}>
                         {editingShiftId ? <Pencil size={20} strokeWidth={2.5} /> : <BookOpen size={20} strokeWidth={2.5} />}
                     </div>
                     <div>
@@ -298,7 +298,7 @@ const FormTurnos = ({ branches }) => {
                         type="button" 
                         onClick={handleSaveShift} 
                         disabled={isLoading}
-                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 hover:shadow-lg' : 'bg-brand text-white border-brand-hover hover:bg-brand-hover hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-warning text-white border-amber-600 hover:bg-warning-hover hover:shadow-lg' : 'bg-brand text-white border-brand-hover hover:bg-brand-hover hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         {isLoading ? (
                             <><Loader2 size={14} className="animate-spin"/> Guardando</>

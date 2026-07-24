@@ -14,7 +14,7 @@ const glassInput = "w-full h-10 px-3 bg-surface-card border border-slate-200/80 
 
 const NocturnalLegalInfo = () => (
     <div className="relative group inline-flex items-center ml-1.5">
-        <Info size={11} className="text-indigo-400 cursor-help" strokeWidth={2} />
+        <Info size={11} className="text-chart-3-text cursor-help" strokeWidth={2} />
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
             <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
             <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
@@ -124,19 +124,19 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     {otBank.diurnal > 0 && (
                         <div className="bg-surface-card border border-warning/30 rounded-xl p-2.5 space-y-2">
                             <div className="flex items-center justify-between">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-amber-700">HE Diurnas</p>
-                                <span className="text-[13px] font-black text-amber-800">{otBank.diurnal.toFixed(1)}h</span>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-warning-text">HE Diurnas</p>
+                                <span className="text-[13px] font-black text-warning-text">{otBank.diurnal.toFixed(1)}h</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <p className="text-[8px] font-black text-warning mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dPayInput} onChange={e => setDPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-warning/30 focus:border-amber-400 rounded-lg text-[16px] font-black text-amber-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-warning/30 focus:border-warning rounded-lg text-[16px] font-black text-amber-900 outline-none" />
                                 </div>
                                 <div>
-                                    <p className="text-[8px] font-black text-blue-500 mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
+                                    <p className="text-[8px] font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dCompInput} onChange={e => setDCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-blue-200 focus:border-blue-400 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-chart-1/30 focus:border-chart-1 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
                                 </div>
                             </div>
                             {dUsed > 0 && (
@@ -149,21 +149,21 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
                     {/* Nocturnal section */}
                     {otBank.nocturnal > 0 && (
-                        <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-2.5 space-y-2">
+                        <div className="bg-chart-3/10/60 border border-chart-3/30 rounded-xl p-2.5 space-y-2">
                             <div className="flex items-center justify-between">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-600">HE Nocturnas <span className="text-indigo-400 font-bold normal-case">(×2.25 si se pagan)</span></p>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-chart-3-text">HE Nocturnas <span className="text-chart-3-text font-bold normal-case">(×2.25 si se pagan)</span></p>
                                 <span className="text-[13px] font-black text-indigo-800">{otBank.nocturnal.toFixed(1)}h</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                    <p className="text-[8px] font-black text-indigo-600 mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
+                                    <p className="text-[8px] font-black text-chart-3-text mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nPayInput} onChange={e => setNPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-indigo-200 focus:border-indigo-400 rounded-lg text-[16px] font-black text-indigo-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-chart-3/30 focus:border-indigo-400 rounded-lg text-[16px] font-black text-indigo-900 outline-none" />
                                 </div>
                                 <div>
-                                    <p className="text-[8px] font-black text-blue-500 mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
+                                    <p className="text-[8px] font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nCompInput} onChange={e => setNCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-blue-200 focus:border-blue-400 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-chart-1/30 focus:border-chart-1 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
                                 </div>
                             </div>
                             {nUsed > 0 && (
@@ -176,17 +176,17 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
                     <button type="button" onClick={handleApplyOT}
                         disabled={dError || nError || (dUsed === 0 && nUsed === 0)}
-                        className="w-full py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        className="w-full py-2 rounded-xl bg-warning text-white text-[10px] font-black uppercase tracking-widest hover:bg-warning-hover active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
                         Aplicar distribución
                     </button>
                 </div>
             )}
             {otApplied && (
                 <div className="col-span-2 space-y-1.5">
-                    {dPay  > 0 && <div className="bg-success/10 border border-success/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-emerald-700">✓ {dPay.toFixed(1)}h diurnas → Hrs. Extra Diurnas (se pagan en esta planilla).</p></div>}
-                    {nPay  > 0 && <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-indigo-700">✓ {nPay.toFixed(1)}h nocturnas → Hrs. Extra Nocturnas ×2.25 (se pagan en esta planilla).</p></div>}
-                    {(dComp > 0 || nComp > 0) && <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-blue-700">✓ {(dComp + nComp).toFixed(1)}h marcadas como tiempo compensado.</p></div>}
-                    {(dLeft > 0 || nLeft > 0) && <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-amber-700">{(dLeft + nLeft).toFixed(1)}h permanecen en banco para la siguiente quincena.</p></div>}
+                    {dPay  > 0 && <div className="bg-success/10 border border-success/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-success-text">✓ {dPay.toFixed(1)}h diurnas → Hrs. Extra Diurnas (se pagan en esta planilla).</p></div>}
+                    {nPay  > 0 && <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-chart-3-text">✓ {nPay.toFixed(1)}h nocturnas → Hrs. Extra Nocturnas ×2.25 (se pagan en esta planilla).</p></div>}
+                    {(dComp > 0 || nComp > 0) && <div className="bg-chart-1/10 border border-chart-1/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-chart-1-text">✓ {(dComp + nComp).toFixed(1)}h marcadas como tiempo compensado.</p></div>}
+                    {(dLeft > 0 || nLeft > 0) && <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5"><p className="text-[11px] font-black text-warning-text">{(dLeft + nLeft).toFixed(1)}h permanecen en banco para la siguiente quincena.</p></div>}
                 </div>
             )}
 
@@ -249,7 +249,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     </div>
                     <div>
                         <p className="text-[9px] text-content-3">Líquido</p>
-                        <p className="text-[16px] font-black text-emerald-700">{fmt(preview.net_pay)}</p>
+                        <p className="text-[16px] font-black text-success-text">{fmt(preview.net_pay)}</p>
                     </div>
                 </div>
             </div>
@@ -262,7 +262,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     value={formData._reason || ''}
                     onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
                     placeholder="Ej: Corrección de días por permiso autorizado"
-                    className="w-full h-10 px-3 bg-warning/10 border border-amber-300/60 hover:border-amber-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300"
+                    className="w-full h-10 px-3 bg-warning/10 border border-warning/40/60 hover:border-warning focus:border-warning focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300"
                 />
             </div>
         </div>

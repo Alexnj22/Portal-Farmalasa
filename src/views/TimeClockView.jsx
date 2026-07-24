@@ -132,7 +132,7 @@ const TimeClockView = ({ setView }) => {
   const dateStr  = now.toLocaleDateString('es-SV',  { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#060B18] relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-blue-500/30">
+    <div className="min-h-[100dvh] w-full bg-[#060B18] relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30">
 
       {/* ── Animated Ambient Orbs ─────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">

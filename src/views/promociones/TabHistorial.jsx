@@ -119,7 +119,7 @@ export default function TabHistorial({ searchTerm }) {
                                     {pct !== null ? (
                                         <div className="flex items-center gap-1.5 justify-center">
                                             <div className="w-16 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
-                                                <div className={`h-full rounded-full ${pct >= 100 ? 'bg-emerald-400' : 'bg-content-3'}`} style={{ width: `${pct}%` }} />
+                                                <div className={`h-full rounded-full ${pct >= 100 ? 'bg-success' : 'bg-content-3'}`} style={{ width: `${pct}%` }} />
                                             </div>
                                             <span className="text-[10px] text-content-3">{pct}%</span>
                                         </div>
@@ -157,7 +157,7 @@ export default function TabHistorial({ searchTerm }) {
                                                         <div className="flex-1 min-w-0">
                                                             <span className="text-[11px] font-medium text-content-2 truncate">{pp.products?.nombre}</span>
                                                             {pp.factor_descripcion && (
-                                                                <span className="ml-1.5 text-[10px] text-violet-500">{pp.factor_descripcion}</span>
+                                                                <span className="ml-1.5 text-[10px] text-chart-3-text">{pp.factor_descripcion}</span>
                                                             )}
                                                         </div>
                                                         {pp.stock_inicial != null && (
@@ -166,7 +166,7 @@ export default function TabHistorial({ searchTerm }) {
                                                         {ppPct !== null && (
                                                             <div className="flex items-center gap-1">
                                                                 <div className="w-12 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
-                                                                    <div className={`h-full rounded-full ${ppPct >= 100 ? 'bg-emerald-400' : 'bg-content-3'}`} style={{ width: `${ppPct}%` }} />
+                                                                    <div className={`h-full rounded-full ${ppPct >= 100 ? 'bg-success' : 'bg-content-3'}`} style={{ width: `${ppPct}%` }} />
                                                                 </div>
                                                                 <span className="text-[9px] text-content-3">{ppPct}%</span>
                                                             </div>

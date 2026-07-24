@@ -516,7 +516,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     {isExpanded && (
                         <>
                             <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-white/45">{label}</span>
-                            <span className="text-[9px] font-black uppercase tracking-wider text-amber-600/70 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-warning-text/70 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
                         </>
@@ -557,12 +557,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     />
                     {!isExpanded && alert && (
                         <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
                         </span>
                     )}
                     {!isExpanded && badge > 0 && (
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center z-20">
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger text-white text-[8px] font-black rounded-full flex items-center justify-center z-20">
                             {badge > 9 ? '9+' : badge}
                         </span>
                     )}
@@ -575,12 +575,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </span>
                         {alert && (
                             <span className="relative z-10 flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-danger shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                             </span>
                         )}
                         {badge > 0 && (
-                            <span className="relative z-10 min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                            <span className="relative z-10 min-w-[20px] h-5 px-1.5 bg-danger text-white text-[10px] font-black rounded-full flex items-center justify-center">
                                 {badge > 9 ? '9+' : badge}
                             </span>
                         )}
@@ -666,14 +666,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {label}
                             </span>
                             {!isOpen && groupBadge > 0 && (
-                                <span className="min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                                <span className="min-w-[20px] h-5 px-1.5 bg-danger text-white text-[10px] font-black rounded-full flex items-center justify-center">
                                     {groupBadge > 9 ? '9+' : groupBadge}
                                 </span>
                             )}
                             {!isOpen && groupAlert && (
                                 <span className="relative flex h-2 w-2 flex-shrink-0">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
                                 </span>
                             )}
                             <ChevronDown
@@ -868,10 +868,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             
                                             {hasPermission('su_pin', 'can_view') && (
                                                 <button onClick={handleCopySuPin} type="button"
-                                                    className={`group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-violet-500/[0.12] hover:border-violet-400/[0.18] hover:scale-[1.02] active:scale-[0.98] ${focusRing}`}
+                                                    className={`group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-chart-3/[0.12] hover:border-violet-400/[0.18] hover:scale-[1.02] active:scale-[0.98] ${focusRing}`}
                                                     title="Copiar código SU">
                                                     <div className="flex items-center gap-1 mb-0.5">
-                                                        <CheckCircle2 size={10} className="text-white/40 group-hover/supin:text-violet-400 transition-colors" strokeWidth={2} />
+                                                        <CheckCircle2 size={10} className="text-white/40 group-hover/supin:text-chart-3-text transition-colors" strokeWidth={2} />
                                                         <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">SU</span>
                                                     </div>
                                                     <div className="relative h-4 flex items-center justify-center w-full">
@@ -912,7 +912,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             </div>
                                         </button>
                                         <button onClick={handleLogout} aria-label="Cerrar sesión"
-                                            className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-red-400 hover:bg-red-500/[0.14] hover:border-red-500/[0.18] ${focusRing}`}
+                                            className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-red-400 hover:bg-danger/[0.14] hover:border-danger/[0.18] ${focusRing}`}
                                             type="button">
                                             <LogOut size={16} strokeWidth={1.8} />
                                         </button>
@@ -950,7 +950,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <button onClick={handleCopySuPin} type="button" aria-label="Copiar código SU"
                                             className={`relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group
                                                 bg-white/[0.07] border border-white/[0.09]
-                                                text-violet-300/70 hover:bg-violet-500/[0.12] hover:border-violet-400/[0.18]
+                                                text-violet-300/70 hover:bg-chart-3/[0.12] hover:border-violet-400/[0.18]
                                                 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(139,92,246,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]
                                                 hover:scale-105 active:scale-[0.97] transition-all ${focusRing}`}
                                             title="PIN SU">
@@ -984,8 +984,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </div>
                                     <button onClick={handleLogout} type="button" aria-label="Cerrar sesión"
                                         className={`w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                            bg-red-500/[0.08] border border-red-500/[0.12] text-red-400/60
-                                            hover:text-red-300 hover:bg-red-500/[0.18] hover:border-red-500/[0.22]
+                                            bg-danger/[0.08] border border-danger/[0.12] text-red-400/60
+                                            hover:text-red-300 hover:bg-danger/[0.18] hover:border-danger/[0.22]
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
@@ -1140,14 +1140,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </div>
                                     <span className="text-[13px] font-semibold whitespace-nowrap text-white pr-1">{flyout.label}</span>
                                     {flyout.badge > 0 && (
-                                        <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                             {flyout.badge > 9 ? '9+' : flyout.badge}
                                         </span>
                                     )}
                                     {flyout.alert && (
                                         <span className="relative flex h-2 w-2 flex-shrink-0">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
                                         </span>
                                     )}
                                     {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
@@ -1176,7 +1176,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                         <MIcon size={14} strokeWidth={1.5} className="text-white/40" />
                                                     </div>
                                                     <span className="text-[13px] font-medium text-white/40 flex-1 whitespace-nowrap">{m.label}</span>
-                                                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/80 bg-warning/10 border border-warning/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                                         Próximamente
                                                     </span>
                                                 </div>
@@ -1204,14 +1204,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     <span className="text-[13px] font-medium whitespace-nowrap flex-1">{m.label}</span>
                                                     {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
                                                     {m.badge > 0 && (
-                                                        <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                             {m.badge > 9 ? '9+' : m.badge}
                                                         </span>
                                                     )}
                                                     {m.alert && (
                                                         <span className="relative flex h-2 w-2 flex-shrink-0">
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
+                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
                                                         </span>
                                                     )}
                                                 </button>

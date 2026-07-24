@@ -2,11 +2,11 @@ import React from 'react';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
 const SERVICE_CONFIG = {
-    rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-purple-600 bg-purple-50 border-purple-200', ring: 'focus:border-purple-500 focus:ring-purple-500/20', providerLabel: 'Nombre del Arrendador' },
-    light: { title: 'Energía Eléctrica', icon: Zap, color: 'text-orange-500 bg-orange-50 border-orange-200', ring: 'focus:border-orange-500 focus:ring-orange-500/20', providerLabel: 'Compañía Eléctrica' },
-    water: { title: 'Agua Potable', icon: Droplet, color: 'text-cyan-500 bg-cyan-50 border-cyan-200', ring: 'focus:border-cyan-500 focus:ring-cyan-500/20', providerLabel: 'Servicio de Agua' },
-    internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-blue-500 bg-blue-50 border-blue-200', ring: 'focus:border-blue-500 focus:ring-blue-500/20', providerLabel: 'Proveedor ISP' },
-    phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-emerald-500 focus:ring-emerald-500/20', providerLabel: 'Telefonía Móvil' },
+    rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-purple-500 focus:ring-purple-500/20', providerLabel: 'Nombre del Arrendador' },
+    light: { title: 'Energía Eléctrica', icon: Zap, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', ring: 'focus:border-chart-4 focus:ring-orange-500/20', providerLabel: 'Compañía Eléctrica' },
+    water: { title: 'Agua Potable', icon: Droplet, color: 'text-chart-5-text bg-chart-5/10 border-chart-5/30', ring: 'focus:border-cyan-500 focus:ring-cyan-500/20', providerLabel: 'Servicio de Agua' },
+    internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-chart-1-text bg-chart-1/10 border-chart-1/30', ring: 'focus:border-chart-1 focus:ring-blue-500/20', providerLabel: 'Proveedor ISP' },
+    phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-success focus:ring-emerald-500/20', providerLabel: 'Telefonía Móvil' },
     taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-slate-300', ring: 'focus:border-slate-500 focus:ring-slate-500/20', providerLabel: 'Alcaldía / Entidad' }
 };
 
@@ -59,13 +59,13 @@ const FormServicePayment = ({ formData, setFormData }) => {
         const [ptYear, ptMonth] = paidThrough.split('-').map(Number);
         
         if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-            return { state: 'Estará Al Día', color: 'text-emerald-700 bg-success/10 border-success/30', icon: CheckCircle };
+            return { state: 'Estará Al Día', color: 'text-success-text bg-success/10 border-success/30', icon: CheckCircle };
         }
         if (ptYear === currentYear && ptMonth === currentMonth - 1) {
-            if (currentDay > parseInt(dueDay, 10)) return { state: 'Estará Vencido', color: 'text-red-700 bg-danger/10 border-danger/30', icon: AlertTriangle };
-            return { state: 'Vence Pronto', color: 'text-amber-700 bg-warning/10 border-warning/30', icon: Clock };
+            if (currentDay > parseInt(dueDay, 10)) return { state: 'Estará Vencido', color: 'text-danger-text bg-danger/10 border-danger/30', icon: AlertTriangle };
+            return { state: 'Vence Pronto', color: 'text-warning-text bg-warning/10 border-warning/30', icon: Clock };
         }
-        return { state: 'Estará Vencido', color: 'text-red-700 bg-danger/10 border-danger/30', icon: AlertTriangle };
+        return { state: 'Estará Vencido', color: 'text-danger-text bg-danger/10 border-danger/30', icon: AlertTriangle };
     };
 
     const statusPreview = calculatePreviewStatus();

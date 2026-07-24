@@ -33,9 +33,9 @@ export default function PushPromptBanner() {
   return (
     <div data-surface="dropdown" className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[500] w-[calc(100%-2rem)] max-w-sm
                     flex items-center gap-3 px-4 py-3 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-violet-500/20 border border-violet-400/25
+      <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-chart-3/20 border border-violet-400/25
                       flex items-center justify-center">
-        <Bell size={16} className="text-violet-500" />
+        <Bell size={16} className="text-chart-3-text" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold text-content leading-tight">Activa las notificaciones</p>

@@ -99,7 +99,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             {/* 2. Categoría */}
             <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
-                    <Tag size={12} className="text-purple-500"/> Categoría
+                    <Tag size={12} className="text-chart-3-text"/> Categoría
                 </label>
                 <LiquidSelect
                     value={data.category}
@@ -126,9 +126,9 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         htmlFor="file-upload-custom"
                         className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
                             data.file || data.url
-                            ? 'border-emerald-400 bg-success/10 hover:bg-success/10' 
+                            ? 'border-success bg-success/10 hover:bg-success/10' 
                             : isEditing && !data.url
-                                ? 'border-red-300 bg-danger/10 hover:bg-danger/10 hover:border-red-400' // Alerta roja si falta subir en edición
+                                ? 'border-danger/40 bg-danger/10 hover:bg-danger/10 hover:border-danger' // Alerta roja si falta subir en edición
                                 : 'border-slate-300 bg-surface-card backdrop-blur-md hover:bg-white hover:border-brand/50'
                         }`}
                     >
@@ -168,7 +168,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <p className="text-[13px] font-black text-content-2 group-hover:text-brand transition-colors">¿Tiene fecha de expedición?</p>
                             <p className="text-[10px] font-bold text-content-3 mt-0.5">Útil para documentos de renovación periódica.</p>
                         </div>
-                        <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasIssueDate ? 'bg-emerald-500' : 'bg-surface-card-hover'}`}>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasIssueDate ? 'bg-success' : 'bg-surface-card-hover'}`}>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasIssueDate ? 'translate-x-5' : 'translate-x-0'}`}></div>
                         </div>
                     </div>
@@ -193,7 +193,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <p className="text-[13px] font-black text-content-2 group-hover:text-warning transition-colors">¿Tiene fecha de vencimiento?</p>
                             <p className="text-[10px] font-bold text-content-3 mt-0.5">El sistema te alertará antes de que caduque.</p>
                         </div>
-                        <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasExpiration ? 'bg-amber-500' : 'bg-surface-card-hover'}`}>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasExpiration ? 'bg-warning' : 'bg-surface-card-hover'}`}>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasExpiration ? 'translate-x-5' : 'translate-x-0'}`}></div>
                         </div>
                     </div>

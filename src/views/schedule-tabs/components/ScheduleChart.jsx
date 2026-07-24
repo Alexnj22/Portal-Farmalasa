@@ -16,7 +16,7 @@ const ScheduleChart = ({
             <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
                     <span className="flex items-center gap-1.5 text-[10.5px] font-black text-content-2 tracking-tight whitespace-nowrap">
-                        <TrendingUp size={10} strokeWidth={2.5} className="text-cyan-500 shrink-0" />
+                        <TrendingUp size={10} strokeWidth={2.5} className="text-chart-5-text shrink-0" />
                         {chartTitle}
                     </span>
                     {/* Legend inline */}
@@ -48,7 +48,7 @@ const ScheduleChart = ({
                     </div>
                     <div className="opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200">
                         <button onClick={() => openModal && openModal('viewWfmAnalytics')}
-                            className="w-6 h-6 rounded-full bg-surface-card backdrop-blur-md text-brand border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all"
+                            className="w-6 h-6 rounded-full bg-surface-card backdrop-blur-md text-brand border border-chart-1/30 shadow-md flex items-center justify-center hover:bg-chart-1/10 hover:scale-105 active:scale-[0.97] transition-all"
                             title="Expandir Análisis">
                             <Maximize2 size={10} strokeWidth={2.5} />
                         </button>

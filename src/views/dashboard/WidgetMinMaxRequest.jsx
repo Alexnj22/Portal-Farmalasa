@@ -153,7 +153,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
               {loadingCur ? <Loader2 size={13} className="animate-spin text-content-3" /> : (
                 <div className="text-right">
                   <span className="text-[11px] font-bold text-content-2">
-                    MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span> <span className="text-content-3 font-medium">und</span>
+                    MIN <span className="text-chart-4-text">{current?.min ?? '—'}</span> · MAX <span className="text-chart-1-text">{current?.max ?? '—'}</span> <span className="text-content-3 font-medium">und</span>
                   </span>
                   {(fmtEquiv(current?.min, pres) || fmtEquiv(current?.max, pres)) && (
                     <div className="text-[9px] text-content-3 font-semibold">
@@ -177,26 +177,26 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         )}
 
         {/* Aviso: valores en unidades + factor de presentación */}
-        <div className="flex items-start gap-2 rounded-xl bg-blue-50/70 border border-blue-100 px-3 py-2">
-          <Package size={13} className="text-blue-500 mt-0.5 shrink-0" />
-          <div className="text-[10px] text-blue-700 font-medium leading-snug">
+        <div className="flex items-start gap-2 rounded-xl bg-chart-1/10/70 border border-chart-1/30 px-3 py-2">
+          <Package size={13} className="text-chart-1-text mt-0.5 shrink-0" />
+          <div className="text-[10px] text-chart-1-text font-medium leading-snug">
             MIN y MAX se ingresan en <b>unidades</b>.
             {domPres && <> <b>{domPres.factor} und = 1 {domPres.tipo?.trim() || 'caja'}</b>.</>}
-            {domPres?.descripcion && <div className="text-[9px] text-blue-500/80 mt-0.5">Factor calculado: {domPres.descripcion}</div>}
+            {domPres?.descripcion && <div className="text-[9px] text-chart-1-text/80 mt-0.5">Factor calculado: {domPres.descripcion}</div>}
           </div>
         </div>
 
         {/* Nuevos valores */}
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black text-orange-500 uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
+            <label className="text-[10px] font-black text-chart-4-text uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
             <input type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
-              className="w-full text-right text-[16px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300" />
+              className="w-full text-right text-[16px] font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
+            <label className="text-[10px] font-black text-chart-1-text uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
             <input type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
-              className="w-full text-right text-[16px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-300" />
+              className="w-full text-right text-[16px] font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-300" />
           </div>
         </div>
 

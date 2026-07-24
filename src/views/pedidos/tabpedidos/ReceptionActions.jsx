@@ -115,11 +115,11 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Revisar items del reenvío (después de confirmar la segunda llegada) */}
             {llegadaOk && todosReenviosResueltos && !hasFaltaPendiente && hasFaltaItems && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
-                    <Database size={13} className="text-violet-500" />
-                    <span className="text-violet-700">Revisar caja del reenvío en Sistema de Ventas</span>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10/40 border-violet-100 text-[11px]">
+                    <Database size={13} className="text-chart-3-text" />
+                    <span className="text-chart-3-text">Revisar caja del reenvío en Sistema de Ventas</span>
                     <button onClick={onOpenReenvioModal} disabled={!!busy}
-                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-[0.97] transition-all disabled:opacity-50">
+                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3 text-white hover:bg-chart-3 active:scale-[0.97] transition-all disabled:opacity-50">
                         Revisar
                     </button>
                 </div>
@@ -127,16 +127,16 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Paso 2: Confirmar en Sistema de Ventas */}
             {llegadaOk && !erpOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
-                    <Database size={13} className="text-violet-500" />
-                    <span className="text-violet-700">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10/40 border-violet-100 text-[11px]">
+                    <Database size={13} className="text-chart-3-text" />
+                    <span className="text-chart-3-text">
                         Paso 2 — Confirmar en Sistema de Ventas {pendientesCount > 0 ? `(${pendientesCount})` : ''}
                     </span>
                     <div className="ml-auto flex items-center gap-1.5">
                         {apoyoChips}
                         {apoyoBtn}
                         <button onClick={onOpenRecibir} disabled={!!busy}
-                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-[0.97] transition-all disabled:opacity-50">
+                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3 text-white hover:bg-chart-3 active:scale-[0.97] transition-all disabled:opacity-50">
                             Confirmar
                         </button>
                     </div>

@@ -11,8 +11,8 @@ const FormAuditDetail = ({ data }) => {
 
     const getSeverityStyles = (severity) => {
         switch (severity) {
-            case 'CRITICAL': return { bg: 'bg-red-500', icon: <ShieldAlert size={20} className="text-white" /> };
-            case 'WARNING': return { bg: 'bg-amber-500', icon: <AlertTriangle size={20} className="text-white" /> };
+            case 'CRITICAL': return { bg: 'bg-danger', icon: <ShieldAlert size={20} className="text-white" /> };
+            case 'WARNING': return { bg: 'bg-warning', icon: <AlertTriangle size={20} className="text-white" /> };
             default: return { bg: 'bg-brand', icon: <CheckCircle2 size={20} className="text-white" /> };
         }
     };
@@ -63,7 +63,7 @@ const FormAuditDetail = ({ data }) => {
                     </div>
 
                     <div className={itemContainerClass}>
-                        <div className={`${iconBoxClass} bg-blue-50/50`}>
+                        <div className={`${iconBoxClass} bg-chart-1/10/50`}>
                             <Activity size={16} className="text-brand" />
                         </div>
                         <div className="min-w-0 pt-0.5">
@@ -121,7 +121,7 @@ const FormAuditDetail = ({ data }) => {
 
                 <div className="relative flex-1">
                     <div className="absolute inset-0 p-8 md:p-10 overflow-y-auto scrollbar-hide">
-                        <pre className="text-success font-mono text-[13px] leading-relaxed whitespace-pre-wrap selection:bg-emerald-500/30 selection:text-white">
+                        <pre className="text-success font-mono text-[13px] leading-relaxed whitespace-pre-wrap selection:bg-success/30 selection:text-white">
                             {(!data.details || Object.keys(data.details).length === 0) 
                                 ? "// No hay metadatos adicionales registrados." 
                                 : JSON.stringify(data.details, null, 4)}

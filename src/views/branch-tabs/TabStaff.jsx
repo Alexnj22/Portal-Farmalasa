@@ -16,10 +16,10 @@ import { fetchBranchHourlySalesAll } from '../../data/schedules';
 // ============================================================================
 const getStaffTheme = (colorTheme) => {
     const themes = {
-        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-amber-400', badge: 'bg-amber-500', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-amber-400 to-orange-500' },
-        blue: { bg: 'bg-surface-card hover:bg-blue-50/50', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-indigo-500' },
-        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-emerald-400', badge: 'bg-emerald-500', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-emerald-400 to-teal-500' },
-        purple: { bg: 'bg-surface-card hover:bg-purple-50/50', text: 'text-purple-600', ring: 'border-purple-400', badge: 'bg-purple-500', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-purple-400 to-fuchsia-500' },
+        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-amber-400 to-orange-500' },
+        blue: { bg: 'bg-surface-card hover:bg-chart-1/10/50', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-brand to-indigo-500' },
+        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-emerald-400 to-teal-500' },
+        purple: { bg: 'bg-surface-card hover:bg-chart-3/10/50', text: 'text-chart-3-text', ring: 'border-purple-400', badge: 'bg-chart-3', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-purple-400 to-fuchsia-500' },
         slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
     };
     return themes[colorTheme] || themes.slate;
@@ -66,13 +66,13 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     if (isMissing) {
         return (
-            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-red-400/50 hover:shadow-[0_8px_20px_rgba(239,68,68,0.1)] hover:-translate-y-1 min-h-[260px]">
+            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 hover:shadow-[0_8px_20px_rgba(239,68,68,0.1)] hover:-translate-y-1 min-h-[260px]">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
                 <p className="text-[14px] font-black text-content-2 leading-tight group-hover:text-danger transition-colors text-center">{missingText}</p>
                 <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-red-500 group-hover:text-white transition-all">
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger group-hover:text-white transition-all">
                     <Edit3 size={10} strokeWidth={2.5} /> <span className="text-[7px] font-black uppercase tracking-widest">Asignar</span>
                 </div>
             </div>
@@ -143,7 +143,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                         <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col flex-1 overflow-hidden">
                             <span className="text-[10px] font-black text-content-2 uppercase tracking-widest leading-none flex items-center gap-1.5">
-                                Ingreso {hireDate && <span className="text-brand bg-blue-50 px-1 rounded lowercase font-bold tracking-normal">({getRelativeTime(hireDate)})</span>}
+                                Ingreso {hireDate && <span className="text-brand bg-chart-1/10 px-1 rounded lowercase font-bold tracking-normal">({getRelativeTime(hireDate)})</span>}
                             </span>
                             <span className="text-[10px] font-bold text-content-2 mt-0.5 truncate">{formatDate(hireDate)}</span>
                         </div>
@@ -256,7 +256,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <button
                     onClick={startHistoricalSync}
                     disabled={isSyncing}
-                    className="px-5 py-2.5 bg-brand hover:bg-blue-500 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,82,204,0.3)] active:scale-[0.97]"
+                    className="px-5 py-2.5 bg-brand hover:bg-chart-1 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,82,204,0.3)] active:scale-[0.97]"
                 >
                     {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
                 </button>
@@ -379,7 +379,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     }
 
     const complianceScore = reqCount > 0 ? Math.round((metCount / reqCount) * 100) : 100;
-    const scoreTheme = complianceScore === 100 ? 'bg-emerald-500' : complianceScore >= 70 ? 'bg-amber-500' : 'bg-red-500';
+    const scoreTheme = complianceScore === 100 ? 'bg-success' : complianceScore >= 70 ? 'bg-warning' : 'bg-danger';
     const textTheme = complianceScore === 100 ? 'text-success' : complianceScore >= 70 ? 'text-warning' : 'text-danger';
 
     const MIN_CONCURRENT_STAFF = 2;
@@ -461,7 +461,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <span className="text-[9px] font-black leading-none text-danger">-{minStaff - coverageStaffCount}</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-amber-200/50 rounded-full overflow-hidden">
-                                    <div className="h-full bg-red-400 animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
+                                    <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
                                 </div>
                             </div>
                             <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-[1.2rem] shadow-[0_15px_60px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
@@ -542,15 +542,15 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
                     >
                         {aiMode ? (
-                            <div className="absolute inset-[1px] bg-indigo-50 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-indigo-200">
-                                <X size={16} strokeWidth={3} className="text-indigo-400 group-hover/ai-btn:text-indigo-600 transition-colors" />
+                            <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
+                                <X size={16} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
                             </div>
                         ) : (
                             <>
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
                                 <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
-                                <div className="absolute inset-0 border border-purple-200/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
-                                <Sparkles size={18} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
+                                <div className="absolute inset-0 border border-chart-3/30/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
+                                <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-20 relative" />
                             </>
                         )}
                     </button>}
@@ -565,13 +565,13 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
-                        <div className="bg-surface-card backdrop-blur-3xl border border-indigo-100/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
 
                             {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                                <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-indigo-500/20 blur-[80px] rounded-full animate-pulse [animation-duration:4s]"></div>
-                                <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-purple-500/20 blur-[80px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
-                                <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-cyan-400/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
+                                <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:4s]"></div>
+                                <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
+                                <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-5/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
                             </div>
 
                             <div className="relative z-10 flex flex-col items-center justify-center text-center">
@@ -584,18 +584,18 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 </div>
 
                                 <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico WFM Inteligente</h2>
-                                <p className="text-sm font-bold text-indigo-400/80 uppercase tracking-widest mb-10">Análisis de la plantilla y cumplimiento legal</p>
+                                <p className="text-sm font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis de la plantilla y cumplimiento legal</p>
 
                                 {isGeneratingAi ? (
                                     /* SKELETON DE CARGA NEURONAL */
                                     <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-10">
                                         <div className="flex flex-col items-center justify-center mb-8">
                                             <div className="relative w-12 h-12 flex items-center justify-center mb-3">
-                                                <div className="absolute inset-0 border-2 border-indigo-200/50 rounded-full animate-ping [animation-duration:2s]"></div>
+                                                <div className="absolute inset-0 border-2 border-chart-3/30/50 rounded-full animate-ping [animation-duration:2s]"></div>
                                                 <div className="absolute inset-1 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
                                                 <div className="absolute inset-3 border-l-2 border-r-2 border-cyan-400 rounded-full animate-spin [animation-duration:2.5s] direction-reverse"></div>
                                             </div>
-                                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">Analizando Organización...</p>
+                                            <p className="text-[10px] font-black text-chart-3-text uppercase tracking-widest animate-pulse">Analizando Organización...</p>
                                         </div>
                                         <div className="space-y-4">
                                             <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
@@ -633,7 +633,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */
                         <div className="space-y-8 mb-8 pt-2">
                             {/* Dashboard Skeleton */}
-                            <div className="bg-surface-card border border-blue-200/50 rounded-[1.5rem] p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
+                            <div className="bg-surface-card border border-chart-1/30/50 rounded-[1.5rem] p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full skeleton"></div>
                                     <div className="flex flex-col gap-2 w-1/3">
@@ -665,9 +665,9 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <div className="pt-2">
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-brand/5 to-indigo-500/5 border border-blue-200/50 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-gradient-to-br from-brand/5 to-indigo-500/5 border border-chart-1/30/50 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-blue-100 text-brand flex items-center justify-center shadow-sm">
+                                        <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />
                                         </div>
                                         <div>
@@ -683,25 +683,25 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 <p className="text-[18px] font-black text-content mt-1">{historicalSales.length}</p>
                                                 <p className="text-[9px] font-bold text-content-3">Horas de venta analizadas</p>
                                             </div>
-                                            <div className="bg-blue-50/80 backdrop-blur-md rounded-xl p-3 border border-blue-100 shadow-[0_2px_10px_rgba(0,82,204,0.05)]">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-blue-500">Pico Máximo Detectado</p>
-                                                <p className="text-[15px] font-black text-blue-700 mt-1 flex items-center gap-1.5">
-                                                    {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-blue-400" />
+                                            <div className="bg-chart-1/10/80 backdrop-blur-md rounded-xl p-3 border border-chart-1/30 shadow-[0_2px_10px_rgba(0,82,204,0.05)]">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-chart-1-text">Pico Máximo Detectado</p>
+                                                <p className="text-[15px] font-black text-chart-1-text mt-1 flex items-center gap-1.5">
+                                                    {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-chart-1-text" />
                                                 </p>
-                                                <p className="text-[9px] font-bold text-blue-500">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
+                                                <p className="text-[9px] font-bold text-chart-1-text">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
                                             </div>
                                             <div className="bg-warning/10 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-warning">Impacto en Plantilla</p>
-                                                <p className="text-[18px] font-black text-amber-700 mt-1">+{extraVolumeHours} Hrs</p>
+                                                <p className="text-[18px] font-black text-warning-text mt-1">+{extraVolumeHours} Hrs</p>
                                                 <p className="text-[9px] font-bold text-warning">Añadidas al presupuesto semanal</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-indigo-50/60 backdrop-blur-md rounded-xl p-4 border border-indigo-100 text-left flex items-start gap-4">
-                                            <Hourglass size={28} className="text-indigo-400 shrink-0 mt-1" strokeWidth={2} />
+                                        <div className="bg-chart-3/10/60 backdrop-blur-md rounded-xl p-4 border border-chart-3/30 text-left flex items-start gap-4">
+                                            <Hourglass size={28} className="text-chart-3-text shrink-0 mt-1" strokeWidth={2} />
                                             <div>
-                                                <p className="text-[12px] font-black uppercase tracking-widest text-indigo-700 mb-1">Fase de Incubación (Recolección de Datos)</p>
-                                                <p className="text-[10px] font-bold text-indigo-600/80 leading-relaxed">
+                                                <p className="text-[12px] font-black uppercase tracking-widest text-chart-3-text mb-1">Fase de Incubación (Recolección de Datos)</p>
+                                                <p className="text-[10px] font-bold text-chart-3-text/80 leading-relaxed">
                                                     La sucursal tiene menos de 3 meses. El algoritmo está recopilando silenciosamente los patrones de venta sin afectar el cálculo base. Cuando el historial madure, se activarán las sugerencias automáticas de refuerzo de plantilla.
                                                 </p>
                                             </div>
@@ -758,7 +758,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>
-                                            <p className="text-[12px] font-black text-amber-700">Plaza Sugerida</p>
+                                            <p className="text-[12px] font-black text-warning-text">Plaza Sugerida</p>
                                             <p className="text-[8px] font-bold text-warning uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
                                         </div>
                                     ))}

@@ -377,7 +377,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             </span>
                         )}
                         {cajasExtra > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-chart-7/10 text-chart-7-text border border-sky-200">
                                 + {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}
                             </span>
                         )}

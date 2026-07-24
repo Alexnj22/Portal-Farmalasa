@@ -13,7 +13,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
         <PedidoModal onClose={onCancel}>
                 <PedidoModal.Header>
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-sm shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-warning flex items-center justify-center shadow-sm shrink-0">
                             <Pause size={20} className="text-white" />
                         </div>
                         <div>
@@ -25,11 +25,11 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
 
                 <PedidoModal.Body className="space-y-4">
                     {kioskLunch && (
-                        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200">
-                            <Coffee size={15} className="text-teal-500 shrink-0" />
+                        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-chart-9/10 border border-chart-9/30">
+                            <Coffee size={15} className="text-chart-9-text shrink-0" />
                             <div>
                                 <p className="text-[12px] font-semibold text-teal-800">Almuerzo detectado en el kiosko</p>
-                                <p className="text-[11px] text-teal-600">Tu marcaje de salida a almuerzo se registró hoy.</p>
+                                <p className="text-[11px] text-chart-9-text">Tu marcaje de salida a almuerzo se registró hoy.</p>
                             </div>
                         </div>
                     )}
@@ -48,7 +48,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                                         onClick={() => !isUsed && setRazonSel(opt.key)}
                                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
                                             isUsed ? 'border-slate-100 bg-surface-card-hover text-content-3 cursor-not-allowed' :
-                                            isSel  ? 'border-amber-400 bg-warning/10 text-amber-800 shadow-sm' :
+                                            isSel  ? 'border-warning bg-warning/10 text-warning-text shadow-sm' :
                                                      'border-slate-200 text-content-2 hover:bg-surface-card-hover'
                                         }`}
                                     >
@@ -72,7 +72,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             onChange={e => setComment(e.target.value)}
                             placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
                             rows={2}
-                            className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors text-content-2"
+                            className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-warning bg-white resize-none transition-colors text-content-2"
                         />
                     </div>
                 </PedidoModal.Body>
@@ -85,7 +85,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                         <button
                             disabled={!canConfirm || busy}
                             onClick={onConfirm}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-warning text-white font-semibold hover:bg-warning-hover text-[13px] transition-colors disabled:opacity-50 shadow-sm"
                         >
                             {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
                             Confirmar pausa

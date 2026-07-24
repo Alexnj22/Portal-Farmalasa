@@ -34,8 +34,8 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
             <LiquidModal.Header>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center">
-                            <CalendarClock size={16} className="text-indigo-600" />
+                        <div className="w-8 h-8 rounded-xl bg-chart-3/10 flex items-center justify-center">
+                            <CalendarClock size={16} className="text-chart-3-text" />
                         </div>
                         <div>
                             <p className="text-[13px] font-bold text-content">
@@ -99,7 +99,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                     <button
                         onClick={() => value && onConfirm(new Date(value).toISOString())}
                         disabled={!value || saving}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                         <Check size={13} />
                         {saving ? 'Guardando…' : isEditing ? 'Actualizar' : 'Confirmar'}

@@ -124,7 +124,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     <div>
                         <h3 className="text-xl font-black text-emerald-950 tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
                         <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 bg-surface-card rounded-md text-[9px] font-black text-emerald-700 uppercase tracking-widest border border-success/30">
+                            <span className="px-2.5 py-1 bg-surface-card rounded-md text-[9px] font-black text-success-text uppercase tracking-widest border border-success/30">
                                 Sede: {formData.name}
                             </span>
                             {currentPaidThrough && (
@@ -182,7 +182,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* ALERTA DE CONFLICTO */}
                 {isConflict && (
-                    <div className="flex items-center gap-3 text-red-700 bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.1)] animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.1)] animate-in fade-in slide-in-from-top-2">
                         <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
                         <span className="text-[11px] font-black uppercase tracking-widest leading-tight">
                             Ya existe un pago registrado para {currentPaidThrough} o posterior.
@@ -226,7 +226,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-success mb-1 border border-success/30">
                                     <CheckCircle size={24} strokeWidth={2} />
                                 </div>
-                                <p className="text-[13px] font-black text-emerald-800 tracking-tight max-w-[200px] truncate">
+                                <p className="text-[13px] font-black text-success-text tracking-tight max-w-[200px] truncate">
                                     {paymentData.receiptFile.name}
                                 </p>
                                 <p className="text-[10px] font-bold text-success/70 uppercase tracking-widest">

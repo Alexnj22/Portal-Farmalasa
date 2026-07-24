@@ -1055,7 +1055,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             {isEditMode && (
                 <div className="mb-4 bg-warning/10 border border-warning/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm">
                     <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <p className="text-[11px] text-amber-700 font-medium leading-tight">
+                    <p className="text-[11px] text-warning-text font-medium leading-tight">
                         Los campos marcados con <span className="font-black">Acción RRHH</span> (sucursal, cargo, salario, contrato) solo se pueden modificar mediante una acción de personal desde el perfil del empleado.
                     </p>
                 </div>
@@ -1072,7 +1072,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="bg-warning/10 backdrop-blur-md border border-warning/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-4 mb-2">
                                 <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <div>
-                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-amber-700">Posible Duplicado</h4>
+                                    <h4 className="text-[11px] font-black uppercase tracking-widest text-warning-text">Posible Duplicado</h4>
                                     <p className="text-[11px] text-warning font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Verifica si es una persona diferente (Homónimo).</p>
                                 </div>
                             </div>
@@ -1117,7 +1117,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                         {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{birthDateErrorMsg}</span>}
                                     </label>
-                                    <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-red-400 !bg-danger/10' : isMinor ? '!border-amber-300 !bg-warning/10' : 'border-slate-200/80'}`}>
+                                    <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-danger !bg-danger/10' : isMinor ? '!border-warning/40 !bg-warning/10' : 'border-slate-200/80'}`}>
                                         <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} placeholder="Seleccionar Fecha" />
                                     </div>
                                 </div>
@@ -1159,7 +1159,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {isMinor && (
                                     <div className="md:col-span-2 bg-warning/10 border border-warning/30 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
                                         <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
-                                        <p className="text-[11px] text-amber-700 font-medium leading-tight">
+                                        <p className="text-[11px] text-warning-text font-medium leading-tight">
                                             <span className="font-black">Menor de edad (16-17 años).</span> Por Ley (Art. 116-117 Código de Trabajo): prohibido asignar turno nocturno, y requiere examen médico previo gratuito antes de admitirlo (con repetición anual hasta los 18 años). En El Salvador el DUI no se tramita hasta los 18 — por eso se pide un documento alterno (partida de nacimiento, carné de minoridad).
                                         </p>
                                     </div>
@@ -1168,11 +1168,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Teléfono {phoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{phoneErrorMsg}</span>}</span>
-                                        <button type="button" onClick={addPhone} className="text-brand hover:text-blue-700 flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
+                                        <button type="button" onClick={addPhone} className="text-brand hover:text-chart-1-text flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
                                             <Plus size={11} strokeWidth={3} /> Agregar
                                         </button>
                                     </label>
-                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${phoneHasError ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${phoneHasError ? '!border-danger !bg-danger/10' : ''}`}>
                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
                                         <input type="tel" name="phone" value={formData.phone || ''}
                                             onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
@@ -1190,7 +1190,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
                                             return (
                                                 <div key={idx} className="flex items-center gap-2">
-                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-red-400 !bg-danger/10' : 'border-slate-200/80'}`}>
+                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-slate-200/80'}`}>
                                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
                                                         <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-[16px] font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -1210,7 +1210,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Género</span>
                                         {!formData.gender && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                                     </label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.gender ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.gender ? '!border-danger !bg-danger/10' : ''}`}>
                                         <LiquidSelect value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
@@ -1219,7 +1219,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Estado Civil</span>
                                         {!formData.marital_status && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                                     </label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.marital_status ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.marital_status ? '!border-danger !bg-danger/10' : ''}`}>
                                         <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
@@ -1241,13 +1241,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Distrito</span>
                                         {formData.department && !formData.municipality && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                                     </label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${formData.department && !formData.municipality ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${formData.department && !formData.municipality ? '!border-danger !bg-danger/10' : ''}`}>
                                         <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
 
                                 <div className="md:col-span-2 -mt-2">
-                                    <button type="button" onClick={addAddress} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-brand hover:text-blue-700 transition-colors">
+                                    <button type="button" onClick={addAddress} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-brand hover:text-chart-1-text transition-colors">
                                         <Plus size={11} strokeWidth={3} /> Agregar Dirección Alterna
                                     </button>
                                 </div>
@@ -1279,7 +1279,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 <span>Distrito</span>
                                                                 {addr.department && !addr.municipality && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                                                             </label>
-                                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${addr.department && !addr.municipality ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${addr.department && !addr.municipality ? '!border-danger !bg-danger/10' : ''}`}>
                                                                 <LiquidSelect value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Distrito...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                             </div>
                                                         </div>
@@ -1302,7 +1302,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-[0.8rem] border border-indigo-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <GraduationCap size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Nivel Académico</h4>
@@ -1322,7 +1322,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span>Grado Finalizado</span>
                                             {!formData.education_grade_completed && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                                         </label>
-                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.education_grade_completed ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.education_grade_completed ? '!border-danger !bg-danger/10' : ''}`}>
                                             <LiquidSelect value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                         </div>
                                     </div>
@@ -1406,22 +1406,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 })()}
 
                                 {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && !(formData.education_level === 'UNIVERSITARIO' && formData.has_maestria) && (
-                                    <div className="md:col-span-2 bg-indigo-50/40 rounded-[1.25rem] p-3.5 border border-indigo-100/60 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="md:col-span-2 bg-chart-3/10/40 rounded-[1.25rem] p-3.5 border border-chart-3/30/60 animate-in fade-in zoom-in-95 duration-200">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input type="checkbox" checked={!!formData.is_studying} onChange={(e) => handleSelectChange('is_studying', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                            <span className="text-[11px] font-black text-indigo-700 uppercase tracking-wide">¿Actualmente estudiando?</span>
+                                            <span className="text-[11px] font-black text-chart-3-text uppercase tracking-wide">¿Actualmente estudiando?</span>
                                         </label>
 
                                         {!!formData.is_studying && (
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                                                 <div>
-                                                    <label className="text-[9px] font-black uppercase tracking-widest text-indigo-500 ml-1 mb-1 block">Mes de Inicio</label>
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Mes de Inicio</label>
                                                     <div className="rounded-[1rem] h-[38px]">
                                                         <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[1] : ''} onChange={(val) => handleStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." compact clearable={false} {...portalSelectProps} />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-[9px] font-black uppercase tracking-widest text-indigo-500 ml-1 mb-1 block">Año de Inicio</label>
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Año de Inicio</label>
                                                     <div className="rounded-[1rem] h-[38px]">
                                                         <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[0] : ''} onChange={(val) => handleStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
                                                     </div>
@@ -1430,7 +1430,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </div>
                                         )}
                                         {estimatedStudyEnd && (
-                                            <p className={`text-[10px] font-bold mt-2 ml-1 ${studyEndInPast ? 'text-danger' : 'text-indigo-600'}`}>
+                                            <p className={`text-[10px] font-bold mt-2 ml-1 ${studyEndInPast ? 'text-danger' : 'text-chart-3-text'}`}>
                                                 {studyEndInPast
                                                     ? `Finalizó en ${estimatedStudyEnd} — no puede seguir "actualmente estudiando"`
                                                     : `Finaliza aprox.: ${estimatedStudyEnd}`}
@@ -1442,15 +1442,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && (() => {
                                     const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
                                     return (
-                                        <div className="md:col-span-2 bg-purple-50/40 rounded-[1.25rem] p-3.5 border border-purple-100/60 animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="md:col-span-2 bg-chart-3/10/40 rounded-[1.25rem] p-3.5 border border-purple-100/60 animate-in fade-in zoom-in-95 duration-200">
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input type="checkbox" checked={!!formData.has_maestria} onChange={(e) => handleSelectChange('has_maestria', e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
-                                                <span className="text-[11px] font-black text-purple-700 uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>
+                                                <span className="text-[11px] font-black text-chart-3-text uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>
                                             </label>
                                             {!!formData.has_maestria && (
                                                 <div className="mt-3 grid grid-cols-1 gap-3">
                                                     <div>
-                                                        <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 flex items-center justify-between">
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 flex items-center justify-between">
                                                             <span>Maestría / Postgrado</span>
                                                             {!formData.maestria_title && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                                                         </label>
@@ -1466,7 +1466,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     {isOtherMaestria && (
                                                         <div>
-                                                            <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 block">Especifica la Maestría / Postgrado</label>
+                                                            <label className="text-[9px] font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Especifica la Maestría / Postgrado</label>
                                                             <CatalogOtherInput
                                                                 value={formData.maestria_title}
                                                                 onChange={(val) => handleSelectChange('maestria_title', val)}
@@ -1479,19 +1479,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div className="pt-2 border-t border-purple-100/60">
                                                         <label className="flex items-center gap-2 cursor-pointer">
                                                             <input type="checkbox" checked={!!formData.maestria_is_studying} onChange={(e) => handleSelectChange('maestria_is_studying', e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
-                                                            <span className="text-[11px] font-black text-purple-700 uppercase tracking-wide">¿Maestría en curso?</span>
+                                                            <span className="text-[11px] font-black text-chart-3-text uppercase tracking-wide">¿Maestría en curso?</span>
                                                         </label>
 
                                                         {!!formData.maestria_is_studying && (
                                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                                                                 <div>
-                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 block">Mes de Inicio</label>
+                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Mes de Inicio</label>
                                                                     <div className="rounded-[1rem] h-[38px]">
                                                                         <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[1] : ''} onChange={(val) => handleMaestriaStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." compact clearable={false} {...portalSelectProps} />
                                                                     </div>
                                                                 </div>
                                                                 <div>
-                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 block">Año de Inicio</label>
+                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 block">Año de Inicio</label>
                                                                     <div className="rounded-[1rem] h-[38px]">
                                                                         <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[0] : ''} onChange={(val) => handleMaestriaStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
                                                                     </div>
@@ -1500,7 +1500,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             </div>
                                                         )}
                                                         {estimatedMaestriaEnd && (
-                                                            <p className={`text-[10px] font-bold mt-2 ml-1 ${maestriaStudyEndInPast ? 'text-danger' : 'text-purple-600'}`}>
+                                                            <p className={`text-[10px] font-bold mt-2 ml-1 ${maestriaStudyEndInPast ? 'text-danger' : 'text-chart-3-text'}`}>
                                                                 {maestriaStudyEndInPast
                                                                     ? `Finalizó en ${estimatedMaestriaEnd} — no puede seguir "en curso"`
                                                                     : `Finaliza aprox.: ${estimatedMaestriaEnd}`}
@@ -1560,7 +1560,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         );
                                     })}
                                 </div>
-                                <button type="button" onClick={addSkill} className="mt-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-blue-700 transition-colors">
+                                <button type="button" onClick={addSkill} className="mt-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
                                     <Plus size={12} strokeWidth={3} /> Agregar Curso / Habilidad
                                 </button>
                             </div>
@@ -1568,7 +1568,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-teal-50 text-teal-600 rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <Car size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Vehículo y Acreditaciones</h4>
@@ -1602,13 +1602,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </label>
                             </div>
                             {(formData.has_motorcycle_license || formData.has_car_license || isPharmacistRegent || isNursing) && (
-                                <p className="text-[9px] text-teal-600 font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos{(isPharmacistRegent && !formData.has_srs_accreditation) || (isNursing && !isNursingRole) ? ' (detectado automáticamente por Cargo/Profesión)' : ''}.</p>
+                                <p className="text-[9px] text-chart-9-text font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos{(isPharmacistRegent && !formData.has_srs_accreditation) || (isNursing && !isNursingRole) ? ' (detectado automáticamente por Cargo/Profesión)' : ''}.</p>
                             )}
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-cyan-50 text-cyan-600 rounded-[0.8rem] border border-cyan-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-[0.8rem] border border-cyan-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <Users size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Personas que Dependen Económicamente</h4>
@@ -1655,12 +1655,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
                                                             </span>
                                                             <button type="button" onClick={() => toggleDependentAgeMode(idx)}
-                                                                className="text-brand font-bold normal-case tracking-normal hover:text-blue-700 transition-colors">
+                                                                className="text-brand font-bold normal-case tracking-normal hover:text-chart-1-text transition-colors">
                                                                 {depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}
                                                             </button>
                                                         </label>
                                                         {depAgeOnly ? (
-                                                            <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${depAgeInvalid ? '!border-red-400 !bg-danger/10' : 'border-slate-200/80'}`}>
+                                                            <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${depAgeInvalid ? '!border-danger !bg-danger/10' : 'border-slate-200/80'}`}>
                                                                 <input type="number" min={MIN_DEPENDENT_AGE} max={MAX_DEPENDENT_AGE} step="1" value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)} placeholder="Edad en años"
                                                                     className="w-full h-full bg-transparent text-[16px] font-bold text-content-2 outline-none pl-4 pr-4" />
                                                             </div>
@@ -1710,7 +1710,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     })}
                                 </div>
                             )}
-                            <button type="button" onClick={addDependent} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-blue-700 transition-colors">
+                            <button type="button" onClick={addDependent} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
                                 <Plus size={12} strokeWidth={3} /> Agregar Persona
                             </button>
                         </div>
@@ -1738,7 +1738,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-white border border-danger/30 text-danger text-[11px] font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
                                                 {cond}
                                                 <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
-                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-red-300 hover:text-white hover:bg-red-500 transition-colors">
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-red-300 hover:text-white hover:bg-danger transition-colors">
                                                     <X size={11} strokeWidth={2.5} />
                                                 </button>
                                             </span>
@@ -1780,7 +1780,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     })}
                                 </div>
                             )}
-                            <button type="button" onClick={addChronicCondition} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-blue-700 transition-colors">
+                            <button type="button" onClick={addChronicCondition} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
                                 <Plus size={12} strokeWidth={3} /> Agregar Condición
                             </button>
 
@@ -1816,7 +1816,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <span>Grado</span>
                                                     {!formData.disability_grade && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">Requerido</span>}
                                                 </label>
-                                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.disability_grade ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.disability_grade ? '!border-danger !bg-danger/10' : ''}`}>
                                                     <LiquidSelect value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                                 </div>
                                             </div>
@@ -1862,11 +1862,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Teléfono de Emergencia {emergPhoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{emergPhoneErrorMsg}</span>}</span>
-                                        <button type="button" onClick={addEmergencyPhone} className="text-brand hover:text-blue-700 flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
+                                        <button type="button" onClick={addEmergencyPhone} className="text-brand hover:text-chart-1-text flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
                                             <Plus size={11} strokeWidth={3} /> Agregar
                                         </button>
                                     </label>
-                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${emergPhoneHasError ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${emergPhoneHasError ? '!border-danger !bg-danger/10' : ''}`}>
                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
                                         <input type="tel" name="emergency_contact_phone" value={formData.emergency_contact_phone || ''}
                                             onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
@@ -1882,7 +1882,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
                                             return (
                                                 <div key={idx} className="flex items-center gap-2">
-                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-red-400 !bg-danger/10' : 'border-slate-200/80'}`}>
+                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-slate-200/80'}`}>
                                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
                                                         <input type="tel" value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-[16px] font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -1917,26 +1917,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <>
                                         <div className={`relative z-30 ${isExterna ? 'md:col-span-2' : ''}`}>
                                             <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span></label>
-                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.branch_id ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.branch_id ? '!border-danger !bg-danger/10' : ''}`}>
                                                 <LiquidSelect value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                             </div>
                                         </div>
                                         {isExterna && (
                                             <div className="relative z-20 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 ml-1 mb-1.5 block">Farmacias Asignadas</label>
-                                                <div className="flex flex-wrap gap-2 p-3 bg-teal-50/50 border border-teal-200/60 rounded-[1rem] min-h-[44px]">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-chart-9-text ml-1 mb-1.5 block">Farmacias Asignadas</label>
+                                                <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10/50 border border-chart-9/30/60 rounded-[1rem] min-h-[44px]">
                                                     {farmaciasOpts.map(opt => {
                                                         const assigned = (formData.assigned_branch_ids || []).map(String);
                                                         const isActive = assigned.includes(opt.value);
                                                         return (
                                                             <button key={opt.value} type="button"
                                                                 onClick={() => setFormData(p => { const cur = (p.assigned_branch_ids || []).map(String); return { ...p, assigned_branch_ids: isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value] }; })}
-                                                                className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-teal-500 text-white border-teal-400 shadow-sm' : 'bg-white text-content-3 border-slate-200 hover:border-teal-300 hover:text-teal-600'}`}
+                                                                className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-chart-9 text-white border-teal-400 shadow-sm' : 'bg-white text-content-3 border-slate-200 hover:border-teal-300 hover:text-chart-9-text'}`}
                                                             >{opt.label}</button>
                                                         );
                                                     })}
                                                 </div>
-                                                {(formData.assigned_branch_ids || []).length === 0 && <p className="text-[9px] text-teal-500 font-bold mt-1.5 ml-1">Sin farmacias asignadas — el personal externo cubre todas por defecto.</p>}
+                                                {(formData.assigned_branch_ids || []).length === 0 && <p className="text-[9px] text-chart-9-text font-bold mt-1.5 ml-1">Sin farmacias asignadas — el personal externo cubre todas por defecto.</p>}
                                             </div>
                                         )}
                                         <div className="relative z-30">
@@ -1947,7 +1947,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                         <div className="relative z-20">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cargo Principal <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span></label>
-                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.role_id ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.role_id ? '!border-danger !bg-danger/10' : ''}`}>
                                                 <LiquidSelect value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
                                             </div>
                                         </div>
@@ -1965,16 +1965,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         {formData.contract_type === 'SERVICIOS' && (
                             <div className="bg-danger/10 border border-danger/30 rounded-2xl p-3.5 flex items-start gap-3">
                                 <ShieldAlert size={18} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
-                                <p className="text-[11px] text-red-700 font-medium leading-tight">
+                                <p className="text-[11px] text-danger-text font-medium leading-tight">
                                     <span className="font-black">Riesgo legal — "Servicios Profesionales" con subordinación.</span> El Art. 20 del Código de Trabajo presume un contrato laboral real (con derecho a aguinaldo, vacaciones, ISSS e indemnización) cuando hay subordinación — horario, cargo y sucursal asignados, como en este expediente. Un juez laboral puede reclasificarlo sin importar la etiqueta del contrato. Usa este tipo solo para relaciones genuinamente independientes, sin horario ni supervisión directa.
                                 </p>
                             </div>
                         )}
 
                         {formData.contract_type === 'PRACTICAS' && (
-                            <div className="bg-blue-50/70 border border-blue-200/70 rounded-2xl p-3.5 flex items-start gap-3">
-                                <GraduationCap size={18} className="text-blue-500 shrink-0 mt-0.5" strokeWidth={2.5} />
-                                <p className="text-[11px] text-blue-700 font-medium leading-tight">
+                            <div className="bg-chart-1/10/70 border border-chart-1/30/70 rounded-2xl p-3.5 flex items-start gap-3">
+                                <GraduationCap size={18} className="text-chart-1-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <p className="text-[11px] text-chart-1-text font-medium leading-tight">
                                     <span className="font-black">Contrato de Aprendizaje (Art. 61-70 CT).</span> Requiere forma escrita y aprobación/inscripción ante el Ministerio de Trabajo (Art. 61) para ser válido como tal — si no se tramita, se presume relación laboral ordinaria. Salario mínimo reducido: no menor al 50% del mínimo legal durante el primer año, 75% durante el segundo, 100% desde el tercero (Art. 69). Ninguna de las partes incurre en responsabilidad por la terminación del contrato al llegar a su fin (Art. 68).
                                 </p>
                             </div>
@@ -2010,7 +2010,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span>Fecha Fin de Contrato {contractDatesInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">Debe ser posterior al inicio</span>}</span>
                                             {!formData.contract_end_date && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30">Obligatorio</span>}
                                         </label>
-                                        <div className={`bg-warning/10 rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${contractDatesInvalid ? '!border-red-400 !bg-danger/10' : 'border-warning/30'}`}>
+                                        <div className={`bg-warning/10 rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${contractDatesInvalid ? '!border-danger !bg-danger/10' : 'border-warning/30'}`}>
                                             <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales/prácticas" />
                                         </div>
                                     </div>
@@ -2023,7 +2023,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <span>Base Legal del Plazo (Art. 25)</span>
                                                 {temporalBasisMissing && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30">Requerido</span>}
                                             </label>
-                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${temporalBasisMissing ? '!border-red-400 !bg-danger/10' : ''}`}>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${temporalBasisMissing ? '!border-danger !bg-danger/10' : ''}`}>
                                                 <LiquidSelect value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
                                             </div>
                                         </div>
@@ -2124,8 +2124,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="relative">
                                         <input type="text" name="code" value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
                                             onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
-                                            className={`w-full bg-white border border-slate-200/80 rounded-[1rem] px-4 h-[40px] text-[16px] font-black text-content-2 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50 hover:shadow-md ${!formData.code?.trim() ? '!border-red-400 !bg-danger/10' : ''}`} />
-                                        <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-brand hover:bg-blue-50 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
+                                            className={`w-full bg-white border border-slate-200/80 rounded-[1rem] px-4 h-[40px] text-[16px] font-black text-content-2 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50 hover:shadow-md ${!formData.code?.trim() ? '!border-danger !bg-danger/10' : ''}`} />
+                                        <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-brand hover:bg-chart-1/10 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
                                     </div>
                                     <p className="text-[9px] font-bold text-brand mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
 
@@ -2226,7 +2226,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center justify-between mb-4">
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Otros Documentos</h4>
-                                <button type="button" onClick={addExtraDoc} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-blue-700 transition-colors">
+                                <button type="button" onClick={addExtraDoc} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
                                     <Plus size={12} strokeWidth={3} /> Agregar Documento
                                 </button>
                             </div>

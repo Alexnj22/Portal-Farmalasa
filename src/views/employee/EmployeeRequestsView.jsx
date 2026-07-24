@@ -59,16 +59,16 @@ const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5
 // ─────────────────────────────────────────────────────────────────────────────
 const MinMaxStatusCard = memo(({ req }) => {
     const cfg = req.status === 'approved'
-        ? { border: 'border-emerald-300/70 bg-success/10', badge: 'bg-success/10 text-emerald-700 border-success/30', label: 'Aprobada' }
+        ? { border: 'border-emerald-300/70 bg-success/10', badge: 'bg-success/10 text-success-text border-success/30', label: 'Aprobada' }
         : req.status === 'rejected'
-        ? { border: 'border-red-300 bg-surface-card', badge: 'bg-danger/10 text-danger border-danger/30', label: 'Rechazada' }
-        : { border: 'border-brand/30 bg-surface-card', badge: 'bg-warning/10 text-amber-700 border-warning/30', label: 'Pendiente' };
+        ? { border: 'border-danger/40 bg-surface-card', badge: 'bg-danger/10 text-danger border-danger/30', label: 'Rechazada' }
+        : { border: 'border-brand/30 bg-surface-card', badge: 'bg-warning/10 text-warning-text border-warning/30', label: 'Pendiente' };
     return (
         <div className={`p-5 rounded-[2rem] border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)]`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-[0.875rem] bg-blue-100 border border-blue-200 flex items-center justify-center flex-shrink-0">
-                        <BarChart2 size={16} strokeWidth={2} className="text-blue-600" />
+                    <div className="w-9 h-9 rounded-[0.875rem] bg-chart-1/10 border border-chart-1/30 flex items-center justify-center flex-shrink-0">
+                        <BarChart2 size={16} strokeWidth={2} className="text-chart-1-text" />
                     </div>
                     <div>
                         <p className="text-[13px] font-black text-content leading-tight">Ajuste Min/Max</p>
@@ -87,8 +87,8 @@ const MinMaxStatusCard = memo(({ req }) => {
                 </div>
                 <ArrowRight size={15} className="text-content-3" />
                 <div className="text-left text-[12px] font-black tabular-nums">
-                    <div className="text-orange-600">MIN {req.requested_min}</div>
-                    <div className="text-blue-600">MAX {req.requested_max}</div>
+                    <div className="text-chart-4-text">MIN {req.requested_min}</div>
+                    <div className="text-chart-1-text">MAX {req.requested_max}</div>
                 </div>
             </div>
 
@@ -120,8 +120,8 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-[0.875rem] bg-cyan-100 border border-cyan-200 flex items-center justify-center flex-shrink-0">
-                        <RefreshCw size={16} strokeWidth={2} className="text-cyan-600" />
+                    <div className="w-9 h-9 rounded-[0.875rem] bg-chart-5/10 border border-chart-5/30 flex items-center justify-center flex-shrink-0">
+                        <RefreshCw size={16} strokeWidth={2} className="text-chart-5-text" />
                     </div>
                     <div>
                         <p className="text-[13px] font-black text-content leading-tight">
@@ -131,7 +131,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                     </div>
                 </div>
                 {dateStr && (
-                    <span className="text-[10px] font-bold text-cyan-700 bg-cyan-100 border border-cyan-200 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                    <span className="text-[10px] font-bold text-chart-5-text bg-chart-5/10 border border-chart-5/30 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
                         {dateStr}
                     </span>
                 )}
@@ -148,9 +148,9 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                         <p className="text-[9px] text-content-3 mt-0.5">Lo que darías</p>
                     )}
                 </div>
-                <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-3">
-                    <p className="text-[9px] font-black text-cyan-500 uppercase tracking-widest mb-1">Turno que tomarías</p>
-                    <p className="text-[12px] font-black text-cyan-700">
+                <div className="bg-chart-5/10/80 border border-cyan-100 rounded-2xl p-3">
+                    <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno que tomarías</p>
+                    <p className="text-[12px] font-black text-chart-5-text">
                         {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                     </p>
                     {(!meta.myShift || meta.myShift === 'No especificado') && (
@@ -173,7 +173,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                 </button>
                 <button
                     onClick={() => onAccept(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-emerald-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:bg-emerald-600 transition-all active:scale-[0.97]"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success text-white text-[11px] font-bold uppercase tracking-widest shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:bg-success-hover transition-all active:scale-[0.97]"
                 >
                     <Check size={12} strokeWidth={2.5} /> Aceptar
                 </button>
@@ -198,7 +198,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
     const cardBg =
         req.status === 'PENDING'   ? 'border-brand/30 bg-surface-card backdrop-blur-2xl' :
         req.status === 'APPROVED'  ? 'border-emerald-300/70 bg-success/10 backdrop-blur-2xl' :
-        req.status === 'REJECTED'  ? 'border-red-300 bg-surface-card backdrop-blur-xl' :
+        req.status === 'REJECTED'  ? 'border-danger/40 bg-surface-card backdrop-blur-xl' :
         'border-border-card bg-surface-card backdrop-blur-md';
 
     return (
@@ -250,14 +250,14 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                 {req.type === 'SHIFT_CHANGE' && (
                     <div className="space-y-2">
                         {(meta.targetEmployeeName || meta.date) && (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-cyan-50/60 border border-cyan-200/60">
-                                <RefreshCw size={13} className="text-cyan-500 flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-5/10/60 border border-chart-5/30/60">
+                                <RefreshCw size={13} className="text-chart-5-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                                     {meta.targetEmployeeName && (
-                                        <span className="text-[12px] font-black text-cyan-700">↔ {meta.targetEmployeeName}</span>
+                                        <span className="text-[12px] font-black text-chart-5-text">↔ {meta.targetEmployeeName}</span>
                                     )}
                                     {meta.date && (
-                                        <span className="text-[11px] font-bold text-cyan-600">
+                                        <span className="text-[11px] font-bold text-chart-5-text">
                                             {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}
                                         </span>
                                     )}
@@ -271,8 +271,8 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                                 </p>
                             </div>
-                            <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-cyan-500 uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                            <div className="bg-chart-5/10/80 border border-cyan-100 rounded-2xl p-3">
+                                <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                 <p className="text-[12px] font-black text-content-2">
                                     {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
                                 </p>
@@ -286,7 +286,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         {meta.startDate && (
                             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/10 border border-danger/30">
                                 <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
-                                <span className="text-[12px] font-bold text-red-700">
+                                <span className="text-[12px] font-bold text-danger-text">
                                     {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                                     {meta.endDate && meta.endDate !== meta.startDate && (
                                         <> – {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}</>
@@ -303,12 +303,12 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             </a>
                         )}
                         {req.status === 'PENDING' && uploadFileToStorage && (
-                            <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-slate-200 opacity-60' : 'border-warning/30 hover:border-amber-400 hover:bg-warning/10'}`}>
+                            <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-slate-200 opacity-60' : 'border-warning/30 hover:border-warning hover:bg-warning/10'}`}>
                                 {uploadingDoc
                                     ? <Loader2 size={13} className="text-warning animate-spin flex-shrink-0" />
                                     : <Upload size={13} className="text-warning flex-shrink-0" strokeWidth={2} />
                                 }
-                                <span className="text-[11px] font-bold text-amber-700">
+                                <span className="text-[11px] font-bold text-warning-text">
                                     {uploadingDoc ? 'Subiendo...' : meta.docUrl ? 'Reemplazar documento' : 'Adjuntar certificado / boleta ISSS'}
                                 </span>
                                 <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" disabled={uploadingDoc}
@@ -334,7 +334,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
 
                 {req.approver_note && (
                     <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-[12px] font-bold border ${
-                        req.status === 'APPROVED' ? 'bg-success/10 border-success/30 text-emerald-700' :
+                        req.status === 'APPROVED' ? 'bg-success/10 border-success/30 text-success-text' :
                         req.status === 'REJECTED' ? 'bg-danger/10 border-danger/30 text-danger' :
                         'bg-surface-card-hover border-slate-200/60 text-content-2'
                     }`}>
@@ -717,8 +717,8 @@ const EmployeeRequestsView = () => {
                     {vacationInfo && (
                         <div className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-[11px] font-bold ${
                             !vacationInfo.eligible
-                                ? 'bg-warning/10 border-warning/30 text-amber-700'
-                                : 'bg-success/10 border-success/30 text-emerald-700'
+                                ? 'bg-warning/10 border-warning/30 text-warning-text'
+                                : 'bg-success/10 border-success/30 text-success-text'
                         }`}>
                             <Clock size={13} className="flex-shrink-0" strokeWidth={2.5} />
                             {vacationInfo.eligible
@@ -732,7 +732,7 @@ const EmployeeRequestsView = () => {
                     {existingVacation.approved && (() => {
                         const m = typeof existingVacation.approved.metadata === 'object' ? existingVacation.approved.metadata : {};
                         return (
-                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-[11px] font-bold text-amber-800">
+                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-[11px] font-bold text-warning-text">
                                 <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span>Ya tienes vacaciones aprobadas{m.startDate ? ` del ${fmt(m.startDate)} al ${fmt(m.endDate)}` : ''}. No puedes solicitar otra.</span>
                             </div>
@@ -797,8 +797,8 @@ const EmployeeRequestsView = () => {
                         <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
                             <AlertTriangle size={13} className="text-warning flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div>
-                                <p className="text-[10px] font-black text-amber-700 uppercase tracking-wide">Incapacidad activa</p>
-                                <p className="text-[11px] font-medium text-amber-700 leading-snug">
+                                <p className="text-[10px] font-black text-warning-text uppercase tracking-wide">Incapacidad activa</p>
+                                <p className="text-[11px] font-medium text-warning-text leading-snug">
                                     {activeDisabilities.map(d => fmtDisabilityPeriod(d)).join(', ')} — los días cubiertos no están disponibles.
                                 </p>
                             </div>
@@ -806,7 +806,7 @@ const EmployeeRequestsView = () => {
                     )}
                     <div>
                         <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
-                            <CalendarDays size={11} strokeWidth={2.5} className="text-purple-400" />
+                            <CalendarDays size={11} strokeWidth={2.5} className="text-chart-3-text" />
                             Días de Permiso
                         </label>
                         <div className="bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
@@ -822,9 +822,9 @@ const EmployeeRequestsView = () => {
                     {permDates.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {permDates.map(d => (
-                                <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-100 border border-purple-200 text-purple-800 text-[11px] font-bold">
+                                <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-purple-800 text-[11px] font-bold">
                                     {new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
-                                    <button type="button" onClick={() => handleRemovePermDate(d)} className="text-purple-400 hover:text-purple-700 transition-colors">
+                                    <button type="button" onClick={() => handleRemovePermDate(d)} className="text-chart-3-text hover:text-chart-3-text transition-colors">
                                         <XCircle size={13} strokeWidth={2} />
                                     </button>
                                 </span>
@@ -867,14 +867,14 @@ const EmployeeRequestsView = () => {
 
                     {/* Bloqueo: propia incapacidad */}
                     {payload.date && disabilityConflict(payload.date) && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] font-bold text-red-700">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] font-bold text-danger-text">
                             <AlertTriangle size={13} className="flex-shrink-0" strokeWidth={2.5} />
                             Estás incapacitado ese día ({fmtDisabilityPeriod(disabilityConflict(payload.date))}) — no puedes solicitar cambio de turno
                         </div>
                     )}
                     {/* Bloqueo: incapacidad / permiso / vacación del compañero */}
                     {targetEmpStatus?.blocked && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] font-bold text-red-700">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] font-bold text-danger-text">
                             <AlertTriangle size={13} className="flex-shrink-0" strokeWidth={2.5} />
                             {targetEmp?.name?.split(' ')[0] || 'El compañero'} está {targetEmpStatus.reason} ese día — no puede hacer el cambio
                         </div>
@@ -890,11 +890,11 @@ const EmployeeRequestsView = () => {
                                 </p>
                                 {!myShiftOnDate && <p className="text-[9px] text-content-3 mt-0.5">Sin turno asignado</p>}
                             </div>
-                            <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-cyan-500 uppercase tracking-widest mb-1">
+                            <div className="bg-chart-5/10/80 border border-cyan-100 rounded-2xl p-3">
+                                <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">
                                     Turno de {targetEmp?.name?.split(' ')[0] || 'compañero'}
                                 </p>
-                                <p className="text-[12px] font-black text-cyan-700">
+                                <p className="text-[12px] font-black text-chart-5-text">
                                     {targetEmpShift ? `${targetEmpShift.start} – ${targetEmpShift.end}` : '—'}
                                 </p>
                                 {!targetEmpShift && <p className="text-[9px] text-cyan-400 mt-0.5">Sin turno asignado</p>}
@@ -983,14 +983,14 @@ const EmployeeRequestsView = () => {
                                 value={payload.days || ''}
                                 onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
                                 placeholder="Ej. 3"
-                                className="w-full py-2.5 px-4 bg-white border border-slate-200 focus:bg-white focus:border-red-300 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-slate-300 h-10"
+                                className="w-full py-2.5 px-4 bg-white border border-slate-200 focus:bg-white focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-slate-300 h-10"
                             />
                         </div>
                     </div>
 
                     {/* Fecha fin calculada — chip compacto */}
                     {endDate && (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border bg-danger/10 border-danger/30 text-red-700 w-fit text-[10px] font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border bg-danger/10 border-danger/30 text-danger-text w-fit text-[10px] font-black uppercase tracking-widest">
                             <Stethoscope size={11} className="text-danger flex-shrink-0" strokeWidth={2.5} />
                             <span>Hasta {endDate.toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
                         </div>
@@ -1004,7 +1004,7 @@ const EmployeeRequestsView = () => {
                                 : <span>Certificado Médico <span className="text-content-3 ml-1 normal-case font-medium">(opcional)</span></span>
                             }
                         </label>
-                        <label className="flex items-center gap-3 px-4 py-3 bg-surface-card border-2 border-dashed border-danger/30 hover:border-red-400 hover:bg-danger/10 rounded-2xl cursor-pointer transition-all duration-200 group">
+                        <label className="flex items-center gap-3 px-4 py-3 bg-surface-card border-2 border-dashed border-danger/30 hover:border-danger hover:bg-danger/10 rounded-2xl cursor-pointer transition-all duration-200 group">
                             <div className="w-8 h-8 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition-colors">
                                 {disabilityFile ? <FileImage size={16} className="text-danger" /> : <Upload size={16} className="text-danger" />}
                             </div>
@@ -1028,7 +1028,7 @@ const EmployeeRequestsView = () => {
                     </div>
 
                     <div className="px-4 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
-                        <p className="text-[11px] font-bold text-red-700 leading-relaxed">
+                        <p className="text-[11px] font-bold text-danger-text leading-relaxed">
                             Talento Humano recibirá tu solicitud como urgente. Los días se marcarán automáticamente en tu horario al ser aprobada.
                         </p>
                     </div>
@@ -1087,7 +1087,7 @@ const EmployeeRequestsView = () => {
                             <div className="flex items-center gap-1.5">
                                 {disabilityHeaderAlerts.overlap && (
                                     <div className="relative group/tip">
-                                        <div className="w-7 h-7 rounded-full bg-danger/10 border border-red-300 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
+                                        <div className="w-7 h-7 rounded-full bg-danger/10 border border-danger/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
                                             <AlertTriangle size={13} className="text-danger" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-64 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
@@ -1099,7 +1099,7 @@ const EmployeeRequestsView = () => {
                                 )}
                                 {disabilityHeaderAlerts.needsISSS && (
                                     <div className="relative group/tip2">
-                                        <div className="w-7 h-7 rounded-full bg-warning/10 border border-amber-300 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
+                                        <div className="w-7 h-7 rounded-full bg-warning/10 border border-warning/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
                                             <Info size={13} className="text-warning" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-72 z-50 pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150">
@@ -1113,7 +1113,7 @@ const EmployeeRequestsView = () => {
                         </div>
 
                         {error && (
-                            <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                            <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                 <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span className="leading-tight">{error}</span>
                             </div>
@@ -1181,7 +1181,7 @@ const EmployeeRequestsView = () => {
                                     onChange={e => { setFormNote(e.target.value); if (error) setError(''); }}
                                     rows={4}
                                     placeholder="Describe tu solicitud..."
-                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-amber-300' : ''}`}
+                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
                                     disabled={isSubmitting}
                                 />
                             </div>
@@ -1207,7 +1207,7 @@ const EmployeeRequestsView = () => {
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}
                         {peerRequests.length > 0 && (
                             <div className="col-span-full">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-cyan-600 mb-3 flex items-center gap-1.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-chart-5-text mb-3 flex items-center gap-1.5">
                                     <RefreshCw size={10} /> Requieren tu aprobación
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1232,7 +1232,7 @@ const EmployeeRequestsView = () => {
                                 onClick={() => setShowOldApproved(v => !v)}
                                 className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-200 ${
                                     showOldApproved
-                                        ? 'bg-success/10 border-success/30 text-emerald-700'
+                                        ? 'bg-success/10 border-success/30 text-success-text'
                                         : 'bg-surface-card border-border-card text-content-3 hover:text-content-2 hover:bg-surface-card'
                                 }`}
                             >
@@ -1261,8 +1261,8 @@ const EmployeeRequestsView = () => {
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 pointer-events-none ${
                                         statusFilter === 'PENDING' ? 'bg-brand' :
-                                        statusFilter === 'APPROVED' ? 'bg-emerald-500' :
-                                        statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-content-3'
+                                        statusFilter === 'APPROVED' ? 'bg-success' :
+                                        statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'
                                     }`} />
                                     <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-brand' :

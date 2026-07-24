@@ -50,7 +50,7 @@ const BranchTabGeneral = ({
                             placeholder="Ej: La Popular Centro"
                             value={name}
                             onChange={(val) => setFormData(prev => ({ ...prev, name: val, branchName: val }))}
-                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'red' && !name.trim() ? '!border-red-400 !bg-danger/10 hover:!border-red-500' : 'border-slate-200/80'}`}
+                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'red' && !name.trim() ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-slate-200/80'}`}
                         />
                     </div>
                     <div>
@@ -118,7 +118,7 @@ const BranchTabGeneral = ({
                             placeholder="Barrio El Centro, 1ra Av. Norte..."
                             value={formData.address || ""}
                             onChange={(val) => setFormData(prev => ({ ...prev, address: val }))}
-                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.address?.trim() ? '!border-amber-400 !bg-warning/10 hover:!border-amber-500' : 'border-slate-200/80'}`}
+                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.address?.trim() ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-slate-200/80'}`}
                         />
                     </div>
                     <div>
@@ -173,7 +173,7 @@ const BranchTabGeneral = ({
             {/* ISLA 3: CONTACTO */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-indigo-50 text-indigo-500 rounded-[0.8rem] border border-indigo-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Phone size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Canales de Contacto</h4>
@@ -191,7 +191,7 @@ const BranchTabGeneral = ({
                             value={formData.phone || ""}
                             onChange={(val) => setFormData(prev => ({ ...prev, phone: formatPhoneMask(val) }))}
                             maxLength={9}
-                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.phone ? '!border-amber-400 !bg-warning/10 hover:!border-amber-500' : 'border-slate-200/80'}`}
+                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.phone ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-slate-200/80'}`}
                         />
                     </div>
                     <div>
@@ -205,7 +205,7 @@ const BranchTabGeneral = ({
                             value={formData.cell || ""}
                             onChange={(val) => setFormData(prev => ({ ...prev, cell: formatPhoneMask(val) }))}
                             maxLength={9}
-                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.cell ? '!border-amber-400 !bg-warning/10 hover:!border-amber-500' : 'border-slate-200/80'}`}
+                            className={`!bg-white shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.cell ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-slate-200/80'}`}
                         />
                     </div>
                 </div>

@@ -73,7 +73,7 @@ function DocBadge({ tipo }) {
 function PayBadge({ tipo }) {
   if (!tipo) return null;
   return (
-    <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-emerald-700 uppercase">
+    <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success-text uppercase">
       {tipo}
     </span>
   );
@@ -244,7 +244,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
           withinGrace ? 'bg-warning/10 border border-warning/30' : 'bg-danger/10 border border-danger/30'
         }`}>
           <Clock size={12} className={withinGrace ? 'text-warning' : 'text-danger'} strokeWidth={2.5} />
-          <p className={`text-[11px] font-bold ${withinGrace ? 'text-amber-700' : 'text-danger'}`}>
+          <p className={`text-[11px] font-bold ${withinGrace ? 'text-warning-text' : 'text-danger'}`}>
             {withinGrace
               ? `${graceDaysLeft} día${graceDaysLeft !== 1 ? 's' : ''} restante${graceDaysLeft !== 1 ? 's' : ''} para solicitar anulación`
               : `Anulación fuera de plazo — ${age} días desde la venta`}
@@ -266,22 +266,22 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
     {
       key: 'annul',     icon: Ban,       label: 'Anulación de Factura',
       desc: isCCF ? 'CCF — requiere nota de crédito' : `Período de gracia: ${GRACE_DAYS} días`,
-      color: 'text-rose-600',   bg: 'bg-rose-50 border-rose-200/70',   iconBg: 'bg-rose-100',
+      color: 'text-danger-text',   bg: 'bg-danger/10 border-danger/30/70',   iconBg: 'bg-danger/10',
     },
     {
       key: 'pay_change', icon: CreditCard, label: 'Cambio de Forma de Pago',
       desc: `Actual: ${PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || 'N/A'}`,
-      color: 'text-sky-600',    bg: 'bg-sky-50 border-sky-200/70',     iconBg: 'bg-sky-100',
+      color: 'text-chart-7-text',    bg: 'bg-chart-7/10 border-sky-200/70',     iconBg: 'bg-chart-7/10',
     },
     {
       key: 'vendor_change', icon: UserCog, label: 'Cambio de Vendedor',
       desc: vendor ? vendor.name.split(' ')[0] : `Vendedor: #${inv.cod_vendedor || 'N/A'}`,
-      color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200/70', iconBg: 'bg-purple-100',
+      color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30/70', iconBg: 'bg-chart-3/10',
     },
     {
       key: 'client_change', icon: Contact, label: 'Cambio de Cliente',
       desc: `Actual: ${inv.cliente || 'Sin nombre'}`,
-      color: 'text-teal-600', bg: 'bg-teal-50 border-teal-200/70', iconBg: 'bg-teal-100',
+      color: 'text-chart-9-text', bg: 'bg-chart-9/10 border-chart-9/30/70', iconBg: 'bg-chart-9/10',
     },
   ];
 
@@ -369,9 +369,9 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {isCreditPay && (
-          <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-indigo-50 border border-indigo-200">
-            <Info size={12} className="text-indigo-500 mt-0.5 shrink-0" strokeWidth={2.5} />
-            <p className="text-[11px] font-bold text-indigo-700 leading-snug">
+          <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-chart-3/10 border border-chart-3/30">
+            <Info size={12} className="text-chart-3-text mt-0.5 shrink-0" strokeWidth={2.5} />
+            <p className="text-[11px] font-bold text-chart-3-text leading-snug">
               Venta a <strong>crédito</strong> — la anulación tomará más tiempo y se confirmará al realizarse.
             </p>
           </div>
@@ -379,30 +379,30 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         {ccfSameDay && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-warning/10 border border-warning/30">
             <ShieldAlert size={12} className="text-warning mt-0.5 shrink-0" strokeWidth={2.5} />
-            <p className="text-[11px] font-bold text-amber-700 leading-snug">
+            <p className="text-[11px] font-bold text-warning-text leading-snug">
               <strong>CCF:</strong> Asegúrate de que se emitirá la nota de crédito correspondiente.
             </p>
           </div>
         )}
         {ccfNotSameDay && (
-          <div className="rounded-2xl px-3 py-2 flex flex-col gap-2 bg-danger/10 border border-red-300">
+          <div className="rounded-2xl px-3 py-2 flex flex-col gap-2 bg-danger/10 border border-danger/40">
             <div className="flex items-start gap-2">
               <ShieldAlert size={13} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
-              <p className="text-[11px] font-bold text-red-700 leading-snug">
+              <p className="text-[11px] font-bold text-danger-text leading-snug">
                 <strong>CCF de fecha anterior.</strong> Solo se anulan el mismo día y requieren nota de crédito.
               </p>
             </div>
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={ccfAck} onChange={e => setCcfAck(e.target.checked)}
                 className="mt-0.5 w-4 h-4 rounded accent-red-500 shrink-0" />
-              <span className="text-[11px] font-black text-red-700">Entiendo y confirmo que tengo autorización para solicitarlo</span>
+              <span className="text-[11px] font-black text-danger-text">Entiendo y confirmo que tengo autorización para solicitarlo</span>
             </label>
           </div>
         )}
         {!withinGrace && !ccfNotSameDay && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-danger/10 border border-danger/30">
             <AlertTriangle size={12} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
-            <p className="text-[11px] font-bold text-red-700 leading-snug">
+            <p className="text-[11px] font-bold text-danger-text leading-snug">
               Factura fuera del plazo ({age} días). Requiere motivo detallado y aprobación del supervisor.
             </p>
           </div>
@@ -427,7 +427,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
             className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:ring-2 transition-all resize-none ${
-              commentRequired && !comment.trim() ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-brand focus:ring-brand/10'
+              commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger focus:ring-red-100' : 'border-slate-200 focus:border-brand focus:ring-brand/10'
             }`}
           />
         </div>
@@ -966,7 +966,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         )}
 
         {!loading && isFuzzy && search && (
-          <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-amber-700 font-semibold">
+          <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-warning-text font-semibold">
             <Search size={10} strokeWidth={2.5} className="shrink-0" />
             Similares a &ldquo;{search}&rdquo;
           </div>
@@ -1012,8 +1012,8 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                 </button>
                 <button onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
                   className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
-                    ok ? 'bg-warning/10 hover:bg-amber-500 hover:text-white text-warning'
-                       : 'bg-danger/10 hover:bg-red-500 hover:text-white text-danger'
+                    ok ? 'bg-warning/10 hover:bg-warning hover:text-white text-warning'
+                       : 'bg-danger/10 hover:bg-danger hover:text-white text-danger'
                   }`}
                   title="Solicitar modificación">
                   <AlertCircle size={12} strokeWidth={2.5} />

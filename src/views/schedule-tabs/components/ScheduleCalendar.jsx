@@ -222,11 +222,11 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     const isDaysOffPerfect = daysOffCount === 1;
 
     // Configuración visual de la barra de progreso
-    let barColor = 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'; // Estado Perfecto
+    let barColor = 'bg-success shadow-[0_0_10px_rgba(52,211,153,0.5)]'; // Estado Perfecto
     if (isHoursOver || daysOffCount === 0) {
-        barColor = 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'; // Infracción Grave
+        barColor = 'bg-danger shadow-[0_0_10px_rgba(239,68,68,0.5)]'; // Infracción Grave
     } else if (isHoursUnder || daysOffCount > 1) {
-        barColor = 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]'; // Falta rellenar
+        barColor = 'bg-warning shadow-[0_0_10px_rgba(251,191,36,0.5)]'; // Falta rellenar
     }
 
     const shortName = shortEmployeeName(emp);
@@ -410,12 +410,12 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                     }}>
                         <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col
                             ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
-                            ${apoyoBranch ? 'bg-violet-50 border border-violet-200 shadow-[0_2px_8px_rgba(139,92,246,0.08)]' :
+                            ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[0_2px_8px_rgba(139,92,246,0.08)]' :
                               conf ? conf.bg + ' border border-dashed ' + conf.border :
                               hasShift ? 'bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)]' :
                               'border border-dashed border-slate-300/60 bg-surface-card-hover/30 backdrop-blur-sm'
                             }
-                            ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]' : ''}
+                            ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-danger/40 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]' : ''}
                         `}>
 
                             {!conf && !isReadOnly && !apoyoBranch && (
@@ -427,9 +427,9 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             <div className="relative z-10 w-full h-full flex flex-col">
                                 {apoyoBranch ? (
                                     <div className="w-full flex-1 flex flex-col items-center justify-center gap-1">
-                                        <Building2 size={11} className="text-violet-400" strokeWidth={2} />
-                                        <span className="text-[7px] font-black uppercase tracking-widest text-violet-600">Apoyo</span>
-                                        <span className="text-[6.5px] font-bold text-violet-400 text-center leading-tight truncate px-1">{apoyoBranch}</span>
+                                        <Building2 size={11} className="text-chart-3-text" strokeWidth={2} />
+                                        <span className="text-[7px] font-black uppercase tracking-widest text-chart-3-text">Apoyo</span>
+                                        <span className="text-[6.5px] font-bold text-chart-3-text text-center leading-tight truncate px-1">{apoyoBranch}</span>
                                     </div>
                                 ) : conf ? (
                                     <div className={`w-full flex-1 flex flex-col items-center justify-center ${conf.text}`}>
@@ -456,7 +456,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                         <div className="flex flex-col gap-[2px] mt-auto">
                                             {timeBlocks.map((block, idx) => {
                                                 const isBreak = block.type !== 'work';
-                                                const bgClass = block.type === 'lunch' ? 'bg-orange-50/80 text-orange-600 border border-orange-100/50' : 
+                                                const bgClass = block.type === 'lunch' ? 'bg-chart-4/10/80 text-chart-4-text border border-chart-4/30/50' : 
                                                                 block.type === 'lactation' ? 'bg-pink-50/80 text-pink-600 border border-pink-100/50' : 
                                                                 'text-content-2';
                                                 
@@ -513,18 +513,18 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
     return (
         <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
             <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
-                <div className="min-h-[72px] h-full bg-indigo-50/80 backdrop-blur-xl border border-indigo-200/60 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
-                    <div className="w-9 h-9 rounded-xl bg-surface-card border border-indigo-200/60 overflow-hidden flex items-center justify-center shrink-0">
+                <div className="min-h-[72px] h-full bg-chart-3/10/80 backdrop-blur-xl border border-chart-3/30/60 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                    <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30/60 overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-indigo-200" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden gap-0.5">
                         <h4 className="font-black text-content text-[12px] truncate leading-tight" title={emp.name}>{shortName}</h4>
                         <div className="flex items-center gap-1">
-                            <Building2 size={9} className="text-indigo-400 shrink-0" strokeWidth={2} />
-                            <span className="text-[9px] font-bold text-indigo-500 truncate">{homeBranch?.name || 'Otra sucursal'}</span>
+                            <Building2 size={9} className="text-chart-3-text shrink-0" strokeWidth={2} />
+                            <span className="text-[9px] font-bold text-chart-3-text truncate">{homeBranch?.name || 'Otra sucursal'}</span>
                         </div>
-                        <div className="mt-0.5 px-1.5 py-[2px] bg-indigo-100 border border-indigo-200/80 rounded-full w-fit">
-                            <span className="text-[7px] font-black uppercase tracking-widest text-indigo-600">APOYO</span>
+                        <div className="mt-0.5 px-1.5 py-[2px] bg-chart-3/10 border border-chart-3/30/80 rounded-full w-fit">
+                            <span className="text-[7px] font-black uppercase tracking-widest text-chart-3-text">APOYO</span>
                         </div>
                     </div>
                     <button onClick={onRemove} className="w-7 h-7 rounded-full bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
@@ -558,13 +558,13 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                         onClick={e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch)}>
                         <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay
-                                ? 'bg-indigo-50 border border-indigo-300 shadow-[0_2px_8px_rgba(99,102,241,0.10)]'
+                                ? 'bg-chart-3/10 border border-indigo-300 shadow-[0_2px_8px_rgba(99,102,241,0.10)]'
                                 : hasShift
                                     ? 'bg-surface-card border border-slate-200/50 opacity-40'
                                     : 'border border-dashed border-slate-200/40 bg-surface-card-hover/10 opacity-30'
                             }`}>
                             <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 shadow-sm
-                                ${isCoverageDay ? 'bg-indigo-500 text-white' : 'bg-content-3 text-white'}">
+                                ${isCoverageDay ? 'bg-chart-3 text-white' : 'bg-content-3 text-white'}">
                                 {isCoverageDay ? <Pencil size={8} strokeWidth={2.5} /> : <Plus size={8} strokeWidth={2.5} />}
                             </div>
 
@@ -573,22 +573,22 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
                                             <span className={`text-[7.5px] font-black uppercase px-1 py-[1px] rounded border truncate max-w-[68%]
-                                                ${isCoverageDay ? 'text-indigo-700 bg-indigo-100 border-indigo-200' : 'text-content-3 bg-surface-card-hover border-slate-100'}`}>
+                                                ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-slate-100'}`}>
                                                 {shift?.name || 'Manual'}
                                             </span>
                                             <span className={`text-[7px] font-black px-1 py-[1px] rounded border
-                                                ${isCoverageDay ? 'text-indigo-500 bg-indigo-50 border-indigo-100' : 'text-content-3 bg-surface-card-hover border-slate-100'}`}>
+                                                ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-slate-100'}`}>
                                                 {netHrs}h
                                             </span>
                                         </div>
-                                        <div className={`text-[8px] font-bold font-mono tracking-tight mt-auto ${isCoverageDay ? 'text-indigo-600' : 'text-content-3'}`}>
+                                        <div className={`text-[8px] font-bold font-mono tracking-tight mt-auto ${isCoverageDay ? 'text-chart-3-text' : 'text-content-3'}`}>
                                             {fmt12h(startStr)} - {fmt12h(endStr)}
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="w-full flex-1 flex items-center justify-center">
                                         {isCoverageDay
-                                            ? <span className="text-[7.5px] font-black uppercase text-indigo-400">Libre</span>
+                                            ? <span className="text-[7.5px] font-black uppercase text-chart-3-text">Libre</span>
                                             : <span className="text-[8px] font-black text-content-3">—</span>
                                         }
                                     </div>
@@ -718,17 +718,17 @@ const ScheduleCalendar = memo(({
                                 let dayTextColor = "text-content-3";
                                 
                                 if (dayColor === '#FF2D55') { // Crítico (Rojo)
-                                    headerBg = "bg-rose-50 border-rose-200 shadow-[0_4px_15px_rgba(244,63,94,0.05)]";
+                                    headerBg = "bg-danger/10 border-danger/30 shadow-[0_4px_15px_rgba(244,63,94,0.05)]";
                                     headerTextColor = "text-rose-800";
-                                    dayTextColor = "text-rose-500";
+                                    dayTextColor = "text-danger-text";
                                 } else if (dayColor === '#F79009') { // Pico (Naranja)
                                     headerBg = "bg-warning/10 border-warning/30 shadow-[0_4px_15px_rgba(245,158,11,0.05)]";
-                                    headerTextColor = "text-amber-800";
+                                    headerTextColor = "text-warning-text";
                                     dayTextColor = "text-warning";
                                 } else if (dayColor === '#0052CC') { // Normal (Azul)
-                                    headerBg = "bg-blue-50 border-blue-200 shadow-[0_4px_15px_rgba(0,82,204,0.05)]";
+                                    headerBg = "bg-chart-1/10 border-chart-1/30 shadow-[0_4px_15px_rgba(0,82,204,0.05)]";
                                     headerTextColor = "text-brand";
-                                    dayTextColor = "text-blue-500";
+                                    dayTextColor = "text-chart-1-text";
                                 }
 
                                 return (
@@ -740,7 +740,7 @@ const ScheduleCalendar = memo(({
                                                     {coverageData?.criticalGaps?.length > 0 && (
                                                         <>
                                                             {coverageData.criticalGaps.map((gap, i) => (
-                                                                <span key={i} className="text-[6.5px] 2xl:text-[7px] font-black uppercase text-white bg-rose-500 border border-rose-600 px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
+                                                                <span key={i} className="text-[6.5px] 2xl:text-[7px] font-black uppercase text-white bg-danger border border-rose-600 px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
                                                                     {gap.time}
                                                                 </span>
                                                             ))}
@@ -808,7 +808,7 @@ const ScheduleCalendar = memo(({
                                 <tr><td colSpan={calendarDates.length + 1} className="pt-4 pb-1 px-2">
                                     <div className="flex items-center gap-2">
                                         <div className="flex-1 h-px bg-indigo-200/60" />
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text flex items-center gap-1.5">
                                             <Building2 size={9} /> Personal de Apoyo
                                         </span>
                                         <div className="flex-1 h-px bg-indigo-200/60" />
@@ -836,7 +836,7 @@ const ScheduleCalendar = memo(({
                                     {!showCoverageSearch ? (
                                         <button
                                             onClick={() => setShowCoverageSearch(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-content-2 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50/30 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-content-2 hover:border-indigo-400 hover:text-chart-3-text hover:bg-chart-3/10/30 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
                                         >
                                             <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
                                         </button>
@@ -866,13 +866,13 @@ const ScheduleCalendar = memo(({
                                                         return (
                                                             <button key={e.id}
                                                                 onClick={() => { onAddCoverageEmployee?.(e.id); setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
-                                                                className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-indigo-50 transition-colors text-left w-full">
+                                                                className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-chart-3/10 transition-colors text-left w-full">
                                                                 <div className="w-8 h-8 rounded-xl bg-surface-card-hover overflow-hidden shrink-0 flex items-center justify-center">
                                                                     {e.photo_url ? <img src={e.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={18} className="text-content-3" />}
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <p className="text-[12px] font-black text-content truncate">{e.name}</p>
-                                                                    <p className="text-[10px] text-indigo-500 font-bold truncate">{br?.name || 'Sin sucursal'}</p>
+                                                                    <p className="text-[10px] text-chart-3-text font-bold truncate">{br?.name || 'Sin sucursal'}</p>
                                                                 </div>
                                                             </button>
                                                         );

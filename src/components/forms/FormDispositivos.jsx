@@ -70,7 +70,7 @@ const FormDispositivos = ({ formData }) => {
                     <Activity size={16} className="text-brand"/> Dispositivos aprobados
                 </h4>
                 <div className="bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1.5 shadow-sm">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
                     <span className="text-[9px] font-black tracking-widest uppercase">
                         {activeKiosks.length} / 3
                     </span>
@@ -132,7 +132,7 @@ const FormDispositivos = ({ formData }) => {
                                                     type="button" 
                                                     disabled={isRevoking} 
                                                     onClick={() => executeRevoke(kiosk.id, kiosk.device_name)} 
-                                                    className="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                                    className="w-full py-2.5 bg-danger hover:bg-danger-hover text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
                                                 >
                                                     {isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}
                                                 </button>

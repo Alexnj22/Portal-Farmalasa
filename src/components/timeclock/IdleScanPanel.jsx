@@ -3,7 +3,7 @@ import { ScanBarcode, ShieldAlert, LogIn, Utensils, Baby, LogOut, XCircle, Bell 
 
 const ACTION_ITEMS = [
   { icon: LogIn, glassColor: 'bg-green-500/10 border-green-500/30 text-green-400', glow: 'group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] group-hover:bg-green-500/20', label: 'Entrada' },
-  { icon: Utensils, glassColor: 'bg-orange-500/10 border-orange-500/30 text-orange-400', glow: 'group-hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] group-hover:bg-orange-500/20', label: 'Almuerzo' },
+  { icon: Utensils, glassColor: 'bg-chart-4/10 border-chart-4/30 text-chart-4-text', glow: 'group-hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] group-hover:bg-chart-4/20', label: 'Almuerzo' },
   { icon: Baby, glassColor: 'bg-pink-500/10 border-pink-500/30 text-pink-400', glow: 'group-hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:bg-pink-500/20', label: 'Lactancia' },
   { icon: LogOut, glassColor: 'bg-slate-400/10 border-slate-400/30 text-slate-500', glow: 'group-hover:shadow-[0_0_20px_rgba(148,163,184,0.3)] group-hover:bg-slate-400/20', label: 'Salida' },
 ];
@@ -37,12 +37,12 @@ export default function IdleScanPanel({
 
         {/* TOP: Ícono y Títulos */}
         <div className="flex flex-col items-center text-center w-full mb-6 shrink-0 group/icon">
-          <div className={`inline-flex p-4 rounded-[1.5rem] mb-4 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-blue-500/10 border-blue-500/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
+          <div className={`inline-flex p-4 rounded-[1.5rem] mb-4 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
             }`}>
-            {specialMode ? <ShieldAlert size={42} className="text-orange-400 drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} /> : <ScanBarcode size={42} className="text-blue-400 drop-shadow-[0_2px_10px_rgba(59,130,246,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />}
+            {specialMode ? <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} /> : <ScanBarcode size={42} className="text-chart-1-text drop-shadow-[0_2px_10px_rgba(59,130,246,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />}
           </div>
           <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
-          <p className={`text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-orange-400/80' : 'text-blue-400/80'}`}>Farmacias La Salud &amp; Popular</p>
+          <p className={`text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
         </div>
 
         {/* MIDDLE: Formulario e Input */}
@@ -62,7 +62,7 @@ export default function IdleScanPanel({
               autoComplete="new-password"
               spellCheck="false"
               placeholder={specialMode ? 'ESCANEE PARA AUTORIZAR' : 'ESCANEE SU CARNET'}
-              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] select-none text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] placeholder:text-[16px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase caret-transparent transition-all duration-300 ${specialMode ? 'placeholder:text-orange-400/50 virtual-caret-orange' : 'placeholder:text-white/40 virtual-caret-blue'}`}
+              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] select-none text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] placeholder:text-[16px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase caret-transparent transition-all duration-300 ${specialMode ? 'placeholder:text-chart-4-text/50 virtual-caret-orange' : 'placeholder:text-white/40 virtual-caret-blue'}`}
             />
             {hasValue && (
               <button type="button" onClick={clearHandler} className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-[0.97]">
@@ -74,11 +74,11 @@ export default function IdleScanPanel({
 
           <div className="mt-5 flex flex-col items-center justify-center">
             {specialMode ? (
-              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center gap-2 transition-all duration-300 bg-red-500/10 px-6 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <XCircle size={14} /> Cancelar Permiso
               </button>
             ) : (
-              <button type="button" onClick={specialOutHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-orange-400 flex items-center gap-2 transition-all duration-300 bg-orange-500/10 px-6 py-3.5 rounded-full border border-orange-500/30 hover:bg-orange-500/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={specialOutHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 rounded-full border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <ShieldAlert size={14} /> Autorizar Permiso / Salida
               </button>
             )}
@@ -108,10 +108,10 @@ export default function IdleScanPanel({
       {/* Lunch alerts banner */}
       {!specialMode && lunchAlerts.length > 0 && (
         <div className="w-full max-w-[420px] mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="bg-orange-500/10 backdrop-blur-xl border border-orange-500/25 rounded-[1.5rem] px-4 py-3 shadow-[0_8px_24px_rgba(249,115,22,0.15)]">
+          <div className="bg-chart-4/10 backdrop-blur-xl border border-chart-4/25 rounded-[1.5rem] px-4 py-3 shadow-[0_8px_24px_rgba(249,115,22,0.15)]">
             <div className="flex items-center gap-2 mb-2">
-              <Bell size={13} className="text-orange-400 shrink-0" strokeWidth={2.5} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">
+              <Bell size={13} className="text-chart-4-text shrink-0" strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-chart-4-text">
                 Hora de Almuerzo
               </span>
             </div>
@@ -121,7 +121,7 @@ export default function IdleScanPanel({
                   <span className="text-white/80 text-[11px] font-semibold truncate">
                     {alert.employee.name}
                   </span>
-                  <span className={`text-[10px] font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-red-400' : 'text-orange-300'}`}>
+                  <span className={`text-[10px] font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-red-400' : 'text-chart-4-text'}`}>
                     {alert.minsOverdue > 0 ? `${alert.minsOverdue} min tarde` : `${alert.lunchTime}`}
                   </span>
                 </div>

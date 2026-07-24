@@ -31,11 +31,11 @@ const AccessDeniedView = () => {
         <div className="flex flex-col items-center justify-center h-full min-h-[65vh] text-center px-6 overflow-hidden">
 
             {/* Ambient blob */}
-            <div className="absolute w-[40vw] h-[40vw] bg-violet-400/8 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDuration: '5s' }} />
+            <div className="absolute w-[40vw] h-[40vw] bg-chart-3/8 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDuration: '5s' }} />
 
             {/* Pulsing rings + icon */}
             <div className="relative mb-10 animate-in zoom-in-75 duration-700 fill-mode-both">
-                <span className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-violet-400/15 animate-ping" style={{ animationDuration: '2.5s' }} />
+                <span className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-chart-3/15 animate-ping" style={{ animationDuration: '2.5s' }} />
                 <span className="absolute -inset-6 rounded-full bg-violet-300/8 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.8s' }} />
                 <div className="relative w-24 h-24 rounded-[2rem] bg-white border border-violet-100 shadow-[0_16px_48px_rgba(139,92,246,0.12)] flex items-center justify-center">
                     <Lock size={38} className="text-violet-300" strokeWidth={1.2} />

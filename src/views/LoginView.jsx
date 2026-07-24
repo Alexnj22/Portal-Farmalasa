@@ -418,7 +418,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 'transition-all duration-300 active:scale-[0.93]',
                                 compact ? 'w-10 h-10' : 'w-11 h-11',
                                 cameraActive
-                                    ? 'bg-red-500/[0.15] border-red-400/45 text-danger shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-red-500/[0.25]'
+                                    ? 'bg-danger/[0.15] border-danger/45 text-danger shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-danger/[0.25]'
                                     : 'bg-white/[0.28] border-border-card text-content-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-border-card hover:text-brand',
                             ].join(' ')}
                         >
@@ -484,7 +484,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <div className="rounded-[2.5rem] p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[0_32px_80px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6">
                         <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-[2.5rem]" />
                         <div className="relative flex flex-col items-center gap-3">
-                            <div className="w-14 h-14 rounded-[1.25rem] bg-amber-400/10 border border-amber-300/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                            <div className="w-14 h-14 rounded-[1.25rem] bg-warning/10 border border-warning/40/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
                             <h3 className="text-[22px] font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
@@ -626,7 +626,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 <div className="rounded-[2rem] p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[0_20px_50px_rgba(0,0,0,0.09),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-3 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-[2rem]" />
                     <div className="relative flex items-center gap-2 px-1 mb-1">
-                        <Sparkles size={11} className="text-violet-400" strokeWidth={2} />
+                        <Sparkles size={11} className="text-chart-3-text" strokeWidth={2} />
                         <p className="text-[9px] font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
                     </div>
                     {[

@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.9';
+export const APP_VERSION = '2.52.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.0 — refactor(theme): T7.1 — pase global sobre 118 archivos
+// (v2.52.0).
+//
+// Al re-verificar con un regex ampliado (cualquier tono sólido suelto,
+// no solo el patrón "badge" bg-claro+text-oscuro) el universo real
+// resultó ser 119 archivos con ~1,416 usos — mucho más grande que los
+// ~60 archivos/214 usos medidos originalmente. Dado el volumen y que las
+// mismas parejas de color se repiten con el mismo criterio ya validado
+// docenas de veces hoy (bg-emerald-500→success, bg-red-500→danger,
+// bg-blue-50+text-blue-700→chart-1, indigo/violet/purple→chart-3,
+// orange→chart-4, rose→danger, cyan→chart-5, teal→chart-9, sky→chart-7),
+// se armó un diccionario de sustitución validado y se aplicó en dos
+// pasadas globales sobre los 119 archivos en vez de repetir la lectura
+// manual archivo por archivo para los casos ya de patrón conocido.
+//
+// Resultado: 1,416 → 270 usos (119 → 72 archivos). Build verificado
+// después de cada pasada. Los ~270 restantes son los casos genuinamente
+// atípicos (paletas de 5+ colores por posición, tonos poco comunes,
+// contexto ambiguo) que sí necesitan lectura individual — quedan para la
+// siguiente tanda de esta misma fase T7.1.
 
 // v2.51.9 — refactor(theme): T7.1 — VentasView.jsx completo (v2.51.9).
 //

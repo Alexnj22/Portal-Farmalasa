@@ -18,8 +18,8 @@ const fmtDate = (d) => {
 
 const ESTADO_CFG = {
     draft:  { bg: 'bg-surface-card-hover',    text: 'text-content-2',    border: 'border-slate-200',    dot: 'bg-content-3',    label: 'Borrador' },
-    active: { bg: 'bg-success/10',   text: 'text-emerald-700',  border: 'border-success/30',  dot: 'bg-emerald-500',  label: 'Activa'   },
-    paused: { bg: 'bg-warning/10',     text: 'text-amber-700',    border: 'border-warning/30',    dot: 'bg-amber-400',    label: 'Pausada'  },
+    active: { bg: 'bg-success/10',   text: 'text-success-text',  border: 'border-success/30',  dot: 'bg-success',  label: 'Activa'   },
+    paused: { bg: 'bg-warning/10',     text: 'text-warning-text',    border: 'border-warning/30',    dot: 'bg-warning',    label: 'Pausada'  },
     closed: { bg: 'bg-surface-card-hover',     text: 'text-content-3',    border: 'border-slate-150',    dot: 'bg-content-3',    label: 'Cerrada'  },
 };
 
@@ -161,7 +161,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                         </div>
                         <div className="h-2 bg-surface-card-hover rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-400' : promo.estado === 'active' ? 'bg-blue-500' : 'bg-content-3'}`}
+                                className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-success' : promo.estado === 'active' ? 'bg-chart-1' : 'bg-content-3'}`}
                                 style={{ width: `${pct}%` }}
                             />
                         </div>
@@ -207,7 +207,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                             <span className="text-[10px] font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentaciones.tipo}</span>
                                         )}
                                         {pp.factor_descripcion && (
-                                            <span className="text-[10px] text-violet-600 font-medium bg-violet-50 px-1.5 py-0.5 rounded-md">{pp.factor_descripcion}</span>
+                                            <span className="text-[10px] text-chart-3-text font-medium bg-chart-3/10 px-1.5 py-0.5 rounded-md">{pp.factor_descripcion}</span>
                                         )}
                                     </div>
                                     {/* Bonos */}
@@ -216,7 +216,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                             <span className="text-[10px] text-success">Vend: ${parseFloat(pp.bono_vendedor).toFixed(2)}</span>
                                         )}
                                         {pp.bono_admin_pool > 0 && (
-                                            <span className="text-[10px] text-blue-600">Admin: ${parseFloat(pp.bono_admin_pool).toFixed(2)}</span>
+                                            <span className="text-[10px] text-chart-1-text">Admin: ${parseFloat(pp.bono_admin_pool).toFixed(2)}</span>
                                         )}
                                         {pp.bono_bodega_pool > 0 && (
                                             <span className="text-[10px] text-warning">Bodega: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}</span>
@@ -227,7 +227,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                         <div className="flex items-center gap-1.5 mt-1">
                                             <div className="flex-1 h-1 bg-surface-card-hover rounded-full overflow-hidden">
                                                 <div
-                                                    className={`h-full rounded-full ${ppPct >= 100 ? 'bg-emerald-400' : 'bg-blue-400'}`}
+                                                    className={`h-full rounded-full ${ppPct >= 100 ? 'bg-success' : 'bg-chart-1'}`}
                                                     style={{ width: `${ppPct}%` }}
                                                 />
                                             </div>
@@ -344,7 +344,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                             <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                             <button
                                 onClick={() => setShowModal(true)}
-                                className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold text-blue-600 hover:bg-blue-50 transition-all"
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold text-chart-1-text hover:bg-chart-1/10 transition-all"
                             >
                                 <Plus size={12} /> Nueva
                             </button>

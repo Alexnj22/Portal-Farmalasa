@@ -44,21 +44,21 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
 
     const pool = [
         hasPoner0   && { key: 'poner0',   icon: <XCircle size={13}/>,   label: 'Poner 0',
-            cls: `${B} text-rose-400 hover:text-rose-600 hover:bg-rose-50`,
-            dropCls: 'text-rose-500 hover:text-rose-700 hover:bg-rose-50',
+            cls: `${B} text-danger-text hover:text-danger-text hover:bg-danger/10`,
+            dropCls: 'text-danger-text hover:text-danger-text hover:bg-danger/10',
             onClick: () => onZeroOut() },
         hasRestaura && { key: 'restaurar', icon: <RotateCcw size={13}/>, label: 'Restaurar',
-            cls: `${B} text-success hover:text-emerald-700 hover:bg-success/10`,
-            dropCls: 'text-success hover:text-emerald-700 hover:bg-success/10',
+            cls: `${B} text-success hover:text-success-text hover:bg-success/10`,
+            dropCls: 'text-success hover:text-success-text hover:bg-success/10',
             onClick: () => onResetToCalc() },
         { key: 'hist', icon: <History size={13}/>, label: 'Historial',
-            cls: `${B} text-blue-400 hover:text-brand hover:bg-blue-50`,
-            dropCls: 'text-blue-500 hover:text-brand hover:bg-blue-50',
+            cls: `${B} text-chart-1-text hover:text-brand hover:bg-chart-1/10`,
+            dropCls: 'text-chart-1-text hover:text-brand hover:bg-chart-1/10',
             onClick: () => onOpenHistory() },
         filterHidden
             ? { key: 'show', icon: <Eye size={13}/>, label: 'Mostrar',
-                cls: `${B} text-violet-500 hover:text-violet-700 hover:bg-violet-50`,
-                dropCls: 'text-violet-600 hover:text-violet-700 hover:bg-violet-50',
+                cls: `${B} text-chart-3-text hover:text-chart-3-text hover:bg-chart-3/10`,
+                dropCls: 'text-chart-3-text hover:text-chart-3-text hover:bg-chart-3/10',
                 onClick: () => onUnhide() }
             : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={13} className="animate-spin"/> : <EyeOff size={13}/>,
                 label: 'Ocultar',
@@ -66,16 +66,16 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                 dropCls: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
         isBodegaRow && canManage && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en red',
-            cls: `${B} text-rose-500 hover:text-rose-700 hover:bg-rose-50`,
-            dropCls: 'text-rose-600 hover:text-rose-700 hover:bg-rose-50',
+            cls: `${B} text-danger-text hover:text-danger-text hover:bg-danger/10`,
+            dropCls: 'text-danger-text hover:text-danger-text hover:bg-danger/10',
             onClick: () => onZeroAllBranches() },
     ].filter(Boolean);
 
     const extraBtns = [
         hasDraft && canManage && !isBodegaRow && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
-            cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: () => onDiscardDraft() },
+            cls: 'text-danger-text hover:text-danger-text hover:bg-danger/10', onClick: () => onDiscardDraft() },
         hasDraft && canManage && !isBodegaRow && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
-            cls: 'text-brand hover:text-brand-hover hover:bg-blue-50',
+            cls: 'text-brand hover:text-brand-hover hover:bg-chart-1/10',
             onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
     ].filter(Boolean);
     const allBtns      = [...pool, ...extraBtns];

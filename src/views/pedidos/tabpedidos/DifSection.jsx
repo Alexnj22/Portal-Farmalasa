@@ -148,7 +148,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         <button
                                             onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}
                                             disabled={isBusy || !selTipo}
-                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
+                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                         >
                                             {isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}
                                         </button>
@@ -164,14 +164,14 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                             {/* ── Estado: propuesta — mostrar propuesta ── */}
                             {res === 'propuesta' && !readOnly && (
                                 <>
-                                    <div className="flex items-start gap-1.5 text-[10px] bg-violet-50 rounded-lg px-2.5 py-1.5 border border-violet-100">
+                                    <div className="flex items-start gap-1.5 text-[10px] bg-chart-3/10 rounded-lg px-2.5 py-1.5 border border-violet-100">
                                         {resueltoEmp?.photo_url
                                             ? <img src={resueltoEmp.photo_url} className="w-5 h-5 rounded-full object-cover border border-white shadow-sm shrink-0 mt-0.5" alt="" />
-                                            : <UserCircle2 size={14} className="text-violet-400 shrink-0 mt-0.5" />}
+                                            : <UserCircle2 size={14} className="text-chart-3-text shrink-0 mt-0.5" />}
                                         <div className="flex-1">
                                             <span className="font-semibold text-violet-800">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
-                                            {resueltoEmp && <span className="text-violet-600"> — {resueltoEmp.name?.split(' ')[0]}</span>}
-                                            {item.resolucion_nota && <p className="text-violet-600 italic">{item.resolucion_nota}</p>}
+                                            {resueltoEmp && <span className="text-chart-3-text"> — {resueltoEmp.name?.split(' ')[0]}</span>}
+                                            {item.resolucion_nota && <p className="text-chart-3-text italic">{item.resolucion_nota}</p>}
                                         </div>
                                     </div>
                                     {isBranch && (
@@ -185,7 +185,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                         if (e.key === 'Enter') onResolver(item.id, 'rechazar', null, notaRec[item.id] || null);
                                                         if (e.key === 'Escape') setRejectOpen(p => ({ ...p, [item.id]: false }));
                                                     }}
-                                                    className="flex-1 text-[16px] border border-danger/30 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-red-400 bg-white placeholder-slate-300"
+                                                    className="flex-1 text-[16px] border border-danger/30 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-danger bg-white placeholder-slate-300"
                                                 />
                                                 <button
                                                     onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}
@@ -259,7 +259,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             type="text" placeholder="Nota (opcional)…"
                                             value={corrNota}
                                             onChange={e => setCorrNota(e.target.value)}
-                                            className="flex-1 text-[16px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-400 bg-white placeholder-slate-300"
+                                            className="flex-1 text-[16px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-success bg-white placeholder-slate-300"
                                         />
                                         <button
                                             onClick={() => onCorregirBodega?.(corrNota || null)}

@@ -75,9 +75,9 @@ const fmtDateTime = (d) => {
 // reemplaza los botones de texto+ícono en línea que quedaban apretados). ──
 
 const ACTION_COLORS = {
-    slate:   'text-content-3 hover:text-brand hover:bg-blue-50',
-    blue:    'text-brand hover:text-brand-hover hover:bg-blue-50',
-    emerald: 'text-success hover:text-emerald-700 hover:bg-success/10',
+    slate:   'text-content-3 hover:text-brand hover:bg-chart-1/10',
+    blue:    'text-brand hover:text-brand-hover hover:bg-chart-1/10',
+    emerald: 'text-success hover:text-success-text hover:bg-success/10',
     red:     'text-danger hover:text-danger hover:bg-danger/10',
 };
 
@@ -149,7 +149,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                     (ej. "claro" no aparece en proveedor/número pero sí en
                     items_text), mostrar por qué apareció esta fila. */}
                 {matchSnippet && (
-                    <span className="text-[10px] text-blue-500 truncate block" title={matchSnippet}>…{matchSnippet}…</span>
+                    <span className="text-[10px] text-chart-1-text truncate block" title={matchSnippet}>…{matchSnippet}…</span>
                 )}
             </div>
         );
@@ -290,7 +290,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
                 onClick={(e) => { e.stopPropagation(); apply(); }}
                 disabled={applying}
                 title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
-                className="text-[9px] font-black text-success hover:text-emerald-700 underline whitespace-nowrap disabled:opacity-50"
+                className="text-[9px] font-black text-success hover:text-success-text underline whitespace-nowrap disabled:opacity-50"
             >
                 {applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}
             </button>
@@ -782,13 +782,13 @@ function TabDocumentos({
                     <StatCard
                         icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
                         sub={`${rows.length.toLocaleString()} documento${rows.length !== 1 ? 's' : ''}`}
-                        iconBg="bg-blue-50" iconCls="text-blue-500" valueCls="text-blue-700"
+                        iconBg="bg-chart-1/10" iconCls="text-chart-1-text" valueCls="text-chart-1-text"
                         loading={loading}
                     />
                     <StatCard
                         icon={Receipt} label="Crédito Fiscal IVA" value={fmt$(cardStats.creditoFiscal)}
                         sub="excluye invalidados"
-                        iconBg="bg-success/10" iconCls="text-success" valueCls="text-emerald-700"
+                        iconBg="bg-success/10" iconCls="text-success" valueCls="text-success-text"
                         loading={loading}
                     />
                     <StatCard
@@ -801,7 +801,7 @@ function TabDocumentos({
                         icon={XCircle} label="Invalidados" value={cardStats.invalidadosCount}
                         sub={cardStats.invalidadosCount > 0 ? fmt$(cardStats.invalidadosMonto) : 'sin invalidados'}
                         iconBg="bg-danger/10" iconCls="text-danger" valueCls="text-danger"
-                        activeBg="bg-red-500/10 border-red-300 shadow-md"
+                        activeBg="bg-danger/10 border-danger/40 shadow-md"
                         onClick={cardStats.invalidadosCount > 0 ? () => setFilterInvalidados(v => !v) : undefined}
                         active={filterInvalidados}
                         loading={loading}
@@ -809,8 +809,8 @@ function TabDocumentos({
                     <StatCard
                         icon={UserX} label="Sin Proveedor" value={cardStats.sinProveedorCount}
                         sub="pendiente de emparejar"
-                        iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-amber-700"
-                        activeBg="bg-amber-500/10 border-amber-300 shadow-md"
+                        iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text"
+                        activeBg="bg-warning/10 border-warning/40 shadow-md"
                         onClick={cardStats.sinProveedorCount > 0 ? () => setFilterSinProveedor(v => !v) : undefined}
                         active={filterSinProveedor}
                         loading={loading}
@@ -829,7 +829,7 @@ function TabDocumentos({
                         </div>
                         {dateDirty && (
                             <button onClick={() => setDateRange(defaultDateRange())} title="Quitar fecha"
-                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-colors shrink-0">
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
@@ -861,7 +861,7 @@ function TabDocumentos({
                                 <button onClick={runSyncNow} disabled={syncing}
                                     className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                                         syncing
-                                            ? 'bg-blue-50 border-blue-200 text-blue-600'
+                                            ? 'bg-chart-1/10 border-chart-1/30 text-chart-1-text'
                                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
                                     } disabled:opacity-60`}>
                                     <RefreshCw size={11} strokeWidth={2.5} className={syncing ? 'animate-spin' : ''} />
@@ -903,7 +903,7 @@ function TabDocumentos({
                                 {row.invalidado && (
                                     <span
                                         title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''} — no ampara deducciones (Art. 119-E CT)`}
-                                        className="flex items-center gap-1 text-[9px] font-black text-red-700 bg-red-500/10 border border-red-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                        className="flex items-center gap-1 text-[9px] font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full whitespace-nowrap"
                                     >
                                         <XCircle size={10} /> Invalidado
                                     </span>
@@ -916,7 +916,7 @@ function TabDocumentos({
                                     <button
                                         onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}
                                         title="Ver el PDF que justificó la anulación"
-                                        className="flex items-center gap-1 text-[9px] font-black text-red-700 bg-red-500/10 border border-red-500/25 px-2 py-0.5 rounded-full hover:bg-red-500/20 transition-colors whitespace-nowrap"
+                                        className="flex items-center gap-1 text-[9px] font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full hover:bg-danger/20 transition-colors whitespace-nowrap"
                                     >
                                         <Link2 size={10} /> Ver documento
                                     </button>
@@ -925,7 +925,7 @@ function TabDocumentos({
                                     <button
                                         onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}
                                         title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`}
-                                        className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-full hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                                        className="flex items-center gap-1 text-[9px] font-black text-warning-text bg-warning/10 border border-warning/25 px-2 py-0.5 rounded-full hover:bg-warning/20 transition-colors whitespace-nowrap"
                                     >
                                         <Link2 size={10} /> NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}
                                     </button>
@@ -936,7 +936,7 @@ function TabDocumentos({
                                     <button
                                         onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}
                                         title={`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`}
-                                        className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-500/10 border border-blue-500/25 px-2 py-0.5 rounded-full hover:bg-blue-500/20 transition-colors whitespace-nowrap"
+                                        className="flex items-center gap-1 text-[9px] font-black text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2 py-0.5 rounded-full hover:bg-chart-1/20 transition-colors whitespace-nowrap"
                                     >
                                         <Link2 size={10} /> Ver original
                                     </button>
@@ -979,7 +979,7 @@ function TabDocumentos({
                             <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
                                 <button
                                     onClick={() => viewDetail(row)}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors"
                                     title="Ver detalle"
                                 >
                                     <Eye size={14} />
@@ -987,7 +987,7 @@ function TabDocumentos({
                                 <button
                                     onClick={() => download(row.json_path, 'json', row)}
                                     disabled={!row.json_path}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                     title={row.json_path ? 'Descargar JSON' : 'Sin JSON'}
                                 >
                                     <FileJson size={14} />
@@ -995,14 +995,14 @@ function TabDocumentos({
                                 <button
                                     onClick={() => download(row.pdf_path, 'pdf', row)}
                                     disabled={!row.pdf_path}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                     title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'}
                                 >
                                     <Download size={14} />
                                 </button>
                                 <button
                                     onClick={() => downloadPackage(row)}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-blue-50 transition-colors"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors"
                                     title="Descargar paquete (JSON+PDF)"
                                 >
                                     <Archive size={14} />
@@ -1138,17 +1138,17 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                         </DataCell>
                         <DataCell>
                             {row.kind === 'orphan_pdf' ? (
-                                <span className="text-[10px] font-bold text-blue-700 bg-blue-500/10 border border-blue-500/25 px-2.5 py-0.5 rounded-full">PDF sin JSON</span>
+                                <span className="text-[10px] font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2.5 py-0.5 rounded-full">PDF sin JSON</span>
                             ) : row.kind === 'invalidacion_pendiente' ? (
-                                <span className="text-[10px] font-bold text-orange-700 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-[10px] font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     Invalidación pendiente
                                 </span>
                             ) : row.kind === 'orphan_zip' ? (
-                                <span className="text-[10px] font-bold text-violet-700 bg-violet-500/10 border border-violet-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-[10px] font-bold text-chart-3-text bg-chart-3/10 border border-violet-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     ZIP sin abrir
                                 </span>
                             ) : (
-                                <span className="text-[10px] font-bold text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-[10px] font-bold text-warning-text bg-warning/10 border border-warning/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     JSON inválido
                                 </span>
                             )}

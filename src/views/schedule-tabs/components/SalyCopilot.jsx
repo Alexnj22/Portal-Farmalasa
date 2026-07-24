@@ -8,18 +8,18 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
     const hasWarningAlerts = aiCopilotAlerts.some(a => a.type === 'warning');
 
     let aiBoxBg = "bg-slate-900/80 border-cyan-500/30";
-    let aiGlow = "bg-cyan-500";
+    let aiGlow = "bg-chart-5";
     let aiTitle = "Saly AI";
     let aiIconColor = "text-cyan-400";
     
     if (hasCriticalAlerts) {
         aiBoxBg = "bg-rose-950/60 border-rose-500/30";
-        aiGlow = "bg-rose-500";
+        aiGlow = "bg-danger";
         aiTitle = "Saly AI (Crítica)";
-        aiIconColor = "text-rose-400";
+        aiIconColor = "text-danger-text";
     } else if (hasWarningAlerts) {
-        aiBoxBg = "bg-amber-950/60 border-amber-500/30";
-        aiGlow = "bg-amber-500";
+        aiBoxBg = "bg-amber-950/60 border-warning/30";
+        aiGlow = "bg-warning";
         aiTitle = "Saly AI (Atención)";
         aiIconColor = "text-warning";
     }
@@ -79,7 +79,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                     <div className="h-full flex flex-col items-center justify-center opacity-70">
                         <div className="relative mb-2">
                             <HeartPulse size={24} strokeWidth={1.5} className="text-success" />
-                            <div className="absolute inset-0 bg-emerald-400 blur-xl opacity-40 animate-pulse"></div>
+                            <div className="absolute inset-0 bg-success blur-xl opacity-40 animate-pulse"></div>
                         </div>
                         <p className="text-[10px] font-black tracking-widest uppercase text-emerald-300">Cobertura Óptima</p>
                         <p className="text-[8px] text-content-3 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
@@ -90,9 +90,9 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                         const isDanger = group.highestSeverity === 'danger';
                         const isWarning = group.highestSeverity === 'warning';
                         
-                        const cardBg = isDanger ? 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/30' : isWarning ? 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30' : 'bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/30';
+                        const cardBg = isDanger ? 'bg-danger/10 hover:bg-danger/20 border-rose-500/30' : isWarning ? 'bg-warning/10 hover:bg-warning/20 border-warning/30' : 'bg-chart-5/10 hover:bg-chart-5/20 border-cyan-500/30';
                         const textColor = isDanger ? 'text-rose-300' : isWarning ? 'text-amber-300' : 'text-cyan-300';
-                        const iconColor = isDanger ? 'text-rose-400' : isWarning ? 'text-warning' : 'text-cyan-400';
+                        const iconColor = isDanger ? 'text-danger-text' : isWarning ? 'text-warning' : 'text-cyan-400';
                         const Icon = group.isGeneral ? AlertCircle : User;
 
                         // 🚨 1 AVISO: Tarjeta plana y compacta
@@ -137,7 +137,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                                             {group.alerts.map((alert, idx) => (
                                                 <div key={idx} className="flex items-start gap-1.5 pt-1.5">
                                                     <div className="mt-0.5 shrink-0">
-                                                        {alert.type === 'danger' ? <AlertTriangle size={9} className="text-rose-400 animate-pulse" strokeWidth={2.5} /> :
+                                                        {alert.type === 'danger' ? <AlertTriangle size={9} className="text-danger-text animate-pulse" strokeWidth={2.5} /> :
                                                          alert.type === 'warning' ? <AlertTriangle size={9} className="text-warning" strokeWidth={2.5} /> :
                                                          <Sparkles size={9} className="text-cyan-400" strokeWidth={2.5} />}
                                                     </div>

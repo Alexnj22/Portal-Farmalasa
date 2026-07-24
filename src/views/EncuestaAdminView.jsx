@@ -500,7 +500,7 @@ export default function EncuestaAdminView() {
                     {leftPanel === 'survey-form' && canManage && (
                         <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
                             editingSurvey
-                                ? 'border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                ? 'border-warning/40/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                         }`}>
 
@@ -534,7 +534,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
                                     <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
                                         placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-amber-300' : ''}`} />
+                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_3px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
                                 </div>
 
                                 {/* Año + Estado */}
@@ -595,7 +595,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setSfAnonima(v => !v)}
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfAnonima
-                                                    ? 'bg-violet-50/80 border-violet-300/60 text-violet-700 shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
+                                                    ? 'bg-chart-3/10/80 border-violet-300/60 text-chart-3-text shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             {sfAnonima ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
@@ -611,7 +611,7 @@ export default function EncuestaAdminView() {
                                             {sfCompartir ? 'Resultados públicos' : 'Privado'}
                                         </button>
                                     </div>
-                                    <p className={`text-[10px] mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-violet-500' : 'text-content-3'}`}>
+                                    <p className={`text-[10px] mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-chart-3-text' : 'text-content-3'}`}>
                                         <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfAnonima
                                             ? 'Internamente se guarda quién respondió, pero el empleado no verá su propia atribución.'
@@ -993,7 +993,7 @@ export default function EncuestaAdminView() {
                                     isExpanded
                                         ? 'border-brand/20 shadow-[0_12px_50px_rgba(0,0,0,0.10)] bg-surface-card backdrop-blur-2xl z-10'
                                         : isEditing
-                                            ? 'bg-surface-card backdrop-blur-xl border-amber-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
+                                            ? 'bg-surface-card backdrop-blur-xl border-warning/40/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
                                             : 'border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
                                 }`}>
 
@@ -1033,7 +1033,7 @@ export default function EncuestaAdminView() {
                                                                             'text-warning bg-warning/10 border-warning/30'
                                             }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
                                             {s.anonima && (
-                                                <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
+                                                <span className="flex items-center gap-1 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-chart-3/30/50">
                                                     <EyeOff size={10} strokeWidth={2.5} /> Anónima
                                                 </span>
                                             )}

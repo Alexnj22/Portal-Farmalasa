@@ -62,7 +62,7 @@ const MINMAX_HISTORY_ACTION_META = {
     MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       badge: 'bg-warning/10 text-warning' },
     MINMAX_BODEGA_MANUAL_OVERRIDE:  { label: 'MANUAL BODEGA',  badge: 'bg-chart-3/10 text-chart-3-text' },
     MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     badge: 'bg-success/10 text-success' },
-    MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  badge: 'bg-sky-50 text-sky-600' },
+    MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  badge: 'bg-chart-7/10 text-chart-7-text' },
     MINMAX_RESET_CALC:              { label: 'RESTAURADO',     badge: 'bg-success/10 text-success' },
     MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       badge: 'bg-surface-card-hover text-content-3' },
     MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     badge: 'bg-surface-card-hover text-content-3' },
@@ -1009,7 +1009,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     ) && <span className="shrink-0 text-[8px] font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="Retirado de MIN·MAX en todas las salas">SIN SALAS</span>}
                                                     {limitedData && (
                                                         <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
-                                                            className="shrink-0 text-[8px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">
+                                                            className="shrink-0 text-[8px] font-black text-chart-7-text bg-chart-7/10 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">
                                                             {row.draft_data_days}d DATOS
                                                         </span>
                                                     )}

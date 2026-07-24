@@ -22,17 +22,17 @@ const DAYS = [
 ];
 
 const EVENT_BADGE = {
-    VACATION:   { label: 'Vacaciones',  color: 'bg-warning/10 text-amber-700 border-warning/30' },
-    DISABILITY: { label: 'Incapacidad', color: 'bg-danger/10 text-red-700 border-danger/30' },
-    PERMIT:     { label: 'Permiso',     color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    VACATION:   { label: 'Vacaciones',  color: 'bg-warning/10 text-warning-text border-warning/30' },
+    DISABILITY: { label: 'Incapacidad', color: 'bg-danger/10 text-danger-text border-danger/30' },
+    PERMIT:     { label: 'Permiso',     color: 'bg-chart-3/10 text-chart-3-text border-chart-3/30' },
 };
 
 const VACATION_STATUS = {
     DRAFT:            { label: 'Borrador',      color: 'bg-surface-card-hover text-content-3 border-slate-200' },
-    PRE_APPROVED:     { label: 'Pre-aprobado',  color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    CHANGE_REQUESTED: { label: 'Cambio solicitado', color: 'bg-warning/10 text-amber-700 border-warning/30' },
-    APPROVED:         { label: 'Aprobado',      color: 'bg-success/10 text-emerald-700 border-success/30' },
-    CONFIRMED:        { label: 'Confirmado',    color: 'bg-success/10 text-emerald-700 border-success/30' },
+    PRE_APPROVED:     { label: 'Pre-aprobado',  color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' },
+    CHANGE_REQUESTED: { label: 'Cambio solicitado', color: 'bg-warning/10 text-warning-text border-warning/30' },
+    APPROVED:         { label: 'Aprobado',      color: 'bg-success/10 text-success-text border-success/30' },
+    CONFIRMED:        { label: 'Confirmado',    color: 'bg-success/10 text-success-text border-success/30' },
 };
 
 const fmtDate = (d) => d
@@ -286,7 +286,7 @@ const EmployeeScheduleView = () => {
                                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Entrada</p>
                                                 <p className="text-[15px] font-black text-content">{formatTime12h(d.shift.start)}</p>
                                             </div>
-                                            <Coffee size={12} className="text-orange-400 flex-shrink-0" />
+                                            <Coffee size={12} className="text-chart-4-text flex-shrink-0" />
                                             <div>
                                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Salida</p>
                                                 <p className="text-[15px] font-black text-content">{formatTime12h(d.shift.end)}</p>
@@ -352,7 +352,7 @@ const EmployeeScheduleView = () => {
                                     {vp.status === 'CHANGE_REQUESTED' && vp.change_requested_start && (
                                         <div className="flex items-center gap-2 bg-warning/10 border border-warning/30 rounded-xl px-3 py-2">
                                             <MessageSquare size={11} className="text-warning flex-shrink-0" strokeWidth={2.5} />
-                                            <p className="text-[10px] text-amber-700 font-bold">
+                                            <p className="text-[10px] text-warning-text font-bold">
                                                 Cambio solicitado: {fmtDate(vp.change_requested_start)} → {fmtDate(vp.change_requested_end)}
                                             </p>
                                         </div>

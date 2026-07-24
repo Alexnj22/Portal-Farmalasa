@@ -88,8 +88,8 @@ function specialLossLabel(key) {
 
 function marginLabel(m) {
     if (m === null) return null;
-    if (m < 0)  return { label: 'Pérdida',     cls: 'bg-danger/10 text-red-700 border-danger/30'      };
-    if (m < 15) return { label: 'Margen bajo',  cls: 'bg-warning/10 text-amber-700 border-warning/30' };
+    if (m < 0)  return { label: 'Pérdida',     cls: 'bg-danger/10 text-danger-text border-danger/30'      };
+    if (m < 15) return { label: 'Margen bajo',  cls: 'bg-warning/10 text-warning-text border-warning/30' };
     return null;
 }
 
@@ -113,7 +113,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
     const statText   = 'text-content-2';
     const statLabel  = 'text-content-2';
     const statSub    = 'text-content-3';
-    const statIconBg = 'bg-blue-50';
+    const statIconBg = 'bg-chart-1/10';
     const divider    = 'bg-surface-card-hover';
 
     const filterCardDef = [
@@ -123,7 +123,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             label: 'Con pérdida',
             sub: 'precio < costo',
             count: perdidaCount,
-            activeBg: 'bg-danger/10 border-red-300 shadow-red-100/80',
+            activeBg: 'bg-danger/10 border-danger/40 shadow-red-100/80',
             inactiveBg: 'bg-white border-slate-200 hover:border-danger/30 hover:bg-danger/10',
             iconBg: filterMargin === 'perdida'
                 ? 'bg-white'
@@ -139,7 +139,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             label: 'Margen bajo',
             sub: '< 15% en algún precio',
             count: bajoCount,
-            activeBg: 'bg-warning/10 border-amber-300 shadow-amber-100/80',
+            activeBg: 'bg-warning/10 border-warning/40 shadow-amber-100/80',
             inactiveBg: 'bg-white border-slate-200 hover:border-warning/30 hover:bg-warning/10',
             iconBg: filterMargin === 'bajo'
                 ? 'bg-white'
@@ -204,7 +204,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 disabled={modificadosLoading}
                 className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
                     filterModificados
-                        ? 'bg-warning/10 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px'
+                        ? 'bg-warning/10 border-warning/40 shadow-md shadow-amber-100/80 -translate-y-px'
                         : 'bg-white border-slate-100 hover:border-warning/30 hover:bg-warning/10'
                 }`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -358,7 +358,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     const addCls = 'text-content-3 hover:text-brand';
 
     const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
-    const presetChipOn  = 'bg-warning/10 text-warning border-amber-300';
+    const presetChipOn  = 'bg-warning/10 text-warning border-warning/40';
     const presetChipOff = 'bg-white text-content-3 border-slate-200 hover:border-slate-400 hover:text-content-2';
 
     return (
@@ -562,7 +562,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                 const hasData      = hasSala || hasBodega;
 
                 const rowBg =
-                    hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-surface-card-hover border-slate-100';
+                    hasData ? 'bg-chart-1/10/60 border-chart-1/30' : 'bg-surface-card-hover border-slate-100';
 
                 return (
                     <div key={loc.branch_id} className={`rounded-xl border px-3.5 py-2.5 transition-colors ${rowBg}`}>
@@ -572,10 +572,10 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 <span className={`text-[11px] font-black ${'text-content-2'}`}>{loc.branch_name}</span>
                                 <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
                                     loc.branch_type === 'BODEGA'
-                                        ? 'bg-warning/10 text-amber-700'
-                                        : 'bg-blue-100 text-blue-700'
+                                        ? 'bg-warning/10 text-warning-text'
+                                        : 'bg-chart-1/10 text-chart-1-text'
                                 }`}>{loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}</span>
-                                {hasSala && !hasBodega && <span className={`text-[8px] ${'text-blue-400'}`}>Sala</span>}
+                                {hasSala && !hasBodega && <span className={`text-[8px] ${'text-chart-1-text'}`}>Sala</span>}
                                 {hasBodega && !hasSala && <span className={`text-[8px] ${'text-warning'}`}>Bodega int.</span>}
                                 {hasSala && hasBodega && <span className={`text-[8px] ${'text-success'}`}>Sala + Bodega</span>}
                             </div>
@@ -769,9 +769,9 @@ function classifyFromPurchases(purchases) {
 }
 
 const CLASIF_STYLE = {
-    Nuevo:     { bg: 'bg-success/10 border-success/30 text-emerald-700', Icon: Sparkles   },
-    Reentrada: { bg: 'bg-violet-50 border-violet-200 text-violet-700',   Icon: RotateCcw  },
-    Regular:   { bg: 'bg-blue-50 border-blue-200 text-blue-700',         Icon: Package    },
+    Nuevo:     { bg: 'bg-success/10 border-success/30 text-success-text', Icon: Sparkles   },
+    Reentrada: { bg: 'bg-chart-3/10 border-chart-3/30 text-chart-3-text',   Icon: RotateCcw  },
+    Regular:   { bg: 'bg-chart-1/10 border-chart-1/30 text-chart-1-text',         Icon: Package    },
 };
 
 function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
@@ -934,16 +934,16 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     // ── Expanded-row theme tokens ────────────────────────────────────────────
     const xk = {
         container: 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-brand/[0.12]',
-        loadingRow: 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-blue-100/60',
+        loadingRow: 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-chart-1/30/60',
         loadingText: 'text-content-3',
-        alertDanger: 'bg-danger/10 border-danger/30 text-red-700',
-        alertWarning: 'bg-warning/10 border-warning/30 text-amber-700',
+        alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
+        alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',
         sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-content-2',
-        photoBtn: 'border-slate-200 hover:border-brand/50 bg-surface-card-hover/70 hover:bg-blue-50/30',
+        photoBtn: 'border-slate-200 hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10/30',
         photoSubText: 'text-content-3',
         photoUploadIcon: 'text-content-3 group-hover:text-brand',
         photoUploadLabel: 'text-content-3 group-hover:text-brand',
-        changesBadge: 'bg-warning/10 text-amber-700 border-warning/30',
+        changesBadge: 'bg-warning/10 text-warning-text border-warning/30',
         emptyPresentaciones: 'bg-surface-card-hover border-slate-100 text-content-3',
         pricingWrapper: 'bg-white border-slate-100 shadow-sm',
         pricingThead: 'bg-brand/[0.05] border-b border-brand/[0.08]',
@@ -953,7 +953,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         pricingRowLoss: 'bg-danger/10',
         pricingRowNormal: 'bg-white',
         pricingCellChanged: 'bg-warning/10',
-        pricingValueChanged: 'text-amber-700',
+        pricingValueChanged: 'text-warning-text',
         pricingValueNormal: 'text-content-2',
         pricingOldValue: 'text-content-3',
         pricingFactor: 'text-content-3',
@@ -970,8 +970,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         divider: 'border-slate-100/80',
         vertDivider: 'bg-surface-card-hover',
         btnCancel: 'bg-white border-slate-200 text-content-3 hover:border-slate-300 hover:text-content-2',
-        srsBtnInactive: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200',
-        srsBtnActive: 'bg-violet-100 text-violet-700 border-violet-200',
+        srsBtnInactive: 'bg-surface-card-hover text-content-3 border-slate-200 hover:bg-chart-3/10 hover:text-chart-3-text hover:border-chart-3/30',
+        srsBtnActive: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
         srsDivider: 'border-slate-100',
     };
 
@@ -1059,7 +1059,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
             <tr className={xk.loadingRow}>
                 <td colSpan={5} className="px-5 py-4">
                     <div className={`flex items-center gap-2 text-[11px] ${xk.loadingText}`}>
-                        <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando detalle…
+                        <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando detalle…
                     </div>
                 </td>
             </tr>
@@ -1121,8 +1121,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         </div>
                     )}
                     {specialLossSet.size > 0 && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium bg-orange-50 border-orange-200 text-orange-700">
-                            <TrendingDown size={13} className="shrink-0 text-orange-500" />
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium bg-chart-4/10 border-chart-4/30 text-chart-4-text">
+                            <TrendingDown size={13} className="shrink-0 text-chart-4-text" />
                             <><strong>Pérdida en precio especial</strong> — {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.</>
                         </div>
                     )}
@@ -1136,7 +1136,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         disabled={savingDevolutivo}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors disabled:opacity-50 ${
                             !devolutivo
-                                ? 'bg-warning/10 text-amber-700 border-warning/30 hover:bg-warning/10'
+                                ? 'bg-warning/10 text-warning-text border-warning/30 hover:bg-warning/10'
                                 : 'bg-surface-card-hover text-content-3 border-slate-200 hover:border-slate-300'
                         }`}
                         title={devolutivo
@@ -1774,7 +1774,7 @@ export default function TabCatalogo({
                                 <button key={v} onClick={() => setFilterActivo?.(v)}
                                     className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                                         filterActivo === v
-                                            ? 'bg-success/10 text-emerald-700 shadow-sm'
+                                            ? 'bg-success/10 text-success-text shadow-sm'
                                             : tk.filterBtn
                                     }`}>{label}</button>
                             ))}
@@ -1815,7 +1815,7 @@ export default function TabCatalogo({
                             <>
                                 <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
                                 <button onClick={resetFilters} title="Limpiar todos los filtros"
-                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                     <X size={11} strokeWidth={3} />
                                 </button>
                             </>
@@ -1824,7 +1824,7 @@ export default function TabCatalogo({
 
                     {/* Enriquecer SRS — below filter pill */}
                     <button onClick={() => setShowEnriquecer(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-violet-600 border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-all self-end">
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-chart-3-text border border-chart-3/30 bg-chart-3/10 hover:bg-chart-3/10 transition-all self-end">
                         <FlaskConical size={11} strokeWidth={2.5} /> Enriquecer SRS
                     </button>
                 </div>
@@ -1837,7 +1837,7 @@ export default function TabCatalogo({
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar productos</p>
                     <p className="text-[11px] text-danger mb-4">{loadError}</p>
                     <button onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}
-                        className="px-5 py-2 text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-full transition-colors">
+                        className="px-5 py-2 text-[12px] font-bold text-white bg-danger hover:bg-danger-hover rounded-full transition-colors">
                         Reintentar
                     </button>
                 </div>
@@ -1886,21 +1886,21 @@ export default function TabCatalogo({
                                                     <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
                                                     {mInfo && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
                                                     {specLoss && [...specLoss].map(k => (
-                                                        <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-full shrink-0">
+                                                        <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-chart-4/10 text-chart-4-text border border-chart-4/30 px-1.5 py-0.5 rounded-full shrink-0">
                                                             <TrendingDown size={7} /> Pérd. {specialLossLabel(k)}
                                                         </span>
                                                     ))}
-                                                    {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-warning/10 text-amber-700 border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
-                                                    {!p.devolutivo && <span title="No devolutivo — no se puede devolver al proveedor" className="inline-flex items-center gap-0.5 text-[9px] font-black bg-warning/10 text-amber-700 border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><Ban size={7} /> ND</span>}
+                                                    {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
+                                                    {!p.devolutivo && <span title="No devolutivo — no se puede devolver al proveedor" className="inline-flex items-center gap-0.5 text-[9px] font-black bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><Ban size={7} /> ND</span>}
                                                 </div>
-                                                {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-violet-500/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
+                                                {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-chart-3-text/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                             </div>
                                         </div>
                                     </DataCell>
                                     <DataCell hideBelow="md"><span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span></DataCell>
                                     <DataCell hideBelow="lg">
                                         <div className="flex flex-wrap gap-1">
-                                            {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-blue-50 text-blue-600 border-blue-100">{p.tipo_medicamento}</span>}
+                                            {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-chart-1/10 text-chart-1-text border-chart-1/30">{p.tipo_medicamento}</span>}
                                             {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger-text border-danger/25">Bajo Receta</span>}
                                             {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30">Receta</span>}
                                             {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-content-3">—</span>}
@@ -1913,8 +1913,8 @@ export default function TabCatalogo({
                                     </DataCell>
                                     <DataCell className="w-10 text-center">
                                         {isLoadingThis
-                                            ? <Loader2 size={13} className="animate-spin text-blue-400 mx-auto" />
-                                            : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? 'rotate-180 text-blue-400' : tk.textMid}`} />
+                                            ? <Loader2 size={13} className="animate-spin text-chart-1-text mx-auto" />
+                                            : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? 'rotate-180 text-chart-1-text' : tk.textMid}`} />
                                         }
                                     </DataCell>
                                 </DataRow>

@@ -106,7 +106,7 @@ function ChartTooltip({ active, payload, label, goals, isProjected }) {
     <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-border-card px-4 py-3 min-w-[200px]">
       <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border-card">
         <span className="text-[11px] font-black uppercase tracking-widest text-white/60">{label}</span>
-        {isProjected && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Proyección</span>}
+        {isProjected && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-chart-1/20 text-blue-300 border border-chart-1/30">Proyección</span>}
       </div>
       {payload.filter(p => p.value != null).map(p => {
         const goal = goals[p.name];
@@ -359,7 +359,7 @@ export default function MetasView() {
 
           const borderColor = status === 'green'  ? 'border-green-400/60'
                             : status === 'orange' ? 'border-orange-400/60'
-                            : status === 'red'    ? 'border-red-400/60'
+                            : status === 'red'    ? 'border-danger/60'
                             : 'border-slate-200';
 
           const pulse = 'bg-surface-card-hover/70';
@@ -406,7 +406,7 @@ export default function MetasView() {
                   <div className="h-1.5 rounded-full overflow-hidden bg-surface-card-hover">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        status==='green' ? 'bg-green-500' : status==='orange' ? 'bg-orange-500' : 'bg-red-500'
+                        status==='green' ? 'bg-green-500' : status==='orange' ? 'bg-chart-4' : 'bg-danger'
                       }`}
                       style={{width:`${Math.min(pct*100,100)}%`}}
                     />
@@ -566,7 +566,7 @@ export default function MetasView() {
             <div className="text-center min-w-[110px]">
               <p className={`text-[14px] font-black ${txt}`}>{MONTHS[selectedMonthIdx].full}</p>
               {MONTHS[selectedMonthIdx].projected && (
-                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600">
+                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-chart-3/10 text-chart-3-text">
                   Proyección
                 </span>
               )}
@@ -606,8 +606,8 @@ export default function MetasView() {
           <p className={`text-[13px] font-black ${txt}`}>Detalle Mensual</p>
           <p className={`text-[11px] ${muted}`}>
             <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 inline-block"/>Cumplió ≥ 100%</span>
-            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-orange-100 inline-block"/>≥ 95%</span>
-            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-danger/10 border border-red-300 inline-block"/>No Cumplió &lt; 95%</span>
+            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-chart-4/10 inline-block"/>≥ 95%</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-danger/10 border border-danger/40 inline-block"/>No Cumplió &lt; 95%</span>
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -616,7 +616,7 @@ export default function MetasView() {
               <tr className={`border-b ${divider} bg-surface-card-hover/80`}>
                 <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 bg-surface-card-hover ${muted}`}>Sucursal</th>
                 {MONTHS.slice(0,16).map(m => (
-                  <th key={m.label} className={`text-right px-2 py-2.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${muted} ${m.yr===2026 ? 'bg-indigo-50/40' : ''}`}>
+                  <th key={m.label} className={`text-right px-2 py-2.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${muted} ${m.yr===2026 ? 'bg-chart-3/10/40' : ''}`}>
                     {m.label}
                   </th>
                 ))}
@@ -643,7 +643,7 @@ export default function MetasView() {
                       return (
                         <td key={mi}
                           className={`px-2 py-2 text-right text-[11px] whitespace-nowrap font-mono
-                            ${yr2026 ? 'bg-indigo-50/30' : ''}
+                            ${yr2026 ? 'bg-chart-3/10/30' : ''}
                             ${st ? (status==='green'?'bg-success/10 text-success-text':status==='orange'?'bg-warning/10 text-warning-text':'bg-danger/10 text-danger-text') : 'text-content-3'}`}
                         >
                           {val == null ? <span className={muted}>—</span> : fmt(val)}
@@ -672,7 +672,7 @@ export default function MetasView() {
                 {Array.from({length:16},(_,mi) => {
                   const total = BRANCHES.reduce((a,b)=>a+(RAW[b][mi]||0),0);
                   return (
-                    <td key={mi} className={`px-2 py-2.5 text-right text-[11px] font-black whitespace-nowrap font-mono ${txt} ${MONTHS[mi].yr===2026?'bg-indigo-50/30':''}`}>
+                    <td key={mi} className={`px-2 py-2.5 text-right text-[11px] font-black whitespace-nowrap font-mono ${txt} ${MONTHS[mi].yr===2026?'bg-chart-3/10/30':''}`}>
                       {fmtK(total)}
                     </td>
                   );

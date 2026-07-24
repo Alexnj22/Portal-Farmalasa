@@ -20,13 +20,13 @@ const ERP_NAMES = {
 };
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
 const ERP_COLORS = {
-    1: 'text-blue-600 bg-blue-50 border-blue-100',
-    2: 'text-violet-600 bg-violet-50 border-violet-100',
+    1: 'text-chart-1-text bg-chart-1/10 border-chart-1/30',
+    2: 'text-chart-3-text bg-chart-3/10 border-violet-100',
     3: 'text-success bg-success/10 border-success/30',
-    4: 'text-sky-600 bg-sky-50 border-sky-100',
-    5: 'text-rose-600 bg-rose-50 border-rose-100',
-    6: 'text-amber-700 bg-warning/10 border-warning/30',
-    7: 'text-indigo-600 bg-indigo-50 border-indigo-100',
+    4: 'text-chart-7-text bg-chart-7/10 border-sky-100',
+    5: 'text-danger-text bg-danger/10 border-rose-100',
+    6: 'text-warning-text bg-warning/10 border-warning/30',
+    7: 'text-chart-3-text bg-chart-3/10 border-chart-3/30',
 };
 
 function parseFactor(detalle) {
@@ -47,18 +47,18 @@ function ExpiryCell({ fecha }) {
     const info = expiryInfo(fecha);
     if (!info) return null;
     if (info.expired) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <AlertTriangle size={9} /> {fecha}
         </span>
     );
     if (info.days <= 30) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <Calendar size={9} /> {fecha} <span className="opacity-70">{info.days}d</span>
         </span>
     );
     if (info.days <= 90)  return <span className="text-xs font-semibold text-warning whitespace-nowrap">{fecha}</span>;
     if (info.days <= 180) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-400 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <Calendar size={9} /> {fecha}
         </span>
     );
@@ -236,7 +236,7 @@ export default function TabInventario({ searchTerm = '' }) {
                 <div className="flex items-center gap-3 flex-wrap">
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
                             <Package size={15} className="text-brand" />
                         </div>
                         <div className="text-left">
@@ -254,7 +254,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); setFilterAreaVenc(false); }}
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterVencidos
-                                ? 'bg-danger/10 border-red-300 shadow-md shadow-red-100/80 -translate-y-px'
+                                ? 'bg-danger/10 border-danger/40 shadow-md shadow-red-100/80 -translate-y-px'
                                 : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10'
                         }`}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-white' : 'bg-danger/10'}`}>
@@ -274,14 +274,14 @@ export default function TabInventario({ searchTerm = '' }) {
                         onClick={() => { setFilterSixMonths(v => !v); setFilterVencidos(false); setFilterAreaVenc(false); }}
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterSixMonths
-                                ? 'bg-orange-50 border-orange-300 shadow-md shadow-orange-100/80 -translate-y-px'
-                                : 'bg-white border-slate-100 hover:border-orange-200 hover:bg-orange-50/40'
+                                ? 'bg-chart-4/10 border-chart-4/40 shadow-md shadow-orange-100/80 -translate-y-px'
+                                : 'bg-white border-slate-100 hover:border-chart-4/30 hover:bg-chart-4/10/40'
                         }`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-white' : 'bg-orange-50'}`}>
-                            <CalendarClock size={15} className="text-orange-500" />
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-white' : 'bg-chart-4/10'}`}>
+                            <CalendarClock size={15} className="text-chart-4-text" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-orange-500">
+                            <div className="text-[22px] font-black leading-none tabular-nums text-chart-4-text">
                                 {loading ? <span className="text-content-3">–</span> : sixMonthsTotal.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold text-content-2">Próx. a vencer</div>
@@ -295,14 +295,14 @@ export default function TabInventario({ searchTerm = '' }) {
                             onClick={() => { setFilterAreaVenc(v => !v); setFilterVencidos(false); setFilterSixMonths(false); }}
                             className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                                 filterAreaVenc
-                                    ? 'bg-rose-50 border-rose-300 shadow-md shadow-rose-100/80 -translate-y-px'
-                                    : 'bg-white border-slate-100 hover:border-rose-200 hover:bg-rose-50/40'
+                                    ? 'bg-danger/10 border-rose-300 shadow-md shadow-rose-100/80 -translate-y-px'
+                                    : 'bg-white border-slate-100 hover:border-danger/30 hover:bg-danger/10/40'
                             }`}>
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-white' : 'bg-rose-50'}`}>
-                                <PackageX size={15} className="text-rose-500" />
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-white' : 'bg-danger/10'}`}>
+                                <PackageX size={15} className="text-danger-text" />
                             </div>
                             <div className="text-left">
-                                <div className="text-[22px] font-black leading-none tabular-nums text-rose-600">
+                                <div className="text-[22px] font-black leading-none tabular-nums text-danger-text">
                                     {loading ? <span className="text-content-3">–</span> : Object.keys(vencidosMap).length.toLocaleString()}
                                 </div>
                                 <div className="text-[10px] font-bold text-content-2">Área vencidos</div>
@@ -317,7 +317,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             <DollarSign size={15} className="text-success" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-emerald-700">
+                            <div className="text-[22px] font-black leading-none tabular-nums text-success-text">
                                 {loading
                                     ? <span className="text-content-3">–</span>
                                     : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -351,7 +351,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 </div>
                                 {selectedErp !== null && (
                                     <button onClick={() => setSelectedErp(null)}
-                                        className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
+                                        className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                         <X size={9} strokeWidth={3} />
                                     </button>
                                 )}
@@ -373,7 +373,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </div>
                                     {filterLab !== null && (
                                         <button onClick={() => setFilterLab(null)}
-                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
+                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                             <X size={9} strokeWidth={3} />
                                         </button>
                                     )}
@@ -396,7 +396,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </div>
                                     {filterCat !== null && (
                                         <button onClick={() => setFilterCat(null)}
-                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0 hover:scale-110">
+                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                             <X size={9} strokeWidth={3} />
                                         </button>
                                     )}
@@ -407,7 +407,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 <div className="h-5 w-px bg-surface-card-hover shrink-0" />
                                 <button
                                     onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }}
-                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-red-500 text-danger hover:text-white transition-all shrink-0">
+                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0">
                                     <X size={11} strokeWidth={3} />
                                 </button>
                             </>}
@@ -423,7 +423,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar inventario</p>
                     <p className="text-[11px] text-danger mb-4">{loadError}</p>
                     <button onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}
-                        className="px-5 py-2 text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-full transition-colors">
+                        className="px-5 py-2 text-[12px] font-bold text-white bg-danger hover:bg-danger-hover rounded-full transition-colors">
                         Reintentar
                     </button>
                 </div>
@@ -459,10 +459,10 @@ export default function TabInventario({ searchTerm = '' }) {
                                     index={i}
                                     onClick={() => handleExpand(group.erp_sucursal_id, group.erp_product_id)}
                                     className={
-                                        isExpanded ? 'bg-blue-50/50' :
+                                        isExpanded ? 'bg-chart-1/10/50' :
                                         hasExpired ? 'bg-danger/10' :
                                         isSoon     ? 'bg-warning/10' :
-                                        isSixMo    ? 'bg-orange-50/20' : ''
+                                        isSixMo    ? 'bg-chart-4/10/20' : ''
                                     }
                                 >
                                     {selectedErp === null && (
@@ -488,7 +488,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                     {group.descripcion || '—'}
                                                 </span>
                                                 {group.es_antibiotico && (
-                                                    <span className="mt-0.5 inline-flex text-[9px] font-bold text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
+                                                    <span className="mt-0.5 inline-flex text-[9px] font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">
                                                         Bajo Receta
                                                     </span>
                                                 )}
@@ -526,7 +526,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                             const vUnits = vencidosMap[`${group.erp_sucursal_id}_${group.erp_product_id}`] || 0;
                                             if (!vUnits) return null;
                                             return (
-                                                <span className="ml-1.5 text-[10px] font-bold text-rose-600 tabular-nums">
+                                                <span className="ml-1.5 text-[10px] font-bold text-danger-text tabular-nums">
                                                     / {vUnits.toLocaleString()} V
                                                 </span>
                                             );
@@ -540,7 +540,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
                                 {isExpanded && (
                                     <tr>
-                                        <td colSpan={colCount} className="p-0 border-b border-blue-100/60">
+                                        <td colSpan={colCount} className="p-0 border-b border-chart-1/30/60">
                                             <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
                                                 {expandLoading.has(key) ? (
                                                     <div className="flex items-center gap-2 text-content-3 py-2">
@@ -554,7 +554,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                         {/* Regular inventory */}
                                                         {(expandedData[key] || []).length > 0 && (
                                                             <table className="w-full">
-                                                                {(expandedVencidos[key] || []).length > 0 && <caption className="text-left text-[9px] font-black uppercase tracking-widest text-blue-400 pb-1.5">Inventario regular</caption>}
+                                                                {(expandedVencidos[key] || []).length > 0 && <caption className="text-left text-[9px] font-black uppercase tracking-widest text-chart-1-text pb-1.5">Inventario regular</caption>}
                                                                 <thead>
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
@@ -608,14 +608,14 @@ export default function TabInventario({ searchTerm = '' }) {
                                                         {/* Vencidos section */}
                                                         {(expandedVencidos[key] || []).length > 0 && (
                                                             <table className="w-full mt-3">
-                                                                <caption className="text-left text-[9px] font-black uppercase tracking-widest text-rose-500 pb-1.5">
+                                                                <caption className="text-left text-[9px] font-black uppercase tracking-widest text-danger-text pb-1.5">
                                                                     Ubicación vencidos
                                                                 </caption>
                                                                 <thead>
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
                                                                             <th key={h}
-                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-rose-400 pr-6 last:pr-0 ${
+                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-danger-text pr-6 last:pr-0 ${
                                                                                     h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
                                                                                 }`}>
                                                                                 {h}
@@ -630,29 +630,29 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                         return (
                                                                             <tr key={j} className="border-t border-rose-100/60">
                                                                                 <td className="py-1.5 pr-6">
-                                                                                    <span className="text-[12px] font-semibold text-rose-700">
+                                                                                    <span className="text-[12px] font-semibold text-danger-text">
                                                                                         {row.presentacion || '—'}
                                                                                     </span>
                                                                                     {row.detalle && (
-                                                                                        <span className="text-[10px] text-rose-500 font-mono ml-1.5">
+                                                                                        <span className="text-[10px] text-danger-text font-mono ml-1.5">
                                                                                             {row.detalle}
                                                                                         </span>
                                                                                     )}
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-rose-600">
+                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-danger-text">
                                                                                     {row.lote || '—'}
                                                                                 </td>
                                                                                 <td className="py-1.5 pr-6">
                                                                                     <ExpiryCell fecha={row.fecha_vencimiento} />
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-rose-600 tabular-nums">
+                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-danger-text tabular-nums">
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-rose-600'}`}>
+                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-danger-text'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
-                                                                                    <span className="text-[9px] text-rose-500 ml-0.5">und</span>
+                                                                                    <span className="text-[9px] text-danger-text ml-0.5">und</span>
                                                                                 </td>
                                                                             </tr>
                                                                         );

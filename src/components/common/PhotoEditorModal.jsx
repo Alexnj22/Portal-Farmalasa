@@ -579,7 +579,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                                 ? 'bg-surface-card-hover text-content-3 border-divider cursor-wait'
                                                 : bgError
                                                     ? 'bg-danger/10 text-danger border-danger/30 hover:bg-danger/20'
-                                                    : 'bg-surface-card-hover text-content-2 border-divider hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200'
+                                                    : 'bg-surface-card-hover text-content-2 border-divider hover:bg-chart-3/10 hover:text-chart-3-text hover:border-chart-3/30'
                                     }`}>
                                     {bgRemoving
                                         ? <><Loader2 size={13} className="animate-spin" /> Procesando…</>
@@ -594,7 +594,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     <button
                                         onClick={() => setBrushMode(true)}
                                         title="Retocar bordes del fondo con pincel"
-                                        className="flex items-center gap-1.5 px-3 rounded-2xl border border-violet-200 text-violet-600 hover:bg-violet-50 text-[11px] font-bold transition-all whitespace-nowrap">
+                                        className="flex items-center gap-1.5 px-3 rounded-2xl border border-chart-3/30 text-chart-3-text hover:bg-chart-3/10 text-[11px] font-bold transition-all whitespace-nowrap">
                                         <Paintbrush size={12} /> Retocar
                                     </button>
                                 )}

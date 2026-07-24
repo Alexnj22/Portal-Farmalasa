@@ -20,7 +20,6 @@ import { supabase } from '../supabaseClient';
 import { useToastStore } from '../store/toastStore';
 import { fetchEmployeeApprovalRequestsDetail } from '../data/requests';
 import { fetchEmployeeTimeline } from '../data/employees';
-import ShiftExceptionModal from '../components/ShiftExceptionModal';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -39,7 +38,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const currentTab = activeTab || _activeTab;
     const setCurrentTab = setActiveTab || _setActiveTab;
 
-    const [showExceptionModal, setShowExceptionModal] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [resetResult, setResetResult] = useState(null); // contraseña temporal generada
@@ -1140,13 +1138,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                         </div>
                     </div>
-
-                    {showExceptionModal && (
-                        <ShiftExceptionModal
-                            employee={emp}
-                            onClose={() => setShowExceptionModal(false)}
-                        />
-                    )}
 
                 </div>
             </div>

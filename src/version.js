@@ -5,8 +5,44 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.47.3';
+export const APP_VERSION = '2.47.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.47.4 — refactor(cleanup): elimina ShiftExceptionModal huérfano +
+// fix(responsive): touch targets del widget grid de DashboardView.
+//
+// ShiftExceptionModal.jsx no tenía NINGÚN disparador en toda la app
+// (su estado showExceptionModal nunca se ponía en true, hallazgo ya
+// anotado en un changelog anterior). Se revisó qué hacía (override de
+// horario "solo hoy" con almuerzo/lactancia/nota) y se confirmó que
+// InlineDayEditor.jsx (ya usado en el módulo de Horarios) cubre lo mismo
+// de forma más completa (catálogo de turnos filtrado por horario de
+// sucursal, validación de conflictos, cálculo de horas en vivo) —
+// decisión del usuario: eliminar el modal huérfano en vez de darle un
+// disparador nuevo. Borrado el archivo + sus 3 referencias en
+// EmployeeDetailView.jsx (import, estado, render condicional). Una
+// edición "solo hoy" mejor integrada en Horarios queda como tarea futura.
+//
+// Aparte, cierra el pendiente de touch targets de T4
+// (AUDITORIA-TEMA-2026-07.md §10.4): 9 controles del widget grid de
+// DashboardView.jsx bajo 44px (grip de drag, toggle de resize + su
+// popover W/H, prev/next de tendencia/calendario/cumpleaños, expandir
+// ventas, año prev/next del MonthYearPicker, trigger del MonthYearPicker,
+// botón "Personalizar"). En vez de agrandar el tamaño VISIBLE (que
+// rompería headers angostos en la grilla de 2 columnas de mobile,
+// confirmado en la investigación previa), se usó una zona de toque
+// invisible expandida (`before:absolute before:content-[''] before:-inset-*`,
+// solo en mobile vía el `isMobile` ya calculado en el archivo) — el
+// tamaño visual no cambia, solo el área clickeable real. Para los
+// controles empaquetados muy cerca de un vecino (popover W/H del resize,
+// chevrones del calendario junto al trigger de mes) se amplió también el
+// `gap` en mobile para evitar que las zonas de toque expandidas se
+// solaparan entre sí (verificado que esto habría causado clics
+// ambiguos). Verificado funcionalmente con Playwright: clic 6px fuera
+// del círculo visible del botón de resize sí dispara su acción (prueba
+// de que la zona invisible funciona, no solo el CSS computado). Capturas
+// antes/después en mobile y desktop confirman cero cambio visual. Build
+// + tests (15) verdes.
 
 // v2.47.3 — fix(responsive): touch targets del drawer móvil bajo 44px
 // (barrido de T4, checklist "touch targets" pendiente desde §10.4).

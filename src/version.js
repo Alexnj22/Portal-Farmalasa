@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.4';
+export const APP_VERSION = '2.52.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.5 — fix(theme): T7.1c — estandariza colores en FeedbackOverlay.jsx
+// y corrige un bug real introducido por el pase global v2.52.0.
+//
+// Bug: el diccionario de sustitución global mapeaba TODO `bg-rose-500/NN`
+// a `bg-danger` asumiendo severidad, pero este overlay lo usa también para
+// el estado "cumpleaños" (isBirthday) — que no es un error. Resultado: el
+// ícono, el fondo del header y el botón "¡Muchas Gracias!" del aviso de
+// cumpleaños quedaron pintados de rojo/danger en vez de rosa/celebración.
+// Revertido a chart-6 (identidad rosa de cumpleaños ya usada en
+// AppLayout.jsx para el mismo concepto). Aprendizaje: los regex de
+// sustitución por familia de color son ciegos al SIGNIFICADO — bg-rose-*
+// no siempre es severidad, hay que leer el contexto antes de aplicar.
+//
+// Resto del archivo: overlay fullscreen fijo-oscuro (bg-[#0A0F1C]/80,
+// mismo patrón que TimeClockView) → tokens BASE (no "-text") en THEME_MAP,
+// badge de lactancia (pink→chart-6, texto pink-100 simplificado a blanco
+// por no aportar información), y los textos rojo/púrpura sueltos del
+// resto del componente.
+
 
 // v2.52.4 — fix(theme): T7.1c — estandariza colores en FacturacionView.jsx.
 //

@@ -3,12 +3,12 @@ import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2, Timer
 
 // 🚨 MAPA DE TEMAS LIQUIDGLASS DARK (Glows, Bordes e Íconos)
 const THEME_MAP = {
-  green: { glow: 'bg-success', border: 'border-success/40', icon: 'text-emerald-400' },
-  red: { glow: 'bg-danger', border: 'border-danger/50', icon: 'text-red-400' },
+  green: { glow: 'bg-success', border: 'border-success/40', icon: 'text-success' },
+  red: { glow: 'bg-danger', border: 'border-danger/50', icon: 'text-danger' },
   orange: { glow: 'bg-chart-4', border: 'border-chart-4/50', icon: 'text-chart-4-text' },
   blue: { glow: 'bg-[#0052CC]', border: 'border-[#0052CC]/50', icon: 'text-[#0052CC]' },
-  pink: { glow: 'bg-pink-500', border: 'border-pink-500/50', icon: 'text-pink-400' },
-  purple: { glow: 'bg-chart-3', border: 'border-purple-500/50', icon: 'text-chart-3-text' },
+  pink: { glow: 'bg-chart-6', border: 'border-chart-6/50', icon: 'text-chart-6' },
+  purple: { glow: 'bg-chart-3', border: 'border-chart-3/50', icon: 'text-chart-3-text' },
   slate: { glow: 'bg-slate-400', border: 'border-white/10', icon: 'text-white' },
 };
 
@@ -61,8 +61,8 @@ export default function FeedbackOverlay({
       <div className="flex flex-col items-center justify-center text-center w-full max-w-6xl h-full p-8 relative z-10">
 
         {isLactationAction && (
-          <div className="absolute top-10 right-10 flex items-center gap-2 bg-pink-500/10 backdrop-blur-2xl border border-pink-500/30 px-5 py-2.5 rounded-full text-pink-100 font-bold animate-pulse shadow-[0_4px_20px_rgba(244,114,182,0.2),inset_0_1px_2px_rgba(255,255,255,0.15)] overflow-hidden">
-            <Baby size={20} className="text-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]" /> Periodo de Lactancia
+          <div className="absolute top-10 right-10 flex items-center gap-2 bg-chart-6/10 backdrop-blur-2xl border border-chart-6/30 px-5 py-2.5 rounded-full text-white font-bold animate-pulse shadow-[0_4px_20px_rgba(244,114,182,0.2),inset_0_1px_2px_rgba(255,255,255,0.15)] overflow-hidden">
+            <Baby size={20} className="text-chart-6 drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]" /> Periodo de Lactancia
           </div>
         )}
 
@@ -121,7 +121,7 @@ export default function FeedbackOverlay({
                 </div>
 
                 {warning && (
-                  <div className="flex items-center justify-center gap-2 px-8 py-3 bg-warning/10 backdrop-blur-xl border border-warning/30 text-amber-400 rounded-[1.5rem] font-bold uppercase tracking-widest text-[11px] animate-pulse shadow-sm w-full">
+                  <div className="flex items-center justify-center gap-2 px-8 py-3 bg-warning/10 backdrop-blur-xl border border-warning/30 text-warning rounded-[1.5rem] font-bold uppercase tracking-widest text-[11px] animate-pulse shadow-sm w-full">
                     <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">{warning}</span>
                   </div>
@@ -131,7 +131,7 @@ export default function FeedbackOverlay({
                   <button
                     type="button"
                     onClick={onEarlyExtra}
-                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-chart-3/10 backdrop-blur-xl border border-purple-500/30 text-purple-300 rounded-[1.5rem] font-bold uppercase tracking-widest text-[11px] w-full transition-all duration-300 hover:bg-chart-3/20 hover:border-purple-500/50 hover:text-purple-200 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.97]"
+                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 text-chart-3 rounded-[1.5rem] font-bold uppercase tracking-widest text-[11px] w-full transition-all duration-300 hover:bg-chart-3/20 hover:border-chart-3/50 hover:text-white hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.97]"
                   >
                     <TimerReset size={15} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">Registrar Tiempo Extra</span>
@@ -150,19 +150,19 @@ export default function FeedbackOverlay({
 
             {/* COLUMNA DERECHA: Tarjeta de Aviso Liquid Glass */}
             {announcement && (
-              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-[2rem] overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-rose-900/40 to-amber-900/30 border border-rose-400/30 hover:border-rose-400/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
+              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-[2rem] overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
                 {isBirthday && (
                   <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2rem]">
                     <div className="absolute -top-8 -right-8 text-[120px] opacity-[0.07] select-none">🎂</div>
                     <div className="absolute -bottom-4 -left-4 text-[80px] opacity-[0.07] select-none">🎉</div>
                   </div>
                 )}
-                <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isBirthday ? 'bg-gradient-to-r from-rose-500/15 to-amber-500/10 border-rose-400/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
-                  <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center backdrop-blur-md shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-danger/20 border-rose-400/30' : isUrgent ? 'bg-white/5 border-white/10 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
+                <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
+                  <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center backdrop-blur-md shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
                     {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5 ${isBirthday ? 'text-rose-300' : isUrgent ? 'text-red-400' : 'text-white/40'}`}>
+                    <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5 ${isBirthday ? 'text-chart-6' : isUrgent ? 'text-danger' : 'text-white/40'}`}>
                       {isBirthday ? '🎉 ¡Celebración!' : isUrgent ? '🚨 Aviso Urgente' : 'Mensaje Administrativo'}
                     </span>
                     <h3 className={`font-semibold text-[20px] leading-tight tracking-tight ${isBirthday ? 'text-white' : 'text-white/90'}`}>
@@ -173,10 +173,10 @@ export default function FeedbackOverlay({
 
                 <div className="relative p-8 flex flex-col justify-between h-full min-h-[300px] bg-transparent">
                   <div className="flex-1 overflow-y-auto max-h-[200px] scrollbar-hide">
-                    <p className={`text-[15px] md:text-[16px] font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-rose-100/80' : 'text-white/60'}`}>{announcement.message}</p>
+                    <p className={`text-[15px] md:text-[16px] font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-full font-bold uppercase tracking-widest text-[11px] sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-emerald-400 border border-success/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isBirthday ? 'bg-danger/20 text-rose-300 border border-rose-400/40 hover:bg-danger/30 hover:border-rose-400/60 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)]' : isUrgent ? 'bg-danger/10 text-red-400 border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-full font-bold uppercase tracking-widest text-[11px] sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
                     {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : isBirthday ? <><span className="text-base">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>
@@ -217,7 +217,7 @@ export default function FeedbackOverlay({
               ${color === 'red' ? 'bg-danger/15 border-danger/30' : 'bg-white/5 border-white/10'}
             `}>
               <p className={`text-sm md:text-base font-bold uppercase tracking-widest text-balance leading-relaxed
-                ${color === 'red' ? 'text-red-300' : 'text-white/70'}
+                ${color === 'red' ? 'text-danger' : 'text-white/70'}
               `}>
                 {subtext}
               </p>

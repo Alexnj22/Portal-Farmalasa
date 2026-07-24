@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.11';
+export const APP_VERSION = '2.52.12';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.12 — fix(theme): T7.1c — estandariza colores en
+// ScheduleCalendar.jsx (identidad "Apoyo"/chart-3 y "Lactancia"/chart-6
+// consistentes en toda la vista, header de días con severidad de ventas
+// rojo/naranja/azul→danger/warning/chart-1) y EmployeeAnnouncementsView.jsx
+// (mismo patrón de tarjeta "turno de compañero" chart-5 medio-migrado que
+// en TabShifts/EmployeeRequestsView, gradientes de severidad rojo/verde en
+// la vista de confirmación de avisos).
+
 
 // v2.52.11 — fix(theme): T7.1c — estandariza colores en SalyCopilot.jsx
 // (misma tarjeta SALY fija-oscura que TabShifts.jsx, tokens base) y

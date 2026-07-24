@@ -99,11 +99,11 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                             )}
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2 pt-1">
-                                    <div className="bg-surface-card border border-slate-100 rounded-xl p-2">
+                                    <div className="bg-surface-card border border-border-card rounded-xl p-2">
                                         <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Tu turno</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                     </div>
-                                    <div className="bg-chart-5/10 border border-cyan-100 rounded-xl p-2">
+                                    <div className="bg-chart-5/10 border border-chart-5/20 rounded-xl p-2">
                                         <p className="text-[8px] font-black text-chart-5-text uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                     </div>
@@ -283,7 +283,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-success -translate-y-10" />
-                    <div className="relative z-10 w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-[0_20px_60px_rgba(16,185,129,0.45)] hover:scale-105 transition-transform duration-500">
+                    <div className="relative z-10 w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[0_20px_60px_rgba(16,185,129,0.45)] hover:scale-105 transition-transform duration-500">
                         <Sparkles size={44} strokeWidth={1.6} />
                     </div>
                     <h3 className="font-black text-[26px] text-content tracking-tight mb-2">¡Todo al día!</h3>
@@ -418,7 +418,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
                         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-[0_12px_40px_rgba(16,185,129,0.55)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[0_12px_40px_rgba(16,185,129,0.55)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>
                             <p className="mt-3 text-[11px] font-black text-success-text uppercase tracking-widest animate-in fade-in slide-in-from-bottom-1 duration-200 delay-75">Leído</p>
@@ -428,7 +428,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div
                         className={`rounded-[2.5rem] border flex flex-col transition-all duration-500 group/card hover:-translate-y-1.5 ${
                             phase === 'check'
-                                ? 'border-emerald-300 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-white'
+                                ? 'border-success/50 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-white'
                                 : isUrgent
                                 ? 'border-danger/30   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-white'
                                 : 'border-slate-200/50 shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-white'
@@ -438,7 +438,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                             {/* Badges + fecha */}
                             <div className="flex flex-wrap items-center gap-2">
                                 {isUrgent && (
-                                    <span className="flex items-center gap-1.5 text-white bg-gradient-to-r from-red-500 to-red-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(239,68,68,0.4)] animate-pulse">
+                                    <span className="flex items-center gap-1.5 text-white bg-gradient-to-r from-danger to-danger/80 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(239,68,68,0.4)] animate-pulse">
                                         <Flame size={11} strokeWidth={2.5}/> Urgente
                                     </span>
                                 )}
@@ -463,8 +463,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                             {meta?.requestType && (
                                 <div className={`rounded-2xl border p-4 space-y-2.5 ${
                                     meta.status === 'APPROVED'
-                                        ? 'bg-gradient-to-br from-emerald-50 to-teal-50/40 border-success/30'
-                                        : 'bg-gradient-to-br from-red-50 to-orange-50/40 border-danger/30'
+                                        ? 'bg-gradient-to-br from-success/10 to-chart-9/10 border-success/30'
+                                        : 'bg-gradient-to-br from-danger/10 to-chart-4/10 border-danger/30'
                                 }`}>
                                     {meta.requestType === 'SHIFT_CHANGE' && (<>
                                         {meta.targetEmployeeName && (
@@ -481,11 +481,11 @@ const UnreadStack = memo(({ list, onRead }) => {
                                         )}
                                         {(meta.myShift || meta.targetShift) && (
                                             <div className="grid grid-cols-2 gap-2 pt-0.5">
-                                                <div className="bg-surface-card border border-slate-100 rounded-xl p-2.5">
+                                                <div className="bg-surface-card border border-border-card rounded-xl p-2.5">
                                                     <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>
-                                                <div className="bg-chart-5/10 border border-cyan-100 rounded-xl p-2.5">
+                                                <div className="bg-chart-5/10 border border-chart-5/20 rounded-xl p-2.5">
                                                     <p className="text-[8px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                                 </div>
@@ -541,7 +541,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 disabled={phase !== 'idle'}
                                 className={`w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-[0.14em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 hover:-translate-y-0.5 hover:scale-[1.01] active:scale-[0.98] group/btn ${
                                     isUrgent
-                                        ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_8px_28px_rgba(239,68,68,0.38)] hover:shadow-[0_14px_36px_rgba(239,68,68,0.52)]'
+                                        ? 'bg-gradient-to-r from-danger to-chart-4 text-white shadow-[0_8px_28px_rgba(239,68,68,0.38)] hover:shadow-[0_14px_36px_rgba(239,68,68,0.52)]'
                                         : 'bg-gradient-to-r from-brand to-[#6929C4] text-white shadow-[0_8px_28px_rgba(0,82,204,0.35)] hover:shadow-[0_14px_36px_rgba(0,82,204,0.50)]'
                                 }`}
                             >

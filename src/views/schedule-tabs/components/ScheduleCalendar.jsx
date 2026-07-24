@@ -419,7 +419,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         `}>
 
                             {!conf && !isReadOnly && !apoyoBranch && (
-                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 hover:bg-blue-600">
+                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 hover:bg-chart-1">
                                     <Pencil size={8} strokeWidth={2.5} />
                                 </div>
                             )}
@@ -457,7 +457,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                             {timeBlocks.map((block, idx) => {
                                                 const isBreak = block.type !== 'work';
                                                 const bgClass = block.type === 'lunch' ? 'bg-chart-4/10 text-chart-4-text border border-chart-4/30' : 
-                                                                block.type === 'lactation' ? 'bg-pink-50/80 text-pink-600 border border-pink-100/50' : 
+                                                                block.type === 'lactation' ? 'bg-chart-6/10 text-chart-6-text border border-chart-6/30' :
                                                                 'text-content-2';
                                                 
                                                 return (
@@ -515,7 +515,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
             <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30 overflow-hidden flex items-center justify-center shrink-0">
-                        {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-indigo-200" />}
+                        {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-chart-3/40" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden gap-0.5">
                         <h4 className="font-black text-content text-[12px] truncate leading-tight" title={emp.name}>{shortName}</h4>
@@ -558,7 +558,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                         onClick={e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch)}>
                         <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay
-                                ? 'bg-chart-3/10 border border-indigo-300 shadow-[0_2px_8px_rgba(99,102,241,0.10)]'
+                                ? 'bg-chart-3/10 border border-chart-3/40 shadow-[0_2px_8px_rgba(99,102,241,0.10)]'
                                 : hasShift
                                     ? 'bg-surface-card border border-slate-200/50 opacity-40'
                                     : 'border border-dashed border-slate-200/40 bg-surface-card-hover/10 opacity-30'
@@ -719,7 +719,7 @@ const ScheduleCalendar = memo(({
                                 
                                 if (dayColor === '#FF2D55') { // Crítico (Rojo)
                                     headerBg = "bg-danger/10 border-danger/30 shadow-[0_4px_15px_rgba(244,63,94,0.05)]";
-                                    headerTextColor = "text-rose-800";
+                                    headerTextColor = "text-danger-text";
                                     dayTextColor = "text-danger-text";
                                 } else if (dayColor === '#F79009') { // Pico (Naranja)
                                     headerBg = "bg-warning/10 border-warning/30 shadow-[0_4px_15px_rgba(245,158,11,0.05)]";
@@ -740,7 +740,7 @@ const ScheduleCalendar = memo(({
                                                     {coverageData?.criticalGaps?.length > 0 && (
                                                         <>
                                                             {coverageData.criticalGaps.map((gap, i) => (
-                                                                <span key={i} className="text-[6.5px] 2xl:text-[7px] font-black uppercase text-white bg-danger border border-rose-600 px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
+                                                                <span key={i} className="text-[6.5px] 2xl:text-[7px] font-black uppercase text-white bg-danger border border-danger px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
                                                                     {gap.time}
                                                                 </span>
                                                             ))}
@@ -807,11 +807,11 @@ const ScheduleCalendar = memo(({
                             {coverageEmployeesData.length > 0 && (
                                 <tr><td colSpan={calendarDates.length + 1} className="pt-4 pb-1 px-2">
                                     <div className="flex items-center gap-2">
-                                        <div className="flex-1 h-px bg-indigo-200/60" />
+                                        <div className="flex-1 h-px bg-chart-3/30" />
                                         <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text flex items-center gap-1.5">
                                             <Building2 size={9} /> Personal de Apoyo
                                         </span>
-                                        <div className="flex-1 h-px bg-indigo-200/60" />
+                                        <div className="flex-1 h-px bg-chart-3/30" />
                                     </div>
                                 </td></tr>
                             )}
@@ -836,7 +836,7 @@ const ScheduleCalendar = memo(({
                                     {!showCoverageSearch ? (
                                         <button
                                             onClick={() => setShowCoverageSearch(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-content-2 hover:border-indigo-400 hover:text-chart-3-text hover:bg-chart-3/10 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-content-2 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
                                         >
                                             <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
                                         </button>

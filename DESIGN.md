@@ -3,8 +3,8 @@
 > **v2.0 — 2026-07-24** — refleja el cierre de T7 (`AUDITORIA-TEMA-2026-07.md`):
 > color 100% tokenizado (T7.1, 119 archivos), sombras consolidadas al 56%
 > en 19 tokens canónicos (T7.3), matriz de QA de 4 temas verificada (T7.2).
-> Pendiente: decisión sobre si Liquid Glass sobrevive como tema seleccionable
-> o se retira (diferida explícitamente hasta después de T7 — ver §2).
+> Decisión sobre Liquid Glass ya tomada (T7.5): se mantienen los 4 temas,
+> reestructurados como 2 ejes (Estilo/Modo) en `ThemeToggle` — ver §2.
 
 ## Cómo usar este doc
 
@@ -55,9 +55,8 @@ sola vez al cargar, no reactivo a cambios posteriores del SO) —
 seleccionable vía `ThemeToggle`, montado permanentemente en el sidebar
 (footer expandido + rail colapsado) desde T6.
 
-**Decisión pendiente** (diferida explícitamente hasta el cierre de T7):
-si Liquid Glass sobrevive como tema seleccionable o se retira del todo.
-No decidir esto sin consultarlo primero — ver `AUDITORIA-TEMA-2026-07.md`.
+**Decisión tomada (2026-07-24, T7.5)**: Liquid Glass sobrevive como tema
+seleccionable — no se retira. Ver `AUDITORIA-TEMA-2026-07.md` §11.
 
 **ThemeContext** (`src/context/ThemeContext.jsx`) persists choice to `localStorage` under key `portal-theme`.
 Exposes `{ theme, setTheme, cycleTheme, isDark, isSolid, isLiquid, themes }`. `cycleTheme` (rotates

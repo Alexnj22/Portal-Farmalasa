@@ -1006,16 +1006,14 @@ AUDITORIA-TEMA-2026-07.md") — el punto de montaje definitivo, el default
 (Solid Modern claro) y `<meta name="theme-color">` dinámico siguen siendo
 trabajo de T6, no de esta sesión.
 
-**Decisión de Liquid Glass — sigue pendiente, explícitamente diferida**: el
-punto 5 de §0 decía que se decidía "después de ver el prototipo" (T2, ya
-pasado); al preguntarse directamente en esta sesión, el usuario pidió
-explícitamente NO decidir todavía — cerrar el resto del plan primero y
-tomar la decisión (mantener los 4 temas vs. eliminar liquid/dark) al
-final. T5.2 (degradar blur de liquid en móvil) se hizo de todos modos: es
-trabajo barato de revertir si Liquid se elimina, y necesario si sobrevive.
-Cualquier fase futura que asuma la eliminación de liquid/dark (borrar
-tokens, simplificar ThemeContext) NO debe ejecutarse sin confirmar esto
-primero.
+**Decisión de Liquid Glass — RESUELTA (2026-07-24, sesión T7.5)**: se
+mantienen los 4 temas. El punto 5 de §0 decía que se decidía "después de
+ver el prototipo" (T2), luego se difirió explícitamente hasta cerrar T7;
+con T7 cerrado, el usuario confirmó mantener los 4 — Liquid Glass no se
+elimina. Se expone reestructurado como 2 ejes independientes en
+`ThemeToggle` (Estilo: Liquid Glass | Solid — Modo: Claro | Oscuro) en vez
+del ciclo de 4 pasos anterior; ver DESIGN.md §2. T5.2 (degradar blur de
+liquid en móvil) ya estaba hecho y ahora es definitivo, no un hedge.
 
 **T5.3 (2026-07-24, v2.49.1) — motion/shadow, a pedido del usuario**: tras
 preguntar si el plan contempla sombras/animaciones/hover como riesgo de

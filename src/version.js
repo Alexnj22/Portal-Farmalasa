@@ -5,8 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.54.0';
+export const APP_VERSION = '2.54.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.54.1 — docs(theme): cierra formalmente la decisión de Liquid Glass.
+//
+// AUDITORIA-TEMA-2026-07.md §11 y DESIGN.md (encabezado + §2) seguían
+// diciendo "decisión pendiente/diferida" sobre si Liquid Glass sobrevive
+// como tema — quedó stale: el usuario ya la tomó en esta misma sesión
+// (mantener los 4 temas, ver el ThemeToggle de 2 ejes de v2.54.0). Sin
+// esto, cualquiera que abriera el doc creería que sigue sin decidirse.
 
 // v2.54.0 — feat(theme): rediseña ThemeToggle a selector de 2 ejes (Estilo →
 // Modo).

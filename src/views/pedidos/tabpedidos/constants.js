@@ -12,32 +12,36 @@ export const PAUSE_REASONS = [
     { key: 'otro',         label: 'Otro…',                icon: MessageSquare, maxUses: null, requiresComment: true },
 ];
 
+// Tokenizado T7 — mismo criterio de color por etapa que TabEnCurso.jsx
+// (STAGE_CONFIG/COLOR_CLASSES ahí), mismo concepto de dispatch-stage.
 export const STAGE_CONFIG = {
-    sin_iniciar: { label: 'Sin iniciar',     color: 'slate',   icon: Package      },
-    preparando:  { label: 'En preparación',  color: 'blue',    icon: Activity     },
-    pausado:     { label: 'Pausado',         color: 'amber',   icon: Pause        },
-    preparado:   { label: 'Listo p/ envío',  color: 'violet',  icon: CheckCircle2 },
-    transito:    { label: 'En tránsito',     color: 'indigo',  icon: Truck        },
-    contando:    { label: 'Cajas recibidas', color: 'teal',    icon: PackageCheck },
-    erp:         { label: 'Sis. Ventas',      color: 'emerald', icon: Database     },
+    sin_iniciar: { label: 'Sin iniciar',     color: 'neutral', icon: Package      },
+    preparando:  { label: 'En preparación',  color: 'chart-1', icon: Activity     },
+    pausado:     { label: 'Pausado',         color: 'warning', icon: Pause        },
+    preparado:   { label: 'Listo p/ envío',  color: 'chart-3', icon: CheckCircle2 },
+    transito:    { label: 'En tránsito',     color: 'chart-5', icon: Truck        },
+    contando:    { label: 'Cajas recibidas', color: 'chart-7', icon: PackageCheck },
+    erp:         { label: 'Sis. Ventas',      color: 'success', icon: Database     },
 };
 
 export const COLOR_CLS = {
-    slate:   { bg: 'bg-slate-100',  text: 'text-slate-500',   border: 'border-slate-200'   },
-    blue:    { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'    },
-    amber:   { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200'   },
-    violet:  { bg: 'bg-violet-50',  text: 'text-violet-700',  border: 'border-violet-200'  },
-    indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200'  },
-    teal:    { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200'    },
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+    neutral:  { bg: 'bg-surface-card-hover', text: 'text-content-3',    border: 'border-border-card'  },
+    warning:  { bg: 'bg-warning/10',         text: 'text-warning-text', border: 'border-warning/30'   },
+    success:  { bg: 'bg-success/10',         text: 'text-success-text', border: 'border-success/30'   },
+    'chart-1': { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' },
+    'chart-3': { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
+    'chart-5': { bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30' },
+    'chart-7': { bg: 'bg-chart-7/10', text: 'text-chart-7-text', border: 'border-chart-7/30' },
 };
 
+// Tokenizado T7 — mismo criterio de color por sucursal que TabPedidos.jsx
+// (SUC_COLORS local, paleta cat-N por posición; 6=Bodega queda neutro).
 export const SUC_COLORS = {
-    1: 'bg-blue-100 text-blue-700 border-blue-200',
-    2: 'bg-violet-100 text-violet-700 border-violet-200',
-    3: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    4: 'bg-amber-100 text-amber-700 border-amber-200',
-    5: 'bg-rose-100 text-rose-700 border-rose-200',
-    6: 'bg-slate-100 text-slate-600 border-slate-200',
-    7: 'bg-teal-100 text-teal-700 border-teal-200',
+    1: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
+    2: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
+    3: 'bg-success/10 text-success-text border-success/30',
+    4: 'bg-warning/10 text-warning-text border-warning/30',
+    5: 'bg-chart-6/10 text-chart-6-text border-chart-6/30',
+    6: 'bg-surface-card-hover text-content-2 border-border-card',
+    7: 'bg-chart-9/10 text-chart-9-text border-chart-9/30',
 };

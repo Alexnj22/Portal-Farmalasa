@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.7';
+export const APP_VERSION = '2.52.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.8 — fix(theme): T7.1c — estandariza colores en
+// pedidos/tabpedidos/constants.js (STAGE_CONFIG, COLOR_CLS, SUC_COLORS).
+//
+// Mismo concepto de dispatch-stage que TabEnCurso.jsx (sin_iniciar/
+// preparando/pausado/preparado/transito/contando/erp) y mismo concepto de
+// color-por-sucursal que el SUC_COLORS local de TabPedidos.jsx — ambos ya
+// tokenizados en sesiones anteriores de T7 pero esta copia "hermana"
+// (extraída a constants.js para StagePill/SucPill) había quedado con la
+// paleta cruda original. Migrada a los MISMOS tokens que sus contrapartes
+// para que ambas vistas muestren idéntico color para el mismo estado.
+
 
 // v2.52.7 — fix(theme): T7.1c — estandariza colores en
 // EmployeeRequestsView.jsx.

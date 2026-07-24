@@ -826,21 +826,29 @@ restantes** — esta clase de bug se considera cerrada (v2.46.2 → v2.47.1).
 
 Con el barrido de scroll horizontal (desktop + iPhone 13) y la auditoría
 de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
-- **Modales — muestra representativa revisada (v2.47.3), no exhaustiva**:
-  abiertos con Playwright a 1024×768 y verificados sin scroll horizontal +
-  captura visual: `PromoModal` (`/promociones`, wizard 2 pasos),
-  `EmployeeFormModal` (`/staff`, wizard 4 pasos, tab Personal), 
-  `NuevoConteoModal` (`/conteo-inventario`). Los 3 limpios — ancho fijo
-  centrado, sin overflow, formularios legibles. **No abiertos**: modales
-  de `/pedidos` (`CrearRutaModal`, `RecepcionModal`, `LlegadaModal`) —
-  bloqueados por el bug preexistente de `@capacitor-community/
-  background-geolocation` (ver nota al final de esta sección); modal de
-  `ShiftExceptionModal` en `/schedules` — el selector automático no
-  encontró su botón disparador (posiblemente requiere seleccionar una
-  celda del calendario primero, no un botón de header); modal de
-  `/payroll` — sin botón "nuevo" visible en el header para este usuario
-  (puede ser gated por período ya abierto o por permiso). Cobertura
-  parcial, no el 100% de los ~30 overlays hand-rolled del proyecto (§9.1).
+- **Modales — 5 de 8 candidatos verificados (v2.47.3 → v2.47.5)**:
+  abiertos con Playwright a 1024×768, sin scroll horizontal: `PromoModal`
+  (`/promociones`), `EmployeeFormModal` (`/staff`), `NuevoConteoModal`
+  (`/conteo-inventario`), `CrearRutaModal` (`/pedidos`, vía el botón
+  "Crear Ruta" de un pedido "Por despachar" — desbloqueado tras el fix
+  de `/pedidos` en v2.47.5) y `FormNewPayrollPeriod`/"Nueva Quincena"
+  (`/payroll` — el selector automático original falló porque su botón es
+  un ícono `Plus` sin texto/aria-label dentro de la card "Períodos";
+  resuelto con un selector estructural). Los 5 limpios.
+  **`ShiftExceptionModal` se eliminó en v2.47.4** en vez de auditarse —
+  investigación encontró que no tenía NINGÚN disparador en toda la app
+  (dead code confirmado, ya anotado en un changelog previo) y que
+  `InlineDayEditor.jsx` (módulo de Horarios) ya cubre la misma función
+  ("editar el turno de un empleado para un día") de forma más completa;
+  decisión del usuario tras revisar qué hacía el modal. **`LlegadaModal`/
+  `RecepcionModal`/`ReenvioLlegadaModal` quedan sin verificar**: requieren
+  un pedido en la etapa "Entregado"/"Completados" del lifecycle, y no
+  había ninguno en ese estado en los datos de prueba al momento de
+  auditar (confirmado — el filtro "Completados" de `/pedidos` mostró
+  "Sin pedidos activos") — no es un bug, es un estado de datos del
+  negocio; queda pendiente re-intentar cuando exista un pedido en esa
+  etapa. Cobertura ya no bloqueada por ningún bug de infraestructura,
+  solo por disponibilidad de datos de prueba.
 - **Touch targets — medido y corregido el hallazgo sistémico (v2.47.3)**:
   barrido con Playwright en viewport iPhone 13 sobre 9 rutas (`/overview`,
   `/monitor`, `/my-requests`, `/minmax`, `/ventas`, `/profile`,
@@ -853,12 +861,21 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   HIG). Mismo bloque de código sirve al sidebar de escritorio (mouse, sin
   problema) y al drawer móvil (touch) — fix con `min-h-[44px]` aplicado
   SOLO cuando `isMobile`. Verificado: 30 → 0 elementos bajo el umbral,
-  captura del drawer confirma que no rompe el layout indentado. **Pendiente,
-  menor prioridad**: los controles de personalizar/redimensionar widgets
-  de `DashboardView.jsx` (20-28px, iconos secundarios de baja frecuencia
-  de uso — "Personalizar", drag-handles de resize) no se tocaron; no son
-  navegación primaria y requerirían rediseño del header del widget, fuera
-  de alcance de un fix mecánico.
+  captura del drawer confirma que no rompe el layout indentado.
+  **Cerrado en v2.47.4**: los 9 controles de personalizar/redimensionar de
+  `DashboardView.jsx` (grip de drag, toggle+popover W/H de resize,
+  prev/next de tendencia/calendario/cumpleaños, expandir ventas, año
+  prev/next y trigger del `MonthYearPicker`, botón "Personalizar") también
+  reciben el fix — pero no agrandando el tamaño VISIBLE (rompería headers
+  angostos en la grilla de 2 columnas de mobile), sino con una zona de
+  toque invisible expandida (`before:absolute before:-inset-*`,
+  mobile-only) más un `gap` ampliado donde había controles empaquetados a
+  ≤6px entre sí (popover W/H, chevrones del calendario junto al trigger de
+  mes) para evitar que las zonas expandidas se solaparan entre vecinos.
+  Verificado funcionalmente (no solo visualmente): clic 6px fuera del
+  círculo visible del botón de resize sí dispara su `onClick`, confirmando
+  que la técnica funciona y no es solo CSS sin efecto. Capturas antes/
+  después en mobile y desktop sin cambio visual.
 - **Tipografía ≥16px en inputs móviles** — investigado (no solo pendiente):
   `PortalInput.jsx`/`CatalogSelect.jsx` (los `<input>` de texto libre) ya
   usan `text-[16px]` — correcto, sin zoom-on-focus de iOS. El input de
@@ -916,11 +933,27 @@ de sub-tabs ya hechos, lo que queda explícitamente sin verificar:
   historial vacío con el patrón de empty state correcto. **Con esto, las
   13 vistas más grandes del proyecto (top-13 por líneas de código) quedan
   todas verificadas visualmente a 1024×768 en esta sesión.**
-- **`/pedidos`** (y sus tabs: `TabPedidos`, `TabReglas`, `TabMetricas`,
-  `TabRutas`) sigue bloqueada para cualquier auditoría (visual o
-  mecánica vía Playwright logueado) hasta que se resuelva el bug
-  preexistente de `@capacitor-community/background-geolocation` — no es
-  parte de T4, pero es un bloqueador transversal a tener en cuenta. La
-  revisión manual de `TabReglas.jsx`/`pedidos/RutaEnCursoCard.jsx` sí
-  recibió el fix de stat-cards de todos modos (código auditado por grep,
-  no por navegación en vivo).
+- **`/pedidos` — desbloqueada (v2.47.5)**: el bloqueador transversal que
+  impedía CUALQUIER auditoría (visual o mecánica) sobre esta ruta y sus 4
+  tabs internas (`TabPedidos`, `TabReglas`, `TabMetricas`, `TabRutas`)
+  desde el inicio de esta sesión de continuación quedó resuelto. Causa
+  raíz: `@capacitor-community/background-geolocation` es un plugin
+  100% nativo sin entrada JS; dos sitios (`RutaMapModal.jsx`,
+  `usePedidosData.js`) lo importaban con `import()` dinámico en vez de
+  `registerPlugin` (la forma documentada por el plugin) — Vite resolvía
+  el specifier estático en tiempo de transform SIEMPRE (sin importar
+  `/* @vite-ignore */` ni el guard `isNative` en runtime), por lo que
+  bastaba con CARGAR estos archivos para que `/pedidos` tirara el error
+  boundary, no con ejecutar la rama nativa. Fix aplicado, verificado con
+  Playwright: `/pedidos` renderiza sus 5 tabs (Generar, Pedidos,
+  Historial Rutas, Métricas, Reglas de Despacho) sin error boundary ni
+  overlay de Vite. **Nota importante**: la sintaxis rota tampoco habría
+  resuelto en un build nativo real, así que es probable que el tracking
+  GPS de rutas nunca haya funcionado correctamente en producción tampoco
+  — no hay forma de verificar el comportamiento GPS real en dispositivo
+  nativo desde este entorno; queda a cargo del usuario. Con la ruta
+  desbloqueada, ya se completó `CrearRutaModal` en la cobertura de
+  modales (ver arriba); el barrido mecánico de scroll horizontal +
+  sub-tabs sobre `/pedidos` en sí (análogo al ya hecho para
+  productos/schedules/ventas) queda como trabajo adicional no incluido
+  en este pase, ya no bloqueado técnicamente para hacerse después.

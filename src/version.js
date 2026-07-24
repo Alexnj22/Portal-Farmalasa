@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.13';
+export const APP_VERSION = '2.52.14';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.14 — fix(theme): T7.1c — estandariza colores en EncuestaView.jsx
+// (avatares/KPIs blue-indigo→chart-1/brand, Jefes purple-violet→chart-3/
+// chart-6), FormEditPayrollEntry.jsx (banco de horas extra: inputs con
+// bg/border ya tokenizados pero texto crudo al lado — mismo patrón de
+// media-migración de siempre) y FormAiSchedulerPreview.jsx (identidad
+// Lactancia pink→chart-6 consistente con ScheduleCalendar.jsx/
+// TabShifts.jsx). El shimmer indigo/purple/cyan del loading de IA se deja
+// intacto — mismo patrón decorativo documentado ya en 6 archivos.
+
 
 // v2.52.13 — fix(theme): T7.1c — estandariza colores en TabExpenses.jsx
 // + corrige gap real en el gate mecánico: el regex de T7.1 nunca incluyó

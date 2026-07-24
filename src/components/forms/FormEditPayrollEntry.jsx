@@ -16,10 +16,10 @@ const NocturnalLegalInfo = () => (
     <div className="relative group inline-flex items-center ml-1.5">
         <Info size={11} className="text-chart-3-text cursor-help" strokeWidth={2} />
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-            <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
+            <p className="font-black text-chart-3 mb-1.5">Art. 168 — Código de Trabajo SV</p>
             <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
-            <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
-            <p className="text-content-3">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
+            <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-chart-3 font-bold">+25% recargo</span> sobre tarifa diurna</p>
+            <p className="text-content-3">• Hrs. extra nocturnas: <span className="text-chart-3 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
             <p className="text-content-3">• Jornada noct. máx: 7h/día, 39h/sem</p>
             <p className="text-content-3">• Si &gt;4h son nocturnas → turno nocturno</p>
         </div>
@@ -131,12 +131,12 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 <div>
                                     <p className="text-[8px] font-black text-warning mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dPayInput} onChange={e => setDPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-warning/30 focus:border-warning rounded-lg text-[16px] font-black text-amber-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-warning/30 focus:border-warning rounded-lg text-[16px] font-black text-warning-text outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dCompInput} onChange={e => setDCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-chart-1/30 focus:border-chart-1 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-chart-1/30 focus:border-chart-1 rounded-lg text-[16px] font-black text-chart-1-text outline-none" />
                                 </div>
                             </div>
                             {dUsed > 0 && (
@@ -152,18 +152,18 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                         <div className="bg-chart-3/10 border border-chart-3/30 rounded-xl p-2.5 space-y-2">
                             <div className="flex items-center justify-between">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-chart-3-text">HE Nocturnas <span className="text-chart-3-text font-bold normal-case">(×2.25 si se pagan)</span></p>
-                                <span className="text-[13px] font-black text-indigo-800">{otBank.nocturnal.toFixed(1)}h</span>
+                                <span className="text-[13px] font-black text-chart-3-text">{otBank.nocturnal.toFixed(1)}h</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <p className="text-[8px] font-black text-chart-3-text mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nPayInput} onChange={e => setNPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-chart-3/30 focus:border-indigo-400 rounded-lg text-[16px] font-black text-indigo-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-chart-3/30 focus:border-chart-3 rounded-lg text-[16px] font-black text-chart-3-text outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nCompInput} onChange={e => setNCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-chart-1/30 focus:border-chart-1 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-chart-1/30 focus:border-chart-1 rounded-lg text-[16px] font-black text-chart-1-text outline-none" />
                                 </div>
                             </div>
                             {nUsed > 0 && (
@@ -262,7 +262,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     value={formData._reason || ''}
                     onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
                     placeholder="Ej: Corrección de días por permiso autorizado"
-                    className="w-full h-10 px-3 bg-warning/10 border border-warning/40 hover:border-warning focus:border-warning focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300"
+                    className="w-full h-10 px-3 bg-warning/10 border border-warning/40 hover:border-warning focus:border-warning focus:ring-4 focus:ring-warning/20 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300"
                 />
             </div>
         </div>

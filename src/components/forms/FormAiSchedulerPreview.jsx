@@ -270,8 +270,8 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
     return (
         <div className="w-full flex flex-col gap-4 animate-in fade-in duration-500">
             {/* RAZONAMIENTO */}
-            <div className="bg-chart-3/10 border border-purple-100 rounded-xl p-4 relative overflow-hidden shadow-sm">
-                <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-purple-200 opacity-50 -rotate-12 pointer-events-none" strokeWidth={1} />
+            <div className="bg-chart-3/10 border border-chart-3/20 rounded-xl p-4 relative overflow-hidden shadow-sm">
+                <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-chart-3/30 opacity-50 -rotate-12 pointer-events-none" strokeWidth={1} />
                 <h4 className="text-[10px] font-black text-chart-3-text uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><Sparkles size={12}/> Resumen de Gemini</h4>
                 <p className="text-[12px] font-bold text-content-2 leading-relaxed relative z-10 italic">"{aiResult?.ai_reasoning || 'Horario generado óptimamente.'}"</p>
             </div>
@@ -325,10 +325,10 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                         return (
                                             <td key={dayId} className="p-2 align-top border-l border-slate-200/60">
                                                 {shift ? (
-                                                    <div className="flex flex-col h-full bg-white border border-chart-3/30 rounded-lg shadow-sm overflow-hidden hover:border-indigo-300 transition-colors group/cell">
+                                                    <div className="flex flex-col h-full bg-white border border-chart-3/30 rounded-lg shadow-sm overflow-hidden hover:border-chart-3/50 transition-colors group/cell">
                                                         
                                                         {/* Header de la celda (Selector) */}
-                                                        <div className="w-full bg-chart-3/10 hover:bg-chart-3/10 text-chart-3-text border-b border-indigo-50 transition-colors">
+                                                        <div className="w-full bg-chart-3/10 hover:bg-chart-3/10 text-chart-3-text border-b border-chart-3/20 transition-colors">
                                                             <LiquidSelect
                                                                 nano
                                                                 bare
@@ -363,7 +363,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                                 )}
 
                                                                 {dayData.lactationTime && (
-                                                                    <div className="flex justify-center items-center bg-pink-50 text-pink-600 rounded px-1.5 py-0.5 border border-pink-100/50 mt-0.5">
+                                                                    <div className="flex justify-center items-center bg-chart-6/10 text-chart-6-text rounded px-1.5 py-0.5 border border-chart-6/30 mt-0.5">
                                                                         <span>Lactancia (+1h)</span>
                                                                     </div>
                                                                 )}
@@ -383,7 +383,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                                 <Utensils size={11} strokeWidth={2.5}/>
                                                             </button>
                                                             <div className="w-px bg-surface-card-hover/50"></div>
-                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lactationTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lactationTime ? 'text-pink-500 bg-pink-50' : 'text-content-3 hover:text-pink-400 hover:bg-surface-card-hover'}`} title="Con/Sin Lactancia">
+                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lactationTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lactationTime ? 'text-chart-6 bg-chart-6/10' : 'text-content-3 hover:text-chart-6 hover:bg-surface-card-hover'}`} title="Con/Sin Lactancia">
                                                                 <Baby size={11} strokeWidth={2.5}/>
                                                             </button>
                                                         </div>

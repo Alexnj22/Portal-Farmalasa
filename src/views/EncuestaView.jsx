@@ -99,10 +99,10 @@ function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
                     src={photo}
                     alt={nombre}
                     onError={() => setFailed(true)}
-                    className={`w-full h-full rounded-full object-cover object-top ${isJefe ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
+                    className={`w-full h-full rounded-full object-cover object-top ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`}
                 />
             ) : (
-                <div className={`w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black ${isJefe ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
+                <div className={`w-full h-full rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`}
                     style={{ fontSize: size * 0.38 }}>
                     {initials}
                 </div>
@@ -662,10 +662,10 @@ export default function EncuestaView() {
                         {/* KPIs */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {[
-                                { label: 'Participantes',  value: RESPUESTAS.length, sub: '100% del total', Icon: Users,    grad: 'from-blue-500 to-indigo-500' },
-                                { label: 'Jefes',          value: RESPUESTAS.filter(r => r.isJefe).length,  sub: 'de sala / área', Icon: UserCheck, grad: 'from-purple-500 to-violet-500' },
+                                { label: 'Participantes',  value: RESPUESTAS.length, sub: '100% del total', Icon: Users,    grad: 'from-chart-1 to-brand' },
+                                { label: 'Jefes',          value: RESPUESTAS.filter(r => r.isJefe).length,  sub: 'de sala / área', Icon: UserCheck, grad: 'from-chart-3 to-chart-6' },
                                 { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-slate-500 to-slate-400' },
-                                { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-teal-500 to-emerald-500' },
+                                { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-chart-9 to-success' },
                             ].map(({ label, value, sub, Icon, grad }) => (
                                 <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 bg-white shadow-sm">
                                     <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
@@ -783,13 +783,13 @@ export default function EncuestaView() {
                                         <>
                                         {/* Average score prominent display */}
                                         <div className="flex items-center gap-4">
-                                            <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-warning/30 shrink-0">
+                                            <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-warning/10 to-chart-4/10 border border-warning/30 shrink-0">
                                                 <span className="text-[28px] font-black text-warning leading-none">{avg != null ? avg.toFixed(1) : '–'}</span>
                                                 <span className="text-[10px] font-bold text-warning">/ 10</span>
                                             </div>
                                             <div className="flex-1 space-y-2">
                                                 {/* Gradient track */}
-                                                <div className="relative h-3 rounded-full overflow-hidden bg-gradient-to-r from-rose-300 via-amber-300 via-blue-300 to-emerald-400">
+                                                <div className="relative h-3 rounded-full overflow-hidden bg-gradient-to-r from-danger via-warning via-chart-1 to-success">
                                                     {avgPct != null && (
                                                         <div className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-warning shadow-md transition-all duration-700"
                                                             style={{ left: `calc(${avgPct}% - 7px)` }} />
@@ -1130,7 +1130,7 @@ export default function EncuestaView() {
                                                 <div className="text-[9px] text-content-3">{rows.length} personas · {jCount} jefe{jCount !== 1 ? 's' : ''}</div>
                                             </div>
                                             <div className="flex-1 h-3 rounded-full bg-surface-card-hover overflow-hidden">
-                                                <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700"
+                                                <div className="h-full rounded-full bg-gradient-to-r from-chart-1 to-brand transition-all duration-700"
                                                     style={{ width: `${score}%` }} />
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
@@ -1395,7 +1395,7 @@ export default function EncuestaView() {
                                 {/* Segment header bar */}
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-chart-3/20 bg-gradient-to-r from-chart-3/10 to-chart-3/5">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_8px_rgba(139,92,246,0.35)]">
+                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center shadow-[0_0_8px_rgba(139,92,246,0.35)]">
                                             <Sparkles size={10} className="text-white" />
                                         </div>
                                         <span className="text-[12px] font-black text-content-2 tracking-tight">

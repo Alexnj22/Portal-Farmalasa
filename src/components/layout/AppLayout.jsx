@@ -25,6 +25,7 @@ import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
 import OfflineBanner from '../common/OfflineBanner';
+import SystemUpdateBanner from '../common/SystemUpdateBanner';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -271,6 +272,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     }, [visibleGroups]);
 
     const [searchOpen, setSearchOpen] = useState(false);
+    // Empuja #main-scroll cuando SystemUpdateBanner está visible — a
+    // diferencia de OfflineBanner/PushPromptBanner (transitorios), este
+    // aviso puede quedar en pantalla toda la sesión y no debe tapar contenido.
+    const [updateBannerVisible, setUpdateBannerVisible] = useState(false);
     useEffect(() => {
         const onKeyDown = (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -1050,7 +1055,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
 
                     {/* Content */}
-                    <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
+                    <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:pb-4 lg:pr-2 px-2 lg:px-0 transition-[padding-top] duration-300 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]' : ''} ${updateBannerVisible ? 'pt-24 lg:pt-24' : ''}`}>
                         {!isMobile && (
                             <div className="absolute top-4 right-5 z-[200] hidden lg:block">
                                 <NotificationBell variant="desktop" />
@@ -1231,6 +1236,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             <PushPromptBanner />
             <OfflineBanner />
+            <SystemUpdateBanner onVisibleChange={setUpdateBannerVisible} />
 
             <MenuSearchModal
                 isOpen={searchOpen}

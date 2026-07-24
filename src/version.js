@@ -5,8 +5,44 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.47.5';
+export const APP_VERSION = '2.48.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.48.0 — feat(layout): aviso global "Portal en actualización visual"
+// (SystemUpdateBanner) mientras dura la migración de tema T1-T7.
+//
+// A pedido del usuario: mientras la migración de tema (AUDITORIA-TEMA-
+// 2026-07.md) sigue en curso, algunas vistas pueden verse ligeramente
+// distintas de una sesión a otra — el aviso deja claro que es cosmético,
+// no un problema de datos. Nuevo componente
+// `src/components/common/SystemUpdateBanner.jsx`, montado en
+// `AppLayout.jsx` junto a `PushPromptBanner`/`OfflineBanner` (mismo
+// patrón: features de sesión van en AppLayout, visibles sin importar
+// rol/ruta). Dismissible vía `sessionStorage`
+// (`system_update_notice_dismissed_v1`, mismo patrón que
+// `PushPromptBanner`) — reaparece en la siguiente sesión, ya que el
+// estado de la migración cambia día a día.
+//
+// A diferencia de Offline/PushPrompt (transitorios, bajo riesgo de tapar
+// contenido), este aviso puede quedar visible toda la sesión sobre
+// CUALQUIER vista, así que taparía contenido si solo flotara encima.
+// Fix de dos partes:
+// 1. `SystemUpdateBanner` expone su estado `visible` vía prop
+//    `onVisibleChange`; `AppLayout` lo guarda (`updateBannerVisible`) y
+//    empuja `#main-scroll` hacia abajo (`pt-24`, con `lg:pt-24` explícito
+//    porque el `lg:pt-2` ya existente en el mismo div le ganaba a un
+//    `pt-24` sin prefijo en viewports de escritorio — encontrado
+//    revisando la primera captura, donde el aviso tapaba la fila de stat
+//    cards en /overview a 1440px).
+// 2. En mobile, el header sticky vive FUERA de `#main-scroll` (elemento
+//    hermano en AppLayout), así que empujar el padding no lo despeja —
+//    el aviso necesita su propio offset responsive
+//    (`top-[calc(4.75rem+env(safe-area-inset-top,0px))] lg:top-4`,
+//    encontrado igual por captura: el aviso tapaba el menú hamburguesa y
+//    la campana en iPhone 13).
+// Verificado con Playwright en /overview (1440px y iPhone 13) y /ventas
+// (1024px, sidebar en modo rail): sin solape en ningún caso, dismiss
+// retrae el padding sin dejar hueco. Build + tests (15) verdes.
 
 // v2.47.5 — fix(pedidos): /pedidos ya no crashea en dev server — import
 // roto de @capacitor-community/background-geolocation.

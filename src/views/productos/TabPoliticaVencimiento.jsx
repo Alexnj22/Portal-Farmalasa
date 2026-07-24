@@ -291,8 +291,8 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
 // ─── Summary card ─────────────────────────────────────────────────────────────
 
 const SUMMARY_COLOR = {
-    teal:   { bg: 'from-teal-50 to-white',   border: 'border-teal-100/80',   icon: 'bg-teal-100 text-teal-600',    glow: 'shadow-teal-100',   text: 'text-teal-600'   },
-    indigo: { bg: 'from-indigo-50 to-white', border: 'border-indigo-100/80', icon: 'bg-indigo-100 text-indigo-600',glow: 'shadow-indigo-100', text: 'text-indigo-600' },
+    teal:   { bg: 'from-chart-9/10 to-surface-card',   border: 'border-chart-9/30',   icon: 'bg-chart-9/10 text-chart-9-text',    glow: 'shadow-chart-9/20',   text: 'text-chart-9-text'   },
+    indigo: { bg: 'from-chart-3/10 to-surface-card', border: 'border-chart-3/30', icon: 'bg-chart-3/10 text-chart-3-text',glow: 'shadow-chart-3/20', text: 'text-chart-3-text' },
     amber:  { bg: 'from-amber-50 to-white',  border: 'border-warning/30',  icon: 'bg-warning/10 text-warning',  glow: 'shadow-amber-100',  text: 'text-warning'  },
 };
 
@@ -321,15 +321,15 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
             layout
             className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                 isOpen
-                    ? 'border-teal-200/70 shadow-lg shadow-teal-50 bg-surface-card backdrop-blur-sm'
-                    : 'border-slate-200/60 hover:border-teal-200/50 hover:shadow-md bg-surface-card backdrop-blur-sm'
+                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card backdrop-blur-sm'
+                    : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
             }`}
         >
             <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3.5 text-left group">
                 <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                    isOpen ? 'bg-gradient-to-br from-teal-400 to-teal-500 shadow-md shadow-teal-200' : 'bg-surface-card-hover group-hover:bg-teal-50'
+                    isOpen ? 'bg-chart-9 shadow-md shadow-chart-9/30' : 'bg-surface-card-hover group-hover:bg-chart-9/10'
                 }`}>
-                    <FlaskConical className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-content-3 group-hover:text-teal-500'}`} />
+                    <FlaskConical className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-content-3 group-hover:text-chart-9-text'}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -342,9 +342,9 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                 </div>
 
                 <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                    isOpen ? 'bg-teal-50 rotate-180' : 'bg-surface-card-hover group-hover:bg-surface-card-hover'
+                    isOpen ? 'bg-chart-9/10 rotate-180' : 'bg-surface-card-hover group-hover:bg-surface-card-hover'
                 }`}>
-                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-teal-500' : 'text-content-3'}`} />
+                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-chart-9-text' : 'text-content-3'}`} />
                 </div>
             </button>
 
@@ -391,7 +391,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                             {canEdit && (
                                 <button
                                     onClick={onStartAdd}
-                                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-teal-200 text-teal-600 hover:bg-teal-50 hover:border-teal-300 transition-colors text-[11px] font-bold"
+                                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-chart-9/30 text-chart-9-text hover:bg-chart-9/10 hover:border-chart-9/40 transition-colors text-[11px] font-bold"
                                 >
                                     <Plus className="w-3.5 h-3.5" /> Agregar proveedor
                                 </button>
@@ -426,19 +426,19 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
             <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-content-2 truncate flex items-center gap-1.5">
                     {isCofarsal(proveedor.nombre) && (
-                        <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                        <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
                     )}
                     {proveedor.nombre}
                 </p>
                 {proveedor.notas && <p className="text-[10px] text-content-3 truncate mt-0.5">{proveedor.notas}</p>}
             </div>
             {proveedor.vineta != null && (
-                <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full shrink-0" title="Viñeta">
+                <span className="text-[9px] font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full shrink-0" title="Viñeta">
                     v{proveedor.vineta}
                 </span>
             )}
             {proveedor.devolutivo ? (
-                <span className="text-[9px] font-black uppercase text-emerald-700 bg-success/10 border border-success/30 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[9px] font-black uppercase text-success-text bg-success/10 border border-success/30 px-2 py-0.5 rounded-full shrink-0">
                     Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}
                 </span>
             ) : (
@@ -448,7 +448,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
             )}
             {canEdit && (
                 <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => setEditing(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-content-3 hover:text-teal-600 hover:bg-teal-50 transition-colors">
+                    <button onClick={() => setEditing(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-content-3 hover:text-chart-9-text hover:bg-chart-9/10 transition-colors">
                         <Pencil className="w-3 h-3" />
                     </button>
                     <button onClick={() => onDelete(proveedor)} className="w-6 h-6 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors">
@@ -504,7 +504,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
         <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl bg-white border border-teal-200/70 shadow-md shadow-teal-100/50 p-2.5"
+            className="rounded-xl bg-surface-card border border-chart-9/30 shadow-md shadow-chart-9/20 p-2.5"
         >
             <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
                 <div className="flex-1 min-w-[160px]">
@@ -527,8 +527,8 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         placeholder="0"
                         disabled={!draft.devolutivo}
                         title="Meses antes de vencer por política de devolución"
-                        className={`w-12 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 text-content-2 text-center ${
-                            draft.devolutivo && draft.meses_devolucion === '' ? 'border-red-300 focus:border-red-300' : 'border-slate-200 focus:border-teal-300'
+                        className={`w-12 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 text-content-2 text-center ${
+                            draft.devolutivo && draft.meses_devolucion === '' ? 'border-danger/40 focus:border-danger/40' : 'border-border-card focus:border-chart-9/40'
                         }`}
                     />
                     <span className="text-[9px] font-semibold text-content-3 whitespace-nowrap">meses</span>
@@ -543,7 +543,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
                         title="Viñeta: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio-viñeta vigente del producto para resolver la política automáticamente"
-                        className="w-14 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 border-slate-200 focus:border-teal-300 text-content-2 text-center"
+                        className="w-14 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 border-border-card focus:border-chart-9/40 text-content-2 text-center"
                     />
                     <span className="text-[9px] font-semibold text-content-3 whitespace-nowrap">viñeta</span>
                 </div>
@@ -553,7 +553,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     title={draft.devolutivo ? 'Marcar como No Devolutivo (ND)' : 'No Devolutivo (ND) — no acepta devolución'}
                     className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors shrink-0 ${
                         !draft.devolutivo
-                            ? 'bg-warning/10 text-amber-700 border-warning/30'
+                            ? 'bg-warning/10 text-warning-text border-warning/30'
                             : 'bg-surface-card-hover text-content-3 border-slate-200 hover:border-slate-300'
                     }`}
                 >
@@ -564,12 +564,12 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.notas}
                     onChange={e => setF('notas', e.target.value)}
                     placeholder="Notas (opcional)"
-                    className="flex-1 min-w-[110px] text-[16px] px-2 py-1.5 rounded-lg border border-slate-200 bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-content-2 placeholder-slate-300"
+                    className="flex-1 min-w-[110px] text-[16px] px-2 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
                 />
 
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
                     {saving ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-500" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-chart-9-text" />
                     ) : justSaved ? (
                         <Check className="w-3.5 h-3.5 text-success" />
                     ) : null}
@@ -590,7 +590,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
                     onChange={e => setF('nombre', e.target.value)}
                     placeholder="Nombre del proveedor/droguería"
-                    className="w-full mt-1.5 text-[16px] font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-surface-card outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-content-2 placeholder-slate-300"
+                    className="w-full mt-1.5 text-[16px] font-semibold px-2.5 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
                 />
             )}
             {draft.devolutivo && draft.meses_devolucion === '' && (

@@ -24,9 +24,9 @@ function classifyLab(nombre) {
 }
 
 const SECTIONS = [
-    { key: 'principales', label: 'Laboratorios principales',    dot: 'bg-teal-500',   pill: 'bg-teal-50 text-teal-700 border-teal-200'   },
-    { key: 'insumos',     label: 'Insumos',                     dot: 'bg-indigo-500', pill: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-    { key: 'cosmeticos',  label: 'Cosméticos / Conveniencia',   dot: 'bg-rose-400',   pill: 'bg-rose-50 text-rose-700 border-rose-200'    },
+    { key: 'principales', label: 'Laboratorios principales',    dot: 'bg-chart-9',   pill: 'bg-chart-9/10 text-chart-9-text border-chart-9/30'   },
+    { key: 'insumos',     label: 'Insumos',                     dot: 'bg-chart-3', pill: 'bg-chart-3/10 text-chart-3-text border-chart-3/30' },
+    { key: 'cosmeticos',  label: 'Cosméticos / Conveniencia',   dot: 'bg-chart-6',   pill: 'bg-chart-6/10 text-chart-6-text border-chart-6/30'    },
 ];
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -202,8 +202,8 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 // ─── Summary card ─────────────────────────────────────────────────────────────
 
 const SUMMARY_COLOR = {
-    teal:   { bg: 'from-teal-50 to-white',     border: 'border-teal-100/80',   icon: 'bg-teal-100 text-teal-600',    glow: 'shadow-teal-100',   text: 'text-teal-600'   },
-    indigo: { bg: 'from-indigo-50 to-white',   border: 'border-indigo-100/80', icon: 'bg-indigo-100 text-indigo-600',glow: 'shadow-indigo-100', text: 'text-indigo-600' },
+    teal:   { bg: 'from-chart-9/10 to-surface-card',     border: 'border-chart-9/30',   icon: 'bg-chart-9/10 text-chart-9-text',    glow: 'shadow-chart-9/20',   text: 'text-chart-9-text'   },
+    indigo: { bg: 'from-chart-3/10 to-surface-card',   border: 'border-chart-3/30', icon: 'bg-chart-3/10 text-chart-3-text',glow: 'shadow-chart-3/20', text: 'text-chart-3-text' },
     slate:  { bg: 'from-slate-50 to-white',    border: 'border-slate-100/80',  icon: 'bg-surface-card-hover text-content-3',  glow: 'shadow-slate-100',  text: 'text-content-3'  },
 };
 
@@ -232,17 +232,17 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
             layout
             className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                 isOpen
-                    ? 'border-teal-200/70 shadow-lg shadow-teal-50 bg-surface-card backdrop-blur-sm'
-                    : 'border-slate-200/60 hover:border-teal-200/50 hover:shadow-md bg-surface-card backdrop-blur-sm'
+                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card backdrop-blur-sm'
+                    : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
             }`}
         >
             <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3.5 text-left group">
                 <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 ${
                     isOpen
-                        ? 'bg-gradient-to-br from-teal-400 to-teal-500 shadow-md shadow-teal-200'
-                        : 'bg-surface-card-hover group-hover:bg-teal-50'
+                        ? 'bg-chart-9 shadow-md shadow-chart-9/30'
+                        : 'bg-surface-card-hover group-hover:bg-chart-9/10'
                 }`}>
-                    <FlaskConical className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-content-3 group-hover:text-teal-500'}`} />
+                    <FlaskConical className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-content-3 group-hover:text-chart-9-text'}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -262,8 +262,8 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
                             className={`w-2 h-2 rounded-full transition-all duration-300 ${
                                 hasAny(locationMap[b.id] || {})
                                     ? b.type === 'BODEGA'
-                                        ? 'bg-amber-400 shadow-sm shadow-amber-200'
-                                        : 'bg-teal-400 shadow-sm shadow-teal-200'
+                                        ? 'bg-warning shadow-sm shadow-warning/30'
+                                        : 'bg-chart-9 shadow-sm shadow-chart-9/30'
                                     : 'bg-surface-card-hover'
                             }`}
                         />
@@ -271,9 +271,9 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
                 </div>
 
                 <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                    isOpen ? 'bg-teal-50 rotate-180' : 'bg-surface-card-hover group-hover:bg-surface-card-hover'
+                    isOpen ? 'bg-chart-9/10 rotate-180' : 'bg-surface-card-hover group-hover:bg-surface-card-hover'
                 }`}>
-                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-teal-500' : 'text-content-3'}`} />
+                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-chart-9-text' : 'text-content-3'}`} />
                 </div>
             </button>
 
@@ -352,8 +352,8 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
 
     // Accent colours based on branch type
     const accent = isBodegaBranch
-        ? { bar: 'from-amber-400 to-amber-300', badge: 'bg-warning/10 text-amber-700', dot: 'bg-amber-400' }
-        : { bar: 'from-teal-400 to-cyan-300',   badge: 'bg-teal-100 text-teal-700',   dot: 'bg-teal-400'  };
+        ? { bar: 'from-warning to-warning/70', badge: 'bg-warning/10 text-warning-text', dot: 'bg-warning' }
+        : { bar: 'from-chart-9 to-chart-5',   badge: 'bg-chart-9/10 text-chart-9-text',   dot: 'bg-chart-9'  };
 
     return (
         <motion.div
@@ -435,8 +435,8 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                             {!isBodegaBranch && (
                                 <div className="flex p-0.5 bg-surface-card-hover/80 rounded-xl mb-3 gap-0.5">
                                     {[
-                                        { key: 'sala',   label: 'Sala de ventas',  active: 'text-teal-700  bg-white shadow-sm shadow-teal-100'  },
-                                        { key: 'bodega', label: 'Bodega interna',  active: 'text-amber-700 bg-white shadow-sm shadow-amber-100' },
+                                        { key: 'sala',   label: 'Sala de ventas',  active: 'text-chart-9-text  bg-surface-card shadow-sm shadow-chart-9/20'  },
+                                        { key: 'bodega', label: 'Bodega interna',  active: 'text-warning-text bg-surface-card shadow-sm shadow-warning/20' },
                                     ].map(t => (
                                         <button
                                             key={t.key}
@@ -470,8 +470,8 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                                 onClick={() => setSalaType(t.key)}
                                                 className={`flex-1 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 ${
                                                     salaType === t.key
-                                                        ? 'bg-teal-500 text-white border-teal-500 shadow-sm shadow-teal-200'
-                                                        : 'bg-surface-card text-content-3 border-slate-200 hover:border-teal-200 hover:text-teal-500'
+                                                        ? 'bg-chart-9 text-white border-chart-9 shadow-sm shadow-chart-9/30'
+                                                        : 'bg-surface-card text-content-3 border-border-card hover:border-chart-9/30 hover:text-chart-9-text'
                                                 }`}
                                             >
                                                 {t.label}
@@ -495,7 +495,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                     whileTap={{ scale: 0.96 }}
                                     onClick={save}
                                     disabled={saving}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-teal-200/60 transition-all disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-chart-9 hover:bg-chart-9/80 text-white text-xs font-bold shadow-md shadow-chart-9/30 transition-all disabled:opacity-50"
                                 >
                                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                     Guardar
@@ -521,8 +521,8 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
 
 function GlassChip({ icon, label, sub, color }) {
     const cls = color === 'amber'
-        ? 'bg-gradient-to-r from-amber-50 to-amber-50/60 border-warning/30 text-amber-700'
-        : 'bg-gradient-to-r from-teal-50 to-teal-50/60 border-teal-200/70 text-teal-700';
+        ? 'bg-gradient-to-r from-warning/10 to-warning/5 border-warning/30 text-warning-text'
+        : 'bg-gradient-to-r from-chart-9/10 to-chart-9/5 border-chart-9/30 text-chart-9-text';
     return (
         <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold backdrop-blur-sm ${cls}`}>
             <span className="opacity-60">{icon}</span>
@@ -534,8 +534,8 @@ function GlassChip({ icon, label, sub, color }) {
 
 function GlassInput({ label, value, onChange, placeholder, accent }) {
     const focus = accent === 'amber'
-        ? 'focus:ring-2 focus:ring-amber-100 focus:border-amber-300'
-        : 'focus:ring-2 focus:ring-teal-100 focus:border-teal-300';
+        ? 'focus:ring-2 focus:ring-warning/20 focus:border-warning/40'
+        : 'focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40';
     return (
         <div className="flex items-center gap-2.5">
             <span className="text-[11px] font-bold text-content-3 w-12 flex-shrink-0 text-right">{label}</span>

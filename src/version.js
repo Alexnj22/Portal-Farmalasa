@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.51.3';
+export const APP_VERSION = '2.51.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.4 — refactor(theme): T7.1 — BranchesView + TabLaboratorios/
+// TabPoliticaVencimiento (v2.51.4).
+//
+// BranchesView.jsx: tipos de sucursal (Farmacia/Administración/Externos)
+// → cat-1/3/9; panel "Gemini Insight" (indigo/purple decorativo) → chart-3
+// consistente; barras de completitud legal/inmueble/servicios → danger/
+// warning real. TabLaboratorios/TabPoliticaVencimiento (misma estructura
+// duplicada en ambos archivos): categorías de laboratorio → cat-9/3/6;
+// toggle sala de ventas/bodega → cat-9/warning.
 
 // v2.51.3 — refactor(theme): T7.1 — cierra todo src/views/pedidos/ (v2.51.3).
 //

@@ -222,7 +222,7 @@ function FilterControls({
                     <button onClick={() => setFilterAntibiotico(v => !v)}
                         className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                             filterAntibiotico
-                                ? 'bg-rose-100 border-rose-200 text-rose-700 shadow-sm'
+                                ? 'bg-danger/10 border-danger/30 text-danger-text shadow-sm'
                                 : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-slate-200 hover:text-content-2'
                         }`}>
                         Receta Médica
@@ -731,10 +731,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
                                         <div className="flex gap-1 flex-wrap mt-0.5">
                                             {(r.has_puntos || filterPuntos) && (
-                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-amber-700">Puntos</span>
+                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-warning-text">Puntos</span>
                                             )}
                                             {abInvoicesSet.has(r.id) && (
-                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>
+                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>
                                             )}
                                         </div>
                                     )}
@@ -840,7 +840,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             <div className={`text-[11px] font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
+                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>}
                                                                                     {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
                                                                                     {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
                                                                                     {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}

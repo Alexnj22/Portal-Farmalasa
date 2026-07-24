@@ -80,7 +80,7 @@ const COLOR_CLS = {
     emerald: { bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30' },
 };
 
-const PEDIDO_PILL  = { confirmado: 'bg-blue-100 text-blue-700 border-blue-200', enviado: 'bg-indigo-100 text-indigo-700 border-indigo-200', parcial: 'bg-warning/10 text-amber-700 border-warning/30', completado: 'bg-success/10 text-emerald-700 border-success/30', anulado: 'bg-danger/10 text-danger border-danger/30' };
+const PEDIDO_PILL  = { confirmado: 'bg-chart-1/10 text-chart-1-text border-chart-1/30', enviado: 'bg-chart-3/10 text-chart-3-text border-chart-3/30', parcial: 'bg-warning/10 text-warning-text border-warning/30', completado: 'bg-success/10 text-success-text border-success/30', anulado: 'bg-danger/10 text-danger-text border-danger/30' };
 const PEDIDO_LABEL = { confirmado: 'Por despachar', enviado: 'En ruta', parcial: 'Con diferencias', completado: 'Completado', anulado: 'Anulado' };
 
 // PAUSE_REASONS: extraído a ./tabpedidos/constants.js (Bloque 6.C) —

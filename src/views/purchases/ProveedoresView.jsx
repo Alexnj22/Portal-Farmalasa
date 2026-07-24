@@ -3,6 +3,7 @@ import { Truck, Tag, Layers, AlertTriangle, X, CheckCircle2, Building2 } from 'l
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
@@ -38,11 +39,8 @@ function RegimenCell({ row }) {
     if (!row.regimen_fiscal) return <span className="text-content-3 text-[11px]">—</span>;
     const isExcluido = row.regimen_fiscal === 'sujeto_excluido';
     return (
-        <span
-            title={isExcluido ? 'Sin NRC (Art. 119 CT) — no da crédito fiscal; retención de Renta 10% si es persona natural por un servicio (Art. 156 CT)' : 'Tiene NRC — da derecho a crédito fiscal de IVA'}
-            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${isExcluido ? 'text-amber-700 bg-amber-500/10 border-amber-500/25' : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25'}`}
-        >
-            {REGIMEN_LABELS[row.regimen_fiscal]}
+        <span title={isExcluido ? 'Sin NRC (Art. 119 CT) — no da crédito fiscal; retención de Renta 10% si es persona natural por un servicio (Art. 156 CT)' : 'Tiene NRC — da derecho a crédito fiscal de IVA'}>
+            <Badge variant={isExcluido ? 'warning' : 'success'}>{REGIMEN_LABELS[row.regimen_fiscal]}</Badge>
         </span>
     );
 }

@@ -22,16 +22,20 @@ const formatDate = (d) => d
     ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
 
+// Tokenizado T7 — mismo criterio que RequestsView.jsx (comparten el mismo
+// enum de `type`, deben verse iguales en ambas vistas): VACATION/DISABILITY
+// son severidad real (positivo/negativo), el resto es categórico puro,
+// mapeado a los MISMOS chart-N que RequestsView para el tipo compartido.
 const EVENT_THEMES = {
-    VACATION:    { bg: 'bg-success/10',  text: 'text-emerald-700', border: 'border-success/30', dot: 'border-emerald-500',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]' },
-    PERMIT:      { bg: 'bg-warning/10',    text: 'text-amber-700',   border: 'border-warning/30',   dot: 'border-amber-500',    glow: 'hover:shadow-[0_8px_24px_rgba(245,158,11,0.12)]'  },
-    DISABILITY:  { bg: 'bg-danger/10',      text: 'text-red-700',     border: 'border-danger/30',     dot: 'border-red-500',      glow: 'hover:shadow-[0_8px_24px_rgba(239,68,68,0.12)]'   },
-    SHIFT_CHANGE:{ bg: 'bg-cyan-50',     text: 'text-cyan-700',    border: 'border-cyan-200',    dot: 'border-cyan-500',     glow: 'hover:shadow-[0_8px_24px_rgba(6,182,212,0.12)]'   },
-    SALARY:      { bg: 'bg-indigo-50',   text: 'text-indigo-700',  border: 'border-indigo-200',  dot: 'border-indigo-500',   glow: 'hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)]'  },
-    TRANSFER:    { bg: 'bg-blue-50',     text: 'text-blue-700',    border: 'border-blue-200',    dot: 'border-blue-500',     glow: 'hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]'  },
-    HIRING:      { bg: 'bg-success/10',  text: 'text-emerald-700', border: 'border-success/30', dot: 'border-emerald-500',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]' },
+    VACATION:    { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]' },
+    PERMIT:      { bg: 'bg-chart-2/10',  text: 'text-chart-2-text', border: 'border-chart-2/30', dot: 'border-chart-2',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]'  },
+    DISABILITY:  { bg: 'bg-danger/10',   text: 'text-danger-text',  border: 'border-danger/30',  dot: 'border-danger',   glow: 'hover:shadow-[0_8px_24px_rgba(239,68,68,0.12)]'   },
+    SHIFT_CHANGE:{ bg: 'bg-chart-3/10',  text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'border-chart-3',  glow: 'hover:shadow-[0_8px_24px_rgba(139,92,246,0.12)]'   },
+    SALARY:      { bg: 'bg-chart-6/10',  text: 'text-chart-6-text', border: 'border-chart-6/30', dot: 'border-chart-6',  glow: 'hover:shadow-[0_8px_24px_rgba(236,72,153,0.12)]'  },
+    TRANSFER:    { bg: 'bg-chart-1/10',  text: 'text-chart-1-text', border: 'border-chart-1/30', dot: 'border-chart-1',  glow: 'hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]'  },
+    HIRING:      { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]' },
 };
-const DEFAULT_THEME = { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-slate-200', dot: 'border-brand', glow: 'hover:shadow-[0_8px_24px_rgba(0,82,204,0.10)]' };
+const DEFAULT_THEME = { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-border-card', dot: 'border-brand', glow: 'hover:shadow-[0_8px_24px_rgba(0,82,204,0.10)]' };
 
 const WEEK_DAYS = [
     { id: 1, short: 'Lu' }, { id: 2, short: 'Ma' }, { id: 3, short: 'Mi' },
@@ -395,9 +399,9 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const dateStr  = d.date?.toISOString().split('T')[0];
                                     const ev       = dateStr ? getEventForDate(dateStr) : null;
                                     const evCfg    = ev ? {
-                                        VACATION:   { label: 'Vac', Icon: Palmtree,    bg: 'bg-emerald-500', light: 'bg-success/10 border-success/30', text: 'text-emerald-700' },
-                                        DISABILITY: { label: 'Incapacidad', Icon: Stethoscope, bg: 'bg-red-500',     light: 'bg-danger/10 border-danger/30',         text: 'text-red-700'     },
-                                        PERMIT:     { label: 'Per', Icon: FileText,    bg: 'bg-amber-500',   light: 'bg-warning/10 border-warning/30',     text: 'text-amber-700'   },
+                                        VACATION:   { label: 'Vac', Icon: Palmtree,    bg: 'bg-success', light: 'bg-success/10 border-success/30', text: 'text-success-text' },
+                                        DISABILITY: { label: 'Incapacidad', Icon: Stethoscope, bg: 'bg-danger',     light: 'bg-danger/10 border-danger/30',         text: 'text-danger-text'     },
+                                        PERMIT:     { label: 'Per', Icon: FileText,    bg: 'bg-chart-2',   light: 'bg-chart-2/10 border-chart-2/30',     text: 'text-chart-2-text'   },
                                     }[ev.type] : null;
                                     return (
                                         <div key={d.id} className={`flex flex-col items-center rounded-2xl p-2 transition-all duration-200 ${

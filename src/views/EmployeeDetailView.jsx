@@ -602,33 +602,37 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 const isHiring = ev.type === 'HIRE' || ev.type === 'HIRING';
                                                 let evTheme = { label, bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-slate-200' };
 
+                                                // Tokenizado T7 — mismo criterio en toda la app: hitos claramente
+                                                // buenos/malos usan success/warning/danger; el resto (transferencias,
+                                                // categorías de puesto, etc.) es categórico puro sin severidad, mapeado
+                                                // a los mismos chart-N que EmployeeProfileView.jsx para el tipo compartido.
                                                 if (isHiring) {
-                                                    evTheme = { label, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30' };
+                                                    evTheme = { label, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' };
                                                 } else if (ev.type === 'ROSTER_PUBLISHED') {
-                                                    evTheme = { label, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-slate-200' };
+                                                    evTheme = { label, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-border-card' };
                                                 } else if (ev.type === 'EMPLEADO_ASIGNADO' || ev.type === 'REASSIGNMENT') {
-                                                    evTheme = { label, bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
+                                                    evTheme = { label, bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' };
                                                 } else if (ev.type === 'EMPLEADO_RELEVADO') {
-                                                    evTheme = { label, bg: 'bg-warning/10', text: 'text-warning', border: 'border-warning/30' };
+                                                    evTheme = { label, bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30' };
                                                 } else if (ev.type === 'EMPLEADO_DESVINCULADO_SUCURSAL' || ev.type === 'UNASSIGNED') {
-                                                    evTheme = { label, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30' };
+                                                    evTheme = { label, bg: 'bg-danger/10', text: 'text-danger-text', border: 'border-danger/30' };
                                                 } else if (EVENT_TYPES[ev.type]) {
-                                                    if (ev.type.includes('TRANSFER'))   evTheme = { label, bg: 'bg-blue-50',   text: 'text-blue-600',   border: 'border-blue-200' };
-                                                    else if (ev.type.includes('PROMOTION')) evTheme = { label, bg: 'bg-warning/10',  text: 'text-warning',  border: 'border-warning/30' };
-                                                    else if (ev.type.includes('SALARY'))    evTheme = { label, bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' };
-                                                    else if (ev.type.includes('TERMINATION')) evTheme = { label, bg: 'bg-danger/10', text: 'text-danger',   border: 'border-danger/30' };
-                                                    else if (ev.type === 'REHIRE')          evTheme = { label, bg: 'bg-success/10', text: 'text-emerald-700', border: 'border-success/30' };
-                                                    else if (ev.type === 'VACATION_RECALL') evTheme = { label, bg: 'bg-warning/10', text: 'text-amber-700',  border: 'border-warning/30' };
-                                                    else if (ev.type === 'DISABILITY')      evTheme = { label, bg: 'bg-danger/10',   text: 'text-danger',   border: 'border-danger/30' };
-                                                    else if (ev.type === 'VACATION')        evTheme = { label, bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' };
-                                                    else if (ev.type === 'PERMIT')          evTheme = { label, bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' };
-                                                    else if (ev.type === 'SUPPORT')         evTheme = { label, bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' };
-                                                    else if (ev.type === 'INDUCTION')       evTheme = { label, bg: 'bg-teal-50',  text: 'text-teal-600',  border: 'border-teal-200' };
+                                                    if (ev.type.includes('TRANSFER'))   evTheme = { label, bg: 'bg-chart-1/10',   text: 'text-chart-1-text',   border: 'border-chart-1/30' };
+                                                    else if (ev.type.includes('PROMOTION')) evTheme = { label, bg: 'bg-success/10',  text: 'text-success-text',  border: 'border-success/30' };
+                                                    else if (ev.type.includes('SALARY'))    evTheme = { label, bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' };
+                                                    else if (ev.type.includes('TERMINATION')) evTheme = { label, bg: 'bg-danger/10', text: 'text-danger-text',   border: 'border-danger/30' };
+                                                    else if (ev.type === 'REHIRE')          evTheme = { label, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' };
+                                                    else if (ev.type === 'VACATION_RECALL') evTheme = { label, bg: 'bg-warning/10', text: 'text-warning-text',  border: 'border-warning/30' };
+                                                    else if (ev.type === 'DISABILITY')      evTheme = { label, bg: 'bg-danger/10',   text: 'text-danger-text',   border: 'border-danger/30' };
+                                                    else if (ev.type === 'VACATION')        evTheme = { label, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' };
+                                                    else if (ev.type === 'PERMIT')          evTheme = { label, bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30' };
+                                                    else if (ev.type === 'SUPPORT')         evTheme = { label, bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30' };
+                                                    else if (ev.type === 'INDUCTION')       evTheme = { label, bg: 'bg-chart-9/10',  text: 'text-chart-9-text',  border: 'border-chart-9/30' };
                                                 }
 
                                                 return (
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
-                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-emerald-500' : 'border-brand'}`}></div>
+                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-success' : 'border-brand'}`}></div>
                                                         
                                                         <div className={`bg-surface-card hover:bg-surface-card rounded-3xl p-5 border border-border-card transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">

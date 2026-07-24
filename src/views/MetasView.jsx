@@ -72,10 +72,14 @@ function getStatus(val, goal) {
   return 'red';
 }
 
+// 3 estados reales de severidad (cumplió/cerca/no cumplió), tokenizados T7
+// (antes green/orange/red de Tailwind crudo, invisibles al gate de color y
+// sin variante por tema — el rojo sólido de "red" en particular no
+// reaccionaba a dark/solid-dark).
 const STATUS_STYLES = {
-  green:  { row:'bg-green-50/80',  cell:'text-green-800 font-semibold', badge:'bg-green-100 text-green-700 border border-green-200',    dot:'bg-green-500',  label:'Cumplió',    ring:'ring-green-400' },
-  orange: { row:'bg-orange-50/80', cell:'text-orange-800 font-semibold',badge:'bg-orange-100 text-orange-700 border border-orange-200', dot:'bg-orange-400', label:'',           ring:'ring-orange-400' },
-  red:    { row:'bg-danger/10',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',  dot:'bg-red-600',    label:'No Cumplió', ring:'ring-red-500' },
+  green:  { row:'bg-success/10',  cell:'text-success-text font-semibold', badge:'bg-success/10 text-success-text border border-success/30',  dot:'bg-success',  label:'Cumplió',    ring:'ring-success' },
+  orange: { row:'bg-warning/10', cell:'text-warning-text font-semibold',badge:'bg-warning/10 text-warning-text border border-warning/30', dot:'bg-warning', label:'',           ring:'ring-warning' },
+  red:    { row:'bg-danger/10',    cell:'text-danger-text font-semibold',   badge:'bg-danger text-white border border-danger shadow-sm',  dot:'bg-danger',    label:'No Cumplió', ring:'ring-danger' },
 };
 
 // Linear regression → projects `ahead` steps from last non-null value
@@ -640,7 +644,7 @@ export default function MetasView() {
                         <td key={mi}
                           className={`px-2 py-2 text-right text-[11px] whitespace-nowrap font-mono
                             ${yr2026 ? 'bg-indigo-50/30' : ''}
-                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-danger/10 text-red-900') : 'text-content-3'}`}
+                            ${st ? (status==='green'?'bg-success/10 text-success-text':status==='orange'?'bg-warning/10 text-warning-text':'bg-danger/10 text-danger-text') : 'text-content-3'}`}
                         >
                           {val == null ? <span className={muted}>—</span> : fmt(val)}
                         </td>

@@ -42,19 +42,26 @@ const TYPE_ICONS = {
     CLIENT_CHANGE_REQUEST:  Contact,
 };
 
-// circle = card colored avatar; section = section label color
+// circle = card colored avatar; section = section label color.
+// Tokenizado T7 (AUDITORIA-TEMA-2026-07.md, propuesta de estandarización de
+// color aprobada por el usuario 2026-07-24): 11 tipos → 9 son categóricos
+// genuinos (paleta cerrada cat-1..9, sin significado de severidad) + 2 SÍ
+// son severidad real, no solo "otra categoría más" — DISABILITY (ausencia
+// médica) y ANNULMENT_REQUEST (pide deshacer algo ya enviado, necesita
+// revisión) pasan a los tokens semánticos danger/warning en vez de un
+// color categórico arbitrario.
 const TYPE_COLORS = {
-    VACATION:     { circle: 'bg-emerald-500',  ring: 'ring-emerald-200', section: 'text-emerald-700', border: 'border-success/30', hover: 'hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]',  sectionIcon: 'text-success bg-success/10 border-success/30'  },
-    PERMIT:       { circle: 'bg-blue-500',     ring: 'ring-blue-200',    section: 'text-blue-700',    border: 'border-blue-200/50',    hover: 'hover:shadow-[0_8px_28px_rgba(59,130,246,0.12)]',   sectionIcon: 'text-blue-600 bg-blue-50 border-blue-200/50'           },
-    SHIFT_CHANGE: { circle: 'bg-cyan-500',     ring: 'ring-cyan-200',    section: 'text-cyan-700',    border: 'border-cyan-200/50',    hover: 'hover:shadow-[0_8px_28px_rgba(6,182,212,0.12)]',    sectionIcon: 'text-cyan-600 bg-cyan-50 border-cyan-200/50'           },
-    OVERTIME:     { circle: 'bg-amber-500',    ring: 'ring-amber-200',   section: 'text-amber-700',   border: 'border-warning/30',   hover: 'hover:shadow-[0_8px_28px_rgba(245,158,11,0.12)]',   sectionIcon: 'text-warning bg-warning/10 border-warning/30'        },
-    ADVANCE:      { circle: 'bg-violet-500',   ring: 'ring-violet-200',  section: 'text-violet-700',  border: 'border-violet-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(139,92,246,0.12)]',   sectionIcon: 'text-violet-600 bg-violet-50 border-violet-200/50'     },
-    CERTIFICATE:  { circle: 'bg-indigo-500',   ring: 'ring-indigo-200',  section: 'text-indigo-700',  border: 'border-indigo-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(99,102,241,0.12)]',   sectionIcon: 'text-indigo-600 bg-indigo-50 border-indigo-200/50'     },
-    DISABILITY:             { circle: 'bg-red-500',      ring: 'ring-red-200',      section: 'text-red-700',      border: 'border-danger/30',      hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',     sectionIcon: 'text-danger bg-danger/10 border-danger/30'              },
-    ANNULMENT_REQUEST:      { circle: 'bg-rose-500',     ring: 'ring-rose-200',     section: 'text-rose-700',     border: 'border-rose-200/60',     hover: 'hover:shadow-[0_8px_28px_rgba(244,63,94,0.14)]',     sectionIcon: 'text-rose-600 bg-rose-50 border-rose-200/50'           },
-    PAYMENT_CHANGE_REQUEST: { circle: 'bg-sky-500',      ring: 'ring-sky-200',      section: 'text-sky-700',      border: 'border-sky-200/50',      hover: 'hover:shadow-[0_8px_28px_rgba(14,165,233,0.12)]',    sectionIcon: 'text-sky-600 bg-sky-50 border-sky-200/50'              },
-    VENDOR_CHANGE_REQUEST:  { circle: 'bg-purple-500',   ring: 'ring-purple-200',   section: 'text-purple-700',   border: 'border-purple-200/50',   hover: 'hover:shadow-[0_8px_28px_rgba(168,85,247,0.12)]',    sectionIcon: 'text-purple-600 bg-purple-50 border-purple-200/50'     },
-    CLIENT_CHANGE_REQUEST:  { circle: 'bg-teal-500',     ring: 'ring-teal-200',     section: 'text-teal-700',     border: 'border-teal-200/50',     hover: 'hover:shadow-[0_8px_28px_rgba(20,184,166,0.12)]',    sectionIcon: 'text-teal-600 bg-teal-50 border-teal-200/50'           },
+    VACATION:     { circle: 'bg-chart-1',  ring: 'ring-chart-1/30', section: 'text-chart-1-text', border: 'border-chart-1/30', hover: 'hover:shadow-[0_8px_28px_rgba(59,130,246,0.12)]',  sectionIcon: 'text-chart-1-text bg-chart-1/10 border-chart-1/30'  },
+    PERMIT:       { circle: 'bg-chart-2',  ring: 'ring-chart-2/30', section: 'text-chart-2-text', border: 'border-chart-2/30', hover: 'hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]',  sectionIcon: 'text-chart-2-text bg-chart-2/10 border-chart-2/30'  },
+    SHIFT_CHANGE: { circle: 'bg-chart-3',  ring: 'ring-chart-3/30', section: 'text-chart-3-text', border: 'border-chart-3/30', hover: 'hover:shadow-[0_8px_28px_rgba(139,92,246,0.12)]',  sectionIcon: 'text-chart-3-text bg-chart-3/10 border-chart-3/30'  },
+    OVERTIME:     { circle: 'bg-chart-4',  ring: 'ring-chart-4/30', section: 'text-chart-4-text', border: 'border-chart-4/30', hover: 'hover:shadow-[0_8px_28px_rgba(249,115,22,0.12)]',  sectionIcon: 'text-chart-4-text bg-chart-4/10 border-chart-4/30'  },
+    ADVANCE:      { circle: 'bg-chart-5',  ring: 'ring-chart-5/30', section: 'text-chart-5-text', border: 'border-chart-5/30', hover: 'hover:shadow-[0_8px_28px_rgba(6,182,212,0.12)]',   sectionIcon: 'text-chart-5-text bg-chart-5/10 border-chart-5/30'  },
+    CERTIFICATE:  { circle: 'bg-chart-6',  ring: 'ring-chart-6/30', section: 'text-chart-6-text', border: 'border-chart-6/30', hover: 'hover:shadow-[0_8px_28px_rgba(236,72,153,0.12)]',  sectionIcon: 'text-chart-6-text bg-chart-6/10 border-chart-6/30'  },
+    DISABILITY:             { circle: 'bg-danger',  ring: 'ring-danger/30',  section: 'text-danger-text',  border: 'border-danger/30',  hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',   sectionIcon: 'text-danger-text bg-danger/10 border-danger/30'   },
+    ANNULMENT_REQUEST:      { circle: 'bg-warning', ring: 'ring-warning/30', section: 'text-warning-text', border: 'border-warning/30', hover: 'hover:shadow-[0_8px_28px_rgba(247,144,9,0.14)]',   sectionIcon: 'text-warning-text bg-warning/10 border-warning/30' },
+    PAYMENT_CHANGE_REQUEST: { circle: 'bg-chart-7',  ring: 'ring-chart-7/30', section: 'text-chart-7-text', border: 'border-chart-7/30', hover: 'hover:shadow-[0_8px_28px_rgba(234,179,8,0.12)]',   sectionIcon: 'text-chart-7-text bg-chart-7/10 border-chart-7/30'  },
+    VENDOR_CHANGE_REQUEST:  { circle: 'bg-chart-8',  ring: 'ring-chart-8/30', section: 'text-chart-8-text', border: 'border-chart-8/30', hover: 'hover:shadow-[0_8px_28px_rgba(100,116,139,0.12)]', sectionIcon: 'text-chart-8-text bg-chart-8/10 border-chart-8/30'  },
+    CLIENT_CHANGE_REQUEST:  { circle: 'bg-chart-9',  ring: 'ring-chart-9/30', section: 'text-chart-9-text', border: 'border-chart-9/30', hover: 'hover:shadow-[0_8px_28px_rgba(20,184,166,0.12)]',  sectionIcon: 'text-chart-9-text bg-chart-9/10 border-chart-9/30'  },
 };
 
 const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });

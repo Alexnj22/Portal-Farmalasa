@@ -10,9 +10,9 @@ import RutaMapModal from './RutaMapModal';
 import { updateRutaStatus, updateRutaPedidoEntregado, fetchBranchIdForSucursal } from '../../data/pedidos';
 
 const STATUS_BADGE = {
-  pendiente:  { label: 'Pendiente',  cls: 'bg-warning/10  text-amber-700  border-warning/30'  },
-  en_ruta:    { label: 'En ruta',    cls: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-  completada: { label: 'Completada', cls: 'bg-success/10 text-emerald-700 border-success/30' },
+  pendiente:  { label: 'Pendiente',  cls: 'bg-warning/10  text-warning-text  border-warning/30'  },
+  en_ruta:    { label: 'En ruta',    cls: 'bg-chart-5/10 text-chart-5-text border-chart-5/30' },
+  completada: { label: 'Completada', cls: 'bg-success/10 text-success-text border-success/30' },
 };
 
 function fmtDist(m) {

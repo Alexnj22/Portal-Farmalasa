@@ -31,6 +31,18 @@
   --warning: #F79009;
   --danger:  #F04438;
 
+  /* Texto seguro para AA sobre el propio tinte de success/warning/danger
+     (Badge.jsx) — mismos valores que ya traía Badge.jsx hardcodeados
+     (contrast-check.mjs: success 4.79:1, warning 5.80:1, danger 6.03:1),
+     ahora tokenizados y con contraparte clara para dark/solid-dark (T7 —
+     el bug real: Badge.jsx nunca redefinía estos por tema, así que en
+     dark/solid-dark quedaba texto oscuro sobre el mismo tinte ya oscuro
+     de la tarjeta ahí — invisible, nunca se detectó porque Badge.jsx
+     tiene 0 adopciones reales hasta T7). */
+  --success-text: #0a7a46;
+  --warning-text: #9a4507;
+  --danger-text:  #a6291e;
+
   /* Ease functions */
   --ease-spring: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-out:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -103,13 +115,27 @@
      documentado en DESIGN.md §22, corregido de paso al migrar el componente). */
   --surface-tab-active: #ffffff;
 
-  /* Paleta dataviz categórica (6) — ya son los colores más usados hoy en ese rol (MetasView.jsx) */
-  --chart-1: #3b82f6;
-  --chart-2: #10b981;
-  --chart-3: #8b5cf6;
-  --chart-4: #f97316;
-  --chart-5: #06b6d4;
-  --chart-6: #ec4899;
+  /* Paleta dataviz categórica — ya eran los colores más usados hoy en ese rol
+     (MetasView.jsx). Extendida a 8 en T7 (AUDITORIA-TEMA-2026-07.md, gate
+     mecánico de color) para servir TAMBIÉN como paleta "un color por
+     categoría" en listas (tipos de solicitud, métodos de pago, etc.) que
+     hoy inventan un color Tailwind distinto por vista (~214 ocurrencias
+     medidas, 15+ familias de color). chart-7/8 elegidos para separarse
+     perceptualmente de success/warning/danger/brand — nunca se confunden
+     con severidad. Cada --chart-N-text es el texto seguro para AA cuando
+     chart-N se usa como fondo de badge (mismo patrón que success/warning/
+     danger en Badge.jsx): oscuro en temas claros, claro en temas oscuros —
+     con --chart-N solo (sin -text) el par bg/texto se ve invertido y falla
+     contraste, el bug real que tenía Badge.jsx antes de este pase. */
+  --chart-1: #3b82f6; --chart-1-text: #1d4ed8; /* azul */
+  --chart-2: #10b981; --chart-2-text: #047857; /* esmeralda */
+  --chart-3: #8b5cf6; --chart-3-text: #6d28d9; /* violeta */
+  --chart-4: #f97316; --chart-4-text: #c2410c; /* naranja */
+  --chart-5: #06b6d4; --chart-5-text: #0e7490; /* cian */
+  --chart-6: #ec4899; --chart-6-text: #be185d; /* rosa */
+  --chart-7: #eab308; --chart-7-text: #854d0e; /* dorado, nuevo T7 */
+  --chart-8: #64748b; --chart-8-text: #334155; /* pizarra, nuevo T7 */
+  --chart-9: #14b8a6; --chart-9-text: #0f766e; /* teal, agregado durante T7.1b — RequestsView.jsx necesitaba 9 categorías simultáneas reales, no 8 */
 
   /* Semáforo real de riesgo de stock (7 estados, src/views/productos/tabminmax/constants.js STAT_CFGS) */
   --stock-out:         #ef4444; /* red-500 */
@@ -164,6 +190,15 @@
   --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.45);
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.60);
   /* backdrop-* sin cambios: mismo blur, el fondo oscuro se cuela a través del glass */
+
+  /* --chart-N-text más claros para leerse sobre el tinte oscuro de la
+     misma tarjeta (T7) — el par bg/texto de :root está pensado para
+     tarjeta clara, invertido aquí. Mismo motivo para success/warning/
+     danger-text (fix del bug real de Badge.jsx). */
+  --chart-1-text: #60a5fa; --chart-2-text: #34d399; --chart-3-text: #a78bfa;
+  --chart-4-text: #fb923c; --chart-5-text: #22d3ee; --chart-6-text: #f472b6;
+  --chart-7-text: #facc15; --chart-8-text: #94a3b8; --chart-9-text: #2dd4bf;
+  --success-text: #34d399; --warning-text: #fbbf24; --danger-text: #f87171;
 }
 
 /* Fase T5: degrada el costo de blur de liquid/dark en móvil (blur(44px)→
@@ -240,6 +275,15 @@
   --text-primary:   rgba(248,250,252,0.95);
   --text-secondary: rgba(148,163,184,0.90);
   --text-tertiary:  rgba(148,163,184,0.90); /* corregido Fase T2: rgba(100,116,139,.9) daba 2.76:1, FAIL AA; slate-400 da 4.92:1 */
+
+  /* --chart-N-text más claros para leerse sobre la tarjeta oscura opaca
+     (T7) — mismos valores que [data-theme="dark"], la tarjeta oscura de
+     ambos temas es igual de oscura para este propósito. Mismo motivo
+     para success/warning/danger-text (fix del bug real de Badge.jsx). */
+  --chart-1-text: #60a5fa; --chart-2-text: #34d399; --chart-3-text: #a78bfa;
+  --chart-4-text: #fb923c; --chart-5-text: #22d3ee; --chart-6-text: #f472b6;
+  --chart-7-text: #facc15; --chart-8-text: #94a3b8; --chart-9-text: #2dd4bf;
+  --success-text: #34d399; --warning-text: #fbbf24; --danger-text: #f87171;
 
   --surface-card:       rgba(30,41,59,1.00);
   --surface-card-hover: rgba(51,65,85,1.00);
@@ -471,6 +515,9 @@
   --color-success:      var(--success);
   --color-warning:      var(--warning);
   --color-danger:       var(--danger);
+  --color-success-text: var(--success-text);
+  --color-warning-text: var(--warning-text);
+  --color-danger-text:  var(--danger-text);
 
   /* Texto */
   --color-content:   var(--text-primary);
@@ -517,13 +564,16 @@
   --color-scrim:      var(--scrim);
   --color-divider:    var(--divider);
 
-  /* Paleta dataviz */
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-chart-6: var(--chart-6);
+  /* Paleta dataviz / categórica (T7: también "un color por categoría" en listas) */
+  --color-chart-1: var(--chart-1); --color-chart-1-text: var(--chart-1-text);
+  --color-chart-2: var(--chart-2); --color-chart-2-text: var(--chart-2-text);
+  --color-chart-3: var(--chart-3); --color-chart-3-text: var(--chart-3-text);
+  --color-chart-4: var(--chart-4); --color-chart-4-text: var(--chart-4-text);
+  --color-chart-5: var(--chart-5); --color-chart-5-text: var(--chart-5-text);
+  --color-chart-6: var(--chart-6); --color-chart-6-text: var(--chart-6-text);
+  --color-chart-7: var(--chart-7); --color-chart-7-text: var(--chart-7-text);
+  --color-chart-8: var(--chart-8); --color-chart-8-text: var(--chart-8-text);
+  --color-chart-9: var(--chart-9); --color-chart-9-text: var(--chart-9-text);
 
   /* Semáforo de riesgo de stock (7 estados reales, ver tabminmax/constants.js) */
   --color-stock-out:         var(--stock-out);

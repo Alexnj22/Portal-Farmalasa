@@ -11,8 +11,8 @@ import { ERP_NAMES } from '../../constants/erp';
 const GLASS = 'rounded-2xl border border-slate-200/60 bg-surface-card backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
 
 const PEDIDO_STATUS_PILL = {
-    confirmado: 'bg-blue-100 text-blue-700 border-blue-200',
-    enviado:    'bg-indigo-100 text-indigo-700 border-indigo-200',
+    confirmado: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
+    enviado:    'bg-chart-3/10 text-chart-3-text border-chart-3/30',
 };
 const PEDIDO_STATUS_LABEL = {
     confirmado: 'Por despachar',
@@ -31,24 +31,29 @@ function getBranchStage(row, pedidoStatus) {
     return 'sin_iniciar';
 }
 
+// Colores tokenizados T7: sin_iniciar es neutro (nada que distinguir
+// todavía), pausado/erp SÍ son severidad real (excepción/completado, no
+// solo "otra etapa más") → warning/success; el resto son etapas de un
+// pipeline sin severidad propia → paleta categórica cat-1/3/5/7 (mismo
+// criterio de "distinguir sin implicar bueno/malo" del resto del gate).
 const STAGE_CONFIG = {
-    sin_iniciar: { label: 'Sin iniciar',          color: 'slate',   icon: Package      },
-    preparando:  { label: 'En preparación',        color: 'blue',    icon: Activity     },
-    pausado:     { label: 'Pausado',               color: 'amber',   icon: Pause        },
-    preparado:   { label: 'Listo para envío',      color: 'violet',  icon: CheckCircle2 },
-    transito:    { label: 'En tránsito',           color: 'indigo',  icon: Truck        },
-    contando:    { label: 'Cajas recibidas',       color: 'teal',    icon: PackageCheck },
-    erp:         { label: 'Ingresado al ERP',      color: 'emerald', icon: Database     },
+    sin_iniciar: { label: 'Sin iniciar',          color: 'neutral', icon: Package      },
+    preparando:  { label: 'En preparación',        color: 'chart-1', icon: Activity     },
+    pausado:     { label: 'Pausado',               color: 'warning', icon: Pause        },
+    preparado:   { label: 'Listo para envío',      color: 'chart-3', icon: CheckCircle2 },
+    transito:    { label: 'En tránsito',           color: 'chart-5', icon: Truck        },
+    contando:    { label: 'Cajas recibidas',       color: 'chart-7', icon: PackageCheck },
+    erp:         { label: 'Ingresado al ERP',      color: 'success', icon: Database     },
 };
 
 const COLOR_CLASSES = {
-    slate:   { bg: 'bg-surface-card-hover',    text: 'text-content-3',   border: 'border-slate-200'   },
-    blue:    { bg: 'bg-blue-50',      text: 'text-blue-700',    border: 'border-blue-200'    },
-    amber:   { bg: 'bg-warning/10',     text: 'text-amber-700',   border: 'border-warning/30'   },
-    violet:  { bg: 'bg-violet-50',    text: 'text-violet-700',  border: 'border-violet-200'  },
-    indigo:  { bg: 'bg-indigo-50',    text: 'text-indigo-700',  border: 'border-indigo-200'  },
-    teal:    { bg: 'bg-teal-50',      text: 'text-teal-700',    border: 'border-teal-200'    },
-    emerald: { bg: 'bg-success/10',   text: 'text-emerald-700', border: 'border-success/30' },
+    neutral: { bg: 'bg-surface-card-hover', text: 'text-content-3',    border: 'border-border-card'  },
+    warning: { bg: 'bg-warning/10',         text: 'text-warning-text', border: 'border-warning/30'   },
+    success: { bg: 'bg-success/10',         text: 'text-success-text', border: 'border-success/30'   },
+    'chart-1': { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' },
+    'chart-3': { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
+    'chart-5': { bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30' },
+    'chart-7': { bg: 'bg-chart-7/10', text: 'text-chart-7-text', border: 'border-chart-7/30' },
 };
 
 function fmtMin(min) {

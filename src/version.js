@@ -5,8 +5,48 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.50.0';
+export const APP_VERSION = '2.51.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.51.0 — refactor(theme): T7.1 — estandarización de color, primera
+// tanda (tokens + Bucket A de severidad real).
+//
+// Gate mecánico de T7 encontró que Badge.jsx/Button.jsx (componentes
+// "compartidos" de T3) tenían 0 y 1 adopciones reales respectivamente —
+// los 214 badges ad-hoc medidos en 2026-07-23 seguían intactos. Auditoría
+// completa de los 214 (no una muestra): ~15-20 son severidad real
+// (success/warning/danger), el resto (~180+) es color-por-categoría
+// (tipos de solicitud, métodos de pago, categorías de encuesta, historial
+// de eventos) usando 15+ familias de color Tailwind distintas — nunca
+// tokenizadas, invisibles al gate de color original (no usan bg-white/
+// text-slate/hex).
+//
+// Propuesta de estandarización (mockup aprobado por el usuario
+// 2026-07-24): 3 reglas — severidad real → Badge/tokens semánticos;
+// categórico genuino → paleta cerrada de 9 (--chart-1..9, extendida de
+// 6 durante esta sesión: 7/8 nuevos, 9 agregado tras encontrar que
+// RequestsView.jsx necesitaba 9 categorías simultáneas reales, no 8);
+// decorativo sin valor informativo → sin color, tratamiento neutro.
+//
+// Bug real corregido de paso: Badge.jsx nunca redefinía su texto de
+// success/warning/danger por tema (hex fijo) — en dark/solid-dark
+// quedaba texto oscuro sobre el mismo tinte ya oscuro de la tarjeta,
+// invisible porque el componente nunca se había usado. Mismo patrón
+// aplicado a los 9 --chart-N (cada uno con --chart-N-text, claro en
+// temas oscuros, oscuro en temas claros).
+//
+// Migrados en esta tanda (Bucket A, severidad real): ProveedoresView/
+// FormProveedorDetail (régimen fiscal excluido/incluido), badges de
+// antibiótico "Bajo Receta"/"Receta Médica" (VentasView, TabCatalogo),
+// MetasView (cumplió/cerca/no cumplió), lifecycle de pedidos completado/
+// anulado (TabPedidos, TabEnCurso, TabRutas, RutaEnCursoCard), RequestsView
+// (11 tipos: 9 categóricos + Incapacidad→danger + Anulación→warning, antes
+// tratadas como "una categoría más"), EmployeeProfileView/EmployeeDetailView
+// (historial de eventos del empleado, mismo criterio y mismos chart-N que
+// RequestsView para el tipo compartido — antes cada vista coloreaba el
+// mismo evento distinto). Bucket B (categórico, ~100+ casos restantes:
+// Facturación, Dashboard, Encuesta, laboratorios) y Bucket C (decorativo,
+// quitar color) quedan para la siguiente tanda de esta misma fase T7.
 
 // v2.50.0 — feat(theme): Fase T6 — default Solid Modern + theme-color
 // dinámico.

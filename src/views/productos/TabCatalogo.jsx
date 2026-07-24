@@ -1901,7 +1901,7 @@ export default function TabCatalogo({
                                     <DataCell hideBelow="lg">
                                         <div className="flex flex-wrap gap-1">
                                             {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-blue-50 text-blue-600 border-blue-100">{p.tipo_medicamento}</span>}
-                                            {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-orange-50 text-orange-600 border-orange-100">Bajo Receta</span>}
+                                            {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger-text border-danger/25">Bajo Receta</span>}
                                             {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30">Receta</span>}
                                             {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-content-3">—</span>}
                                         </div>

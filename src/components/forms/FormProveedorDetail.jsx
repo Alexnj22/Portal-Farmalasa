@@ -190,7 +190,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         </label>
                         <div className="h-[44px] flex items-center">
                             <span className={`text-[12px] font-bold px-3 py-1.5 rounded-full border ${
-                                formData?.regimen_fiscal === 'sujeto_excluido' ? 'text-amber-700 bg-amber-500/10 border-amber-500/25' : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25'
+                                formData?.regimen_fiscal === 'sujeto_excluido' ? 'text-warning-text bg-warning/10 border-warning/25' : 'text-success-text bg-success/10 border-success/25'
                             }`}>
                                 {formData?.regimen_fiscal ? REGIMEN_LABELS[formData.regimen_fiscal] : 'Sin determinar'}
                             </span>

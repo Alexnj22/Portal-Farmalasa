@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.2';
+export const APP_VERSION = '2.52.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.3 — fix(theme): T7.1c — estandariza colores en AppLayout.jsx (sidebar).
+//
+// El footer del sidebar y el flyout de navegación colapsada son superficies
+// FIJAS-oscuras (no reaccionan al tema activo, confirmado por el uso de
+// utilidades text-white/NN en todo el bloque) — por eso los tokens de
+// severidad/categóricos usados aquí son siempre la variante BASE
+// (--success/--danger/--chart-3/--chart-6), nunca la "-text" (esa sí cambia
+// de valor por tema y perdería contraste sobre un fondo que nunca cambia).
+// Reemplazados: emerald-400→success (checks de copiar PIN/PIN SU), violet-
+// 300/400/200→chart-3 (identidad "Super Usuario"), red-400/300→danger
+// (hover de cerrar sesión), pink-500→chart-6 (badge de cumpleaños, en
+// sidebar Y en el header mobile con fondo claro — el token base es
+// theme-invariant así que sirve en ambos contextos). También corregido un
+// bug real preexistente: el chip "Próximamente" combinaba bg-amber-100/
+// border-amber-200 (fijos, siempre claros) con text-warning-text (que SÍ
+// cambia por tema) — en dark/solid-dark el texto se habría vuelto claro
+// sobre un chip que sigue siendo claro, contraste roto. Unificado a
+// bg-warning/15 border-warning/30 text-warning (todo base, theme-invariant).
+
 
 // v2.52.2 — fix(theme): T7.1c — cierra TabStaff.jsx y PermissionsView.jsx
 // (los 2 archivos con más ocurrencias sueltas restantes tras el pase global).

@@ -473,7 +473,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     // Anillo de foco visible por teclado — compartido por todos los controles
     // del sidebar (sobre glass oscuro) para que Tab nunca navegue a ciegas.
-    const focusRing = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/70';
+    const focusRing = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-chart-3/70';
 
     const allModuleKeys = useMemo(() =>
         visibleGroups.flatMap(g => g.visibleModules.filter(m => !m.comingSoon).map(m => m.key)),
@@ -516,7 +516,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     {isExpanded && (
                         <>
                             <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-white/45">{label}</span>
-                            <span className="text-[9px] font-black uppercase tracking-wider text-warning-text/70 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-warning bg-warning/15 border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
                         </>
@@ -856,28 +856,28 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 className={`group/pin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-white/[0.11] hover:border-white/[0.14] hover:scale-[1.02] active:scale-[0.98] ${focusRing}`}
                                                 title="Copiar PIN">
                                                 <div className="flex items-center gap-1 mb-0.5">
-                                                    <CheckCircle2 size={10} className="text-white/42 group-hover/pin:text-emerald-400 transition-colors" strokeWidth={2} />
+                                                    <CheckCircle2 size={10} className="text-white/42 group-hover/pin:text-success transition-colors" strokeWidth={2} />
                                                     <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">PIN</span>
                                                 </div>
                                                 <div className="relative h-4 flex items-center justify-center w-full">
                                                     <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white ${isCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
                                                     <Copy size={12} className={`absolute transition-all duration-300 text-white/50 ${isCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
-                                                    <CheckCircle2 size={12} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
+                                                    <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
                                                 </div>
                                             </button>
                                             
                                             {hasPermission('su_pin', 'can_view') && (
                                                 <button onClick={handleCopySuPin} type="button"
-                                                    className={`group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-chart-3/[0.12] hover:border-violet-400/[0.18] hover:scale-[1.02] active:scale-[0.98] ${focusRing}`}
+                                                    className={`group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18] hover:scale-[1.02] active:scale-[0.98] ${focusRing}`}
                                                     title="Copiar código SU">
                                                     <div className="flex items-center gap-1 mb-0.5">
                                                         <CheckCircle2 size={10} className="text-white/40 group-hover/supin:text-chart-3-text transition-colors" strokeWidth={2} />
                                                         <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">SU</span>
                                                     </div>
                                                     <div className="relative h-4 flex items-center justify-center w-full">
-                                                        <span className={`absolute text-[12px] font-black text-violet-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
-                                                        <Copy size={12} className={`absolute text-violet-300/55 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
-                                                        <CheckCircle2 size={12} className={`absolute text-emerald-400 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
+                                                        <span className={`absolute text-[12px] font-black text-chart-3 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
+                                                        <Copy size={12} className={`absolute text-chart-3/55 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
+                                                        <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
                                                     </div>
                                                 </button>
                                             )}
@@ -902,7 +902,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
-                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                         <Cake size={9} className="text-white" />
                                                     </span>
                                                 )}
@@ -912,7 +912,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             </div>
                                         </button>
                                         <button onClick={handleLogout} aria-label="Cerrar sesión"
-                                            className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-red-400 hover:bg-danger/[0.14] hover:border-danger/[0.18] ${focusRing}`}
+                                            className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-danger hover:bg-danger/[0.14] hover:border-danger/[0.18] ${focusRing}`}
                                             type="button">
                                             <LogOut size={16} strokeWidth={1.8} />
                                         </button>
@@ -938,7 +938,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 bg-white/[0.07] border border-white/[0.09] text-white/45 hover:bg-white/[0.13] hover:border-white/[0.15]
                                                 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] ${focusRing}`}
                                             title="PIN">
-                                            {isCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
+                                            {isCopied ? <CheckCircle2 size={17} className="text-success" /> : (
                                                 <>
                                                     <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
                                                     <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black text-white/90">{authPin}</span>
@@ -950,14 +950,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <button onClick={handleCopySuPin} type="button" aria-label="Copiar código SU"
                                             className={`relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group
                                                 bg-white/[0.07] border border-white/[0.09]
-                                                text-violet-300/70 hover:bg-chart-3/[0.12] hover:border-violet-400/[0.18]
+                                                text-chart-3/70 hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18]
                                                 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(139,92,246,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]
                                                 hover:scale-105 active:scale-[0.97] transition-all ${focusRing}`}
                                             title="PIN SU">
-                                            {isSuCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
+                                            {isSuCopied ? <CheckCircle2 size={17} className="text-success" /> : (
                                                 <>
                                                     <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
-                                                    <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[10px] font-black text-violet-200">{authPin}{suSuffix}</span>
+                                                    <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[10px] font-black text-chart-3">{authPin}{suSuffix}</span>
                                                 </>
                                             )}
                                         </button>
@@ -977,15 +977,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
                                         </button>
                                         {myBirthday && (
-                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                 <Cake size={9} className="text-white" />
                                             </span>
                                         )}
                                     </div>
                                     <button onClick={handleLogout} type="button" aria-label="Cerrar sesión"
                                         className={`w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                            bg-danger/[0.08] border border-danger/[0.12] text-red-400/60
-                                            hover:text-red-300 hover:bg-danger/[0.18] hover:border-danger/[0.22]
+                                            bg-danger/[0.08] border border-danger/[0.12] text-danger/60
+                                            hover:text-danger hover:bg-danger/[0.18] hover:border-danger/[0.22]
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
@@ -1056,7 +1056,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                                     </button>
                                     {myBirthday && (
-                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                             <Cake size={9} className="text-white" />
                                         </span>
                                     )}
@@ -1176,7 +1176,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                         <MIcon size={14} strokeWidth={1.5} className="text-white/40" />
                                                     </div>
                                                     <span className="text-[13px] font-medium text-white/40 flex-1 whitespace-nowrap">{m.label}</span>
-                                                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/80 bg-warning/10 border border-warning/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    <span className="text-[9px] font-black uppercase tracking-wider text-warning/80 bg-warning/10 border border-warning/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                                         Próximamente
                                                     </span>
                                                 </div>

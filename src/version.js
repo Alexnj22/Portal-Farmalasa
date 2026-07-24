@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.12';
+export const APP_VERSION = '2.52.13';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.13 — fix(theme): T7.1c — estandariza colores en TabExpenses.jsx
+// + corrige gap real en el gate mecánico: el regex de T7.1 nunca incluyó
+// `ring-*`, así que todo `focus:ring-emerald-300`/`ring-blue-100`/etc.
+// quedó invisible a la auditoría aunque el resto de la clase (bg-/border-/
+// text-) sí se migró. Encontrados y corregidos 8 casos en 4 archivos ya
+// "cerrados" en esta sesión (PermissionsView, FacturacionView×5,
+// PromoModal, EmployeeDetailView) — todos con la misma forma "border-X
+// tokenizado + focus:ring-X crudo al lado".
+//
+// TabExpenses.jsx además introduce un 4to estado real no cubierto por
+// success/warning/danger: "Recibo Pendiente" (fuchsia) — un estado de
+// negocio genuino (servicio pagado pero sin comprobante subido), no
+// decorativo. Mapeado a chart-6 (mismo hue rosa/fucsia de la paleta
+// categórica), consistente con el resto del proyecto.
+
 
 // v2.52.12 — fix(theme): T7.1c — estandariza colores en
 // ScheduleCalendar.jsx (identidad "Apoyo"/chart-3 y "Lactancia"/chart-6

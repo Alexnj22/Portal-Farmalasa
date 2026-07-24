@@ -119,7 +119,7 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
             <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
                 <div className="flex items-start gap-3 max-w-2xl">
                     <textarea
-                        className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-sm text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                        className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-sm text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                         rows={2} autoFocus
                         placeholder={placeholder || 'Comentario (opcional)'}
                         value={comment} onChange={e => setComment(e.target.value)}
@@ -539,7 +539,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <span className="ml-auto text-[12px] font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
-                                                                <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)} />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
@@ -1025,7 +1025,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                             </div>
                                                             <div className="flex items-start gap-3">
                                                                 <textarea
-                                                                    className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                    className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)}
                                                                 />
@@ -1347,7 +1347,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-chart-4-text">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                            <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={comment} onChange={e => setComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
@@ -1453,7 +1453,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                            <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={nullComment} onChange={e => setNullComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">

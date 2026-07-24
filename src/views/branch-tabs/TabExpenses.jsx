@@ -14,7 +14,7 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
         return {
             state: 'pending_receipt',
             label: 'Recibo Pendiente',
-            colorClass: 'border-fuchsia-400 bg-fuchsia-50/50 text-fuchsia-700 shadow-[0_0_15px_rgba(217,70,239,0.15)] ring-1 ring-fuchsia-400'
+            colorClass: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[0_0_15px_rgba(217,70,239,0.15)] ring-1 ring-chart-6'
         };
     }
 
@@ -28,18 +28,18 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const ptMonth = parseInt(ptMonthStr, 10);
 
     if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400' };
+        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-success' };
     }
 
     if (ptYear === currentYear && ptMonth === currentMonth - 1) {
         if (currentDay > dueDay) {
-            return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+            return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-danger' };
         } else {
-            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-400' };
+            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-warning' };
         }
     }
 
-    return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400' };
+    return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-danger' };
 };
 
 // ============================================================================
@@ -53,10 +53,10 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
     const colorMap = {
         blue: 'text-brand bg-chart-1/10 border-chart-1/30',
         orange: 'text-chart-4-text bg-chart-4/10 border-chart-4/30',
-        cyan: 'text-chart-5-text bg-chart-5/10 border-cyan-100',
-        purple: 'text-chart-3-text bg-chart-3/10 border-purple-100',
+        cyan: 'text-chart-5-text bg-chart-5/10 border-chart-5/20',
+        purple: 'text-chart-3-text bg-chart-3/10 border-chart-3/20',
         emerald: 'text-success bg-success/10 border-success/30',
-        slate: 'text-content-3 bg-surface-card-hover border-slate-200'
+        slate: 'text-content-3 bg-surface-card-hover border-border-card'
     };
 
     return (
@@ -68,7 +68,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 group-hover:scale-110 ${isPendingReceipt ? 'text-fuchsia-600 bg-white border-fuchsia-200' : colorMap[colorTheme]}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 group-hover:scale-110 ${isPendingReceipt ? 'text-chart-6 bg-white border-chart-6/30' : colorMap[colorTheme]}`}>
                         {isPendingReceipt ? <AlertCircle size={20} strokeWidth={2}/> : <Icon size={20} strokeWidth={2} />}
                     </div>
                     <div className="min-w-0 pr-2">
@@ -76,7 +76,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         <p className="text-[9px] font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-fuchsia-600 text-white border-fuchsia-700' : 'bg-white border-slate-100 group-hover:bg-surface-card-hover'}`}>
+                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6 text-white border-chart-6' : 'bg-white border-border-card group-hover:bg-surface-card-hover'}`}>
                     {statusObj.label}
                 </div>
             </div>
@@ -99,14 +99,14 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             {isPendingReceipt ? (
                 <button
                     onClick={onUploadReceipt}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-fuchsia-600 border border-fuchsia-700 text-white font-black text-[10px] uppercase tracking-widest hover:bg-fuchsia-700 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6 border border-chart-6 text-white font-black text-[10px] uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
                 >
                     <UploadCloud size={14} strokeWidth={2.5} /> Subir Comprobante
                 </button>
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-slate-200 text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand hover:border-chart-1/30 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand hover:border-chart-1/30 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>
@@ -395,15 +395,15 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-amber-50/90 to-amber-100/50 backdrop-blur-xl border border-warning/30 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
-                            <div className="absolute right-0 bottom-0 w-24 h-24 bg-amber-300/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
+                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
+                            <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-10">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-white">
                                     <Zap size={16} className="text-warning" strokeWidth={2.5}/>
                                 </div>
                                 <h5 className="text-[10px] font-black uppercase tracking-widest text-warning/90">Mayor Gasto Externo</h5>
                             </div>
-                            <p className="text-[17px] font-black text-amber-950 leading-tight relative z-10 tracking-tight mt-1">
+                            <p className="text-[17px] font-black text-warning-text leading-tight relative z-10 tracking-tight mt-1">
                                 {stats.highestService}
                             </p>
                         </div>

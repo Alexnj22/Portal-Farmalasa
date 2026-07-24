@@ -23,7 +23,7 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-content-3 text-content-2';
+const inp = 'w-full text-[12px] bg-white border border-border-card rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-chart-1/20 transition-all placeholder:text-content-3 text-content-2';
 const lbl = 'text-[10px] font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────

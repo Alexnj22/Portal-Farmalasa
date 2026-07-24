@@ -1223,7 +1223,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     onChange={e => setCancelReason(e.target.value)}
                                     placeholder="Explica el motivo de la cancelación..."
                                     rows={3}
-                                    className="w-full bg-surface-card border border-border-card rounded-2xl p-3 text-[16px] text-content-2 outline-none focus:ring-2 focus:ring-red-200 resize-none"
+                                    className="w-full bg-surface-card border border-border-card rounded-2xl p-3 text-[16px] text-content-2 outline-none focus:ring-2 focus:ring-danger/30 resize-none"
                                 />
                             </>
                         )}

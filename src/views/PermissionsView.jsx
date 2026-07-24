@@ -304,7 +304,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                        shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,82,204,0.08)]
                        hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_16px_48px_rgba(0,82,204,0.16),0_4px_16px_rgba(0,0,0,0.06)]
                        hover:-translate-y-2 hover:scale-[1.018] hover:bg-surface-card
-                       ${flash ? 'ring-2 ring-blue-300/50 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_0_0_4px_rgba(0,82,204,0.06),0_8px_32px_rgba(0,82,204,0.18)]' : ''}`
+                       ${flash ? 'ring-2 ring-chart-1/50 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_0_0_4px_rgba(0,82,204,0.06),0_8px_32px_rgba(0,82,204,0.18)]' : ''}`
                     : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-surface-card'
         }`}>
             <div className="p-4">

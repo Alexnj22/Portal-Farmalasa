@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.5';
+export const APP_VERSION = '2.52.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.6 — fix(theme): T7.1c — estandariza colores en
+// productos/tabminmax/constants.js (ALERT, STAT_CFGS, ABC_CFG, XYZ_CFG).
+//
+// ALERT/STAT_CFGS son el semáforo de riesgo de stock (7 estados:
+// out_of_stock/below_min/approaching/ok/overstocked/dead_stock/no_data) —
+// coinciden 1:1 con los tokens --stock-* creados en T1 (mismo semáforo, ya
+// usado en TabMinMaxNetwork.jsx). Se migró a esos tokens en vez de a
+// chart-N genéricos, preservando la identidad visual específica de stock.
+// De paso se corrigió una inconsistencia real preexistente: ALERT.no_data
+// usaba dot 'bg-slate-300' (gris, igual que dead_stock) mientras que
+// STAT_CFGS.no_data ya usaba 'bg-yellow-300' para el mismo estado — dos
+// componentes del mismo semáforo mostraban colores distintos para
+// "Sin historial". Unificado a bg-stock-no-data (amarillo) en ambos.
+// ABC_CFG/XYZ_CFG: A/B/D neutros (sin info) → tokens de contenido;
+// C (10% de ingresos, clase de atención) → warning; Z/erratic (demanda
+// errática) → danger, coherente con cómo se usan en el resto del módulo.
+
 
 // v2.52.5 — fix(theme): T7.1c — estandariza colores en FeedbackOverlay.jsx
 // y corrige un bug real introducido por el pase global v2.52.0.

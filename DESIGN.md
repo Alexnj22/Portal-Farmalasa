@@ -60,14 +60,22 @@ si Liquid Glass sobrevive como tema seleccionable o se retira del todo.
 No decidir esto sin consultarlo primero — ver `AUDITORIA-TEMA-2026-07.md`.
 
 **ThemeContext** (`src/context/ThemeContext.jsx`) persists choice to `localStorage` under key `portal-theme`.
-Exposes `{ theme, setTheme, cycleTheme, isDark, isSolid, isLiquid, themes }`.
-`cycleTheme` rotates through all four in order: liquid → dark → solid → solid-dark → liquid.
+Exposes `{ theme, setTheme, cycleTheme, isDark, isSolid, isLiquid, themes }`. `cycleTheme` (rotates
+liquid → dark → solid → solid-dark → liquid) still exists but `ThemeToggle` no longer calls it —
+see below.
 
-**ThemeToggle** (`src/components/common/ThemeToggle.jsx`) has two variants:
-- `'sidebar'` — full label + sub-label row inside sidebar footer
-- `'compact'` — icon-only square button
+**ThemeToggle** (`src/components/common/ThemeToggle.jsx`, rediseñado T7.5 2026-07-24) expone los 4
+temas como **2 ejes independientes** en vez de un ciclo de 4 pasos — Estilo (Liquid Glass | Solid)
+y Modo (Claro | Oscuro), cada uno un `data-surface="tab-track"` de 2 opciones (mismo patrón visual
+que `ViewTabBar`). El trigger abre un popover portaled a `document.body` (`data-surface="dropdown"`,
+mismo mecanismo de posicionamiento con tracking continuo vía `requestAnimationFrame` que
+`LiquidSelect` — ver §17). Un tap en cualquier opción aplica `setTheme(combine(style, mode))` al
+instante, sin paso "siguiente". Dos variantes:
+- `'sidebar'` — fila completa (ícono + label de 2 líneas + chevron) en el footer del sidebar
+- `'compact'` — botón cuadrado en el rail; el popover se posiciona a la derecha del botón (mismo
+  criterio que los flyouts de navegación del rail)
 
-Icons: Layers (liquid) · Moon (dark) · Sun (solid) · Monitor (solid-dark).
+Iconos: Layers (Liquid Glass) · Monitor (Solid) para Estilo; Sun (Claro) · Moon (Oscuro) para Modo.
 
 ---
 

@@ -5,8 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.53.4';
+export const APP_VERSION = '2.54.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.54.0 — feat(theme): rediseña ThemeToggle a selector de 2 ejes (Estilo →
+// Modo).
+//
+// Decisión: se mantienen los 4 temas (liquid/dark/solid/solid-dark), pero
+// deja de exponerse como un ciclo de 4 pasos (cycleTheme, un click salta al
+// siguiente en orden fijo) — ahora son 2 ejes independientes: Estilo (Liquid
+// Glass | Solid) y Modo (Claro | Oscuro), cada uno un `data-surface=
+// "tab-track"` de 2 opciones (mismo componente visual que ViewTabBar, en vez
+// de inventar un patrón nuevo). Mockup mostrado y aprobado antes de tocar el
+// componente real.
+//
+// El trigger abre un popover portaled a document.body, con el mismo
+// mecanismo de posicionamiento que LiquidSelect (tracking continuo vía
+// requestAnimationFrame + flip hacia arriba si no cabe abajo + cierre por
+// click-outside/Escape) — reusado en vez de reinventado, para no
+// reintroducir la clase de bug ya resuelta ahí (LiquidSelect Positioning
+// Fix v2.9.22). Un tap en cualquier opción aplica el tema al instante.
+//
+// Ambas variantes cubiertas: 'sidebar' (fila del footer, popover debajo/
+// encima según espacio) y 'compact' (botón del rail, popover a la derecha
+// como los flyouts de navegación). Verificado con Playwright: cambio de
+// tema real al hacer click (solid→solid-dark confirmado por data-theme),
+// popover se reposiciona/flipea correctamente cerca del borde inferior del
+// viewport, sin errores de consola nuevos (los COEP/CORS observados son
+// preexistentes, confirmado con una corrida baseline sin tocar el
+// componente). DESIGN.md actualizado.
 
 // v2.53.4 — feat(theme): T7.5 — backfill de items post-cierre (scrim/divider,
 // dropdown, blobs globales).

@@ -5,8 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.46.1';
+export const APP_VERSION = '2.46.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.46.2 — fix(responsive): TabCatalogo.jsx, auditoría responsive de T4
+// arranca (mismo orden del plan: /monitor, /my-requests, /pedidos, /minmax,
+// /ventas). Bug real encontrado a 1024×768 (Playwright, sin scroll
+// horizontal pero con layout roto): el wrapper de las 5 stat cards
+// ("Productos activos"/"Nuevos este mes"/etc.) llevaba flex-1 min-w-0,
+// que SIEMPRE reclama el espacio "sobrante" del row en vez de envolver
+// como bloque completo — con el cluster de filtros (Activos/Todos +
+// 2 LiquidSelect + Enriquecer SRS) ocupando ~500px de los 846px
+// disponibles, el wrapper de cards quedaba con solo ~330px, forzando
+// 1 card por fila con hueco enorme a la derecha (confirmado con
+// getBoundingClientRect en cada nivel del árbol). Fix: se quita flex-1/
+// min-w-0 — sin ellos, el ancho preferido del contenido hace que el
+// flex-wrap del padre baje el bloque completo a su propia línea cuando
+// no cabe junto a los filtros, mostrando las 5 cards en fila completa
+// tanto a 1024px (ahora) como a 1440px (los filtros quedan debajo en vez
+// de al lado — layout alternativo válido, no roto).
+// Verificado con Playwright a 1024×768 y 1440×900: monitor/my-requests/
+// ventas ya estaban limpios sin cambios (sin scroll horizontal, header en
+// una línea, sidebar colapsa a rail correctamente). /pedidos bloqueado
+// para auditar por un bug preexistente no relacionado (paquete
+// @capacitor-community/background-geolocation, ya documentado antes en
+// esta sesión). Build + tests verdes.
 
 // v2.46.1 — fix(theme) + docs: cierra el gate de T7 sobre el codemod de
 // v2.46.0. Bug real encontrado: el regex de #003D99 era case-sensitive y

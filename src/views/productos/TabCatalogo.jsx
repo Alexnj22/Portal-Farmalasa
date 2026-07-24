@@ -1735,10 +1735,19 @@ export default function TabCatalogo({
                 <SrsEnriquecerModal onClose={() => setShowEnriquecer(false)} />
             )}
 
-            {/* ── Stats + filter pill row ── */}
+            {/* ── Stats + filter pill row ──
+                Nota: el wrapper de stat cards NO lleva flex-1/min-w-0 a
+                propósito — con flex-1 siempre reclama el espacio "sobrante"
+                en vez de envolver como bloque cuando no cabe junto al
+                cluster de filtros (a 1024px el cluster de filtros ocupa
+                ~500px, dejando solo ~330px al wrapper, forzando 1 card por
+                fila). Sin flex-1, su ancho preferido hace que flex-wrap del
+                padre lo baje a su propia línea completa cuando no cabe —
+                corrige 1024×768 sin romper 1440px (auditoría responsive T4,
+                2026-07-23). */}
             <div className="flex items-start gap-3 flex-wrap">
                 {/* Stat cards */}
-                <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
                     <MarginStatCards
                         stats={marginStats}
                         loading={statsLoading}

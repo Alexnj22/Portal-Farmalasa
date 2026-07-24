@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.6';
+export const APP_VERSION = '2.52.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.7 — fix(theme): T7.1c — estandariza colores en
+// EmployeeRequestsView.jsx.
+//
+// Mismo patrón de "media migración" visto en otros archivos: chart-5
+// (cyan, identidad SHIFT_CHANGE compartida con RequestsView.jsx) ya
+// tokenizado en la mayoría de clases pero con border-cyan-100/300 y
+// text-cyan-400 sueltos al lado. chart-3 (violeta, PERMIT) con
+// text-purple-800 suelto. Estado "Aprobada" (MinMax propio) con
+// border-emerald-300 crudo junto a bg-success ya tokenizado. Tooltips de
+// alerta de incapacidad (bg-red-700/bg-amber-700, sólidos con texto
+// blanco) → bg-danger/bg-warning (base, mismo look).
+
 
 // v2.52.6 — fix(theme): T7.1c — estandariza colores en
 // productos/tabminmax/constants.js (ALERT, STAT_CFGS, ABC_CFG, XYZ_CFG).

@@ -59,7 +59,7 @@ const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5
 // ─────────────────────────────────────────────────────────────────────────────
 const MinMaxStatusCard = memo(({ req }) => {
     const cfg = req.status === 'approved'
-        ? { border: 'border-emerald-300/70 bg-success/10', badge: 'bg-success/10 text-success-text border-success/30', label: 'Aprobada' }
+        ? { border: 'border-success/40 bg-success/10', badge: 'bg-success/10 text-success-text border-success/30', label: 'Aprobada' }
         : req.status === 'rejected'
         ? { border: 'border-danger/40 bg-surface-card', badge: 'bg-danger/10 text-danger border-danger/30', label: 'Rechazada' }
         : { border: 'border-brand/30 bg-surface-card', badge: 'bg-warning/10 text-warning-text border-warning/30', label: 'Pendiente' };
@@ -116,7 +116,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
         : null;
 
     return (
-        <div className="p-5 rounded-[2rem] border-2 border-cyan-300/60 bg-gradient-to-br from-cyan-50/60 to-white/80 backdrop-blur-2xl flex flex-col gap-4 shadow-[0_4px_20px_rgba(6,182,212,0.1)]">
+        <div className="p-5 rounded-[2rem] border-2 border-chart-5/30 bg-gradient-to-br from-chart-5/10 to-white/80 backdrop-blur-2xl flex flex-col gap-4 shadow-[0_4px_20px_rgba(6,182,212,0.1)]">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
@@ -148,13 +148,13 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                         <p className="text-[9px] text-content-3 mt-0.5">Lo que darías</p>
                     )}
                 </div>
-                <div className="bg-chart-5/10 border border-cyan-100 rounded-2xl p-3">
+                <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
                     <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno que tomarías</p>
                     <p className="text-[12px] font-black text-chart-5-text">
                         {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                     </p>
                     {(!meta.myShift || meta.myShift === 'No especificado') && (
-                        <p className="text-[9px] text-cyan-400 mt-0.5">Lo que recibirías</p>
+                        <p className="text-[9px] text-chart-5 mt-0.5">Lo que recibirías</p>
                     )}
                 </div>
             </div>
@@ -197,7 +197,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
 
     const cardBg =
         req.status === 'PENDING'   ? 'border-brand/30 bg-surface-card backdrop-blur-2xl' :
-        req.status === 'APPROVED'  ? 'border-emerald-300/70 bg-success/10 backdrop-blur-2xl' :
+        req.status === 'APPROVED'  ? 'border-success/40 bg-success/10 backdrop-blur-2xl' :
         req.status === 'REJECTED'  ? 'border-danger/40 bg-surface-card backdrop-blur-xl' :
         'border-border-card bg-surface-card backdrop-blur-md';
 
@@ -271,7 +271,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                                 </p>
                             </div>
-                            <div className="bg-chart-5/10 border border-cyan-100 rounded-2xl p-3">
+                            <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
                                 <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                 <p className="text-[12px] font-black text-content-2">
                                     {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
@@ -822,7 +822,7 @@ const EmployeeRequestsView = () => {
                     {permDates.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {permDates.map(d => (
-                                <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-purple-800 text-[11px] font-bold">
+                                <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-[11px] font-bold">
                                     {new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                                     <button type="button" onClick={() => handleRemovePermDate(d)} className="text-chart-3-text hover:text-chart-3-text transition-colors">
                                         <XCircle size={13} strokeWidth={2} />
@@ -852,7 +852,7 @@ const EmployeeRequestsView = () => {
                     </div>
                     <div>
                         <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
-                            <CalendarDays size={11} strokeWidth={2.5} className="text-cyan-400" />
+                            <CalendarDays size={11} strokeWidth={2.5} className="text-chart-5" />
                             Fecha del cambio
                         </label>
                         <div className="bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
@@ -890,14 +890,14 @@ const EmployeeRequestsView = () => {
                                 </p>
                                 {!myShiftOnDate && <p className="text-[9px] text-content-3 mt-0.5">Sin turno asignado</p>}
                             </div>
-                            <div className="bg-chart-5/10 border border-cyan-100 rounded-2xl p-3">
+                            <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
                                 <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">
                                     Turno de {targetEmp?.name?.split(' ')[0] || 'compañero'}
                                 </p>
                                 <p className="text-[12px] font-black text-chart-5-text">
                                     {targetEmpShift ? `${targetEmpShift.start} – ${targetEmpShift.end}` : '—'}
                                 </p>
-                                {!targetEmpShift && <p className="text-[9px] text-cyan-400 mt-0.5">Sin turno asignado</p>}
+                                {!targetEmpShift && <p className="text-[9px] text-chart-5 mt-0.5">Sin turno asignado</p>}
                             </div>
                         </div>
                     )}
@@ -1005,7 +1005,7 @@ const EmployeeRequestsView = () => {
                             }
                         </label>
                         <label className="flex items-center gap-3 px-4 py-3 bg-surface-card border-2 border-dashed border-danger/30 hover:border-danger hover:bg-danger/10 rounded-2xl cursor-pointer transition-all duration-200 group">
-                            <div className="w-8 h-8 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition-colors">
+                            <div className="w-8 h-8 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0 group-hover:bg-danger/20 transition-colors">
                                 {disabilityFile ? <FileImage size={16} className="text-danger" /> : <Upload size={16} className="text-danger" />}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1091,7 +1091,7 @@ const EmployeeRequestsView = () => {
                                             <AlertTriangle size={13} className="text-danger" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-64 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-                                            <div className="bg-red-700 text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
+                                            <div className="bg-danger text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Ya tienes asignada una incapacidad del {fmtDisabilityPeriod(disabilityHeaderAlerts.overlap)} — las fechas seleccionadas se solapan con ese período.
                                             </div>
                                         </div>
@@ -1103,7 +1103,7 @@ const EmployeeRequestsView = () => {
                                             <Info size={13} className="text-warning" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-72 z-50 pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150">
-                                            <div className="bg-amber-700 text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
+                                            <div className="bg-warning text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Desde el día 4, aplica cobertura del ISSS. El ISSS cubre el 75% de tu salario a partir del día 4. Es obligatorio presentar la boleta oficial de incapacidad del ISSS dentro de 3 días hábiles para que la empresa pueda tramitar el reembolso. Puedes adjuntarla ahora o desde tu solicitud pendiente.
                                             </div>
                                         </div>

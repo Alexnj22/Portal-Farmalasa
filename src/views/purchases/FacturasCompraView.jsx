@@ -838,7 +838,7 @@ function TabDocumentos({
                     {/* Descargar (ZIP de filtrados) — incorporado al pill */}
                     {filtered.length > 0 && (
                         <>
-                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                            <div className="h-5 w-px bg-divider shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={downloadBulk}
                                     disabled={bulkDownloading}
@@ -856,7 +856,7 @@ function TabDocumentos({
                     {/* Sincronizar ahora — incorporado al pill (antes vivía suelto a la izquierda) */}
                     {canEdit && (
                         <>
-                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                            <div className="h-5 w-px bg-divider shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={runSyncNow} disabled={syncing}
                                     className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${

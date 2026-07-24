@@ -727,7 +727,7 @@ const SchedulesView = ({ openModal, setView }) => {
                     compact clearable={false} icon={Building2} bare />
             </div>
 
-            <div className="h-5 w-px bg-surface-card shrink-0" />
+            <div className="h-5 w-px bg-divider shrink-0" />
 
             {/* Week navigator — hover-reveal arrows */}
             <div className="group/week flex items-center overflow-visible cursor-default relative z-10">
@@ -756,7 +756,7 @@ const SchedulesView = ({ openModal, setView }) => {
             {/* Reset X */}
             {!isDefaultWeek && (
                 <>
-                    <div className="h-5 w-px bg-surface-card shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
                     <button onClick={handleResetFilters} title="Volver a semana actual"
                         className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-10">
                         <X size={11} strokeWidth={3} />
@@ -767,7 +767,7 @@ const SchedulesView = ({ openModal, setView }) => {
             {/* Publish */}
             {canEdit && getScope('schedules') !== 'BRANCH' && (
                 <>
-                    <div className="h-5 w-px bg-surface-card shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
                     <button
                         onClick={weekIsPublished ? undefined : triggerPublishAudit}
                         disabled={isPublishing || employeesInView.length === 0 || isPastWeek}

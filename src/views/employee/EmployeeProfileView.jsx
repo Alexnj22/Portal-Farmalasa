@@ -254,7 +254,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     <span className="text-[11px] font-bold text-content-2 whitespace-nowrap">{emp.dui}</span>
                 </div>
             )}
-            {(emp.phone || emp.dui) && <div className="hidden md:block w-px h-6 bg-surface-card-hover/60 mx-0.5 shrink-0" />}
+            {(emp.phone || emp.dui) && <div className="hidden md:block w-px h-6 bg-divider mx-0.5 shrink-0" />}
             {/* Edit button */}
             <button
                 onClick={() => openModal('editContact', emp)}

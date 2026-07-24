@@ -315,10 +315,10 @@ export default function TabPromos({ searchTerm, canEdit }) {
                     <div className="flex items-center px-2 py-2">
                         <Tag size={13} className="text-content-3 flex-shrink-0" />
                     </div>
-                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
                     {pillFilters.map((pf, idx) => (
                         <React.Fragment key={pf.key}>
-                            {idx > 0 && <div className="h-5 w-px bg-surface-card-hover shrink-0" />}
+                            {idx > 0 && <div className="h-5 w-px bg-divider shrink-0" />}
                             <button
                                 onClick={() => setFilterState(pf.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all ${
@@ -341,7 +341,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
                     {canEdit && (
                         <>
-                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                            <div className="h-5 w-px bg-divider shrink-0" />
                             <button
                                 onClick={() => setShowModal(true)}
                                 className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold text-chart-1-text hover:bg-chart-1/10 transition-all"

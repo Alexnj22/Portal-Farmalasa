@@ -186,7 +186,7 @@ export default function ProveedoresView({ openModal }) {
                             )}
                         </div>
 
-                        <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                        <div className="h-5 w-px bg-divider shrink-0" />
 
                         <div className="flex items-center">
                             <div className="px-2 py-2 overflow-visible" style={{ width: '160px' }}>
@@ -201,7 +201,7 @@ export default function ProveedoresView({ openModal }) {
                             )}
                         </div>
 
-                        <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                        <div className="h-5 w-px bg-divider shrink-0" />
 
                         <div className="flex items-center">
                             <div className="px-2 py-2 overflow-visible" style={{ width: '130px' }}>

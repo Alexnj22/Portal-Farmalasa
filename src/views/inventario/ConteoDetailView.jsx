@@ -616,7 +616,7 @@ export default function ConteoDetailView() {
                     <div className="flex items-center rounded-2xl border border-slate-200/70 bg-surface-card overflow-hidden">
                         {FILTRO_PILLS.map((f, idx) => (
                             <React.Fragment key={f.key}>
-                                {idx > 0 && <div className="h-5 w-px bg-surface-card-hover" />}
+                                {idx > 0 && <div className="h-5 w-px bg-divider" />}
                                 <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-[11px] font-semibold transition-all ${filtro === f.key ? 'bg-chart-9 text-white' : 'text-content-3 hover:bg-surface-card-hover'}`}>
                                     {f.label}
                                 </button>

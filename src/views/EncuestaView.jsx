@@ -582,7 +582,7 @@ export default function EncuestaView() {
                         <span className="hidden sm:inline">{label}</span>
                     </button>
                 ))}
-                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <div className="py-1.5 overflow-visible" style={{ width: filterSucursal ? Math.max(130, 80 + filterSucursal.length * 7) + 'px' : '175px' }}>
                     <LiquidSelect
                         value={filterSucursal}
@@ -596,7 +596,7 @@ export default function EncuestaView() {
                 </div>
                 {surveys.length > 1 && (
                     <>
-                        <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                        <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                         <div className="py-1.5 overflow-visible w-[200px]">
                             <LiquidSelect
                                 value={selectedSurveyId ?? ''}

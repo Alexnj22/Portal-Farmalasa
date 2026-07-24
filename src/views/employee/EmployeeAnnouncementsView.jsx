@@ -728,7 +728,7 @@ const EmployeeAnnouncementsView = () => {
                         ? 'max-w-[360px] opacity-100'
                         : 'max-w-0 opacity-0 pointer-events-none'
                 }`}>
-                    <div className="w-px h-6 bg-surface-card-hover/60 mx-1 shrink-0" />
+                    <div className="w-px h-6 bg-divider mx-1 shrink-0" />
                     {readFilters.map(({ key, label, icon: Icon }) => {
                         const isActive = typeFilter === key;
                         return (
@@ -752,7 +752,7 @@ const EmployeeAnnouncementsView = () => {
                     })}
                 </div>
 
-                <div className="w-px h-6 bg-surface-card-hover/60 mx-1 shrink-0" />
+                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
                     className={`relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
                     <Search size={15} strokeWidth={2.5} />

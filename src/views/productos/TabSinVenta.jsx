@@ -614,13 +614,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Sub-filter cards */}
                     {mode === 'sin_gestion' && <React.Fragment key="sin_gestion_filters">
-                        <div className="w-px h-14 self-center hidden sm:block bg-surface-card-hover" />
+                        <div className="w-px h-14 self-center hidden sm:block bg-divider" />
                         <SinMinMaxFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'agregar' : id)}
                             loading={activeLoading} ignoredSet={ignoredSet} />
                     </React.Fragment>}
                     {mode === 'stock_ret' && <React.Fragment key="stock_ret_filters">
-                        <div className="w-px h-14 self-center hidden sm:block bg-surface-card-hover" />
+                        <div className="w-px h-14 self-center hidden sm:block bg-divider" />
                         <StockRetFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
                     </React.Fragment>}

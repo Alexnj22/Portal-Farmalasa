@@ -460,7 +460,7 @@ export default function ItemSections({ allItems, loading }) {
                         <span className="text-[11px] font-bold tabular-nums text-content-2 shrink-0">
                             {psp === undefined ? <span className="text-content-3">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
                         </span>
-                        <div className="w-px h-4 bg-surface-card-hover shrink-0 mx-0.5" />
+                        <div className="w-px h-4 bg-divider shrink-0 mx-0.5" />
                         <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">MIN</span>
                         <input
                             type="number" min="0" value={edit.min} disabled={isSaving}

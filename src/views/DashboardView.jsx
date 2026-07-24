@@ -1149,7 +1149,7 @@ const DashboardView = ({ openModal }) => {
                       {n}
                     </button>
                   ))}
-                  <div className="w-px h-3 bg-surface-card-hover mx-0.5" />
+                  <div className="w-px h-3 bg-divider mx-0.5" />
                   <span className="text-[8px] font-black text-content-2 uppercase tracking-widest mr-0.5">H</span>
                   {[1,2,3,4].map(n => (
                     <button key={n}
@@ -1983,7 +1983,7 @@ const DashboardView = ({ openModal }) => {
       />
 
       {/* Divider */}
-      <div className="w-px h-5 bg-surface-card-hover/70" />
+      <div className="w-px h-5 bg-divider" />
 
       {/* Personalizar — py-3 en mobile para alcanzar el touch target de 44px (v2.47.4) */}
       <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 ${isMobile ? 'py-3' : 'py-2'} rounded-full text-[12px] font-bold transition-all duration-150 active:scale-[0.97] shadow-sm border ${

@@ -160,7 +160,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${sec.pill}`}>
                                         {sectionLabs.length}
                                     </span>
-                                    <div className="flex-1 h-px bg-surface-card-hover ml-1" />
+                                    <div className="flex-1 h-px bg-divider ml-1" />
                                     <ChevronDown className={`w-4 h-4 text-content-3 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                                 </button>
 

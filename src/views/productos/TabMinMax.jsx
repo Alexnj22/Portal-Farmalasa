@@ -399,7 +399,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {/* Active ABC/XYZ filter badge + clear */}
                         {(filterAbc !== 'all' || filterXyz !== 'all') && (
                             <>
-                                <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
                                     className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-chart-1/10 border border-chart-1/30 text-[11px] font-black text-chart-1-text hover:bg-danger/10 hover:border-danger/30 hover:text-danger transition-colors shrink-0">
                                     {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
@@ -408,7 +408,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             </>
                         )}
 
-                        <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
+                        <div className="h-5 w-px bg-divider shrink-0" />
 
                         {/* CSV */}
                         <motion.button onClick={async () => {
@@ -436,7 +436,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             <Download size={12} /> CSV
                         </motion.button>
 
-                        <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
+                        <div className="h-5 w-px bg-divider shrink-0" />
 
                         {/* Config — solo can_edit (guardar hace RLS raw error si no) */}
                         <motion.button onClick={() => setConfigOpen(o => !o)}
@@ -447,7 +447,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             <Settings2 size={13} />
                         </motion.button>
 
-                        <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
+                        <div className="h-5 w-px bg-divider shrink-0" />
 
                         {/* Labs visibility — solo can_edit (guardar hace RLS raw error si no) */}
                         <motion.button onClick={() => setLabsOpen(o => !o)}
@@ -460,7 +460,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                         {!isBodega && (
                             <>
-                                <div className="h-5 w-px bg-surface-card-hover/60 shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
 
                                 {/* Todas las sucursales — oculto en Bodega (se actualiza sola vía trigger) */}
                                 <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'all' })} disabled={!canManage || calculating || loading}
@@ -478,7 +478,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {/* Calcular — blue right cap (oculto para Bodega: se actualiza sola) */}
                     {!isBodega && (
                         <>
-                            <div className="self-stretch w-px bg-surface-card-hover/60 shrink-0" />
+                            <div className="self-stretch w-px bg-divider shrink-0" />
                             <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'single' })} disabled={!canManage || calculating || loading}
                                 {...ctaAnim}
                                 className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-brand hover:bg-brand-hover transition-colors rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
@@ -519,7 +519,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-content-3 inline-block" /> MIN (Z)</span>
                                 <span className="font-black text-content-3">{config?.reorder_z_days ?? 15}d</span>
                             </div>
-                            <div className="h-px bg-surface-card-hover my-0.5" />
+                            <div className="h-px bg-divider my-0.5" />
                             <div className="flex items-center justify-between gap-4">
                                 <span>Ventana histórica</span>
                                 <span className="font-bold text-content-2">{config?.analysis_days ?? 180}d</span>
@@ -586,7 +586,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             const active = filterAlert === cfg.key;
                             return (
                                 <React.Fragment key={cfg.key}>
-                                    {i > 0 && <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />}
+                                    {i > 0 && <div className="h-5 w-px bg-divider shrink-0" />}
                                     <motion.button
                                         whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
@@ -619,7 +619,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {/* Clase A — urgente, visible cuando hay datos publicados */}
                         {hasPublishedData && criticalACount > 0 && !loading && (
                             <>
-                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterAbc(prev => prev === 'A' ? 'all' : 'A'); setPage(1); }}
@@ -646,7 +646,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <AnimatePresence>
                         {sparseCount > 0 && !loading && (
                             <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
@@ -681,7 +681,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <AnimatePresence>
                         {!isBodega && dispatchRiskCount > 0 && !loading && (
                             <motion.div key="dispatch-risk" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterDispatchRisk(f => !f); setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
@@ -731,7 +731,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <AnimatePresence>
                         {hiddenIds.size > 0 && (
                             <motion.div key="hidden-toggle" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-surface-card-hover/50 shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.92 }}
                                     onClick={() => setFilterHidden(f => !f)}
@@ -788,7 +788,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <span className="text-[11px] font-black text-content tabular-nums">{draftCount}</span>
                                 <span className="text-[10px] text-content-3 font-medium">borrador{draftCount !== 1 ? 'es' : ''}</span>
                             </div>
-                            <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
+                            <div className="h-4 w-px bg-divider shrink-0" />
                             {/* Solo borradores */}
                             <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                 onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
@@ -798,7 +798,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {/* Solo cambios */}
                             {hasPublishedData && changesCount > 0 && (
                                 <>
-                                    <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
+                                    <div className="h-4 w-px bg-divider shrink-0" />
                                     <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                         onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
                                         className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterChangesOnly ? 'bg-chart-3/20 text-chart-3-text font-bold' : 'text-content-2 hover:bg-surface-card-hover/60 hover:text-content'}`}>
@@ -809,7 +809,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {/* Ocultar filtrados (7A.6) */}
                             {hasActiveFilter && filtered.length > 0 && (
                                 <>
-                                    <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
+                                    <div className="h-4 w-px bg-divider shrink-0" />
                                     <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                         onClick={() => setHideFilteredConfirm(true)}
                                         disabled={hidingFiltered}
@@ -821,7 +821,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             )}
                             {/* Descartar */}
                             <>
-                                <div className="h-4 w-px bg-surface-card-hover/70 shrink-0" />
+                                <div className="h-4 w-px bg-divider shrink-0" />
                                 <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                     onClick={() => setDiscardConfirm(true)}
                                     disabled={discardingAll}
@@ -901,13 +901,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             <span className="text-[10px] text-content-2 whitespace-nowrap">MIN/MAX = Σ sucursales publicadas</span>
                             {bodegaPendingCount > 0 ? (
                                 <>
-                                    <div className="h-3.5 w-px bg-surface-card-hover/70 mx-0.5 shrink-0" />
+                                    <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
                                     <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse inline-block shrink-0" />
                                     <span className="text-[10px] font-bold text-warning-text whitespace-nowrap">{bodegaPendingCount} pendiente{bodegaPendingCount !== 1 ? 's' : ''}</span>
                                 </>
                             ) : hasPublishedData ? (
                                 <>
-                                    <div className="h-3.5 w-px bg-surface-card-hover/70 mx-0.5 shrink-0" />
+                                    <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
                                     <CheckCircle2 size={9} className="text-success shrink-0" />
                                     <span className="text-[10px] font-bold text-success-text whitespace-nowrap">Al día</span>
                                 </>

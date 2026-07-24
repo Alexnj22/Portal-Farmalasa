@@ -213,7 +213,7 @@ const GanttChart = ({ plans, year }) => {
                                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-content-3 w-[160px] text-right pr-3 shrink-0">
                                             {branchName}
                                         </span>
-                                        <div className="flex-1 h-px bg-surface-card-hover" />
+                                        <div className="flex-1 h-px bg-divider" />
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2 group/row">
@@ -677,7 +677,7 @@ const VacationPlanView = () => {
                     </button>
                 </div>
 
-                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
+                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
 
                 {/* Branch filter */}
                 {getScope('vacation_plan') !== 'BRANCH' && <div className="w-[190px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
@@ -693,7 +693,7 @@ const VacationPlanView = () => {
                     />
                 </div>}
 
-                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
+                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
 
                 {/* Status filter */}
                 <div className="w-[180px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
@@ -715,7 +715,7 @@ const VacationPlanView = () => {
                     />
                 </div>
 
-                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
+                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
 
                 {/* Search button — blue pill standard */}
                 <button

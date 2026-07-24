@@ -128,9 +128,9 @@ function SkeletonSection({ rows }) {
   return (
     <div className="mb-4 animate-pulse">
       <div className="flex items-center gap-2 mb-2">
-        <div className="h-px flex-1 bg-surface-card-hover/70 rounded" />
+        <div className="h-px flex-1 bg-divider rounded" />
         <div className="h-5 w-24 bg-surface-card-hover rounded-full" />
-        <div className="h-px flex-1 bg-surface-card-hover/70 rounded" />
+        <div className="h-px flex-1 bg-divider rounded" />
       </div>
       <div className="space-y-1">
         {Array.from({ length: rows }).map((_, i) => (
@@ -291,7 +291,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
             <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
-            <span className="w-px h-3 bg-surface-card-hover mx-1" />
+            <span className="w-px h-3 bg-divider mx-1" />
             <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{branchTotal}</span>
             <span className="text-[9px] font-semibold text-content-3 ml-0.5">uds</span>
           </div>
@@ -382,7 +382,7 @@ function SectionLabel({ icon: Icon, label, color = 'text-content-3', bg = 'bg-su
         <Icon size={10} className={color} strokeWidth={2.5} />
         <span className={`text-[9px] font-black uppercase tracking-wider ${color}`}>{label}</span>
       </div>
-      <div className="h-px flex-1 bg-surface-card-hover" />
+      <div className="h-px flex-1 bg-divider" />
     </div>
   );
 }
@@ -566,7 +566,7 @@ export default function WidgetInventorySearch() {
                         ? <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                         : <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />}
                       <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
-                      <span className="w-px h-3 bg-surface-card-hover mx-1" />
+                      <span className="w-px h-3 bg-divider mx-1" />
                       <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{total}</span>
                       <span className="text-[9px] font-semibold text-content-3 ml-0.5">uds</span>
                     </div>

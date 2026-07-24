@@ -700,7 +700,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
 
                 {/* ── Agregar visita extra ─────────────────────────────── */}
                 <div className="flex items-center gap-3 my-1 ml-3">
-                  <div className="w-px h-4 bg-surface-card-hover" style={{ marginLeft: 0 }} />
+                  <div className="w-px h-4 bg-divider" style={{ marginLeft: 0 }} />
                 </div>
                 {showAddVisita ? (
                   <div className="ml-10 p-3 rounded-xl border border-warning/30 bg-warning/10 space-y-2">
@@ -740,7 +740,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 {returnLeg && (
                   <>
                     <div className="flex items-center gap-3 my-0.5 ml-3">
-                      <div className="w-px h-5 bg-surface-card-hover mx-auto" style={{ marginLeft: 0 }} />
+                      <div className="w-px h-5 bg-divider mx-auto" style={{ marginLeft: 0 }} />
                       <div className="flex items-center gap-1.5 text-[9px] text-content-3 font-medium">
                         <Clock size={8} className="text-content-3" />
                         {fmtDist(returnLeg.dist_m)} · {returnLeg.dur_min} min regreso a base

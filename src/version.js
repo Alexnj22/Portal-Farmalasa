@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.53.3';
+export const APP_VERSION = '2.53.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.53.4 — feat(theme): T7.5 — backfill de items post-cierre (scrim/divider,
+// dropdown, blobs globales).
+//
+// Cuatro cabos sueltos que quedaron documentados como "pendiente" en
+// DESIGN.md tras el cierre de T7:
+// (1) --scrim: resultó ya resuelto desde T1 (v2.33.0) — la nota estaba
+// stale, corregida sin tocar código.
+// (2) --divider: 39 archivos, 105 usos del patrón `w-px`/`h-px` que pedían
+// prestado bg-surface-card/-hover (o, en un caso, bg-slate-300/50 crudo)
+// migrados a bg-divider — el token correcto que ya existía desde T1 sin
+// consumidores reales. Verificado con Playwright en los 4 temas.
+// (3) dropdown: decisión (no cambio de código) — sigue reusando los tokens
+// de card/input, sin tokens dedicados; no hay caso real que lo justifique.
+// (4) Los 5 blobs ambientales GLOBALES de AppLayout.jsx (detrás de <main>)
+// pasan de violeta/azul genérico a verde/magenta del logo — mismo criterio
+// ya aprobado y aplicado al sidebar en T2.3, ahora extendido. Verificado
+// en liquid y dark (únicos temas donde los blobs son visibles).
 
 // v2.53.3 — docs(design): T7.4 — DESIGN.md v2.0, cierra AUDITORIA-TEMA-2026-07.md T7.
 //

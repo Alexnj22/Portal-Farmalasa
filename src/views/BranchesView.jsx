@@ -341,7 +341,7 @@ const BranchCard = memo(({
                                 </>
                             )}
                         </button>
-                        <div className="w-px h-4 bg-surface-card-hover mx-0.5"></div>
+                        <div className="w-px h-4 bg-divider mx-0.5"></div>
                         </>
                     )}
                     <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-content-3 hover:text-brand hover:bg-brand/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
@@ -512,7 +512,7 @@ const BranchCard = memo(({
 
                 {!['ADMINISTRATIVA','EXTERNA'].includes(branch.type) && (
                     <>
-                        <div className="w-px h-8 bg-surface-card-hover/60 mx-2"></div>
+                        <div className="w-px h-8 bg-divider mx-2"></div>
                         <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
                             <div className="flex items-center gap-2 text-content-3 transition-colors duration-300 group-hover/kiosk:text-content-2">
                                 <span className="text-[10px] font-bold uppercase tracking-widest">Kioscos</span>
@@ -780,7 +780,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                                 <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${BRANCH_TYPE_META[type]?.color}`}>
                                                     {BRANCH_TYPE_META[type]?.sectionLabel}
                                                 </span>
-                                                <div className="flex-1 h-px bg-surface-card-hover/60" />
+                                                <div className="flex-1 h-px bg-divider" />
                                                 <span className="text-[10px] font-bold text-content-3">{groupBranches.length}</span>
                                             </div>
                                         )}

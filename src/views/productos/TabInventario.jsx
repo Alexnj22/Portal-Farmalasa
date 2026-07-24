@@ -358,7 +358,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             </div>
 
                             {labOptions.length > 0 && <>
-                                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <div className="flex items-center">
                                     <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                                         <LiquidSelect
@@ -381,7 +381,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             </>}
 
                             {catOptions.length > 0 && <>
-                                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <div className="flex items-center">
                                     <div className="px-2 py-2 overflow-visible" style={{ width: '155px' }}>
                                         <LiquidSelect
@@ -404,7 +404,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             </>}
 
                             {anyFilter && <>
-                                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                                <div className="h-5 w-px bg-divider shrink-0" />
                                 <button
                                     onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }}
                                     className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0">

@@ -85,7 +85,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <Field form={form} set={set} label="Ventana histórica de ventas"       k="analysis_days" unit="días" min={30} />
                     </section>
 
-                    <div className="h-px bg-surface-card-hover" />
+                    <div className="h-px bg-divider" />
 
                     {/* Reorden por XYZ */}
                     <section className="flex flex-col gap-2">
@@ -95,7 +95,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <Field form={form} set={set} label="Clase Z — demanda errática"  k="reorder_z_days" unit="días" min={1} />
                     </section>
 
-                    <div className="h-px bg-surface-card-hover" />
+                    <div className="h-px bg-divider" />
 
                     {/* Umbrales XYZ */}
                     <section className="flex flex-col gap-2">
@@ -107,7 +107,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         </p>
                     </section>
 
-                    <div className="h-px bg-surface-card-hover" />
+                    <div className="h-px bg-divider" />
 
                     {/* Umbrales ABC */}
                     <section className="flex flex-col gap-2">
@@ -117,7 +117,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <p className="text-[9px] text-content-3">C y D = resto. Recalcula para aplicar.</p>
                     </section>
 
-                    <div className="h-px bg-surface-card-hover" />
+                    <div className="h-px bg-divider" />
 
                     {/* Alerta próximo mínimo */}
                     <section className="flex flex-col gap-2">
@@ -126,7 +126,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <p className="text-[9px] text-content-3">Ej: 25% → alerta si stock &lt; MIN × 1.25</p>
                     </section>
 
-                    <div className="h-px bg-surface-card-hover" />
+                    <div className="h-px bg-divider" />
 
                     {/* Buffer de seguridad */}
                     <section className="flex flex-col gap-2">
@@ -137,7 +137,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <p className="text-[9px] text-content-3">MIN = velocidad × (reorden + buffer). Recalcula para aplicar.</p>
                     </section>
 
-                    <div className="h-px bg-surface-card-hover" />
+                    <div className="h-px bg-divider" />
 
                     {/* Filtrado de demanda mayorista */}
                     <section className="flex flex-col gap-2">

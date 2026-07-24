@@ -471,12 +471,16 @@ inferior). Decisión adoptada para **todo el proyecto de aquí en adelante**:
   móvil se reemplaza por un `LiquidSelect` compacto con el tab activo
   (ícono + label), resolviendo el caso de Pedidos a Sucursales (5 tabs,
   labels largos) sin truncar ni competir por ancho horizontal.
-- **Pendiente**: extender la paleta a los 5 blobs ambientales GLOBALES de
-  `AppLayout.jsx` (el fondo detrás de `<main>`, hoy `rgba(110,70,230,…)`
-  violeta, `rgba(60,100,240,…)` azul, etc. — sin relación con el logo, fuera
-  del alcance de esta sesión que se limitó al sidebar), y a cualquier glow/
-  acento decorativo nuevo que se diseñe de aquí en adelante. No aplica a
-  elementos funcionales (botones, links, focus) — esos siguen en `--brand`.
+- **Extendido a los 5 blobs ambientales GLOBALES de `AppLayout.jsx`** (T7.5,
+  2026-07-24): el fondo detrás de `<main>` (violeta/azul genérico
+  `rgba(110,70,230,…)`/`rgba(60,100,240,…)`, etc.) pasa a verde/magenta del
+  logo, mismo criterio y proporción que el sidebar (2 blobs verdes : 3
+  magenta, ecoando que la cruz+arco inferior del logo real ocupan más área
+  que el arco superior). Verificado con Playwright en liquid y dark (únicos
+  temas donde los blobs son visibles — en solid/solid-dark siguen apagados).
+  Aplica a cualquier glow/acento decorativo nuevo que se diseñe de aquí en
+  adelante. No aplica a elementos funcionales (botones, links, focus) — esos
+  siguen en `--brand`.
 
 ## 8. Contrato de completitud del design system (auditoría 2026-07-23)
 

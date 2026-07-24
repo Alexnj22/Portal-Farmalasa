@@ -652,7 +652,7 @@ const RequestsView = () => {
                         )}
                     </button>
                 ))}
-                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <button onClick={() => setIsSearchMode(true)}
                     className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -674,7 +674,7 @@ const RequestsView = () => {
                                 <div className="flex items-center gap-2 mb-3">
                                     <div className="w-6 h-6 skeleton rounded-lg" />
                                     <div className="h-3 w-24 skeleton rounded-full" />
-                                    <div className="flex-1 h-px bg-surface-card-hover/50 mx-1" />
+                                    <div className="flex-1 h-px bg-divider mx-1" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
@@ -727,7 +727,7 @@ const RequestsView = () => {
                                     </div>
                                     <h3 className={`text-[11px] font-black uppercase tracking-widest ${tc.section}`}>{typeConf.label}</h3>
                                     <span className="text-[10px] font-bold text-content-3">{cards.length}</span>
-                                    <div className="flex-1 h-px bg-surface-card-hover/50 mx-1" />
+                                    <div className="flex-1 h-px bg-divider mx-1" />
                                     <ChevronDown size={13} strokeWidth={2.5}
                                         className={`text-content-3 transition-transform duration-300 flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
                                 </button>

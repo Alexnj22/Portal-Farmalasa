@@ -205,8 +205,8 @@ Migración cerrada: **119 archivos, ~1,400+ usos de color crudo (`bg-emerald-500
 Antes hardcodeados en cada punto de consumo — ahora son tokens únicos:
 ```
 --focus-ring-color: rgba(0,82,204,0.55)   ← usado en la regla global :focus-visible (index.css)
---scrim:            rgba(3,11,28,0.50)    ← overlay de sidebar móvil (hoy AppLayout.jsx usa bg-[#030B1C]/50 hardcodeado — mismo valor, consumo pendiente T3)
---divider:          rgba(203,213,225,0.5) ← ~13 archivos repiten variantes de esto para el patrón `w-px h-N` (consumo pendiente T3/T4)
+--scrim:            rgba(3,11,28,0.50)    ← overlay de sidebar móvil, `bg-scrim` consumido en AppLayout.jsx desde T1 (v2.33.0)
+--divider:          rgba(203,213,225,0.5) ← `bg-divider` consumido en el patrón `w-px h-N` de ~37 archivos (T7.5)
 ```
 
 ### Paleta dataviz — categórica, EN USO ACTIVO (Fase T7.1, extendida de 6 a 9)
@@ -356,7 +356,7 @@ The `[data-surface]` attribute is the canonical way to apply Liquid Glass stylin
 | `page-header` | GlassViewLayout sticky desktop header | `--surface-header`, `--backdrop-header`, `--border-header`, `--header-shadow`, `--header-radius` |
 | `modal` | ModalShell inner div | `--surface-modal`, `--backdrop-modal`, `--border-modal`, `--modal-shadow`, `--modal-radius` |
 | `input` | LiquidSelect trigger | `--surface-input`, `--border-input`, `--input-radius`. Backdrop/shadow reusan `--backdrop-card` (no existe un `--backdrop-input` propio; box-shadow es un inset hardcodeado). |
-| `dropdown` | LiquidSelect portal dropdown | `--surface-dropdown`. Border/shadow/radio/backdrop reusan los de `card` (`--border-card`, `--modal-shadow`, `--card-radius`, `--backdrop-card`) — no tiene tokens propios pese a lo que sugeriría el nombre; pendiente de decisión en T2/T3 si se le dan tokens dedicados. |
+| `dropdown` | LiquidSelect portal dropdown | `--surface-dropdown`. Border/shadow/radio/backdrop reusan los de `card` (`--border-card`, `--modal-shadow`, `--card-radius`, `--backdrop-card`) por decisión — el dropdown es visualmente una extensión del `card`/`input` que lo abre, sin necesidad de identidad propia; no se agregan tokens dedicados salvo que aparezca un caso real que lo requiera. |
 | `tab-track` | ViewTabBar / filter pill track | `--surface-tab-track`, `--border-tab`. Radio hardcodeado `1.25rem` (no token), backdrop reusa `--backdrop-card`. |
 | `sidebar` | AppLayout `<aside>` glass div | Always dark — `bg-[#07031a]/80 backdrop-blur-2xl`. Intentionally ignores theme CSS vars. |
 

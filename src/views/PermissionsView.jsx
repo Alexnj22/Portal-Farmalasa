@@ -692,7 +692,7 @@ const PermissionsView = () => {
             </h2>
             {selectedOrgRole && (
                 <>
-                    <div className="hidden md:block w-px h-6 bg-surface-card-hover mx-0.5" />
+                    <div className="hidden md:block w-px h-6 bg-divider mx-0.5" />
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${roleStyle.bg} ${roleStyle.border}`}>
                         <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${roleStyle.color} flex items-center justify-center flex-shrink-0`}>
                             <ShieldCheck size={11} className="text-white" strokeWidth={2} />
@@ -740,7 +740,7 @@ const PermissionsView = () => {
                         <div className="w-44 shrink-0">
                             <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }} options={copyOptions} placeholder={copyingFrom ? 'Copiando...' : 'Copiar de...'} icon={Copy} clearable={false} compact={true} disabled={activatingAll || copyingFrom} bare />
                         </div>
-                        <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                        <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                     </>
                 )}
                 <button onClick={() => setIsSearchMode(true)}

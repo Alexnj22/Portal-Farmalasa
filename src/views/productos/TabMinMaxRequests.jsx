@@ -351,7 +351,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           )}
           {tab === 'pending' && pendingInView > 0 && (
             <>
-              <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+              <div className="h-5 w-px bg-divider shrink-0" />
               <button onClick={approveAll} disabled={bulkBusy}
                 className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-black text-white bg-success hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
                 {bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}

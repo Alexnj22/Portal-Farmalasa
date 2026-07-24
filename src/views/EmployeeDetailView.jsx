@@ -367,7 +367,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 </button>
             </div>
 
-            {canEdit && <div className="w-px h-6 bg-surface-card mx-1 shrink-0"></div>}
+            {canEdit && <div className="w-px h-6 bg-divider mx-1 shrink-0"></div>}
 
             {canEdit && getEffectiveStatus(emp) === 'En Vacaciones' && (
                 <button onClick={handleVacationRecall} disabled={!canEdit}

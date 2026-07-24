@@ -268,14 +268,14 @@ const EmployeeDocumentsView = () => {
                         </button>
                     );
                 })}
-                <div className="w-px h-5 bg-surface-card-hover/60 mx-1 shrink-0" />
+                <div className="w-px h-5 bg-divider mx-1 shrink-0" />
                 <button onClick={() => setFilterOpen(v => !v)}
                     className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-white text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
                     <Filter size={10} strokeWidth={2.5} />
                     Filtrar
                     {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}
                 </button>
-                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <button onClick={() => setSearchOpen(true)}
                     className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar documentos">

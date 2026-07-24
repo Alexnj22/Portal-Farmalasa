@@ -309,7 +309,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                     <Printer size={11} strokeWidth={2.5} /> Planilla
                                 </button>
 
-                                <div className="w-px h-5 bg-surface-card mx-1" />
+                                <div className="w-px h-5 bg-divider mx-1" />
 
                                 <div className="text-right">
                                     <p className="text-[8px] font-black uppercase tracking-widest text-content-2">Total a pagar</p>
@@ -505,11 +505,11 @@ const PayrollView = ({ openModal }) => {
                 {getScope('payroll') !== 'BRANCH' && <><div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val||'')} options={branchOptions} placeholder="Todas las sucursales" compact clearable={false} icon={Building2} bare />
                 </div>
-                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" /></>}
+                <div className="w-px h-6 bg-divider mx-1 shrink-0" /></>}
                 <div className="w-[160px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val||'ALL')} options={statusOptions} compact clearable={false} icon={ListFilter} bare />
                 </div>
-                <div className="w-px h-6 bg-surface-card mx-1 shrink-0" />
+                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
                     className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

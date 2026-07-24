@@ -709,13 +709,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             <div className="w-full shrink-0" style={{ height: RIBBON_HEIGHT }} aria-hidden="true" />
             <div className="flex w-full flex-1 lg:h-full font-sans relative lg:overflow-hidden">
 
-                {/* ── Global ambient orbs ── */}
+                {/* ── Global ambient orbs — colores reales del logo (verde arco superior,
+                    magenta cruz+arco inferior), mismo criterio que los blobs del sidebar
+                    (AUDITORIA-TEMA-2026-07.md §7.7) ── */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
-                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'70vw', height:'70vw', top:'-15%', left:'-15%', background:'radial-gradient(circle, rgba(110,70,230,0.45) 0%, rgba(130,80,240,0.20) 40%, transparent 70%)', filter:'blur(35px)' }} />
-                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'55vw', height:'55vw', top:'-5%', right:'-20%', background:'radial-gradient(circle, rgba(60,100,240,0.38) 0%, rgba(80,120,255,0.15) 40%, transparent 70%)', filter:'blur(30px)' }} />
-                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'80vw', height:'80vw', bottom:'-35%', left:'-10%', background:'radial-gradient(circle, rgba(150,80,240,0.35) 0%, rgba(160,100,250,0.12) 40%, transparent 70%)', filter:'blur(40px)', animationDelay:'4s', animationDuration:'18s' }} />
-                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'45vw', height:'45vw', top:'25%', right:'5%', background:'radial-gradient(circle, rgba(90,150,255,0.32) 0%, rgba(100,160,255,0.12) 40%, transparent 70%)', filter:'blur(28px)', animationDelay:'2s', animationDuration:'14s' }} />
-                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'30vw', height:'30vw', top:'50%', left:'38%', background:'radial-gradient(circle, rgba(200,120,255,0.28) 0%, rgba(210,130,255,0.10) 40%, transparent 70%)', filter:'blur(22px)', animationDelay:'6s', animationDuration:'11s' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'70vw', height:'70vw', top:'-15%', left:'-15%', background:'radial-gradient(circle, rgba(142,195,15,0.45) 0%, rgba(185,224,90,0.20) 40%, transparent 70%)', filter:'blur(35px)' }} />
+                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'55vw', height:'55vw', top:'-5%', right:'-20%', background:'radial-gradient(circle, rgba(152,29,151,0.38) 0%, rgba(226,163,224,0.15) 40%, transparent 70%)', filter:'blur(30px)' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'80vw', height:'80vw', bottom:'-35%', left:'-10%', background:'radial-gradient(circle, rgba(152,29,151,0.35) 0%, rgba(226,163,224,0.12) 40%, transparent 70%)', filter:'blur(40px)', animationDelay:'4s', animationDuration:'18s' }} />
+                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'45vw', height:'45vw', top:'25%', right:'5%', background:'radial-gradient(circle, rgba(142,195,15,0.32) 0%, rgba(185,224,90,0.12) 40%, transparent 70%)', filter:'blur(28px)', animationDelay:'2s', animationDuration:'14s' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'30vw', height:'30vw', top:'50%', left:'38%', background:'radial-gradient(circle, rgba(152,29,151,0.28) 0%, rgba(226,163,224,0.10) 40%, transparent 70%)', filter:'blur(22px)', animationDelay:'6s', animationDuration:'11s' }} />
                 </div>
 
                 {/* Mobile backdrop */}
@@ -1037,7 +1039,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
                                     <Menu size={22} strokeWidth={2.5} />
                                 </button>
-                                <div className="w-px h-6 rounded-full bg-slate-300/50" />
+                                <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
                                     <h1 className="text-[14px] font-black leading-none tracking-tight text-slate-800">Portal</h1>
                                     <p className="text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 text-brand">La Salud</p>

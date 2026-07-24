@@ -199,7 +199,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                         ))}
                     </div>
 
-                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
 
                     {/* Alert */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
@@ -219,7 +219,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
                     {isDirty && (
                         <>
-                            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                            <div className="h-5 w-px bg-divider shrink-0" />
                             <button onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }}
                                 className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                 <X size={11} strokeWidth={3} />

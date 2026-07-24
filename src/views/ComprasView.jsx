@@ -358,7 +358,7 @@ export default function ComprasView() {
                     />
                 </div>
 
-                <div className="h-5 w-px bg-surface-card-hover" />
+                <div className="h-5 w-px bg-divider" />
 
                 {/* Date end */}
                 <div className="flex items-center gap-1.5">
@@ -373,7 +373,7 @@ export default function ComprasView() {
 
                 {activeTab === 'facturas' && (
                     <>
-                        <div className="h-5 w-px bg-surface-card-hover" />
+                        <div className="h-5 w-px bg-divider" />
                         {/* Supplier filter */}
                         <div className="flex items-center gap-1.5">
                             <Users size={12} className="text-content-3" />

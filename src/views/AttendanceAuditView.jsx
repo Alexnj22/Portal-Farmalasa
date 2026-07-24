@@ -842,7 +842,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               <ShieldCheck size={9} strokeWidth={2.5} /> Aprobar todo
             </button>
           )}
-          <div className="w-px h-8 bg-surface-card-hover/60 mx-0.5" />
+          <div className="w-px h-8 bg-divider mx-0.5" />
           {allApproved ? (
             <div className="flex flex-col items-center min-w-[2.5rem]">
               <ShieldCheck size={16} className="text-success" strokeWidth={2} />
@@ -876,7 +876,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                   <div className="flex items-center gap-2 pt-1">
                     <div className="h-px flex-1 bg-gradient-to-r from-slate-200/60 to-transparent" />
                     <span className="text-[7px] font-black uppercase tracking-[0.2em] text-content-3">nueva semana</span>
-                    <div className="h-px w-8 bg-surface-card-hover/60" />
+                    <div className="h-px w-8 bg-divider" />
                   </div>
                 )}
                 <DayCard
@@ -1219,7 +1219,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
   // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
   const pillWrap    = 'flex items-center border border-border-card bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[var(--shadow-glass-sm)] hover:-translate-y-[2px] transition-all duration-300';
-  const pillDivider = 'h-5 w-px bg-surface-card mx-1';
+  const pillDivider = 'h-5 w-px bg-divider mx-1';
   const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-content-3 hover:bg-white hover:text-content hover:shadow-sm transition-all duration-300 shrink-0';
   const pillLabelText = 'text-content';
   const pillSubText   = (ok) => ok ? 'text-success' : 'text-brand';

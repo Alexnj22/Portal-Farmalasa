@@ -256,7 +256,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <span className="text-[11px] font-bold text-content-2 truncate max-w-[150px]">{liveBranch.address || "No registrada"}</span>
                             </div>
                         </div>
-                        <div className="w-px h-6 bg-surface-card-hover/50 shrink-0"></div>
+                        <div className="w-px h-6 bg-divider shrink-0"></div>
                         {hasPhone && (
                             <>
                                 <div className="flex items-center gap-2.5">
@@ -266,7 +266,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                         <span className="text-[11px] font-bold text-content-2 truncate max-w-[100px]">{liveBranch.phone || liveBranch.cell || "N/A"}</span>
                                     </div>
                                 </div>
-                                <div className="w-px h-6 bg-surface-card-hover/50 shrink-0"></div>
+                                <div className="w-px h-6 bg-divider shrink-0"></div>
                             </>
                         )}
                         <div className="flex items-center gap-2.5">
@@ -276,7 +276,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <span className="text-[11px] font-bold text-content-2 truncate max-w-[120px]">{todaySchedule.timeStr}</span>
                             </div>
                         </div>
-                        <div className="w-px h-6 bg-surface-card-hover/50 shrink-0"></div>
+                        <div className="w-px h-6 bg-divider shrink-0"></div>
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-chart-3/10 text-chart-3-text flex items-center justify-center shrink-0"><CircleUserRound size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">

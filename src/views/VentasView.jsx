@@ -172,7 +172,7 @@ function FilterControls({
             </div>}
 
             {showLab && <>
-            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+            <div className="h-5 w-px bg-divider shrink-0" />
 
             {/* Laboratorio select + individual clear */}
             <div className="flex items-center">
@@ -189,7 +189,7 @@ function FilterControls({
             </div>
             </>}
 
-            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+            <div className="h-5 w-px bg-divider shrink-0" />
 
             {/* Period picker + individual clear */}
             <div className="flex items-center">
@@ -204,7 +204,7 @@ function FilterControls({
                 )}
             </div>
 
-            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+            <div className="h-5 w-px bg-divider shrink-0" />
 
             {/* Toggle filters */}
             <div className="flex items-center gap-1 px-2">
@@ -234,7 +234,7 @@ function FilterControls({
             {/* Clear all */}
             {hasActiveFilters && (
                 <>
-                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
                     <button onClick={resetAll} title="Limpiar todos los filtros"
                         className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
@@ -2445,7 +2445,7 @@ export default function VentasView() {
                     </div>
                 )}
 
-                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <button onClick={() => setPrivacyMode(v => !v)}
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode

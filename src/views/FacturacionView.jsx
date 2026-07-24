@@ -2157,13 +2157,13 @@ export default function FacturacionView() {
                     </button>
                 ))}
 
-                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
 
                 {getScope('facturacion') !== 'BRANCH' && <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
                     <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
                 </div>}
 
-                <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
                     <ExternalLink size={12} /> Admin Facturas
@@ -2171,7 +2171,7 @@ export default function FacturacionView() {
 
                 {hasSearch && (
                     <>
-                        <div className="h-6 w-px bg-surface-card mx-1 shrink-0" />
+                        <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                         <button onClick={openSearch}
                             className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

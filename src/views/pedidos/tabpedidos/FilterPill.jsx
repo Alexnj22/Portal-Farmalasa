@@ -39,7 +39,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                             </button>
                         )}
                     </div>
-                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
                 </>
             )}
 
@@ -55,20 +55,20 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                 )}
             </div>
 
-            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+            <div className="h-5 w-px bg-divider shrink-0" />
 
             {/* Estado */}
             <div className="flex items-center gap-1 px-2 py-1.5">
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado',    'En ruta')}
-                <div className="h-3.5 w-px bg-surface-card-hover mx-0.5 shrink-0" />
+                <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
                 {statusBtn('observacion','Con observación', 'bg-warning text-white border-warning')}
                 {statusBtn('completado', 'Completados',     'bg-success text-white border-success')}
             </div>
 
             {hasActive && (
                 <>
-                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
                     <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>

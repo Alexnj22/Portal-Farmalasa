@@ -149,7 +149,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                         <span className="text-[11px] text-content-3">Total ganado:</span>
                         <span className="text-[11px] font-semibold text-content-2">{fmt$(totalEarned)}</span>
                     </div>
-                    <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                    <div className="h-5 w-px bg-divider shrink-0" />
                     <div className="flex items-center gap-1.5 px-3 py-2">
                         <span className="text-[11px] text-content-3">Pendiente:</span>
                         <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-warning' : 'text-content-3'}`}>

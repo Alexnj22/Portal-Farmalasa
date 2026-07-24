@@ -533,7 +533,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {renderLoginForm(true)}
                     {!isMobileOrApp() && (
                         <>
-                            <div className="h-px bg-surface-card mx-2" />
+                            <div className="h-px bg-divider mx-2" />
                             <button type="button" onClick={goToKiosko}
                                 className="group w-full p-3 rounded-[1.5rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
                                 <div className="flex items-center gap-3">

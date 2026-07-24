@@ -951,7 +951,7 @@ const StaffManagementView = ({
               />
             </div>
 
-            <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+            <div className="h-5 w-px bg-divider shrink-0" />
             <button
               type="button"
               onClick={handleExportCSV}
@@ -963,7 +963,7 @@ const StaffManagementView = ({
 
             {hasActiveFilters && (
               <>
-                <div className="h-5 w-px bg-surface-card-hover shrink-0" />
+                <div className="h-5 w-px bg-divider shrink-0" />
                 <button
                   type="button"
                   onClick={clearFilters}

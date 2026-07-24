@@ -51,16 +51,16 @@ const TYPE_ICONS = {
 // revisión) pasan a los tokens semánticos danger/warning en vez de un
 // color categórico arbitrario.
 const TYPE_COLORS = {
-    VACATION:     { circle: 'bg-chart-1',  ring: 'ring-chart-1/30', section: 'text-chart-1-text', border: 'border-chart-1/30', hover: 'hover:shadow-[0_8px_28px_rgba(59,130,246,0.12)]',  sectionIcon: 'text-chart-1-text bg-chart-1/10 border-chart-1/30'  },
-    PERMIT:       { circle: 'bg-chart-2',  ring: 'ring-chart-2/30', section: 'text-chart-2-text', border: 'border-chart-2/30', hover: 'hover:shadow-[0_8px_28px_rgba(16,185,129,0.12)]',  sectionIcon: 'text-chart-2-text bg-chart-2/10 border-chart-2/30'  },
-    SHIFT_CHANGE: { circle: 'bg-chart-3',  ring: 'ring-chart-3/30', section: 'text-chart-3-text', border: 'border-chart-3/30', hover: 'hover:shadow-[0_8px_28px_rgba(139,92,246,0.12)]',  sectionIcon: 'text-chart-3-text bg-chart-3/10 border-chart-3/30'  },
-    OVERTIME:     { circle: 'bg-chart-4',  ring: 'ring-chart-4/30', section: 'text-chart-4-text', border: 'border-chart-4/30', hover: 'hover:shadow-[0_8px_28px_rgba(249,115,22,0.12)]',  sectionIcon: 'text-chart-4-text bg-chart-4/10 border-chart-4/30'  },
+    VACATION:     { circle: 'bg-chart-1',  ring: 'ring-chart-1/30', section: 'text-chart-1-text', border: 'border-chart-1/30', hover: 'hover:shadow-[var(--shadow-glow-chart-1)]',  sectionIcon: 'text-chart-1-text bg-chart-1/10 border-chart-1/30'  },
+    PERMIT:       { circle: 'bg-chart-2',  ring: 'ring-chart-2/30', section: 'text-chart-2-text', border: 'border-chart-2/30', hover: 'hover:shadow-[var(--shadow-glow-success)]',  sectionIcon: 'text-chart-2-text bg-chart-2/10 border-chart-2/30'  },
+    SHIFT_CHANGE: { circle: 'bg-chart-3',  ring: 'ring-chart-3/30', section: 'text-chart-3-text', border: 'border-chart-3/30', hover: 'hover:shadow-[var(--shadow-glow-chart-3)]',  sectionIcon: 'text-chart-3-text bg-chart-3/10 border-chart-3/30'  },
+    OVERTIME:     { circle: 'bg-chart-4',  ring: 'ring-chart-4/30', section: 'text-chart-4-text', border: 'border-chart-4/30', hover: 'hover:shadow-[var(--shadow-glow-chart-4)]',  sectionIcon: 'text-chart-4-text bg-chart-4/10 border-chart-4/30'  },
     ADVANCE:      { circle: 'bg-chart-5',  ring: 'ring-chart-5/30', section: 'text-chart-5-text', border: 'border-chart-5/30', hover: 'hover:shadow-[0_8px_28px_rgba(6,182,212,0.12)]',   sectionIcon: 'text-chart-5-text bg-chart-5/10 border-chart-5/30'  },
     CERTIFICATE:  { circle: 'bg-chart-6',  ring: 'ring-chart-6/30', section: 'text-chart-6-text', border: 'border-chart-6/30', hover: 'hover:shadow-[0_8px_28px_rgba(236,72,153,0.12)]',  sectionIcon: 'text-chart-6-text bg-chart-6/10 border-chart-6/30'  },
-    DISABILITY:             { circle: 'bg-danger',  ring: 'ring-danger/30',  section: 'text-danger-text',  border: 'border-danger/30',  hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',   sectionIcon: 'text-danger-text bg-danger/10 border-danger/30'   },
+    DISABILITY:             { circle: 'bg-danger',  ring: 'ring-danger/30',  section: 'text-danger-text',  border: 'border-danger/30',  hover: 'hover:shadow-[var(--shadow-glow-danger)]',   sectionIcon: 'text-danger-text bg-danger/10 border-danger/30'   },
     ANNULMENT_REQUEST:      { circle: 'bg-warning', ring: 'ring-warning/30', section: 'text-warning-text', border: 'border-warning/30', hover: 'hover:shadow-[0_8px_28px_rgba(247,144,9,0.14)]',   sectionIcon: 'text-warning-text bg-warning/10 border-warning/30' },
-    PAYMENT_CHANGE_REQUEST: { circle: 'bg-chart-7',  ring: 'ring-chart-7/30', section: 'text-chart-7-text', border: 'border-chart-7/30', hover: 'hover:shadow-[0_8px_28px_rgba(234,179,8,0.12)]',   sectionIcon: 'text-chart-7-text bg-chart-7/10 border-chart-7/30'  },
-    VENDOR_CHANGE_REQUEST:  { circle: 'bg-chart-8',  ring: 'ring-chart-8/30', section: 'text-chart-8-text', border: 'border-chart-8/30', hover: 'hover:shadow-[0_8px_28px_rgba(100,116,139,0.12)]', sectionIcon: 'text-chart-8-text bg-chart-8/10 border-chart-8/30'  },
+    PAYMENT_CHANGE_REQUEST: { circle: 'bg-chart-7',  ring: 'ring-chart-7/30', section: 'text-chart-7-text', border: 'border-chart-7/30', hover: 'hover:shadow-[var(--shadow-glow-chart-7)]',   sectionIcon: 'text-chart-7-text bg-chart-7/10 border-chart-7/30'  },
+    VENDOR_CHANGE_REQUEST:  { circle: 'bg-chart-8',  ring: 'ring-chart-8/30', section: 'text-chart-8-text', border: 'border-chart-8/30', hover: 'hover:shadow-[var(--shadow-glow-chart-8)]', sectionIcon: 'text-chart-8-text bg-chart-8/10 border-chart-8/30'  },
     CLIENT_CHANGE_REQUEST:  { circle: 'bg-chart-9',  ring: 'ring-chart-9/30', section: 'text-chart-9-text', border: 'border-chart-9/30', hover: 'hover:shadow-[0_8px_28px_rgba(20,184,166,0.12)]',  sectionIcon: 'text-chart-9-text bg-chart-9/10 border-chart-9/30'  },
 };
 
@@ -117,7 +117,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
     };
 
     return (
-        <div className={`rounded-[2rem] border bg-surface-card backdrop-blur-2xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
+        <div className={`rounded-[2rem] border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
             ${isUrgent ? 'border-danger' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}
@@ -424,11 +424,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {req.status === 'PENDING' && (
                         <div className="flex items-center gap-2 pt-1">
                             <button onClick={() => onApprove(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success hover:bg-success-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success hover:bg-success-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-success)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Check size={13} strokeWidth={2.5} /> Aprobar
                             </button>
                             <button onClick={() => onReject(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger hover:bg-danger-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(239,68,68,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger hover:bg-danger-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-danger)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <X size={13} strokeWidth={2.5} /> Rechazar
                             </button>
                         </div>
@@ -755,7 +755,7 @@ const RequestsView = () => {
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
                     <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2.5rem] shadow-[var(--shadow-elevation-lg)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-                        <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[0_6px_20px_rgba(16,185,129,0.15)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
+                        <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
                             {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
                         </div>
                         <h3 className="text-[18px] font-bold text-content text-center mb-1">
@@ -781,8 +781,8 @@ const RequestsView = () => {
                                 disabled={!canApprove || isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
                                     actionModal.mode === 'approve'
-                                        ? 'bg-success hover:bg-success-hover shadow-[0_4px_16px_rgba(16,185,129,0.3)]'
-                                        : 'bg-danger hover:bg-danger-hover shadow-[0_4px_16px_rgba(239,68,68,0.3)]'
+                                        ? 'bg-success hover:bg-success-hover shadow-[var(--shadow-glow-success)]'
+                                        : 'bg-danger hover:bg-danger-hover shadow-[var(--shadow-glow-danger)]'
                                 }`}>
                                 {isActioning ? <Loader2 size={14} className="animate-spin" />
                                     : actionModal.mode === 'approve' ? <><Check size={14} strokeWidth={2.5} /> Aprobar</> : <><X size={14} strokeWidth={2.5} /> Rechazar</>}
@@ -888,7 +888,7 @@ const RequestsView = () => {
                             </button>
                             <button onClick={handleCreateRequest}
                                 disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-brand hover:bg-brand-hover shadow-[0_4px_16px_rgba(0,82,204,0.3)]">
+                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]">
                                 {isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}
                             </button>
                         </div>

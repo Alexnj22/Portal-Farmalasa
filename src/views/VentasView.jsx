@@ -2449,7 +2449,7 @@ export default function VentasView() {
                 <button onClick={() => setPrivacyMode(v => !v)}
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode
-                            ? 'bg-slate-700 text-white border-slate-700 shadow-[0_3px_8px_rgba(0,0,0,0.25)]'
+                            ? 'bg-slate-700 text-white border-slate-700 shadow-[var(--shadow-elevation-xl)]'
                             : 'bg-surface-card text-content-3 border-border-card hover:bg-white hover:shadow-md hover:text-content-2'
                     }`}>
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}

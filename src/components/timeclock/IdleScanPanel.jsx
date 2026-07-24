@@ -39,7 +39,7 @@ export default function IdleScanPanel({
         <div className="flex flex-col items-center text-center w-full mb-6 shrink-0 group/icon">
           <div className={`inline-flex p-4 rounded-[1.5rem] mb-4 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
             }`}>
-            {specialMode ? <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} /> : <ScanBarcode size={42} className="text-chart-1-text drop-shadow-[0_2px_10px_rgba(59,130,246,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />}
+            {specialMode ? <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12" strokeWidth={1.5} /> : <ScanBarcode size={42} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12" strokeWidth={1.5} />}
           </div>
           <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
           <p className={`text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
@@ -108,7 +108,7 @@ export default function IdleScanPanel({
       {/* Lunch alerts banner */}
       {!specialMode && lunchAlerts.length > 0 && (
         <div className="w-full max-w-[420px] mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="bg-chart-4/10 backdrop-blur-xl border border-chart-4/25 rounded-[1.5rem] px-4 py-3 shadow-[0_8px_24px_rgba(249,115,22,0.15)]">
+          <div className="bg-chart-4/10 backdrop-blur-xl border border-chart-4/25 rounded-[1.5rem] px-4 py-3 shadow-[var(--shadow-glow-chart-4)]">
             <div className="flex items-center gap-2 mb-2">
               <Bell size={13} className="text-chart-4-text shrink-0" strokeWidth={2.5} />
               <span className="text-[10px] font-black uppercase tracking-widest text-chart-4-text">

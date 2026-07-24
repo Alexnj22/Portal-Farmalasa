@@ -185,7 +185,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     return {
         hasAlerts: true, message: alerts.length > 1 ? `${alerts.length} ALERTAS` : alerts[0].message,
         cardStyles: baseCardStyles,
-        badgeStyles: hasCritical ? 'bg-danger text-white shadow-[0_4px_15px_rgba(239,68,68,0.4)] border-danger' : 'bg-warning text-white shadow-[0_4px_15px_rgba(245,158,11,0.4)] border-warning',
+        badgeStyles: hasCritical ? 'bg-danger text-white shadow-[var(--shadow-glow-danger)] border-danger' : 'bg-warning text-white shadow-[var(--shadow-glow-warning)] border-warning',
         icon: hasCritical ? AlertTriangle : AlertCircle, list: alerts
     };
 };
@@ -315,7 +315,7 @@ const BranchCard = memo(({
 
             {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA */}
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-30">
-                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] border border-white hover:scale-105">
+                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-white hover:scale-105">
                     
                     {isFarmacia && (
                         <>
@@ -356,7 +356,7 @@ const BranchCard = memo(({
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all cursor-help border ${alertStatus.badgeStyles}`}>
                             <alertStatus.icon size={14} strokeWidth={2.5} />
                         </div>
-                        <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-[1.2rem] shadow-[0_20px_40px_rgba(0,0,0,0.3)] opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-border-card z-50">
+                        <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-border-card z-50">
                             <p className="text-[8px] text-content-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-card pb-1.5 flex items-center justify-between">
                                 Problemas Detectados <span className="bg-danger/20 text-danger px-1.5 py-0.5 rounded text-[7px]">{alertStatus.list.length}</span>
                             </p>
@@ -376,7 +376,7 @@ const BranchCard = memo(({
             <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
                 <div className="flex items-start gap-3">
                     <button onClick={() => handleViewProfile(branch)} className="flex items-center gap-4 min-w-0 text-left group/header focus:outline-none w-full pr-[140px]">
-                        <div className="w-14 h-14 rounded-[1.25rem] bg-white border border-border-card text-brand shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
+                        <div className="w-14 h-14 rounded-[1.25rem] bg-white border border-border-card text-brand shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 flex-1 flex flex-col justify-center">
@@ -719,7 +719,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                     {filterStatus !== "ALL" && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-11 h-11 rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
                     )}
-                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[var(--shadow-elevation-sm)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.15)] border border-white hover:border-brand/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
+                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] border border-white hover:border-brand/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
                         <Plus size={16} strokeWidth={2.5} />
                         <span className="hidden sm:inline">Nueva Sucursal</span>
                     </button>}

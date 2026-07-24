@@ -45,7 +45,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
         onClick={onToggle}
         className={`relative inline-flex items-center flex-shrink-0 w-10 h-5 md:w-11 md:h-6 rounded-full border-2 transition-all duration-300 ease-in-out cursor-pointer ${
             disabled ? "opacity-50 cursor-not-allowed bg-surface-card border-border-card" 
-            : on ? "bg-brand border-brand shadow-[0_2px_8px_rgba(0,82,204,0.3)]" : "bg-surface-card-hover border-slate-200 hover:bg-content-3 hover:border-slate-300"
+            : on ? "bg-brand border-brand shadow-[var(--shadow-glow-brand)]" : "bg-surface-card-hover border-slate-200 hover:bg-content-3 hover:border-slate-300"
         }`}
     >
         <span className={`absolute top-[1px] left-[1px] w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${on ? "translate-x-5 md:translate-x-6" : "translate-x-0"}`} />
@@ -55,7 +55,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
 const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
     const isOrange = theme === 'orange';
     const activeBg = isOrange ? 'bg-chart-4' : 'bg-chart-6';
-    const shadowHover = isOrange ? 'hover:shadow-[0_2px_8px_rgba(249,115,22,0.3)]' : 'hover:shadow-[0_2px_8px_rgba(236,72,153,0.3)]';
+    const shadowHover = isOrange ? 'hover:shadow-[var(--shadow-glow-chart-4)]' : 'hover:shadow-[0_2px_8px_rgba(236,72,153,0.3)]';
 
     return (
         <button

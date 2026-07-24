@@ -279,7 +279,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             {/* TABLA DETALLADA */}
             <div className="border border-slate-200 rounded-xl overflow-auto shadow-sm">
                 <table className="w-full text-left border-collapse bg-surface-card-hover/50 min-w-[1000px]">
-                    <thead className="sticky top-0 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] z-20">
+                    <thead className="sticky top-0 bg-white shadow-[var(--shadow-elevation-sm)] z-20">
                         <tr>
                             <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest w-[180px] bg-white">Empleado</th>
                             <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center border-r border-slate-200 bg-white w-[60px]">Hrs</th>

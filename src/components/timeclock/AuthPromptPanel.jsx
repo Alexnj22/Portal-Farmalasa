@@ -47,7 +47,7 @@ const AuthPromptPanel = ({
         {/* TOP */}
         <div className="flex flex-col items-center text-center w-full mb-5 sm:mb-6 shrink-0 group/icon">
           <div className="inline-flex p-4 rounded-[1.5rem] mb-3 sm:mb-4 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
-            <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+            <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
             {promptType === 'IN_AFTER_SHIFT' ? 'Turno Finalizado' : promptType === 'IN_EARLY' ? 'Entrada Anticipada' : promptType === 'OUT_LATE' ? 'Fuera de Tiempo' : promptType === 'IN_EARLY_EXTRA' ? 'Registrar Tiempo Extra' : 'Autorización Requerida'}

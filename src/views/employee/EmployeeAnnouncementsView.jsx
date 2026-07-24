@@ -283,7 +283,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-success -translate-y-10" />
-                    <div className="relative z-10 w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[0_20px_60px_rgba(16,185,129,0.45)] hover:scale-105 transition-transform duration-500">
+                    <div className="relative z-10 w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-500">
                         <Sparkles size={44} strokeWidth={1.6} />
                     </div>
                     <h3 className="font-black text-[26px] text-content tracking-tight mb-2">¡Todo al día!</h3>
@@ -352,7 +352,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         </span>
                     </div>
                     {urgentLeft > 0 && (
-                        <span className="flex items-center gap-1.5 text-[10px] font-black text-white bg-danger px-3 py-1.5 rounded-full shadow-[0_4px_14px_rgba(239,68,68,0.4)] animate-pulse self-center">
+                        <span className="flex items-center gap-1.5 text-[10px] font-black text-white bg-danger px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-danger)] animate-pulse self-center">
                             <Flame size={11} strokeWidth={2.5} /> {urgentLeft} urgente{urgentLeft !== 1 ? 's' : ''}
                         </span>
                     )}
@@ -418,7 +418,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
                         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[0_12px_40px_rgba(16,185,129,0.55)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[var(--shadow-glow-success)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>
                             <p className="mt-3 text-[11px] font-black text-success-text uppercase tracking-widest animate-in fade-in slide-in-from-bottom-1 duration-200 delay-75">Leído</p>
@@ -438,7 +438,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                             {/* Badges + fecha */}
                             <div className="flex flex-wrap items-center gap-2">
                                 {isUrgent && (
-                                    <span className="flex items-center gap-1.5 text-white bg-gradient-to-r from-danger to-danger/80 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(239,68,68,0.4)] animate-pulse">
+                                    <span className="flex items-center gap-1.5 text-white bg-gradient-to-r from-danger to-danger/80 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-danger)] animate-pulse">
                                         <Flame size={11} strokeWidth={2.5}/> Urgente
                                     </span>
                                 )}
@@ -541,8 +541,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 disabled={phase !== 'idle'}
                                 className={`w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-[0.14em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 hover:-translate-y-0.5 hover:scale-[1.01] active:scale-[0.98] group/btn ${
                                     isUrgent
-                                        ? 'bg-gradient-to-r from-danger to-chart-4 text-white shadow-[0_8px_28px_rgba(239,68,68,0.38)] hover:shadow-[0_14px_36px_rgba(239,68,68,0.52)]'
-                                        : 'bg-gradient-to-r from-brand to-[#6929C4] text-white shadow-[0_8px_28px_rgba(0,82,204,0.35)] hover:shadow-[0_14px_36px_rgba(0,82,204,0.50)]'
+                                        ? 'bg-gradient-to-r from-danger to-chart-4 text-white shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)]'
+                                        : 'bg-gradient-to-r from-brand to-[#6929C4] text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'
                                 }`}
                             >
                                 <CheckCircle2 size={19} strokeWidth={2.5} className="group-hover/btn:scale-110 transition-transform duration-200"/>
@@ -575,7 +575,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                 <div className="mt-5 flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <button
                         onClick={handleBack}
-                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-warning/30 bg-warning/10 text-warning-text shadow-[0_4px_16px_rgba(245,158,11,0.18)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
+                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-warning/30 bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning)] hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
                     >
                         {/* barra de countdown que se encoge en 5s */}
                         <div
@@ -738,7 +738,7 @@ const EmployeeAnnouncementsView = () => {
                                 className={`flex items-center gap-1 px-2.5 h-8 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap border shrink-0 ${
                                     key === 'URGENT'
                                         ? isActive
-                                            ? 'bg-danger text-white border-danger shadow-[0_3px_8px_rgba(239,68,68,0.35)] scale-[1.02]'
+                                            ? 'bg-danger text-white border-danger shadow-[var(--shadow-glow-danger)] scale-[1.02]'
                                             : 'bg-transparent text-danger border-danger/30 hover:bg-danger/10 hover:-translate-y-0.5'
                                         : isActive
                                         ? 'bg-white text-content border-white shadow-md scale-[1.02]'

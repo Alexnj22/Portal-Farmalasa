@@ -612,7 +612,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <p className="text-[9px] font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-200 group-hover:shadow-[0_4px_12px_rgba(0,82,204,0.30)]">
+                                <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-200 group-hover:shadow-[var(--shadow-glow-brand)]">
                                     <ArrowRight size={14} className="text-content-3 group-hover:text-white transition-colors" strokeWidth={2.5} />
                                 </div>
                             </button>

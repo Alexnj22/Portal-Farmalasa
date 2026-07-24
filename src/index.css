@@ -180,6 +180,17 @@
   --shadow-glow-warning: 0 4px 15px rgba(247,144,9,.35);
   --shadow-glow-danger:  0 4px 15px rgba(240,68,56,.35);
   --shadow-ring-brand:   0 0 0 4px rgba(0,82,204,.15);
+
+  /* Glow por acento categórico (--chart-N) — misma idea que brand/success/
+     warning/danger de arriba pero para los hues categóricos de T7.1. Se
+     agregaron en la 2ª pasada de T7.3 al auditar el resto de shadow-[...]:
+     no eran parte del mockup original, pero cubren el mismo patrón
+     (hover/glow de un elemento coloreado por categoría, no por severidad). */
+  --shadow-glow-chart-1: 0 4px 15px rgba(59,130,246,.35);  /* azul */
+  --shadow-glow-chart-3: 0 4px 15px rgba(139,92,246,.35);  /* violeta */
+  --shadow-glow-chart-4: 0 4px 15px rgba(249,115,22,.35);  /* naranja */
+  --shadow-glow-chart-7: 0 4px 15px rgba(234,179,8,.35);   /* dorado */
+  --shadow-glow-chart-8: 0 4px 15px rgba(100,116,139,.3);  /* pizarra */
 }
 
 /* ─── Dark LiquidGlass ─── */

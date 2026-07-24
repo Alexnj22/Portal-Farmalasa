@@ -230,7 +230,7 @@ function UltimaVentaCell({ row, allBranches }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
-const GLASS_CARD = 'bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.12)] hover:bg-surface-card';
+const GLASS_CARD = 'bg-surface-card border-slate-200/50 backdrop-blur-sm shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] hover:bg-surface-card';
 
 const FILTER_CARD_CSS = `
 @keyframes cardIn {
@@ -261,11 +261,11 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
-          activeBg: 'bg-warning/10 border-warning/40 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
+          activeBg: 'bg-warning/10 border-warning/40 shadow-[var(--shadow-glow-warning)] -translate-y-1',
           iconBgActive: 'bg-warning/10', iconColor: 'text-warning',
           numColor: n => n > 0 ? 'text-warning' : 'text-content-3' },
         { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc., alto volumen',
-          activeBg: 'bg-chart-4/10 border-chart-4/40 shadow-[0_4px_16px_rgba(249,115,22,0.20)] -translate-y-1',
+          activeBg: 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4)] -translate-y-1',
           iconBgActive: 'bg-chart-4/10', iconColor: 'text-chart-4-text',
           numColor: n => n > 0 ? 'text-chart-4-text' : 'text-content-3' },
         { id: 'mayorista', Icon: Truck, label: 'Mayorista', sub: 'compra por volumen · no agregar',
@@ -273,11 +273,11 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
           iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
           numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
-          activeBg: 'bg-surface-card-hover/80 border-slate-300 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
+          activeBg: 'bg-surface-card-hover/80 border-slate-300 shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-3',
           numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
         { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados',
-          activeBg: 'bg-surface-card-hover/80 border-slate-400 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
+          activeBg: 'bg-surface-card-hover/80 border-slate-400 shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-2',
           numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
     ];
@@ -326,11 +326,11 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
-          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[0_4px_16px_rgba(139,92,246,0.20)] -translate-y-1',
+          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[var(--shadow-glow-chart-3)] -translate-y-1',
           iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
           numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
-          activeBg: 'bg-danger/10 border-danger/40 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
+          activeBg: 'bg-danger/10 border-danger/40 shadow-[var(--shadow-glow-danger)] -translate-y-1',
           iconBgActive: 'bg-danger/10', iconColor: 'text-danger',
           numColor: n => n > 0 ? 'text-danger' : 'text-content-3' },
     ];
@@ -419,13 +419,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
     }, [mode]);
 
     const tk = {
-        card:             'bg-surface-card border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm',
+        card:             'bg-surface-card border-slate-200/70 shadow-[var(--shadow-glow-brand)] backdrop-blur-sm',
         thead:            'bg-gradient-to-r from-brand/[0.07] to-brand/[0.03] border-b border-brand/[0.12]',
         rowBorder:        'border-t border-slate-100',
         rowHover:         'hover:bg-brand/[0.03]',
         skeleton:         'bg-surface-card-hover/70',
         emptyBg:          'bg-surface-card border-slate-200/70 backdrop-blur-sm',
-        filterPill:       'bg-surface-card border-slate-200/70 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
+        filterPill:       'bg-surface-card border-slate-200/70 backdrop-blur-sm shadow-[var(--shadow-glow-brand)]',
         filterBtn:        'text-content-3 hover:text-content-2 hover:bg-surface-card',
         filterDivider:    'bg-surface-card-hover',
         totalText:        'text-content-3',

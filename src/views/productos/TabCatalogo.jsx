@@ -685,7 +685,7 @@ function PhotoLightbox({ src, onClose }) {
             style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: 'rgba(0,0,0,0.65)' }}
             onClick={onClose}>
             <div
-                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.6)] ring-1 ring-white/20"
+                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-xl)] ring-1 ring-white/20"
                 style={{ animation: 'lightbox-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}
                 onClick={e => e.stopPropagation()}>
                 <img src={src} alt="" className="block max-w-[90vw] max-h-[90vh] object-contain" />
@@ -1435,7 +1435,7 @@ export default function TabCatalogo({
         textInactive: 'text-content-3 line-through decoration-slate-300',
         avatarBg: 'bg-brand/[0.07]',
         avatarIcon: 'text-brand/50',
-        filterPill: 'bg-surface-card border-slate-200/70 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
+        filterPill: 'bg-surface-card border-slate-200/70 shadow-[var(--shadow-glow-brand)]',
         filterDivider: 'bg-surface-card-hover',
         filterBtn: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',
         totalText: 'text-content-3',

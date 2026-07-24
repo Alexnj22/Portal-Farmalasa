@@ -110,7 +110,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-content flex items-center gap-2">
                         <Users size={16} className="text-brand"/> Profesionales Asignados
                     </h4>
-                    <button type="button" onClick={addNurse} className="text-[10px] font-black bg-white border border-brand/20 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-300 active:scale-[0.97] uppercase tracking-widest shadow-sm hover:shadow-[0_4px_12px_rgba(0,82,204,0.2)] hover:-translate-y-0.5">
+                    <button type="button" onClick={addNurse} className="text-[10px] font-black bg-white border border-brand/20 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-300 active:scale-[0.97] uppercase tracking-widest shadow-sm hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5">
                         <Plus size={14} strokeWidth={2.5}/> Añadir Profesional
                     </button>
                 </div>

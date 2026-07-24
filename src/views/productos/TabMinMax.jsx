@@ -1507,7 +1507,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {/* Overlay */}
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
                     {/* Card */}
-                    <div className="relative z-10 w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[0_32px_80px_rgba(0,0,0,0.18)] overflow-hidden"
+                    <div className="relative z-10 w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[var(--shadow-elevation-xl)] overflow-hidden"
                         style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(40px) saturate(200%)' }}
                         onClick={e => e.stopPropagation()}>
 
@@ -1552,7 +1552,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
                                 const fmt = v => v == null ? '—' : v;
                                 return (
-                                    <div key={log.id} className="flex items-start gap-3 bg-surface-card border border-border-card rounded-2xl px-3.5 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+                                    <div key={log.id} className="flex items-start gap-3 bg-surface-card border border-border-card rounded-2xl px-3.5 py-3 shadow-[var(--shadow-elevation-sm)]">
                                         {/* Employee avatar */}
                                         <div className="w-8 h-8 rounded-full bg-surface-card-hover border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                             {empPhoto

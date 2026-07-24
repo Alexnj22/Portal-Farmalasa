@@ -34,7 +34,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     // ==========================================
     if (possibleReferents.length === 0) {
         return (
-            <div className="bg-warning/10 backdrop-blur-xl border border-warning/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[0_8px_30px_rgba(245,158,11,0.12)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
+            <div className="bg-warning/10 backdrop-blur-xl border border-warning/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[var(--shadow-glow-warning)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
                 <div className="w-16 h-16 bg-white rounded-[1.5rem] shadow-sm border border-warning/30 flex items-center justify-center text-warning mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />

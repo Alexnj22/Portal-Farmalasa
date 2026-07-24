@@ -898,7 +898,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] ${focusRing}`}
                                             type="button">
                                             <div className="relative h-9 w-9 flex-shrink-0">
-                                                <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[0_4px_12px_rgba(0,0,0,0.4)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
+                                                <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
                                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
@@ -1193,7 +1193,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 >
                                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150
                                                         ${m.isActive
-                                                            ? 'bg-[#4D94FF]/25 shadow-[0_2px_8px_rgba(77,148,255,0.25)]'
+                                                            ? 'bg-[#4D94FF]/25 shadow-[var(--shadow-glow-chart-1)]'
                                                             : 'bg-white/8 group-hover/fi:bg-white/14'}`}>
                                                         <MIcon
                                                             size={14}

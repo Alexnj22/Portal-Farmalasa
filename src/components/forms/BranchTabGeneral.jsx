@@ -42,7 +42,7 @@ const BranchTabGeneral = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
-                            Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-[0_2px_8px_rgba(239,68,68,0.2)] border border-danger/30">Requerido</span>}
+                            Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-danger)] border border-danger/30">Requerido</span>}
                         </label>
                         <LazyInput
                             required

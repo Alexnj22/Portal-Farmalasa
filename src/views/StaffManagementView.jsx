@@ -410,7 +410,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[var(--shadow-glow-brand)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-glow-brand)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
             <ChevronRight size={16} strokeWidth={3} />
@@ -879,7 +879,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewPracticante}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-chart-3 text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-chart-3 text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GraduationCap size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Practicante</span>

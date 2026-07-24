@@ -135,9 +135,9 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedConfirmed.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-white shadow-[0_2px_10px_rgba(0,0,0,0.03)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
+                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-white shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
                         >
-                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[0_4px_12px_rgba(16,185,129,0.4)] transition-transform group-hover:scale-105" />
+                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
                             <p className="text-[12px] font-black text-content truncate">
                               {emp.name}
@@ -203,7 +203,7 @@ const FormAnnouncements = ({ data }) => {
                   <PaginationControls currentPage={pendingPage} totalPages={totalPendingPages} setPage={setPendingPage} />
                 </div>
               ) : (
-                <div className="p-5 bg-success text-white rounded-[1.25rem] shadow-[0_8px_25px_rgba(16,185,129,0.3)] text-center flex items-center justify-center gap-3">
+                <div className="p-5 bg-success text-white rounded-[1.25rem] shadow-[var(--shadow-glow-success)] text-center flex items-center justify-center gap-3">
                    <PartyPopper size={20} className="animate-[bounce_2s_infinite]" />
                   <p className="text-[12px] font-black uppercase tracking-wider drop-shadow-md">
                     ¡Todos han leído el aviso!

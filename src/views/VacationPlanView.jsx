@@ -48,7 +48,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -667,7 +667,7 @@ const VacationPlanView = () => {
             <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
 
                 {/* Year selector */}
-                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
+                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
                     <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
@@ -902,7 +902,7 @@ const VacationPlanView = () => {
                                         {activeHeader?.status === 'DRAFT' && vacationPlans.filter(vp => vp.status === 'DRAFT').length > 0 && (
                                             <button
                                                 onClick={handlePreApprove}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1 hover:bg-chart-1/80 text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all"
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1 hover:bg-chart-1/80 text-white text-[10px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-1)] hover:-translate-y-0.5 transition-all"
                                             >
                                                 <ShieldCheck size={12} strokeWidth={2.5} /> Pre-aprobar plan
                                             </button>

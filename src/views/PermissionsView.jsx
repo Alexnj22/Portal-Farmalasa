@@ -276,7 +276,7 @@ const Toggle = ({ value, onChange, color = 'bg-chart-1', disabled = false, size 
                 disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-[0.97]'
             } ${value ? color : 'bg-surface-card-hover/80'}`}
         >
-            <span className={`absolute ${knob} rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.2)] transition-all duration-300 ${value ? on : 'left-[3px]'}`} />
+            <span className={`absolute ${knob} rounded-full bg-white shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ${value ? on : 'left-[3px]'}`} />
         </button>
     );
 };
@@ -312,7 +312,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 <div className="flex items-start gap-3 mb-3.5">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                         hasAnyPerm
-                            ? 'bg-gradient-to-br from-brand to-[#6929C4] text-white shadow-[0_3px_12px_rgba(0,82,204,0.38)] scale-100'
+                            ? 'bg-gradient-to-br from-brand to-[#6929C4] text-white shadow-[var(--shadow-glow-brand)] scale-100'
                             : 'bg-surface-card backdrop-blur-sm border border-border-card text-content-3 scale-90'
                     }`}>
                         <ModIcon size={15} strokeWidth={1.8} />
@@ -387,7 +387,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     onClick={() => !locked && onChange(module.key, 'scope', opt.value)}
                                     className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                         currentScope === opt.value
-                                            ? `${opt.color} border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.15)] scale-[1.02]`
+                                            ? `${opt.color} border-transparent shadow-[var(--shadow-elevation-lg)] scale-[1.02]`
                                             : 'bg-surface-card backdrop-blur-sm border-border-card text-content-3 hover:bg-surface-card hover:text-content-2'
                                     } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
@@ -832,8 +832,8 @@ const PermissionsView = () => {
                                         isActive
                                             ? isSURol
                                                 ? 'bg-gradient-to-br from-warning/10 to-chart-4/10 border-warning/30 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
-                                                : `${cs.bg} ${cs.border} shadow-[0_4px_16px_rgba(0,0,0,0.08)]`
-                                            : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
+                                                : `${cs.bg} ${cs.border} shadow-[var(--shadow-elevation-md)]`
+                                            : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[var(--shadow-elevation-sm)]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -966,7 +966,7 @@ const PermissionsView = () => {
                                 return (
                                 <div className="rounded-2xl border bg-surface-card backdrop-blur-2xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,0,0,0.06)] p-4 md:col-span-2">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all duration-300`}>
+                                        <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-300`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -986,7 +986,7 @@ const PermissionsView = () => {
                                                     onClick={() => canEdit && handlePriceLevelChange(opt.value)}
                                                     className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                                         isActive
-                                                            ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.2)]`
+                                                            ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[var(--shadow-elevation-xl)]`
                                                             : 'bg-surface-card border-border-card text-content-3 hover:border-content-3 hover:text-content-2'
                                                     } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
                                                     <OptIcon size={9} strokeWidth={2.5} />

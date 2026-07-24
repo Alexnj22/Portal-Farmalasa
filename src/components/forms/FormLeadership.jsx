@@ -104,7 +104,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 onClick={() => setFormData({...formData, selectedEmpId: emp.id})}
                                 className={`flex flex-col gap-2 p-3 rounded-[1.2rem] cursor-pointer border relative transition-colors ${
                                     isSelected 
-                                    ? 'bg-surface-card border-brand shadow-[0_4px_15px_rgba(0,82,204,0.12)] ring-1 ring-brand/20' 
+                                    ? 'bg-surface-card border-brand shadow-[var(--shadow-glow-brand)] ring-1 ring-brand/20' 
                                     : 'bg-surface-card border-border-card hover:bg-surface-card shadow-sm'
                                 }`}
                             >

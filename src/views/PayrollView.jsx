@@ -284,7 +284,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                         {/* Branch header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-border-card bg-surface-card flex-wrap gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-tr from-brand to-brand-purple rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.3)]">
+                                <div className="w-8 h-8 bg-gradient-to-tr from-brand to-brand-purple rounded-xl flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
                                     <Building2 size={14} className="text-white" strokeWidth={2} />
                                 </div>
                                 <div>
@@ -572,7 +572,7 @@ const PayrollView = ({ openModal }) => {
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
                         {!activePeriod ? (
                             <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-                                <div className="w-16 h-16 bg-gradient-to-tr from-brand to-brand-purple rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,82,204,0.3)] mb-4">
+                                <div className="w-16 h-16 bg-gradient-to-tr from-brand to-brand-purple rounded-2xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[15px] font-black text-content-2 uppercase tracking-tight">Selecciona un período</p>

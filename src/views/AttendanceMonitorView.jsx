@@ -302,7 +302,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       case "FINISHED":
         return "border-black/[0.08] bg-surface-card opacity-70 hover:opacity-100 transition-opacity";
       case "EARLY_EXIT":
-        return "border-brand/20 bg-surface-card shadow-[0_10px_30px_rgba(0,82,204,0.08)]";
+        return "border-brand/20 bg-surface-card shadow-[var(--shadow-glow-brand)]";
       case "BUSINESS_OUT":
         return "border-chart-7/30 bg-surface-card shadow-[0_10px_30px_rgba(14,165,233,0.08)]";
       case "OFF_DAY":
@@ -737,7 +737,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               className={[
                 "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
                 isActive
-                  ? "bg-white border-brand shadow-[0_12px_24px_rgba(0,82,204,0.15)] scale-[1.02] ring-1 ring-brand"
+                  ? "bg-white border-brand shadow-[var(--shadow-glow-brand)] scale-[1.02] ring-1 ring-brand"
                   : `${card.bg} ${card.border} hover:bg-white hover:border-white hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1`,
               ].join(" ")}
             >
@@ -798,8 +798,8 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <div
                 key={emp.id}
                 className={[
-                  "p-5 rounded-[2.5rem] border bg-surface-card backdrop-blur-xl shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition-all duration-300",
-                  "hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)]",
+                  "p-5 rounded-[2.5rem] border bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-sm)] transition-all duration-300",
+                  "hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-md)]",
                   getStatusCardStyle(status, isLate),
                 ].join(" ")}
               >

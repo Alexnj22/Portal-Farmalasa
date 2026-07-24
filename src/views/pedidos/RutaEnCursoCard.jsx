@@ -85,7 +85,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
   };
 
   return (
-    <div className="bg-surface-card backdrop-blur-md rounded-2xl border border-border-card shadow-[0_4px_20px_rgba(0,0,0,0.06)] overflow-hidden">
+    <div className="bg-surface-card backdrop-blur-md rounded-2xl border border-border-card shadow-[var(--shadow-elevation-sm)] overflow-hidden">
 
       {/* ── Header (siempre visible) ─────────────────────────── */}
       <div

@@ -34,7 +34,7 @@ function EarlyExitForm({
         
         <div className="flex flex-col items-center text-center w-full mb-4 sm:mb-5 shrink-0 group/icon">
           <div className="inline-flex p-3 sm:p-4 rounded-[1.5rem] mb-2.5 sm:mb-3 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
-            <FileText size={36} className="text-chart-4-text drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-10 sm:h-10" strokeWidth={1.5} />
+            <FileText size={36} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-10 sm:h-10" strokeWidth={1.5} />
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">

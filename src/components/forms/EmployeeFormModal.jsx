@@ -2114,7 +2114,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Usuario (Auto-generado)" name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
                             </div>
 
-                            <div className={`bg-brand/5 rounded-[1.5rem] p-4 md:p-5 border border-brand/20 shadow-[0_8px_30px_rgba(0,82,204,0.05)] transition-all hover:-translate-y-1 hover:shadow-md`}>
+                            <div className={`bg-brand/5 rounded-[1.5rem] p-4 md:p-5 border border-brand/20 shadow-[var(--shadow-glow-brand)] transition-all hover:-translate-y-1 hover:shadow-md`}>
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="p-2 bg-brand text-white rounded-[0.8rem] shadow-[var(--shadow-glow-brand)]"><Lock size={16} strokeWidth={2.5} /></div>
                                     <h4 className="text-[12px] font-black uppercase tracking-widest text-brand">Seguridad Kiosko</h4>

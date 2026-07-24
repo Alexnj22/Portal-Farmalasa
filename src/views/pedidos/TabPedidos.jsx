@@ -335,7 +335,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         stage === 'pausado'
                                             ? 'ring-2 ring-warning shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
                                             : hasObservacion(row) && row.pedido_status !== 'completado'
-                                                ? 'ring-2 ring-chart-4 shadow-[0_4px_20px_rgba(249,115,22,0.18)]'
+                                                ? 'ring-2 ring-chart-4 shadow-[var(--shadow-glow-chart-4)]'
                                                 : isFadedOut
                                                     ? 'opacity-80'
                                                     : ''

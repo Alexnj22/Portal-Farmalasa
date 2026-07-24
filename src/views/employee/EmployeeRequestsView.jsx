@@ -64,7 +64,7 @@ const MinMaxStatusCard = memo(({ req }) => {
         ? { border: 'border-danger/40 bg-surface-card', badge: 'bg-danger/10 text-danger border-danger/30', label: 'Rechazada' }
         : { border: 'border-brand/30 bg-surface-card', badge: 'bg-warning/10 text-warning-text border-warning/30', label: 'Pendiente' };
     return (
-        <div className={`p-5 rounded-[2rem] border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)]`}>
+        <div className={`p-5 rounded-[2rem] border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[var(--shadow-elevation-sm)]`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-[0.875rem] bg-chart-1/10 border border-chart-1/30 flex items-center justify-center flex-shrink-0">
@@ -173,7 +173,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                 </button>
                 <button
                     onClick={() => onAccept(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success text-white text-[11px] font-bold uppercase tracking-widest shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:bg-success-hover transition-all active:scale-[0.97]"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success text-white text-[11px] font-bold uppercase tracking-widest shadow-[var(--shadow-glow-success)] hover:bg-success-hover transition-all active:scale-[0.97]"
                 >
                     <Check size={12} strokeWidth={2.5} /> Aceptar
                 </button>
@@ -202,7 +202,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
         'border-border-card bg-surface-card backdrop-blur-md';
 
     return (
-        <div className={`rounded-[2.5rem] border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 ${cardBg}`}>
+        <div className={`rounded-[2.5rem] border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-0.5 ${cardBg}`}>
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-[0.875rem] flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>

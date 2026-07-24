@@ -906,7 +906,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 <div className="flex items-center gap-2">
                                     {nextStep && (
                                         <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
-                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-brand text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_8px_22px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-brand text-white font-black text-[11px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
                                             {EMP_STEP_LABELS[nextStep]}
                                             <ChevronRight size={15} strokeWidth={2.5} />
                                         </button>

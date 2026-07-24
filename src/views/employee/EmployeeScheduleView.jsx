@@ -264,7 +264,7 @@ const EmployeeScheduleView = () => {
                             key={d.id}
                             className={`rounded-[1.75rem] border p-4 transition-all ${
                                 d.isToday
-                                    ? 'bg-brand/5 border-brand/30 shadow-[0_0_0_1px_rgba(0,82,204,0.15)]'
+                                    ? 'bg-brand/5 border-brand/30 shadow-[var(--shadow-ring-brand)]'
                                     : 'bg-surface-card backdrop-blur-md border-border-card'
                             }`}
                         >

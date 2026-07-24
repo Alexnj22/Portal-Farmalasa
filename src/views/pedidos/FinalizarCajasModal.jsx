@@ -156,7 +156,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 <div className="px-5 py-5 space-y-5">
                     {/* Page count card */}
                     <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-chart-3/10 border border-chart-3/20">
-                        <div className="w-12 h-12 rounded-2xl bg-chart-3 shadow-[0_4px_14px_rgba(139,92,246,0.4)] flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-chart-3 shadow-[var(--shadow-glow-chart-3)] flex items-center justify-center shrink-0">
                             {loadingPages
                                 ? <Loader2 size={19} className="animate-spin text-white" />
                                 : <Package size={19} className="text-white" />
@@ -239,7 +239,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                     <div className="flex items-center gap-3 px-3 pt-3 pb-2">
                                         <div className={`shrink-0 flex flex-col items-center justify-center px-2 py-1.5 rounded-xl min-w-[44px] transition-all ${
                                             hasAssignment
-                                                ? 'bg-chart-3 text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)]'
+                                                ? 'bg-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
                                                 : 'bg-warning text-white'
                                         }`}>
                                             <span className="text-[7px] font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
@@ -259,7 +259,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 <button key={box} onClick={() => toggleBox(idx, box)}
                                                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
                                                         sel
-                                                            ? 'bg-chart-3 border-chart-3 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
+                                                            ? 'bg-chart-3 border-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
                                                             : 'bg-surface-card border-slate-200 text-content-3 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10'
                                                     }`}>
                                                     Caja {box}
@@ -283,7 +283,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 {screen === 1 ? (
                     <button onClick={handleGoScreen2}
                         disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
                         {loadingPages
                             ? <Loader2 size={12} className="animate-spin" />
                             : <>Siguiente <span className="opacity-60">→</span></>
@@ -291,7 +291,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     </button>
                 ) : (
                     <button onClick={handleConfirm} disabled={submitting || !isValid}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
                         {submitting
                             ? <Loader2 size={12} className="animate-spin" />
                             : <PackageCheck size={13} />

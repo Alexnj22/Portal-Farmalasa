@@ -717,7 +717,7 @@ const RolesView = ({ openModal }) => {
                                             key={role.id}
                                             className={`p-5 rounded-[2rem] flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
                                                 ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[var(--shadow-elevation-md)] animate-subtle-shake z-10' : isExternal
-                                                    ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-slate-300 shadow-sm hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1'
+                                                    ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-slate-300 shadow-sm hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1'
                                                     : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:bg-surface-card hover:-translate-y-1'
                                                 }`}
                                         >

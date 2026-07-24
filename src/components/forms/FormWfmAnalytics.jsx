@@ -238,7 +238,7 @@ const FormWfmAnalytics = ({ branches }) => {
             }
 
             return (
-                <div className="bg-slate-800/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-[inset_0_1px_4px_rgba(255,255,255,0.1),0_10px_30px_rgba(0,0,0,0.1)] border border-slate-700/60 w-max z-[100] animate-in fade-in duration-300 transform-gpu">
+                <div className="bg-slate-800/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-[var(--shadow-glass-lg)] border border-slate-700/60 w-max z-[100] animate-in fade-in duration-300 transform-gpu">
                     <p className="font-black text-[10px] uppercase tracking-widest text-content-2 mb-1 leading-none">{branchName}</p>
                     <p className="font-extrabold text-[12px] uppercase tracking-tight text-white mb-2 pb-1.5 border-b border-slate-700">{activeView === 'DAYS' ? 'Día' : 'Hora'}: {data.displayLabel}</p>
                     
@@ -306,12 +306,12 @@ const FormWfmAnalytics = ({ branches }) => {
             </div>
 
             {/* GRÁFICA PRINCIPAL (GLASS CONTAINER) */}
-            <div className="bg-surface-card backdrop-blur-xl rounded-[2rem] p-6 border border-border-card shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_8px_40px_rgba(0,0,0,0.06)] relative min-h-[380px] flex flex-col transform-gpu hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_12px_60px_rgba(0,0,0,0.1)] transition-all duration-700">
+            <div className="bg-surface-card backdrop-blur-xl rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-glass-md)] relative min-h-[380px] flex flex-col transform-gpu hover:shadow-[var(--shadow-glass-lg)] transition-all duration-700">
 
                 {/* CABECERA DE GRÁFICA Y CONTROLES (TABS PILL STYLE) */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 pb-4">
                     <div className="flex items-center gap-3">
-                        <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-500 shadow-[0_3px_10px_rgba(0,82,204,0.15)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.3)]">
+                        <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-500 shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]">
                             <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
                             <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-10 transition-colors duration-300" />
                         </div>
@@ -403,7 +403,7 @@ const FormWfmAnalytics = ({ branches }) => {
             </div>
 
             {/* LEYENDA DEL HEATMAP (GLASS PILL STYLE) */}
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-surface-card backdrop-blur-xl rounded-full py-3.5 px-6 border border-border-card shadow-[var(--shadow-glass-sm)] mt-2 transition-shadow duration-500 hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_30px_rgba(0,0,0,0.1)]">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-surface-card backdrop-blur-xl rounded-full py-3.5 px-6 border border-border-card shadow-[var(--shadow-glass-sm)] mt-2 transition-shadow duration-500 hover:shadow-[var(--shadow-glass-lg)]">
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#64748b] shadow-sm"></div> Valle / Muerta</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-brand shadow-sm"></div> Tráfico Normal</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#F79009] shadow-sm"></div> Hora Pico (Aviso)</div>

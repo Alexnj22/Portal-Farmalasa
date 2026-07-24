@@ -316,7 +316,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     return (
         <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
             <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
-                <div className="min-h-[72px] h-full bg-surface-card backdrop-blur-xl border border-border-card shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                <div className="min-h-[72px] h-full bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card backdrop-blur-md border border-border-card shadow-[inset_0_1px_4px_rgba(255,255,255,0.7)] overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-content-3" />}
                     </div>
@@ -410,7 +410,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                     }}>
                         <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col
                             ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
-                            ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[0_2px_8px_rgba(139,92,246,0.08)]' :
+                            ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)]' :
                               conf ? conf.bg + ' border border-dashed ' + conf.border :
                               hasShift ? 'bg-white border border-slate-200 shadow-[var(--shadow-elevation-xs)]' :
                               'border border-dashed border-slate-300/60 bg-surface-card-hover/30 backdrop-blur-sm'
@@ -702,7 +702,7 @@ const ScheduleCalendar = memo(({
                     <thead className="relative z-[60]">
                         <tr>
                             <th className="p-0 sticky left-0 z-[70] min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
-                                <div className="bg-surface-card backdrop-blur-2xl border border-border-card shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-[1.5rem] pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-[9px] font-black uppercase text-content-3 tracking-widest flex flex-col items-center justify-center gap-1">
+                                <div className="bg-surface-card backdrop-blur-2xl border border-border-card shadow-[var(--shadow-elevation-xs)] rounded-[1.5rem] pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-[9px] font-black uppercase text-content-3 tracking-widest flex flex-col items-center justify-center gap-1">
                                     Personal <span className="bg-surface-card px-2 py-0.5 rounded-lg text-content-3 border border-white">44H / 1 DESCANSO</span>
                                 </div>
                             </th>
@@ -722,11 +722,11 @@ const ScheduleCalendar = memo(({
                                     headerTextColor = "text-danger-text";
                                     dayTextColor = "text-danger-text";
                                 } else if (dayColor === '#F79009') { // Pico (Naranja)
-                                    headerBg = "bg-warning/10 border-warning/30 shadow-[0_4px_15px_rgba(245,158,11,0.05)]";
+                                    headerBg = "bg-warning/10 border-warning/30 shadow-[var(--shadow-glow-warning)]";
                                     headerTextColor = "text-warning-text";
                                     dayTextColor = "text-warning";
                                 } else if (dayColor === '#0052CC') { // Normal (Azul)
-                                    headerBg = "bg-chart-1/10 border-chart-1/30 shadow-[0_4px_15px_rgba(0,82,204,0.05)]";
+                                    headerBg = "bg-chart-1/10 border-chart-1/30 shadow-[var(--shadow-glow-brand)]";
                                     headerTextColor = "text-brand";
                                     dayTextColor = "text-chart-1-text";
                                 }

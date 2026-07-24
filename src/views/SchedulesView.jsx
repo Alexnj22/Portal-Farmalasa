@@ -82,7 +82,7 @@ const HolidaysPanel = ({
                 </div>
                 {canEdit && (
                     <button onClick={() => setShowForm(v => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-slate-200 text-content-2' : 'bg-warning hover:bg-warning-hover border-warning text-white shadow-[0_4px_12px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_18px_rgba(234,179,8,0.4)] hover:-translate-y-0.5'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-slate-200 text-content-2' : 'bg-warning hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
                         {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
                         {showForm ? 'Cancelar' : 'Agregar feriado'}
                     </button>
@@ -126,7 +126,7 @@ const HolidaysPanel = ({
                         </button>
                     </div>
                     <button onClick={onSave} disabled={hSaving || !hDate || !hName.trim()}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-widest rounded-[1rem] shadow-[0_4px_12px_rgba(234,179,8,0.3)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-widest rounded-[1rem] shadow-[var(--shadow-glow-chart-7)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                         {hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
                         {hSaving ? 'Guardando...' : 'Guardar feriado'}
                     </button>
@@ -774,7 +774,7 @@ const SchedulesView = ({ openModal, setView }) => {
                         className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
                             ${weekIsPublished
                                 ? 'bg-success/20 border-success/50 text-success-text cursor-default'
-                                : 'bg-brand border-brand-hover/60 text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
+                                : 'bg-brand border-brand-hover/60 text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97]'}
                             ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
                         {isPublishing ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
                             : weekIsPublished ? <CheckCircle size={11} strokeWidth={2.5} />

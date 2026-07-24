@@ -16,11 +16,11 @@ import { fetchBranchHourlySalesAll } from '../../data/schedules';
 // ============================================================================
 const getStaffTheme = (colorTheme) => {
     const themes = {
-        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-warning to-chart-4' },
+        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[var(--shadow-glow-warning)]', icon: Star, gradient: 'from-warning to-chart-4' },
         blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[var(--shadow-glow-brand)]', icon: Award, gradient: 'from-brand to-chart-3' },
-        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-success to-chart-9' },
-        purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-chart-3', badge: 'bg-chart-3', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-chart-3 to-chart-6' },
-        slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
+        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[var(--shadow-glow-success)]', icon: ShieldCheck, gradient: 'from-success to-chart-9' },
+        purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-chart-3', badge: 'bg-chart-3', shadow: 'hover:shadow-[var(--shadow-glow-chart-3)]', icon: HeartPulse, gradient: 'from-chart-3 to-chart-6' },
+        slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-slate-300', badge: 'bg-content-3', shadow: 'hover:shadow-[var(--shadow-elevation-md)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
     };
     return themes[colorTheme] || themes.slate;
 };
@@ -66,7 +66,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     if (isMissing) {
         return (
-            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 hover:shadow-[0_8px_20px_rgba(239,68,68,0.1)] hover:-translate-y-1 min-h-[260px]">
+            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-1 min-h-[260px]">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
@@ -690,7 +690,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 </p>
                                                 <p className="text-[9px] font-bold text-chart-1-text">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
                                             </div>
-                                            <div className="bg-warning/10 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
+                                            <div className="bg-warning/10 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[var(--shadow-glow-warning)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-warning">Impacto en Plantilla</p>
                                                 <p className="text-[18px] font-black text-warning-text mt-1">+{extraVolumeHours} Hrs</p>
                                                 <p className="text-[9px] font-bold text-warning">Añadidas al presupuesto semanal</p>

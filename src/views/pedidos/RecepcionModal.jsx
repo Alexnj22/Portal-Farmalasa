@@ -627,7 +627,7 @@ export default function RecepcionModal({
                                         isRecibida ? 'bg-success' :
                                         isFalta    ? 'bg-content-3' :
                                         isDanada   ? 'bg-warning' :
-                                                     'bg-chart-3 shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
+                                                     'bg-chart-3 shadow-[var(--shadow-glow-chart-3)]'
                                     }`}>
                                         {isRecibida ? <Check size={18} className="text-white" /> :
                                          isFalta    ? <Truck size={16} className="text-white" /> :

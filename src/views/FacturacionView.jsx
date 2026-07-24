@@ -2191,7 +2191,7 @@ export default function FacturacionView() {
             filtersContent={filtersContent}
             transparentBody={true}
         >
-            <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-border-card shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
                 <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
                     <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>

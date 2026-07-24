@@ -485,7 +485,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
     ? 'bg-brand/[0.09] border-brand/25 shadow-[0_0_0_1px_rgba(0,82,204,0.1),0_2px_8px_rgba(0,82,204,0.08)]'
     : isFuture
     ? 'bg-surface-card-hover border-black/[0.04]'
-    : 'bg-surface-card border-black/[0.07] shadow-[0_1px_6px_rgba(0,0,0,0.05)]';
+    : 'bg-surface-card border-black/[0.07] shadow-[var(--shadow-elevation-sm)]';
 
   return (
     <div className={`rounded-[1.75rem] border p-4 transition-all duration-200 ${cardBg}`}>
@@ -539,7 +539,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           <div className="flex flex-col gap-1.5 shrink-0">
             <button
               onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand hover:border-brand/25 hover:bg-brand/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[0_1px_6px_rgba(0,0,0,0.06)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand hover:border-brand/25 hover:bg-brand/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
             >
               <Edit3 size={11} strokeWidth={2.5} /> Corregir
             </button>
@@ -737,7 +737,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
     : null;
 
   return (
-    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.75rem] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-200 hover:shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
+    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.75rem] shadow-[var(--shadow-elevation-xs)] overflow-hidden transition-all duration-200 hover:shadow-[var(--shadow-elevation-sm)]">
       {/* Collapsed header row */}
       <button
         type="button"
@@ -1261,7 +1261,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
           <ChevronDown size={12} className={`opacity-50 transition-transform duration-200 shrink-0 ${branchDropOpen ? 'rotate-180' : ''}`} />
         </button>
         {branchDropOpen && (
-          <div className="absolute left-0 top-full mt-2 z-50 min-w-[190px] rounded-2xl border border-black/[0.08] bg-surface-card backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden py-1">
+          <div className="absolute left-0 top-full mt-2 z-50 min-w-[190px] rounded-2xl border border-black/[0.08] bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-lg)] overflow-hidden py-1">
             {sortedBranchOptions.map(opt => (
               <button key={opt.value} type="button"
                 onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}
@@ -1281,7 +1281,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
             </span>
             <button type="button" onClick={() => navigate('/payroll')}
-              className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-brand)] hover:shadow-[0_4px_14px_rgba(0,82,204,0.45)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+              className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
               Ver planilla →
             </button>
           </div>

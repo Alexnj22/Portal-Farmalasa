@@ -11,15 +11,15 @@ import { supabase } from '../../supabaseClient';
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)
 // ============================================================================
 const getThemeForAction = (action, isDoc, isSynthetic) => {
-    if (isSynthetic) return { icon: Building2, bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30', dot: 'bg-chart-4', shadow: 'shadow-[0_4px_20px_rgba(249,115,22,0.15)]' };
-    if (isDoc) return { icon: FileText, bg: 'bg-chart-1/10', text: 'text-brand', border: 'border-brand/20', dot: 'bg-brand', shadow: 'shadow-[0_4px_20px_rgba(0,82,204,0.15)]' };
+    if (isSynthetic) return { icon: Building2, bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30', dot: 'bg-chart-4', shadow: 'shadow-[var(--shadow-glow-chart-4)]' };
+    if (isDoc) return { icon: FileText, bg: 'bg-chart-1/10', text: 'text-brand', border: 'border-brand/20', dot: 'bg-brand', shadow: 'shadow-[var(--shadow-glow-brand)]' };
 
     switch (action) {
         case 'PAGO_REGISTRADO':
-            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success', shadow: 'shadow-[0_4px_20px_rgba(16,185,129,0.15)]' };
+            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success', shadow: 'shadow-[var(--shadow-glow-success)]' };
         case 'ALERTA_SISTEMA':
         case 'INSPECTION_RECORDED':
-            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-danger', shadow: 'shadow-[0_4px_20px_rgba(239,68,68,0.15)]' };
+            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-danger', shadow: 'shadow-[var(--shadow-glow-danger)]' };
         case 'EDITAR_SUCURSAL':
         case 'APERTURA_OFICIAL':
         case 'VINCULAR_KIOSCO':
@@ -33,7 +33,7 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
         case 'ACCION_RRHH':
         case 'ASIGNAR_TURNO_SEMANAL':
         case 'REGISTRO_ASISTENCIA':
-            return { icon: Users, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[0_4px_20px_rgba(168,85,247,0.15)]' };
+            return { icon: Users, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3)]' };
         default:
             return { icon: CheckCircle2, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-slate-200', dot: 'bg-content-3', shadow: 'shadow-sm' };
     }
@@ -433,7 +433,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                             <button 
                                 onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}
-                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-chart-3-text font-black text-[11px] uppercase tracking-widest border border-chart-3/30 hover:bg-white hover:text-chart-3-text hover:shadow-[0_8px_20px_rgba(168,85,247,0.15)] transition-all active:scale-[0.97] z-10 relative"
+                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-chart-3-text font-black text-[11px] uppercase tracking-widest border border-chart-3/30 hover:bg-white hover:text-chart-3-text hover:shadow-[var(--shadow-glow-chart-3)] transition-all active:scale-[0.97] z-10 relative"
                             >
                                 <ArrowLeft size={16} strokeWidth={2.5} /> Regresar a línea de tiempo
                             </button>
@@ -484,7 +484,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     <div key={yearGroup.year} className="w-full mb-4">
 
                                         <div className="relative flex justify-center items-center w-full mb-4 group">
-                                            <button onClick={() => toggleYear(yearGroup.year)} className={`relative z-20 flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[13px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border backdrop-blur-xl ${isYearOpen ? 'bg-brand/10 text-brand border-white shadow-[0_10px_30px_rgba(0,82,204,0.2)]' : 'bg-surface-card text-content-2 border-border-card shadow-[0_4px_15px_rgba(0,0,0,0.04)] hover:bg-brand/5 hover:text-brand hover:border-white hover:shadow-[0_8px_25px_rgba(0,82,204,0.15)]'}`}>
+                                            <button onClick={() => toggleYear(yearGroup.year)} className={`relative z-20 flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[13px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border backdrop-blur-xl ${isYearOpen ? 'bg-brand/10 text-brand border-white shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card text-content-2 border-border-card shadow-[var(--shadow-elevation-xs)] hover:bg-brand/5 hover:text-brand hover:border-white hover:shadow-[var(--shadow-glow-brand)]'}`}>
                                                 <Calendar size={15} strokeWidth={2.5} /> AÑO {yearGroup.year}
                                                 <ChevronRight size={16} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isYearOpen ? 'rotate-90 text-brand' : 'text-content-3'}`} />
                                             </button>
@@ -613,7 +613,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                     </div>
 
                                                                                                     {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand bg-surface-card backdrop-blur-md border border-border-card hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[0_2px_8px_rgba(0,82,204,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 shrink-0">
+                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand bg-surface-card backdrop-blur-md border border-border-card hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 shrink-0">
                                                                                                             <Eye size={12} strokeWidth={2.5} /> Ver Doc
                                                                                                         </button>
                                                                                                     ) : null}

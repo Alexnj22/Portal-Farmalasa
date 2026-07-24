@@ -64,7 +64,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
 
     return (
         // 🚨 EL SECRETO: max-h-[210px] evita que estire a la gráfica. p-3.5 lo hace ultra compacto.
-        <div className={`col-span-1 ${aiBoxBg} backdrop-blur-3xl backdrop-saturate-[180%] border rounded-[2rem] p-3.5 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.15)] text-white flex flex-col relative overflow-hidden transition-all duration-500 group/ai h-full max-h-[210px]`}>
+        <div className={`col-span-1 ${aiBoxBg} backdrop-blur-3xl backdrop-saturate-[180%] border rounded-[2rem] p-3.5 shadow-[var(--shadow-glass-lg)] text-white flex flex-col relative overflow-hidden transition-all duration-500 group/ai h-full max-h-[210px]`}>
             <div className={`absolute top-0 right-0 w-32 h-32 ${aiGlow} rounded-full blur-[60px] opacity-15 pointer-events-none`}></div>
             
             <div className="flex items-center justify-between border-b border-border-card pb-2 mb-2 relative z-10 shrink-0">

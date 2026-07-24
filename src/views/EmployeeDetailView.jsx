@@ -340,7 +340,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             
             <div className="flex items-center relative bg-surface-card border border-border-card rounded-full p-1 shrink-0 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]">
                 <div
-                    className="absolute top-1 bottom-1 w-[calc(20%-2px)] bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    className="absolute top-1 bottom-1 w-[calc(20%-2px)] bg-white rounded-full shadow-[var(--shadow-elevation-md)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                     style={{
                         transform: currentTab === 'history'     ? 'translateX(0%)' :
                                    currentTab === 'documents'   ? 'translateX(100%)' :
@@ -371,7 +371,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
             {canEdit && getEffectiveStatus(emp) === 'En Vacaciones' && (
                 <button onClick={handleVacationRecall} disabled={!canEdit}
-                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-warning to-chart-4 text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-warning)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
+                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-warning to-chart-4 text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-warning)] hover:shadow-[var(--shadow-glow-warning)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                     <Palmtree size={14} strokeWidth={3}/> <span className="hidden sm:inline">Ingreso en Vacaciones</span>
                 </button>
             )}
@@ -455,7 +455,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         
                         {/* --- TARJETA DE PERFIL (IZQUIERDA) --- */}
                         <div className="lg:col-span-4 space-y-5">
-                            <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-border-card bg-surface-card shadow-[0_8px_32px_rgba(0,0,0,0.05)] backdrop-blur-2xl">
+                            <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-border-card bg-surface-card shadow-[var(--shadow-elevation-sm)] backdrop-blur-2xl">
                                 
                                 <div className="absolute top-0 h-32 w-full bg-gradient-to-b from-brand/15 to-transparent"></div>
                                 
@@ -581,7 +581,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                         {/* --- CONTENIDO PRINCIPAL (DERECHA) --- */}
                         <div className="lg:col-span-8">
-                            <div className="bg-surface-card backdrop-blur-2xl rounded-[2.5rem] border border-border-card shadow-[0_8px_32px_rgba(0,0,0,0.03)] p-5 md:p-8 min-h-[600px] overflow-hidden relative">
+                            <div className="bg-surface-card backdrop-blur-2xl rounded-[2.5rem] border border-border-card shadow-[var(--shadow-elevation-xs)] p-5 md:p-8 min-h-[600px] overflow-hidden relative">
                                 
                                 {/* PESTAÑA 1: HISTORIAL */}
                                 {currentTab === 'history' && (
@@ -634,7 +634,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
                                                         <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-success' : 'border-brand'}`}></div>
                                                         
-                                                        <div className={`bg-surface-card hover:bg-surface-card rounded-3xl p-5 border border-border-card transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
+                                                        <div className={`bg-surface-card hover:bg-surface-card rounded-3xl p-5 border border-border-card transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-xs)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border shadow-sm ${evTheme.bg} ${evTheme.text} ${evTheme.border}`}>
                                                                     {evTheme.label}
@@ -920,7 +920,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             hover: 'hover:bg-danger/10 hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)]' }
                                                         : hasHours
                                                         ? { bg: 'bg-chart-4/10', border: 'border-chart-4/30', text: 'text-chart-4-text', badge: 'bg-chart-4/10 text-chart-4-text border-chart-4/30', leftBorder: 'border-chart-4/40', Icon: Clock,       label: 'Permiso por Horas',
-                                                            hover: 'hover:bg-chart-4/10 hover:border-chart-4/40 hover:shadow-[0_8px_24px_rgba(249,115,22,0.12)]' }
+                                                            hover: 'hover:bg-chart-4/10 hover:border-chart-4/40 hover:shadow-[var(--shadow-glow-chart-4)]' }
                                                         : { bg: 'bg-warning/10',  border: 'border-warning/30',  text: 'text-warning-text',  badge: 'bg-warning/10 text-warning-text border-warning/30',  leftBorder: 'border-warning/40',  Icon: FileText,    label: 'Permiso',
                                                             hover: 'hover:bg-warning/10 hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)]' };
 

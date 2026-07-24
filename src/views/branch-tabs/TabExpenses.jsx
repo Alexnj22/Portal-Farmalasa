@@ -121,7 +121,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-4 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-4 rounded-2xl shadow-[var(--shadow-elevation-lg)]">
                 <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
                 <p className="text-base font-black text-content flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm"></span>

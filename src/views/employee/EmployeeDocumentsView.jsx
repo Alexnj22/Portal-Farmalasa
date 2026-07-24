@@ -23,7 +23,7 @@ const DOC_CFG = {
         label: 'Constancia', Icon: FileCheck,
         bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30',
         iconBg: 'bg-chart-1/10', accent: 'bg-chart-1',
-        glow: 'hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]',
+        glow: 'hover:shadow-[var(--shadow-glow-chart-1)]',
     },
     VACATION: {
         label: 'Vacaciones', Icon: Palmtree,

@@ -64,7 +64,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-end p-4 pt-20 pointer-events-none">
-            <div className="pointer-events-auto w-80 rounded-2xl border border-border-card shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden"
+            <div className="pointer-events-auto w-80 rounded-2xl border border-border-card shadow-[var(--shadow-elevation-lg)] overflow-hidden"
                 style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(24px)' }}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">

@@ -397,7 +397,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                             : urgLevel === 'high'
                                 ? 'hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)] transition-all duration-200'
                                 : urgLevel === 'mid'
-                                    ? 'hover:border-warning/40 hover:shadow-[0_6px_20px_rgba(245,158,11,0.15)] transition-all duration-200'
+                                    ? 'hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)] transition-all duration-200'
                                     : 'hover:border-slate-300 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200';
 
                         // Urgency badge color
@@ -430,7 +430,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                                 {/* Checkmark — top-right cuando está seleccionado */}
                                 {isOn && (
-                                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-chart-1 flex items-center justify-center shadow-[0_2px_6px_rgba(0,82,204,0.40)]">
+                                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-chart-1 flex items-center justify-center shadow-[var(--shadow-glow-brand)]">
                                         <CheckCircle2 size={10} className="text-white" />
                                     </span>
                                 )}

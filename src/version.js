@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.53.1';
+export const APP_VERSION = '2.53.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.53.2 — feat(theme): T7.3 — segunda pasada de consolidación de sombras.
+//
+// Por decisión del usuario, se amplía el alcance en dos direcciones:
+// (1) 5 tokens nuevos --shadow-glow-chart-1/3/4/7/8 (mismo patrón que
+// brand/success/warning/danger, para los glows de acento categórico que
+// no estaban en el mockup original); (2) el reemplazo mecánico deja de
+// exigir "≥2 repeticiones exactas" — cualquier shadow-[...] de UNA sola
+// capa (sin comas, sin inset+outer combinados) que caiga en alguna de las
+// 19 categorías se tokeniza, incluso si su blur/opacidad específico era
+// único en el código (esa unicidad no era una decisión de diseño
+// deliberada, era la misma deriva de copy-paste que causó los 556
+// valores). 197 usos más en 71 archivos.
+//
+// Total consolidado en T7.3: 542 de 967 usos (56%) → 19 tokens.
+// Los ~426 restantes son shadow-[...] de VARIAS capas combinadas (anillos
+// de foco multi-capa, glass+glow simultáneo) — forzarlos a un solo token
+// aplanaría visualmente algo que hoy tiene más de una intención superpuesta;
+// quedan documentados como fuera de alcance de esta consolidación mecánica.
+// Build verificado.
+
 
 // v2.53.1 — feat(theme): T7.3 — primera pasada de consolidación de sombras.
 //

@@ -173,7 +173,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="mt-4 relative z-10">
                     <button
                         onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                        className="w-full h-10 rounded-xl bg-chart-1/10 text-brand font-black text-[10px] uppercase tracking-widest border border-chart-1/30 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[0_6px_20px_rgba(0,82,204,0.35)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
+                        className="w-full h-10 rounded-xl bg-chart-1/10 text-brand font-black text-[10px] uppercase tracking-widest border border-chart-1/30 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
                     >
                         <UploadCloud size={16} strokeWidth={2.5} /> Subir Archivo
                     </button>
@@ -399,7 +399,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                     </div>
 
                     <div className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
-                        <div className="relative w-full shadow-[0_8px_30px_rgba(0,82,204,0.12)] rounded-full overflow-hidden border border-brand/20 bg-surface-card backdrop-blur-xl">
+                        <div className="relative w-full shadow-[var(--shadow-glow-brand)] rounded-full overflow-hidden border border-brand/20 bg-surface-card backdrop-blur-xl">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-brand" />
                             </div>

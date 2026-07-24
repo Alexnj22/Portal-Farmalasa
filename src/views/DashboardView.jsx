@@ -331,7 +331,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
       </button>
       {open && createPortal(
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
-          <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl p-4 w-[196px]">
+          <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[var(--shadow-elevation-lg)] rounded-2xl p-4 w-[196px]">
             <div className="flex items-center justify-between mb-3 px-1">
               <button onClick={() => setViewYear(y => y - 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={14} strokeWidth={2.5} /></button>
               <span className="text-[13px] font-black text-content">{viewYear}</span>
@@ -1645,9 +1645,9 @@ const DashboardView = ({ openModal }) => {
                   const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
                   const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es',{month:'short'})}`;
                   const cardCls = e.isToday
-                    ? 'bg-brand/5 border-brand/20 shadow-[0_4px_16px_rgba(0,82,204,0.1)]'
+                    ? 'bg-brand/5 border-brand/20 shadow-[var(--shadow-glow-brand)]'
                     : e.isTomorrow
-                    ? 'bg-warning/10 border-warning/30 shadow-[0_4px_12px_rgba(245,158,11,0.1)]'
+                    ? 'bg-warning/10 border-warning/30 shadow-[var(--shadow-glow-warning)]'
                     : e.isPast
                     ? 'bg-surface-card border-border-card opacity-40'
                     : 'bg-surface-card border-border-card hover:bg-surface-card hover:border-slate-200/60 hover:shadow-sm';

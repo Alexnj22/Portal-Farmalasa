@@ -54,7 +54,7 @@ const KioskConfigModal = ({
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
             <div className="inline-flex p-4 rounded-[1.5rem] mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[0_0_40px_rgba(16,185,129,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(16,185,129,0.3)]">
-              <MonitorCheck size={42} className="text-success drop-shadow-[0_2px_10px_rgba(16,185,129,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+              <MonitorCheck size={42} className="text-success drop-shadow-[var(--shadow-glow-success)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
@@ -89,7 +89,7 @@ const KioskConfigModal = ({
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
             <div className="inline-flex p-4 rounded-[1.5rem] mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]">
-              <Settings size={42} className="text-chart-1-text drop-shadow-[0_2px_10px_rgba(59,130,246,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+              <Settings size={42} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">

@@ -334,7 +334,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 )}
                 {totalBadge > 0 && (
                     <>
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center z-20 shadow-[0_2px_8px_rgba(239,68,68,0.5)]">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center z-20 shadow-[var(--shadow-glow-danger)]">
                             {totalBadge > 9 ? '9+' : totalBadge}
                         </span>
                         <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-danger" />

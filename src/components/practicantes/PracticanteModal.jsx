@@ -42,7 +42,7 @@ const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,
 
 const IslandHeader = ({ icon: Icon, title }) => (
     <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-chart-3 text-white rounded-[0.8rem] shadow-[0_4px_12px_rgba(124,58,237,0.3)]"><Icon size={16} strokeWidth={2.5} /></div>
+        <div className="p-2 bg-chart-3 text-white rounded-[0.8rem] shadow-[var(--shadow-glow-chart-3)]"><Icon size={16} strokeWidth={2.5} /></div>
         <h4 className="text-[12px] font-black uppercase tracking-widest text-chart-3-text">{title}</h4>
     </div>
 );

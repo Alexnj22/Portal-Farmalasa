@@ -595,7 +595,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setSfAnonima(v => !v)}
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfAnonima
-                                                    ? 'bg-chart-3/10 border-chart-3/40 text-chart-3-text shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
+                                                    ? 'bg-chart-3/10 border-chart-3/40 text-chart-3-text shadow-[var(--shadow-glow-chart-3)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             {sfAnonima ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
@@ -604,7 +604,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setSfCompartir(v => !v)}
                                             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfCompartir
-                                                    ? 'bg-success/10 border-success/40 text-success-text shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
+                                                    ? 'bg-success/10 border-success/40 text-success-text shadow-[var(--shadow-glow-success)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <Globe size={13} strokeWidth={2.5} />
@@ -789,7 +789,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setRfIsJefe(true)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
                                                 rfIsJefe
-                                                    ? 'bg-warning/10 border-warning/40 text-warning-text shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
+                                                    ? 'bg-warning/10 border-warning/40 text-warning-text shadow-[var(--shadow-glow-warning)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <UserCheck size={14} strokeWidth={2.5} /> Jefe/a de sala
@@ -991,7 +991,7 @@ export default function EncuestaAdminView() {
                             return (
                                 <div key={s.id} className={`rounded-[2.5rem] border flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
                                     isExpanded
-                                        ? 'border-brand/20 shadow-[0_12px_50px_rgba(0,0,0,0.10)] bg-surface-card backdrop-blur-2xl z-10'
+                                        ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl z-10'
                                         : isEditing
                                             ? 'bg-surface-card backdrop-blur-xl border-warning/40 shadow-[var(--shadow-elevation-sm)]'
                                             : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'

@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.8';
+export const APP_VERSION = '2.52.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.9 — fix(theme): T7.1c — estandariza colores en NotificationBell.jsx.
+//
+// A diferencia de los "fondos fijos-oscuros" de AppLayout/TabStaff, este
+// componente sí alterna de verdad con `isDark` (de useTheme()) según el
+// tema activo — cada rama YA es el tema real, no una superficie que
+// simula oscuro. Por eso aquí los "-text" SÍ son la elección correcta en
+// la rama isDark (se resuelven a su valor claro-sobre-oscuro real):
+// amber-300/red-300/emerald-300/blue-300 → warning-text/danger-text/
+// success-text/chart-1-text. border-slate-200 suelto → border-border-card.
+
 
 // v2.52.8 — fix(theme): T7.1c — estandariza colores en
 // pedidos/tabpedidos/constants.js (STAGE_CONFIG, COLOR_CLS, SUC_COLORS).

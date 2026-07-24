@@ -20,13 +20,13 @@ const iconForType = (type = '') => {
 
 const tintForType = (type = '', metadata = {}, isDark = false) => {
     if (isDark) {
-        if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-amber-300 border-warning/40';
+        if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning-text border-warning/40';
         if (type === 'REQUEST_DECIDED' || type === 'MINMAX_DECIDED') {
             return metadata?.status === 'REJECTED'
-                ? 'bg-danger/10 text-red-300 border-danger/40'
-                : 'bg-success/10 text-emerald-300 border-emerald-300/20';
+                ? 'bg-danger/10 text-danger-text border-danger/40'
+                : 'bg-success/10 text-success-text border-success/20';
         }
-        if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-blue-300 border-chart-1/40';
+        if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-chart-1-text border-chart-1/40';
         return 'bg-surface-card text-white/60 border-border-card';
     }
     if (type === 'REQUEST_PENDING' || type === 'MINMAX_PENDING') return 'bg-warning/10 text-warning border-warning/30';
@@ -36,7 +36,7 @@ const tintForType = (type = '', metadata = {}, isDark = false) => {
             : 'bg-success/10 text-success border-success/30';
     }
     if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-brand border-chart-1/30';
-    return 'bg-surface-card-hover text-content-3 border-slate-200/70';
+    return 'bg-surface-card-hover text-content-3 border-border-card/70';
 };
 
 // Tipos que esperan una acción del usuario → chip con verbo específico;
@@ -274,9 +274,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         chipMuted: 'text-white/40',
         undoStrip: 'bg-white/[0.05]',
         undoText: 'text-white/60',
-        undoBtn: 'text-blue-300 hover:bg-chart-1/10 border-chart-1/40',
+        undoBtn: 'text-chart-1-text hover:bg-chart-1/10 border-chart-1/40',
     } : {
-        headerBorder: 'border-slate-200/60',
+        headerBorder: 'border-border-card/60',
         title: 'text-content',
         rowHover: 'hover:bg-surface-card',
         rowUnread: 'bg-chart-1/10',
@@ -327,7 +327,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 {totalBadge > 0 ? (
                     <BellRing size={18} strokeWidth={2}
                         className={`relative z-10 transition-colors
-                            ${hasUrgentAnn ? (isDark ? 'text-red-300 animate-wiggle' : 'text-danger animate-wiggle') : (isDark ? 'text-blue-300' : 'text-brand')}
+                            ${hasUrgentAnn ? (isDark ? 'text-danger-text animate-wiggle' : 'text-danger animate-wiggle') : (isDark ? 'text-chart-1-text' : 'text-brand')}
                             ${justRang && !hasUrgentAnn ? 'animate-wiggle' : ''}`} />
                 ) : (
                     <Bell size={18} strokeWidth={2} className={`relative z-10 ${isDark ? 'text-white/45' : 'text-content-3'}`} />
@@ -375,7 +375,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <button
                                             onClick={() => markAllNotificationsRead()}
                                             title="Marcar todas como leídas"
-                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-blue-300 hover:bg-chart-1/10' : 'text-brand hover:bg-chart-1/10'}`}
+                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand hover:bg-chart-1/10'}`}
                                         >
                                             <CheckCheck size={13} strokeWidth={2.5} />
                                             Leídas
@@ -394,7 +394,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                             <button
                                                 onClick={handleClearAll}
                                                 title="Borrar todas"
-                                                className={`p-1.5 rounded-xl transition-colors ${isDark ? 'text-white/40 hover:text-red-300 hover:bg-danger/10' : 'text-content-3 hover:text-danger hover:bg-danger/10'}`}
+                                                className={`p-1.5 rounded-xl transition-colors ${isDark ? 'text-white/40 hover:text-danger-text hover:bg-danger/10' : 'text-content-3 hover:text-danger hover:bg-danger/10'}`}
                                             >
                                                 <Trash2 size={14} strokeWidth={2} />
                                             </button>
@@ -425,12 +425,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 >
                                     <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0
                                         ${hasUrgentAnn
-                                            ? (isDark ? 'bg-danger/10 text-red-300 border-danger/40' : 'bg-danger/10 text-danger border-danger/30')
-                                            : (isDark ? 'bg-chart-1/10 text-blue-300 border-chart-1/40' : 'bg-chart-1/10 text-brand border-chart-1/30')}`}>
+                                            ? (isDark ? 'bg-danger/10 text-danger-text border-danger/40' : 'bg-danger/10 text-danger border-danger/30')
+                                            : (isDark ? 'bg-chart-1/10 text-chart-1-text border-chart-1/40' : 'bg-chart-1/10 text-brand border-chart-1/30')}`}>
                                         <Megaphone size={16} strokeWidth={2} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-[13px] font-bold leading-tight ${hasUrgentAnn ? (isDark ? 'text-red-300' : 'text-danger') : cx.rowTitle}`}>
+                                        <p className={`text-[13px] font-bold leading-tight ${hasUrgentAnn ? (isDark ? 'text-danger-text' : 'text-danger') : cx.rowTitle}`}>
                                             {annUnread} aviso{annUnread > 1 ? 's' : ''} sin leer{hasUrgentAnn ? ' · URGENTE' : ''}
                                         </p>
                                         <p className={`text-[11px] font-medium mt-0.5 ${cx.rowBody}`}>Comunicados de la empresa</p>
@@ -510,7 +510,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     <span className={`text-[10px] font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
                                                                     {actionLabel && (
                                                                         <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5
-                                                                            ${unread ? (isDark ? 'text-blue-300' : 'text-brand') : cx.chipMuted}`}>
+                                                                            ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand') : cx.chipMuted}`}>
                                                                             {actionLabel}
                                                                             <ArrowRight size={10} strokeWidth={3} />
                                                                         </span>

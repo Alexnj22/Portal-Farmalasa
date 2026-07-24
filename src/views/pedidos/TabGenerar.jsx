@@ -336,8 +336,8 @@ export default function TabGenerar({ searchTerm = '' }) {
                         onClick={() => setGlobalMode(v => !v)}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
                             globalMode
-                                ? 'bg-chart-3 border-indigo-500 text-white shadow-sm'
-                                : 'bg-white border-slate-200 text-content-3 hover:border-indigo-300 hover:text-chart-3-text'
+                                ? 'bg-chart-3 border-chart-3 text-white shadow-sm'
+                                : 'bg-white border-slate-200 text-content-3 hover:border-chart-3/50 hover:text-chart-3-text'
                         }`}
                     >
                         Distribución global de bodega
@@ -384,16 +384,16 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                         // Base: always urgency-based, never changes on selection
                         const baseCls = urgLevel === 'high'
-                            ? 'bg-gradient-to-b from-red-50/90 to-white/60 border-danger/30 backdrop-blur-sm'
+                            ? 'bg-gradient-to-b from-danger/10 to-white/60 border-danger/30 backdrop-blur-sm'
                             : urgLevel === 'mid'
-                                ? 'bg-gradient-to-b from-amber-50/90 to-white/60 border-warning/30 backdrop-blur-sm'
+                                ? 'bg-gradient-to-b from-warning/10 to-white/60 border-warning/30 backdrop-blur-sm'
                                 : urgLevel === 'low'
-                                    ? 'bg-gradient-to-b from-emerald-50/60 to-white/50 border-success/30 backdrop-blur-sm'
+                                    ? 'bg-gradient-to-b from-success/10 to-white/50 border-success/30 backdrop-blur-sm'
                                     : 'bg-gradient-to-b from-white/80 to-white/50 border-slate-200/60 backdrop-blur-sm';
 
                         // Selection adds a glow ring; no-selection adds hover effects
                         const stateCls = isOn
-                            ? 'suc-pop border-chart-1/80 shadow-[0_0_0_4px_rgba(59,130,246,0.15),0_8px_32px_rgba(0,82,204,0.28),0_2px_8px_rgba(0,82,204,0.14),inset_0_1px_0_rgba(255,255,255,0.85)] ring-2 ring-blue-400/25 ring-offset-0'
+                            ? 'suc-pop border-chart-1/80 shadow-[0_0_0_4px_rgba(59,130,246,0.15),0_8px_32px_rgba(0,82,204,0.28),0_2px_8px_rgba(0,82,204,0.14),inset_0_1px_0_rgba(255,255,255,0.85)] ring-2 ring-chart-1/25 ring-offset-0'
                             : urgLevel === 'high'
                                 ? 'hover:border-danger/40 hover:shadow-[0_6px_20px_rgba(239,68,68,0.15)] transition-all duration-200'
                                 : urgLevel === 'mid'
@@ -490,7 +490,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 ${
                             selected.size === 0
                                 ? 'bg-surface-card-hover text-content-3 cursor-not-allowed'
-                                : 'bg-success text-white hover:bg-emerald-700 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
+                                : 'bg-success text-white hover:bg-success/90 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
                         }`}
                     >
                         {confirming ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}

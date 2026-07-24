@@ -8,14 +8,14 @@ const safeParse = (obj) => {
 };
 
 const COLOR_MAP = {
-    blue: "bg-gradient-to-br from-blue-100 to-blue-200 border-chart-1/40 text-chart-1-text",
-    indigo: "bg-gradient-to-br from-indigo-100 to-indigo-200 border-indigo-300 text-chart-3-text",
-    emerald: "bg-gradient-to-br from-emerald-100 to-emerald-200 border-emerald-300 text-success-text",
-    rose: "bg-gradient-to-br from-rose-100 to-rose-200 border-rose-300 text-danger-text",
-    cyan: "bg-gradient-to-br from-cyan-100 to-cyan-200 border-cyan-300 text-chart-5-text",
-    amber: "bg-gradient-to-br from-amber-100 to-amber-200 border-warning/40 text-warning-text",
-    slate: "bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 text-content-2",
-    violet: "bg-gradient-to-br from-violet-100 to-violet-200 border-violet-300 text-chart-3-text",
+    blue: "bg-gradient-to-br from-chart-1/10 to-chart-1/20 border-chart-1/40 text-chart-1-text",
+    indigo: "bg-gradient-to-br from-chart-3/10 to-chart-3/20 border-chart-3/40 text-chart-3-text",
+    emerald: "bg-gradient-to-br from-success/10 to-success/20 border-success/40 text-success-text",
+    rose: "bg-gradient-to-br from-danger/10 to-danger/20 border-danger/40 text-danger-text",
+    cyan: "bg-gradient-to-br from-chart-5/10 to-chart-5/20 border-chart-5/40 text-chart-5-text",
+    amber: "bg-gradient-to-br from-warning/10 to-warning/20 border-warning/40 text-warning-text",
+    slate: "bg-gradient-to-br from-slate-100 to-slate-200 border-border-card text-content-2",
+    violet: "bg-gradient-to-br from-chart-3/10 to-chart-3/20 border-chart-3/40 text-chart-3-text",
 };
 
 const EMPTY_EMPLOYEES = [];
@@ -134,7 +134,7 @@ const hasInjections = legal.injections === true;
                         if (!emp) {
                             return (
                                 <div key={slot.id} className="flex items-center gap-4 p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-sm h-[100px]">
-                                    <div className="w-12 h-12 rounded-[1rem] bg-white flex items-center justify-center text-red-300 shadow-sm border border-danger/30 shrink-0">
+                                    <div className="w-12 h-12 rounded-[1rem] bg-white flex items-center justify-center text-danger shadow-sm border border-danger/30 shrink-0">
                                         <slot.icon size={20} strokeWidth={2.5} />
                                     </div>
                                     <div className="flex flex-col">

@@ -5,8 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.52.14';
+export const APP_VERSION = '2.52.15';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.52.15 — fix(theme): T7.1c — estandariza colores en
+// FormBranchEmployees.jsx (paleta COLOR_MAP de 8 roles: gradientes crudos
+// junto a border/text ya tokenizados) y TabGenerar.jsx (toggle "Distribución
+// global" indigo→chart-3, cards de sucursal por nivel de urgencia rojo/
+// amber/emerald→danger/warning/success, botón "Generar Pedido" emerald-700
+// hover→success/90).
+
 
 // v2.52.14 — fix(theme): T7.1c — estandariza colores en EncuestaView.jsx
 // (avatares/KPIs blue-indigo→chart-1/brand, Jefes purple-violet→chart-3/

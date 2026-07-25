@@ -42,7 +42,7 @@ function contrastRatio(fg, bg) {
 // alpha < 1 (blend manual sobre el fondo de página real de cada tema).
 const PAGE_BG_OPAQUE = {
   liquid: [0xe4, 0xe0, 0xff],       // aprox. del gradiente --bg-page
-  dark:   [0x13, 0x0d, 0x35],
+  dark:   [0x0b, 0x13, 0x30],
   solid:  [0xf4, 0xf6, 0xfb],
   'solid-dark': [0x0f, 0x17, 0x2a],
 };
@@ -57,7 +57,7 @@ const THEMES = {
   },
   dark: {
     bg: PAGE_BG_OPAQUE.dark,
-    surfaceCard: 'rgba(20,30,70,0.50)',
+    surfaceCard: 'rgba(13,20,48,0.58)',
     content: 'rgba(255,255,255,0.92)', content2: 'rgba(255,255,255,0.62)', content3: 'rgba(255,255,255,0.50)',
   },
   solid: {

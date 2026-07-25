@@ -132,27 +132,19 @@ const TimeClockView = ({ setView }) => {
   const dateStr  = now.toLocaleDateString('es-SV',  { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#060B18] relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30">
+    <div className="min-h-[100dvh] w-full bg-surface-page relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30">
 
-      {/* ── Animated Ambient Orbs ─────────────────────────────────── */}
+      {/* ── Ambient orbs — mismo estándar que AppLayout.jsx (colores reales
+          del logo, AUDITORIA-TEMA-2026-07.md §7.7): el kiosco ya no tiene su
+          propio fondo/blobs hardcodeados, consume --bg-page (dark, forzado
+          arriba) + esta misma decoración compartida en vez de una versión
+          bespoke azul/violeta aparte (2026-07-25, a pedido del usuario). ── */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Primary blue — top-left, drifts forward */}
-        <div
-          className="animate-ambient-drift absolute -top-[20%] -left-[15%] w-[85vw] h-[85vw] max-w-[780px] max-h-[780px] rounded-full"
-          style={{ background: 'radial-gradient(circle at 40% 40%, rgba(37,99,235,0.22) 0%, transparent 68%)', filter: 'blur(72px)' }}
-        />
-        {/* Purple — bottom-right, drifts reverse */}
-        <div
-          className="animate-ambient-drift-reverse absolute -bottom-[25%] -right-[20%] w-[75vw] h-[75vw] max-w-[680px] max-h-[680px] rounded-full"
-          style={{ background: 'radial-gradient(circle at 60% 60%, rgba(109,40,217,0.16) 0%, transparent 70%)', filter: 'blur(90px)' }}
-        />
-        {/* Cyan accent — top-right */}
-        <div
-          className="absolute top-[8%] right-[2%] w-[45vw] h-[45vw] max-w-[420px] max-h-[420px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.09) 0%, transparent 72%)', filter: 'blur(64px)', animation: 'ambientDrift 24s ease-in-out infinite reverse' }}
-        />
-        {/* Subtle center vignette glow */}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-blue-950/20 to-transparent" />
+        <div className="animate-ambient-drift absolute rounded-full" style={{ width:'70vw', height:'70vw', top:'-15%', left:'-15%', background:'radial-gradient(circle, rgba(142,195,15,0.45) 0%, rgba(185,224,90,0.20) 40%, transparent 70%)', filter:'blur(35px)' }} />
+        <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'55vw', height:'55vw', top:'-5%', right:'-20%', background:'radial-gradient(circle, rgba(152,29,151,0.38) 0%, rgba(226,163,224,0.15) 40%, transparent 70%)', filter:'blur(30px)' }} />
+        <div className="animate-ambient-drift absolute rounded-full" style={{ width:'80vw', height:'80vw', bottom:'-35%', left:'-10%', background:'radial-gradient(circle, rgba(152,29,151,0.35) 0%, rgba(226,163,224,0.12) 40%, transparent 70%)', filter:'blur(40px)', animationDelay:'4s', animationDuration:'18s' }} />
+        <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'45vw', height:'45vw', top:'25%', right:'5%', background:'radial-gradient(circle, rgba(142,195,15,0.32) 0%, rgba(185,224,90,0.12) 40%, transparent 70%)', filter:'blur(28px)', animationDelay:'2s', animationDuration:'14s' }} />
+        <div className="animate-ambient-drift absolute rounded-full" style={{ width:'30vw', height:'30vw', top:'50%', left:'38%', background:'radial-gradient(circle, rgba(152,29,151,0.28) 0%, rgba(226,163,224,0.10) 40%, transparent 70%)', filter:'blur(22px)', animationDelay:'6s', animationDuration:'11s' }} />
       </div>
 
       {/* 7B.8: el kiosco no daba ningún aviso de conectividad — solo estaba
@@ -307,14 +299,8 @@ const TimeClockView = ({ setView }) => {
             ) : (
               <IdleScanPanel
                 specialMode={specialMode}
-                scanCode={scanCode}
-                inputRef={inputRef}
-                submitHandler={handleScan}
-                keyDownHandler={handleKeyDown}
-                inputChangeHandler={handleInputChange}
                 cancelSpecialModeHandler={cancelAuth}
                 specialOutHandler={requestSpecialOut}
-                clearHandler={() => setScanCode('')}
                 lunchAlerts={lunchAlerts}
               />
             )}

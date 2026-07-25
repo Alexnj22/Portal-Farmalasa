@@ -201,19 +201,29 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --bg-page: radial-gradient(ellipse at 38% 28%, #1e1248 0%, #130d35 22%, #0d0a28 50%, #180d42 100%);
+  /* 2026-07-25: paleta re-anclada al navy real del kiosco (#060B18,
+     TimeClockView.jsx) — a pedido del usuario, "el modo oscuro de
+     LiquidGlass en todo el proyecto debería ser así". Los valores viejos
+     (#1e1248 etc.) mezclaban azul con bastante rojo, por eso leían
+     "violeta/morado" en vez de "azul marino". Mismo criterio en las 8
+     superficies: se reduce el canal rojo relativo a verde/azul,
+     manteniendo la misma estructura (mismos stops del gradiente, misma
+     opacidad por superficie) — solo cambia el matiz, no la jerarquía
+     visual. El kiosco deja de tener su propio fondo hardcodeado (ver
+     TimeClockView.jsx) y pasa a consumir este mismo token. */
+  --bg-page: radial-gradient(ellipse at 38% 28%, #10193b 0%, #0b1330 22%, #060b18 50%, #0a0f28 100%);
 
   --text-primary:   rgba(255,255,255,0.92);
   --text-secondary: rgba(255,255,255,0.62);
   --text-tertiary:  rgba(255,255,255,0.50); /* corregido 2026-07-25: 0.42 daba 4.00:1, mismo motivo que liquid — 0.50 da 5.14:1 */
 
-  --surface-card:       rgba(20,30,70,0.50);
-  --surface-card-hover: rgba(25,38,85,0.65);
-  --surface-header:     rgba(15,22,55,0.60);
-  --surface-modal:      rgba(18,26,62,0.90);
-  --surface-input:      rgba(20,30,70,0.55);
-  --surface-dropdown:   rgba(15,22,55,0.88);
-  --surface-tab-track:  rgba(20,30,70,0.50);
+  --surface-card:       rgba(13,20,48,0.58);
+  --surface-card-hover: rgba(17,26,60,0.70);
+  --surface-header:     rgba(10,15,38,0.60);
+  --surface-modal:      rgba(12,17,43,0.90);
+  --surface-input:      rgba(13,20,48,0.55);
+  --surface-dropdown:   rgba(10,15,38,0.88);
+  --surface-tab-track:  rgba(13,20,48,0.50);
 
   --border-card:   rgba(255,255,255,0.10);
   --border-header: rgba(255,255,255,0.08);
@@ -881,6 +891,14 @@ body::-webkit-scrollbar { display: none; }
 }
 .animate-ambient-drift         { animation: ambientDrift 16s ease-in-out infinite; will-change: transform; }
 .animate-ambient-drift-reverse { animation: ambientDriftReverse 20s ease-in-out infinite; will-change: transform; }
+
+/* Anillo "esperando escaneo" del kiosco (IdleScanPanel) — ondas que se
+   expanden y se desvanecen, como un radar detectando el carné. */
+@keyframes scanPulse {
+  0%   { transform: scale(1);    opacity: 0.8; }
+  70%  { transform: scale(1.55); opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
 
 /* Skeleton sweep */
 .skeleton {

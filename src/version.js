@@ -5,9 +5,41 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.59.2';
+export const APP_VERSION = '2.60.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.60.0 — feat(kiosk): rediseño del tema Dark Liquid Glass (navy real del
+// kiosco como estándar del proyecto) + kiosco sin <input> visible.
+//
+// (1) [data-theme="dark"] en index.css re-anclado al azul casi-puro del
+// kiosco (#060B18) en vez del morado con rojo mezclado que tenía antes —
+// --bg-page y las superficies hermanas (card/header/modal/input/dropdown/
+// tab-track). Aplica automáticamente a TODO lo que ya usa esos tokens, no
+// solo al kiosco. contrast-check.mjs actualizado y sigue en verde en los 4
+// temas (content-3 pasó de 5.14:1 a 5.24:1).
+//
+// (2) TimeClockView.jsx deja de tener su fondo bg-[#060B18] + 3 orbes
+// hardcodeados como excepción aparte — ahora consume bg-surface-page (el
+// --bg-page del tema) y reutiliza los 5 blobs verde/magenta de AppLayout.jsx
+// (misma identidad visual de marca en toda la app, "reusar no reinventar").
+//
+// (3) IdleScanPanel.jsx: se quitó el <input type="password"> que simulaba
+// tecleo manual en la pantalla de espera del kiosco ("no quiero que
+// aparezca un input, nada se ingresa a mano") — el usuario rechazó
+// explícitamente la opción de solo ocultarlo visualmente ("¿por qué ocultar
+// y no mejor arreglar?"). Se reemplazó por ScanReadyRing (anillo pulsante +
+// ícono), y useTimeClockEngine.js ahora captura el escaneo vía un listener
+// global de keydown (mismo patrón que LoginView.jsx) en vez de un <input>
+// enfocado. La detección anti-fraude (detectInputMethod / avgTimePerChar
+// < 40ms = lector) no cambió — solo la fuente de las teclas. AuthPromptPanel
+// (PIN de supervisor) SÍ mantiene su <input> real sin tocar: ahí el tecleo
+// manual es el flujo legítimo (handleScan ya lo permite explícitamente
+// cuando authPrompt está activo). Verificado con QA real (Playwright,
+// login autenticado + sesión de kiosco): 0 <input> en pantalla en modo
+// idle y en modo autorización especial, escaneo simulado llega correctamente
+// a handleScan y el dispositivo no registrado responde "KIOSCO NO
+// AUTORIZADO" como se espera.
+//
 // v2.59.2 — fix(responsive): filter pill se desbordaba en móvil (390px) en
 // 8 archivos — bug real, pre-existente desde 2026-05-03.
 //

@@ -1,5 +1,34 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ScanBarcode, ShieldAlert, LogIn, Utensils, Baby, LogOut, XCircle, Bell } from 'lucide-react';
+
+// Anillo "esperando escaneo" — reemplaza el <input> que simulaba tecleo
+// manual. El carné ya no se escribe: el escáner alimenta un listener global
+// de keydown en useTimeClockEngine.js (mismo patrón que LoginView.jsx), la
+// detección anti-fraude sigue midiendo velocidad de tecleo sobre ese buffer,
+// solo que ya no hay un <input> real detrás. 2026-07-25, a pedido del
+// usuario — "no quiero que aparezca un input, nada se ingresa a mano".
+function ScanReadyRing({ specialMode }) {
+  const ring = specialMode ? 'border-chart-4/40' : 'border-chart-1/40';
+  const core = specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_0_24px_rgba(249,115,22,0.25)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[0_0_24px_rgba(59,130,246,0.25)]';
+  const iconColor = specialMode ? 'text-chart-4-text' : 'text-chart-1-text';
+  return (
+    <div className="w-full flex flex-col items-center gap-3.5 py-2">
+      <div className="relative w-24 h-24 flex items-center justify-center">
+        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_cubic-bezier(0.4,0,0.6,1)_infinite]`} />
+        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_cubic-bezier(0.4,0,0.6,1)_infinite]`} style={{ animationDelay: '1.1s' }} />
+        <div className={`relative w-16 h-16 rounded-full border flex items-center justify-center ${core}`}>
+          {specialMode ? <ShieldAlert size={26} className={iconColor} strokeWidth={1.75} /> : <ScanBarcode size={26} className={iconColor} strokeWidth={1.75} />}
+        </div>
+      </div>
+      <p className="text-[13px] font-bold text-white/85 text-center">
+        {specialMode ? 'Acerca tu carné para autorizar' : 'Acerca tu carné al lector'}
+      </p>
+      <p className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-white/35 text-center">
+        Esperando escaneo
+      </p>
+    </div>
+  );
+}
 
 const ACTION_ITEMS = [
   { icon: LogIn, glassColor: 'bg-success/10 border-success/30 text-success', glow: 'group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] group-hover:bg-success/20', label: 'Entrada' },
@@ -10,24 +39,10 @@ const ACTION_ITEMS = [
 
 export default function IdleScanPanel({
   specialMode,
-  scanCode,
-  inputRef,
-  submitHandler,
-  keyDownHandler,
-  inputChangeHandler,
   specialOutHandler,
   cancelSpecialModeHandler,
-  clearHandler,
   lunchAlerts = [],
 }) {
-
-  useEffect(() => {
-    if ((!scanCode || scanCode.length === 0) && inputRef.current) {
-      inputRef.current.value = '';
-    }
-  }, [scanCode, inputRef]);
-
-  const hasValue = scanCode && scanCode.length > 0;
 
   return (
     <div className="relative z-20 w-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto">
@@ -45,32 +60,9 @@ export default function IdleScanPanel({
           <p className={`text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
         </div>
 
-        {/* MIDDLE: Formulario e Input */}
-        <form onSubmit={submitHandler} className="relative z-20 w-full pointer-events-auto flex flex-col justify-center shrink-0">
-          <div className="relative w-full group/input cursor-text">
-            <input
-              ref={inputRef}
-              type="password"
-              onChange={inputChangeHandler}
-              onKeyDown={keyDownHandler}
-              onContextMenu={(e) => e.preventDefault()}
-              onCopy={(e) => e.preventDefault()}
-              onPaste={(e) => e.preventDefault()}
-              onCut={(e) => e.preventDefault()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => e.preventDefault()}
-              autoComplete="new-password"
-              spellCheck="false"
-              placeholder={specialMode ? 'ESCANEE PARA AUTORIZAR' : 'ESCANEE SU CARNET'}
-              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] select-none text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] placeholder:text-[16px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase caret-transparent transition-all duration-300 ${specialMode ? 'placeholder:text-chart-4-text/50 virtual-caret-orange' : 'placeholder:text-white/40 virtual-caret-blue'}`}
-            />
-            {hasValue && (
-              <button type="button" onClick={clearHandler} className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-[0.97]">
-                <XCircle size={22} strokeWidth={2} />
-              </button>
-            )}
-            <div className={`absolute inset-0 z-10 rounded-3xl opacity-0 transition-opacity duration-500 pointer-events-none ${specialMode ? 'shadow-[0_0_20px_rgba(249,115,22,0.2)] group-focus-within/input:opacity-100' : 'shadow-[0_0_20px_rgba(59,130,246,0.2)] group-focus-within/input:opacity-100'}`} />
-          </div>
+        {/* MIDDLE: estado de espera del escáner (nada se teclea a mano) */}
+        <div className="relative z-20 w-full flex flex-col justify-center shrink-0">
+          <ScanReadyRing specialMode={specialMode} />
 
           <div className="mt-5 flex flex-col items-center justify-center">
             {specialMode ? (
@@ -83,7 +75,7 @@ export default function IdleScanPanel({
               </button>
             )}
           </div>
-        </form>
+        </div>
 
         {/* 🚨 COMPORTAMIENTO 1: LEYENDA POR DEFECTO (ADENTRO ABAJO)
             - hidden: por defecto (celulares).

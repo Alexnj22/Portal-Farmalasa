@@ -59,7 +59,7 @@ const EXCEPTIONS = {
   'src/views/StaffManagementView.jsx': ['color'], // tooltip flotante dark
   'src/views/DashboardView.jsx': ['color'], // tooltips flotantes dark (resto del archivo ya tokenizado)
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
-  'src/views/TimeClockView.jsx': ['color'],
+  'src/views/TimeClockView.jsx': ['color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
   'src/views/LoginView.jsx': ['color'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
   'src/components/timeclock/KioskConfigModal.jsx': ['color'],
   'src/components/timeclock/FeedbackOverlay.jsx': ['color'], // overlay kiosco full-screen

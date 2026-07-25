@@ -29,6 +29,11 @@ import { insertApprovalRequestSilent } from '../data/requests';
 
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
 const EMPTY_ARRAY = [];
+// Pausa entre teclas que corta el buffer de escaneo — un lector físico
+// entrega el carné entero en milisegundos; una pausa mayor casi siempre
+// significa un intento nuevo (o tecleo manual, que igual queda bloqueado
+// por detectInputMethod). Mismo valor que el buffer de LoginView.jsx.
+const KIOSK_SCAN_KEY_GAP_MS = 250;
 
 export function useTimeClockEngine(props = {}) {
     const storeEmployees = useStaff((s) => s.employees) || EMPTY_ARRAY;
@@ -78,6 +83,8 @@ export function useTimeClockEngine(props = {}) {
     const [time, setTime] = useState(new Date());
     const keystrokesRef = useRef([]);
     const closeTimerRef = useRef(null);
+    const scanBufferRef = useRef('');
+    const scanLastKeyRef = useRef(0);
 
     const kiosk = useKioskDevice();
 
@@ -1095,6 +1102,54 @@ const submitEarlyExit = useCallback((e) => {
         time,
         scheduleFeedbackClose,
     ]);
+
+    // Captura global de escaneo para la pantalla de espera (IdleScanPanel) —
+    // ya no hay un <input> real ahí (2026-07-25, rediseño visual del kiosco),
+    // así que el carné se lee vía keydown a nivel window, mismo patrón que
+    // LoginView.jsx. Se desactiva por completo mientras exista un <input>
+    // real en pantalla (AuthPromptPanel, KioskConfigModal, etc. — cubierto
+    // por el mismo target-check de LoginView) o mientras `authPrompt` esté
+    // activo (ese input SÍ es de tecleo manual legítimo, no debe competir
+    // con este listener). keystrokesRef sigue siendo la misma referencia que
+    // lee handleScan/detectInputMethod — el mecanismo anti-fraude no cambia,
+    // solo la fuente de las teclas.
+    useEffect(() => {
+        const canCaptureIdleScan = () =>
+            !authPrompt &&
+            !feedback &&
+            !isProcessing &&
+            !earlyExitData &&
+            !selfDeclareData &&
+            !isConfiguring &&
+            !isRevokeModalOpen;
+
+        const onKeyDown = (e) => {
+            if (!canCaptureIdleScan()) return;
+            const t = e.target;
+            if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+
+            const now = Date.now();
+            if (now - scanLastKeyRef.current > KIOSK_SCAN_KEY_GAP_MS) {
+                scanBufferRef.current = '';
+                keystrokesRef.current = [];
+            }
+            scanLastKeyRef.current = now;
+
+            if (e.key === 'Enter') {
+                if (!scanBufferRef.current) return;
+                e.preventDefault();
+                scanBufferRef.current = '';
+                handleScan();
+            } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                scanBufferRef.current += e.key;
+                keystrokesRef.current.push(now);
+                setScanCode(scanBufferRef.current);
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
+    }, [authPrompt, feedback, isProcessing, earlyExitData, selfDeclareData, isConfiguring, isRevokeModalOpen, handleScan]);
 
     // Lunch alerts: employees currently working whose scheduled lunch time has arrived
     const lunchAlerts = useMemo(() => {

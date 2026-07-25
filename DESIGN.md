@@ -285,10 +285,14 @@ revisar" — fueron evaluadas y decididas explícitamente):
 - **Superficies kiosco/cámara/editor** (pantallas que fuerzan
   `data-theme="dark"` en `<html>` mientras están montadas, o que son
   herramientas técnicas — canvas, video — donde el fondo oscuro no es
-  negociable): `TimeClockView.jsx`, `KioskConfigModal.jsx`,
-  `FeedbackOverlay.jsx`, `PhotoEditorModal.jsx`, `LoginView.jsx` (solo el
-  scanner de cámara + el fondo splash bespoke, comparte gradiente con
-  `App.jsx`).
+  negociable): `KioskConfigModal.jsx`, `FeedbackOverlay.jsx`,
+  `PhotoEditorModal.jsx`, `LoginView.jsx` (solo el scanner de cámara + el
+  fondo splash bespoke, comparte gradiente con `App.jsx`). `TimeClockView.jsx`
+  ya NO cuenta como excepción de fondo/blobs (2026-07-25: migrado a
+  `bg-surface-page` + los 5 blobs verde/magenta de `AppLayout.jsx`, mismos
+  tokens que el resto del proyecto) — la excepción restante solo cubre los 3
+  micro-acentos azules bespoke de la card del reloj (`from-blue-950/[0.30]`,
+  `from-blue-400/[0.04]`, `via-blue-400/12`), un hero accent deliberado.
 - **`ThemeToggle.jsx`** variante `dark`: documentado inline en el propio
   archivo — vive dentro de un host siempre-oscuro (`SidebarSettingsMenu`)
   y usa clases bespoke `bg-white/N`, no tokens (que resolverían claros ahí
@@ -339,10 +343,16 @@ esta lista (nunca solo uno de los dos lugares).
 ```
 
 ### Dark theme overrides — `[data-theme="dark"]`
-- `--bg-page`: deep navy/purple gradient
-- `--surface-card`: `rgba(20,30,70,0.50)`, `--surface-modal`: `rgba(18,26,62,0.90)`
+- `--bg-page`: navy real anclado al kiosco (2026-07-25 — antes era un
+  gradiente que mezclaba azul con bastante rojo y leía "morado"; ahora
+  `radial-gradient(... #10193b 0%, #0b1330 22%, #060b18 50%, #0a0f28 100%)`,
+  el mismo `#060B18` de `TimeClockView.jsx`)
+- `--surface-card`: `rgba(13,20,48,0.58)`, `--surface-modal`: `rgba(12,17,43,0.90)`
 - `--text-primary`: `rgba(255,255,255,0.92)`, secondary/tertiary: white at lower opacity
 - Radii NO se redefinen (heredan de `:root`); solo sombras/superficies/bordes/texto/fondo cambian.
+- El kiosco (`TimeClockView.jsx`) fuerza este tema mientras está montado y
+  ahora CONSUME estos tokens en vez de duplicarlos a mano — ver excepción
+  arriba en §7.1.
 
 ### Solid Light — `[data-theme="solid"]`
 - `--backdrop-*`: all `none` — disables all blur for performance

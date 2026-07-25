@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.57.0';
+export const APP_VERSION = '2.57.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.57.1 — chore(layout): restaura ThemeMigrationRibbon.jsx.
+//
+// Se había retirado en v2.56.1 al cerrar el plan de tema T1-T7. El usuario
+// pidió traerlo de vuelta: aunque ese plan cerró, siguen entrando cambios
+// visuales al portal, así que el aviso sigue siendo relevante. Mismo
+// componente + import + spacer que antes, restaurados en AppLayout.jsx.
 
 // v2.57.0 — fix(layout): panel de Ajustes deja de verse "blanco/externo" +
 // aplica los 3 hallazgos de la auditoría UI/UX del menú.

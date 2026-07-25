@@ -58,7 +58,11 @@
   /* Text */
   --text-primary:   #1e293b;
   --text-secondary: #475569;
-  --text-tertiary:  #64748b;
+  --text-tertiary:  #526279; /* corregido 2026-07-25: #64748b daba 3.80:1 sobre
+     surface-card (liquid) — el script de contraste lo pasaba tratando
+     content-3 como "texto grande" (mín 3:1), pero se usa en badges de
+     9-11px reales que no califican para esa excepción WCAG (requiere
+     18px+, o ~19px+ en negrita). #526279 da 4.96:1, cumple AA normal. */
 
   /* Surfaces */
   --surface-page:       transparent;
@@ -201,7 +205,7 @@
 
   --text-primary:   rgba(255,255,255,0.92);
   --text-secondary: rgba(255,255,255,0.62);
-  --text-tertiary:  rgba(255,255,255,0.42);
+  --text-tertiary:  rgba(255,255,255,0.50); /* corregido 2026-07-25: 0.42 daba 4.00:1, mismo motivo que liquid — 0.50 da 5.14:1 */
 
   --surface-card:       rgba(20,30,70,0.50);
   --surface-card-hover: rgba(25,38,85,0.65);

@@ -10,7 +10,7 @@ export const DOCUMENT_TYPES = {
   CV: { label: 'Hoja de Vida (CV)', icon: User, color: 'text-chart-2-text bg-chart-2/10' },
   MEDICAL: { label: 'Incapacidad / Constancia', icon: HeartPulse, color: 'text-chart-6-text bg-chart-6/10' },
   MEMO: { label: 'Memorándum / Sanción', icon: AlertCircle, color: 'text-chart-4-text bg-chart-4/10' },
-  OTHER: { label: 'Otro Documento', icon: Paperclip, color: 'text-content-3 bg-surface-card-hover' },
+  OTHER: { label: 'Otro Documento', icon: Paperclip, color: 'text-content-2 bg-surface-card-hover' },
 };
 
 // Bucket B categórico (tipos de evento) salvo TERMINATION, que es Bucket A

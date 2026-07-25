@@ -497,7 +497,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-[16px] rounded-[1.25rem]`} />
                                 </div>
                             ))}
-                            {changePassError && <div className="px-4 py-2.5 bg-danger/10 border border-danger/30 rounded-[1rem] flex items-center gap-2"><AlertCircle size={14} className="text-danger shrink-0" strokeWidth={2.5}/><p className="text-[11px] font-black text-danger">{changePassError}</p></div>}
+                            {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-[12px] font-bold leading-relaxed">{changePassError}</span></div>}
                             <GlassButton type="submit" disabled={changePassLoading||!newPassword||!confirmPassword} height="h-[52px]">
                                 {changePassLoading?<Loader2 size={18} className="animate-spin"/>:'Guardar contraseña'}
                             </GlassButton>

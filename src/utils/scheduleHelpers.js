@@ -146,7 +146,7 @@ export const getRoleTheme = (roleName) => {
     if (role.includes('REGENTE')) return { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30' };
     if (role.includes('SUPERVISOR')) return { bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' };
     if (role.includes('ADMINISTRADOR')) return { bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30' };
-    return { bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-divider' };
+    return { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider' };
 };
 
 export const getDayConflictLocal = (dateStr, history) => {

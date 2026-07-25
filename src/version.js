@@ -5,8 +5,58 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.58.1';
+export const APP_VERSION = '2.59.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.59.0 — feat(a11y): consolida el patrón de validación "Requerido" +
+// corrige contraste real de --text-tertiary + auditoría de touch
+// targets/focus/responsive.
+//
+// El usuario pidió resolver las 3 categorías señaladas como fuera del
+// alcance del gate de v2.58.0/v2.58.1: consolidación del patrón de
+// validación, accesibilidad (contraste + touch targets + focus rings) y
+// responsive.
+//
+// (1) Validación "Requerido" — re-análisis mostró que NO eran 3 patrones
+// compitiendo por lo mismo: el badge (campo requerido, componente
+// PortalInput.jsx, 26+ campos reales) y el banner de error de envío
+// (FormRegisterPayment) resuelven problemas distintos. Se le mostró al
+// usuario un mockup (badge vs asterisco+texto sobre los mismos 3 campos
+// reales de BranchTabInmueble) — decisión: el badge se queda como
+// estándar (ya no "deprecado"). Lo único real que sí era inconsistente:
+// el error de envío se veía como banner con caja+ícono en 8 archivos y
+// como texto plano en 2 (FormSetPassword.jsx, LoginView.jsx) — migrados
+// ambos al mismo tratamiento.
+//
+// (2) Contraste real — el script de auditoría anterior
+// (docs/audits/tema-2026-07/contrast-check.mjs) pasaba text-content-3
+// tratándolo SIEMPRE como "texto grande" (umbral WCAG 3:1), sin verificar
+// que se usa en badges reales de 9-11px que no califican para esa
+// excepción (requiere 18px+, o ~19px+ en negrita — el umbral real ahí es
+// 4.5:1). Con el umbral correcto, liquid (3.80:1) y dark (4.00:1)
+// fallaban — nadie los había revisado porque solid/solid-dark fueron los
+// únicos "fallos" que el script marcó en su momento (T2, 2026-07-23).
+// Corregido con el mismo mockup gate que el punto (1): --text-tertiary
+// pasa de #64748b→#526279 (liquid, 4.96:1) y de rgba(255,255,255,.42)→
+// rgba(255,255,255,.50) (dark, 5.14:1) — solid/solid-dark ya cumplían y
+// no se tocaron. Efecto colateral bueno: se detectaron y corrigieron 3
+// regresiones de esta misma sesión (v2.58.0) donde texto informativo
+// (badges de estado/documento) se había bajado de slate-600/700 a
+// text-content-3 — subido a text-content-2.
+//
+// (3) Touch targets + focus rings — auditado, sin hallazgos que requieran
+// fix: solo 4 botones en todo el proyecto miden 24×24px (mínimo real
+// WCAG 2.5.8 AA), ninguno por debajo. Los focus rings tienen una regla
+// global (:focus-visible en index.css) que ya cubre button/input/select/
+// textarea/a/[role=button]/[tabindex]; los inputs con outline-none
+// (PortalInput, LiquidSelect) delegan el foco visible a un wrapper con
+// focus-within — patrón correcto, verificado caso por caso.
+//
+// (4) Responsive — sin regresión detectada en los reemplazos de esta
+// sesión (LiquidDatePicker/TimePicker12 reemplazando inputs nativos):
+// ComprasView ya tenía flex-wrap en el filter pill; ProgramarEntregaModal
+// cabe con margen dentro de su max-w-sm. Auditoría completa de
+// responsive fuera de alcance sin QA autenticado en vivo.
 
 // v2.58.1 — fix(design): cierra los últimos huecos reales encontrados al
 // volver a preguntar "¿ya quedó TODO completo?" tras v2.58.0.

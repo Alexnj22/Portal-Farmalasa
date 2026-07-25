@@ -91,7 +91,7 @@ All tokens live in `:root` in `src/index.css` and are overridden by `[data-theme
 ```
 --text-primary   : #1e293b   (slate-800)
 --text-secondary : #475569   (slate-600)
---text-tertiary  : #64748b   (slate-500)
+--text-tertiary  : #526279   (2026-07-25: bajado de #64748b/slate-500 — ver §22.1)
 ```
 
 ### Surface backdrops
@@ -388,6 +388,18 @@ Todos los tokens de arriba se alían a namespaces de Tailwind v4 en un bloque `@
   `--text-tertiary` en `solid` (`#94a3b8`, 2.56:1) y `solid-dark`
   (`rgba(100,116,139,.9)`, 2.76:1) no cumplían AA contra `surface-card`
   opaco; corregidos a `#64748b`/`rgba(148,163,184,.9)` (4.76:1/4.92:1).
+  **2026-07-25 — segunda vuelta real:** el script mismo tenía un hueco
+  metodológico — trataba `content-3` como "siempre texto grande" (umbral
+  3:1) sin verificar que en la práctica se usa en badges/labels de 9-11px,
+  que NO califican para la excepción de texto grande de WCAG (requiere
+  18px+, o ~19px+ en negrita). Con el umbral real (4.5:1), `liquid`
+  (`#64748b`, 3.80:1) y `dark` (`rgba(255,255,255,.42)`, 4.00:1) fallaban
+  — nadie los había revisado porque `solid`/`solid-dark` fueron los únicos
+  "fallos" que el script marcó en su momento. Corregidos a `#526279`
+  (4.96:1) y `rgba(255,255,255,.50)` (5.14:1) respectivamente. Los 4 temas
+  cumplen AA_NORMAL real para las 3 variantes de texto — ver mockup
+  aprobado por el usuario antes de aplicar (cambia el tono de TODO lo que
+  use `text-content-3`, token global).
 - **Blobs ambient apagados** en `solid`/`solid-dark` (`display:none` sobre
   `.animate-ambient-drift*`) — cero composición GPU constante, cumple §7.2.
 - **Densidad adaptativa** — ver tabla completa en §32.
@@ -1244,7 +1256,7 @@ sin verificar cada punto contra el código primero.
 
 6. **Hardcoded `#0052CC`** — ACOTADO (2026-07-25): la duplicación real (el semáforo de volumen de transacciones — `DashboardView.jsx`×2, `SchedulesView.jsx`, `FormWfmAnalytics.jsx`, consumido por `ScheduleCalendar.jsx`) se migró a `var(--txvol-normal)` etc. Lo que queda crudo son casos ya cubiertos por la excepción de Recharts/canvas (`DashboardView.jsx` Area/gradient SVG, `TabExpenses.jsx` BarChart SVG) y por la excepción de `KpiCard` (`color` prop, string-concat de alpha) — ambas ya documentadas en §6, no son deuda nueva.
 
-7. **Three validation error patterns coexist** — inline text (FormSetPassword), "Requerido" glow badge next to label (BranchTabInmueble), and banner with AlertCircle (FormRegisterPayment). The standard defined in §28 is: inline text under the field + global banner. The glow badge is deprecated. **Sigue sin resolver** (verificado 2026-07-25, los 3 patrones coexisten tal cual) — no es una violación de color/nativo, es consolidación de patrón de componente; queda fuera del alcance del gate mecánico de §6.
+7. ~~Three validation error patterns coexist~~ — **RESUELTO 2026-07-25.** Resultó ser 2 problemas distintos, no 1 con 3 estilos: el badge "Requerido" (campo vacío) y el banner de error de envío/servidor nunca competían entre sí. Decisión (con mockup mostrado al usuario — badge vs asterisco sobre los mismos 3 campos reales): el badge se queda como estándar, ya no está deprecado (26+ campos reales vía `PortalInput.jsx`, a11y ya correcta). Lo único que sí era inconsistente — `FormSetPassword.jsx`/`LoginView.jsx` mostraban el error de envío como texto plano en vez del banner con caja+ícono de los otros 8 archivos — ya migrado. Ver §28 "Validation error standard".
 
 ---
 
@@ -1568,38 +1580,55 @@ Both patterns:
 Buttons: `disabled:bg-slate-300 disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`
 Inputs: `disabled:bg-slate-50 disabled:opacity-50`
 
-### Validation error standard
+### Validation error standard — REVISADO 2026-07-25
 
-Three patterns coexist in the codebase today (inconsistency documented in §23 item 7). The defined standard going forward:
+Esta sección describía "3 patrones que compiten por el mismo problema" y
+recomendaba deprecar el badge. Al re-auditar (con mockup mostrado al
+usuario, decisión tomada 2026-07-25) resultó que eran **2 problemas
+distintos mal etiquetados como uno solo**:
 
-**(a) Inline field error** — appears below the field, shown when a field-level rule fails:
+- El **indicador de campo requerido** (badge) y el **error de envío/
+  servidor** (banner) no compiten entre sí — nunca fueron la misma cosa.
+- El badge de campo requerido no estaba "deprecado" en la práctica: es el
+  estándar real, vive en el componente compartido `PortalInput.jsx` y se
+  usa en 26+ campos (`EmployeeFormModal`, `PracticanteModal`) más 4
+  archivos que lo replican a mano (`BranchTabInmueble`,
+  `BranchTabGeneral`, `FormRehireEmployee`, `NuevoConteoModal`). Ya trae
+  `aria-invalid`/`aria-describedby` bien resueltos. **Decisión: se queda,
+  ya no es "deprecado".**
+- Lo único real que sí era inconsistente: el error de *envío* se veía
+  como banner con caja+ícono en 8 archivos y como texto plano sin caja en
+  2 (`FormSetPassword.jsx`, `LoginView.jsx`) — corregido, ambos ahora
+  usan el mismo tratamiento.
+
+**(a) Indicador de campo requerido — el badge, componente `PortalInput`:**
 ```jsx
-<p className="text-[11px] font-black text-red-600 mt-1">
+<span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-sm">
+  Requerido
+</span>
+```
+Solo se muestra cuando el campo es requerido y está vacío (`isMissing && !hasError`). Con `aria-invalid="true"` + `aria-describedby` apuntando al `id` del badge/mensaje.
+
+**(b) Inline field error** — appears below the field, shown when a field-level rule fails:
+```jsx
+<p className="text-[11px] font-black text-danger mt-1">
   {fieldError}
 </p>
 ```
 Must be paired with `aria-invalid="true"` on the input and `aria-describedby` pointing to the error element's `id`.
 
-**(b) Global / submit banner** — appears above the submit button, shown for server errors or cross-field validation failures:
+**(c) Global / submit banner** — appears above the submit button, shown for server errors or cross-field validation failures. Mensajes cortos tipo label → `uppercase tracking-widest`; oraciones completas (ej. "Las contraseñas no coinciden.") → case normal, sin uppercase:
 ```jsx
-// Reference: src/components/forms/FormRegisterPayment.jsx:185
-<div className="flex items-center gap-3 text-red-700
-  bg-red-50/80 backdrop-blur-sm px-4 py-3 rounded-2xl
-  border border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.1)]
+// Referencia: src/components/forms/FormRegisterPayment.jsx:185,
+// src/components/forms/FormSetPassword.jsx, src/views/LoginView.jsx
+<div className="flex items-center gap-3 text-danger-text
+  bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl
+  border border-danger/30 shadow-[var(--shadow-glow-danger)]
   animate-in fade-in slide-in-from-top-2">
-  <AlertCircle size={18} className="shrink-0 text-red-500" strokeWidth={2.5} />
-  <span className="text-[12px] font-bold">{globalError}</span>
+  <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
+  <span className="text-[12px] font-bold leading-relaxed">{globalError}</span>
 </div>
 ```
-
-**(c) Required field indicator** — asterisk `*` in the label, never a glow badge:
-```jsx
-<label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
-  Nombre del Arrendador *
-</label>
-```
-
-**Deprecated:** the inline "Requerido" badge with `shadow-[0_0_8px_rgba(239,68,68,0.5)]` next to labels (currently in `src/components/forms/BranchTabInmueble.jsx:75–133`). Use asterisk in label + inline error text instead.
 
 ---
 

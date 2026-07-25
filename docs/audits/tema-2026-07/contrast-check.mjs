@@ -53,12 +53,12 @@ const THEMES = {
   liquid: {
     bg: PAGE_BG_OPAQUE.liquid,
     surfaceCard: 'rgba(230,245,255,0.16)',
-    content: '#1e293b', content2: '#475569', content3: '#64748b',
+    content: '#1e293b', content2: '#475569', content3: '#526279',
   },
   dark: {
     bg: PAGE_BG_OPAQUE.dark,
     surfaceCard: 'rgba(20,30,70,0.50)',
-    content: 'rgba(255,255,255,0.92)', content2: 'rgba(255,255,255,0.62)', content3: 'rgba(255,255,255,0.42)',
+    content: 'rgba(255,255,255,0.92)', content2: 'rgba(255,255,255,0.62)', content3: 'rgba(255,255,255,0.50)',
   },
   solid: {
     bg: PAGE_BG_OPAQUE.solid,
@@ -83,7 +83,12 @@ for (const [themeName, t] of Object.entries(THEMES)) {
   for (const [role, hex] of [['content', t.content], ['content-2', t.content2], ['content-3', t.content3]]) {
     const fg = parseColor(hex, surfaceCardResolved);
     const ratio = contrastRatio(fg, surfaceCardResolved);
-    const min = role === 'content-3' ? AA_LARGE : AA_NORMAL; // content-3 = caption/tertiary, tratado como texto grande
+    // 2026-07-25: content-3 se re-corrigió para cumplir AA_NORMAL (4.5:1),
+    // no solo AA_LARGE (3:1). El supuesto anterior ("content-3 = caption,
+    // siempre texto grande") era falso en la práctica — se usa en badges
+    // reales de 9-11px que no califican para la excepción de "texto
+    // grande" de WCAG (requiere 18px+, o ~19px+ en negrita).
+    const min = AA_NORMAL;
     const pass = ratio >= min;
     if (!pass) failures++;
     console.log(`  ${role.padEnd(10)} sobre surface-card:  ${ratio.toFixed(2)}:1  ${pass ? 'PASS' : 'FAIL'} (mín ${min}:1)`);

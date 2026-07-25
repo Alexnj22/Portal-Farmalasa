@@ -167,7 +167,7 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
 };
 
 export const getTodayAttendanceStatus = (emp, shifts) => {
-    if (!emp) return { status: 'UNKNOWN', label: 'Desconocido', color: 'bg-surface-card-hover text-content-3 border-divider' };
+    if (!emp) return { status: 'UNKNOWN', label: 'Desconocido', color: 'bg-surface-card-hover text-content-2 border-divider' };
 
     const todayStr = toLocalISO(new Date());
     const todayConfig = getTodayScheduleConfig(emp, shifts);
@@ -177,11 +177,11 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
         return { status: 'OTHER', label: effectiveStatus, color: 'bg-chart-3/10 text-chart-3-text border-chart-3/30' };
     }
 
-    if (todayConfig.isOffDay) return { status: 'OFF', label: 'Día Libre', color: 'bg-surface-card-hover text-content-3 border-divider' };
+    if (todayConfig.isOffDay) return { status: 'OFF', label: 'Día Libre', color: 'bg-surface-card-hover text-content-2 border-divider' };
 
     const p = (emp.attendance || []).filter(a => a.timestamp?.startsWith(todayStr));
 
-    if (p.length === 0) return { status: 'ABSENT', label: 'Sin Marcar', color: 'bg-surface-card-hover text-content-3 border-divider' };
+    if (p.length === 0) return { status: 'ABSENT', label: 'Sin Marcar', color: 'bg-surface-card-hover text-content-2 border-divider' };
 
     const l = p[p.length - 1];
     const lastType = l.type || '';
@@ -196,7 +196,7 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
         // 🚨 NUEVO: Etiqueta especial para Gestión Externa
         return { status: 'BUSINESS', label: 'Gestión Externa', color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' };
     else
-        return { status: 'OUT', label: 'Salida Laboral', color: 'bg-surface-card-hover text-content-3 border-divider' };
+        return { status: 'OUT', label: 'Salida Laboral', color: 'bg-surface-card-hover text-content-2 border-divider' };
 };
 
 export const getScheduleForDate = (emp, dateStr, shifts) => {

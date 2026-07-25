@@ -5,9 +5,40 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.0';
+export const APP_VERSION = '2.60.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.60.1 — fix(kiosk): modo compacto bajo 800px de alto — el contenido
+// SIEMPRE debe verse completo, sin importar la resolución.
+//
+// QA responsivo real (Playwright, sesión autenticada) en 1024×768 (mínimo
+// desktop documentado en DESIGN.md), 1280×720, 1366×768 (laptop/AIO barato
+// más común) y 1920×1080 encontró que el botón "Autorizar Permiso / Salida"
+// (y en 1280×720 hasta el anillo de escaneo) quedaba debajo del borde
+// inferior de la pantalla en las 3 resoluciones ≤768px de alto — Y NO HABÍA
+// SCROLL que lo alcanzara.
+//
+// Causa raíz del "no hay scroll": el contenedor raíz de TimeClockView.jsx
+// usaba `min-h-[100dvh]` (un piso, no un techo) + `overflow-y-auto` sobre
+// sí mismo, pero como `html/body/#root` fuerzan `height:100%; overflow:
+// hidden` en desktop (index.css, GLOBAL RESET), el div simplemente crecía
+// más alto que el viewport (990px en un viewport de 720px) sin que su
+// propio overflow-y-auto se activara nunca (nunca excedía SU PROPIA caja) —
+// el sobrante quedaba recortado por #root, inalcanzable. Cambiado a
+// `h-[100dvh]` (altura fija): ahora el div SÍ se topa con el límite del
+// viewport y su scroll interno funciona de verdad, como red de seguridad
+// para cualquier resolución más extrema que las probadas.
+//
+// Además, modo compacto real bajo `[@media(max-height:800px)]` (mismo
+// breakpoint que ya usaba el dock flotante de íconos de IdleScanPanel.jsx)
+// en el reloj y la tarjeta central de TimeClockView.jsx, IdleScanPanel.jsx
+// y AuthPromptPanel.jsx (mismo riesgo por sus botones extra de PIN/Omitir):
+// ícono/título/anillo de escaneo más chicos, paddings y gaps reducidos,
+// subtítulo secundario oculto. Cero cambio en 1920×1080+ (breakpoint no
+// aplica). Verificado de nuevo en las 4 resoluciones tras el fix: el botón
+// queda visible con margen de sobra en las 3 que antes fallaban, en modo
+// idle y en modo autorización especial.
+//
 // v2.60.0 — feat(kiosk): rediseño del tema Dark Liquid Glass (navy real del
 // kiosco como estándar del proyecto) + kiosco sin <input> visible.
 //

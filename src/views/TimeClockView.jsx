@@ -132,7 +132,7 @@ const TimeClockView = ({ setView }) => {
   const dateStr  = now.toLocaleDateString('es-SV',  { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div className="min-h-[100dvh] w-full bg-surface-page relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30">
+    <div className="h-[100dvh] w-full bg-surface-page relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30">
 
       {/* ── Ambient orbs — mismo estándar que AppLayout.jsx (colores reales
           del logo, AUDITORIA-TEMA-2026-07.md §7.7): el kiosco ya no tiene su
@@ -209,15 +209,23 @@ const TimeClockView = ({ setView }) => {
       </button>
 
       {/* ── Main content ──────────────────────────────────────────── */}
-      <main className="relative z-10 flex-1 w-full flex flex-col items-center px-4 py-20 sm:py-24">
-        <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6">
+      {/* [@media(max-height:800px)] = modo compacto: mismo breakpoint que ya
+          usa el dock de íconos de IdleScanPanel.jsx. Sin esto, en 1024x768/
+          1280x720/1366x768 (probado con Playwright real) la tarjeta central
+          se pasaba de la altura del viewport y el botón "Autorizar Permiso"
+          quedaba inaccesible — no había scroll que lo alcanzara porque este
+          contenedor usaba min-h en vez de h fija (ver el cambio de
+          min-h-[100dvh]→h-[100dvh] arriba, que además deja un scroll real
+          como red de seguridad para cualquier caso más extremo). */}
+      <main className="relative z-10 flex-1 w-full flex flex-col items-center px-4 py-20 sm:py-24 [@media(max-height:800px)]:py-6">
+        <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(max-height:800px)]:gap-2.5">
 
           {/* Logo */}
-          <div className="animate-view-enter flex flex-col items-center gap-2">
+          <div className="animate-view-enter flex flex-col items-center gap-2 [@media(max-height:800px)]:gap-1">
             <img
               src="/Logo192.png"
               alt="Farmalasa"
-              className="w-12 h-12 object-contain opacity-80 drop-shadow-[0_0_24px_rgba(147,197,253,0.35)]"
+              className="w-12 h-12 [@media(max-height:800px)]:w-8 [@media(max-height:800px)]:h-8 object-contain opacity-80 drop-shadow-[0_0_24px_rgba(147,197,253,0.35)]"
               draggable="false"
             />
             <span className="text-[9px] font-bold uppercase tracking-[0.32em] text-white/30">
@@ -231,7 +239,7 @@ const TimeClockView = ({ setView }) => {
               bg-gradient-to-b from-blue-950/[0.30] to-white/[0.02]
               backdrop-blur-[60px] backdrop-saturate-[160%]
               border border-white/[0.10]
-              rounded-[2.5rem] px-5 py-7
+              rounded-[2.5rem] px-5 py-7 [@media(max-height:800px)]:py-3
               shadow-[0_32px_72px_rgba(0,0,0,0.45),inset_0_2px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(255,255,255,0.03)]
               transition-all duration-500 hover:border-white/[0.16] hover:-translate-y-1
               hover:shadow-[0_40px_80px_rgba(0,0,0,0.55),inset_0_2px_0_rgba(255,255,255,0.09)]"
@@ -244,19 +252,19 @@ const TimeClockView = ({ setView }) => {
 
             {/* Time */}
             <h2 className="relative text-white/[0.92] font-extralight tabular-nums leading-none w-full text-center whitespace-nowrap
-              text-[3rem] sm:text-[3.5rem] tracking-tight
+              text-[3rem] sm:text-[3.5rem] [@media(max-height:800px)]:text-[1.85rem] tracking-tight
               drop-shadow-[0_0_40px_rgba(147,197,253,0.22)]">
               {timeStr}
             </h2>
 
             {/* Date */}
-            <p className="relative text-white/40 text-[10px] font-bold uppercase tracking-[0.32em] mt-3 w-full text-center truncate px-2 capitalize">
+            <p className="relative text-white/40 text-[10px] font-bold uppercase tracking-[0.32em] mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 capitalize">
               {dateStr}
             </p>
 
             {/* Device label */}
             {kioskLabel && (
-              <p className="relative text-white/20 text-[9px] font-semibold uppercase tracking-[0.22em] mt-2 w-full text-center truncate px-4">
+              <p className="relative text-white/20 text-[9px] font-semibold uppercase tracking-[0.22em] mt-2 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-4">
                 {kioskLabel}
               </p>
             )}

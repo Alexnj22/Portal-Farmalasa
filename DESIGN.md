@@ -1134,6 +1134,27 @@ Dividers between filter controls: `h-5 w-px bg-slate-100`.
 
 Reference implementation: `VentasView` — see `FilterControls` (`src/views/VentasView.jsx:118`), rendered inline in each tab body (`TabVentas`/`TabVendedores`/`TabProductos`) immediately after the stat cards row, never passed through `filtersContent`. Same pattern in the Productos tabs (`TabInventario`, `TabCatalogo`, `TabSinVenta`) and `StaffManagementView`.
 
+**Bug real de responsive encontrado y corregido (2026-07-25, QA autenticado
+en móvil real):** el propio contenedor del pill (`shrink-0 overflow-visible`,
+sin `flex-wrap` ni `max-w-full`) se desbordaba fuera del viewport en pantallas
+angostas (390px) — el texto del rango de fechas quedaba cortado en el borde
+en vez de ajustarse. Pre-existente desde 2026-05-03, no introducido por
+ninguna sesión de tema. Corregido agregando `flex-wrap max-w-full` al
+contenedor del pill en los 8 archivos que copian esta anatomía:
+`VentasView.jsx` (`FilterControls`), `StaffManagementView.jsx`,
+`ProveedoresView.jsx`, `FacturasCompraView.jsx`, `TabPromos.jsx`,
+`TabBonificaciones.jsx`, `TabHistorial.jsx`, `TabSinVenta.jsx` (vía
+`tk.filterPill`). Con esto, en vez de desbordar o cortar texto, los
+controles del pill (sucursal / rango de fecha / toggles) se acomodan en
+varias líneas dentro del propio pill. Verificado sin scroll horizontal en
+`document.documentElement` a 390px de ancho.
+
+**Excepción documentada, no un bug:** `TabInventario.jsx` (Productos) usa
+`hidden lg:flex` en su pill — los filtros de esa tab simplemente no están
+disponibles en móvil (no hay una versión alterna). Es una brecha de
+paridad de features entre desktop/móvil, no un bug de overflow — fuera de
+alcance de esta corrección puntual.
+
 ---
 
 ## 18. Empty States

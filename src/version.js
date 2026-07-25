@@ -5,8 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.59.1';
+export const APP_VERSION = '2.59.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.59.2 — fix(responsive): filter pill se desbordaba en móvil (390px) en
+// 8 archivos — bug real, pre-existente desde 2026-05-03.
+//
+// El usuario preguntó de nuevo "¿ya está todo bien?" y esta vez se hizo QA
+// autenticado en vivo con Playwright en viewport móvil real (390×844),
+// además de los 4 temas completos (liquid/dark/solid/solid-dark) sobre
+// Inicio/Ventas y ~10 vistas más nunca antes verificadas en esta sesión
+// (Facturación, Productos, Promociones, Horarios, Cotizaciones,
+// Solicitudes, Plan de Vacaciones). Todo limpio — MENOS un bug real
+// encontrado en móvil: el contenedor del filter pill (`FilterControls` en
+// VentasView.jsx, documentado en DESIGN.md §17 como la implementación de
+// referencia) tenía `shrink-0 overflow-visible` sin `flex-wrap` ni
+// `max-w-full` — a 390px de ancho el texto del rango de fechas se cortaba
+// en el borde del viewport en vez de ajustarse.
+//
+// Confirmado con git blame que es pre-existente (commit 1ffdb87,
+// 2026-05-03) — no introducido por T1-T7 ni por esta sesión, que solo
+// había tocado colores ahí. Encontrado exactamente por hacer QA real en
+// viewport móvil en vez de asumir que "solo cambié colores, no puede
+// haber roto el layout".
+//
+// La misma anatomía de pill (copiada, no un componente compartido) tenía
+// el mismo bug en 7 archivos más: StaffManagementView.jsx,
+// ProveedoresView.jsx, FacturasCompraView.jsx, TabPromos.jsx,
+// TabBonificaciones.jsx, TabHistorial.jsx, TabSinVenta.jsx (vía
+// `tk.filterPill`). Los 8 corregidos con `flex-wrap max-w-full` —
+// verificado sin overflow horizontal en `document.documentElement` a
+// 390px en las 4 vistas re-probadas tras el fix.
+//
+// Excepción documentada aparte (no corregida, distinta naturaleza):
+// TabInventario.jsx (Productos) usa `hidden lg:flex` en su pill — sin
+// alternativa móvil, es una brecha de paridad de features, no un bug de
+// overflow.
 
 // v2.59.1 — fix(test): corrige tests/e2e/smoke.spec.js — buscaba el texto
 // "Dashboard", renombrado a "Inicio" hace semanas (project_menu_

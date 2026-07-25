@@ -627,7 +627,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 </div>
 
                 {/* Right: filter pill — mode selector + sucursal */}
-                <div className={`flex items-center rounded-2xl border transition-all duration-300 shrink-0 overflow-visible ${tk.filterPill}`}>
+                <div className={`flex items-center flex-wrap rounded-2xl border transition-all duration-300 shrink-0 overflow-visible max-w-full ${tk.filterPill}`}>
 
                     {/* Mode pills */}
                     <div className="flex items-center gap-1 px-2.5 py-2">

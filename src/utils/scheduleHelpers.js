@@ -138,14 +138,15 @@ export const calculateEmployeeWeeklyHoursLocal = (schedule, shifts, history, cal
     return Number((totalMins / 60).toFixed(1));
 };
 
+// Bucket B (DESIGN.md §6) — categórico por jerarquía de rol, sin severidad.
 export const getRoleTheme = (roleName) => {
     const role = (roleName || '').toUpperCase();
-    if (role.includes('GERENTE') || (role.includes('JEFE') && !role.includes('SUB'))) return { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' };
-    if (role.includes('SUBJEFE')) return { bg: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-200' };
-    if (role.includes('REGENTE')) return { bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' };
-    if (role.includes('SUPERVISOR')) return { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' };
-    if (role.includes('ADMINISTRADOR')) return { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
-    return { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
+    if (role.includes('GERENTE') || (role.includes('JEFE') && !role.includes('SUB'))) return { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' };
+    if (role.includes('SUBJEFE')) return { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' };
+    if (role.includes('REGENTE')) return { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30' };
+    if (role.includes('SUPERVISOR')) return { bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' };
+    if (role.includes('ADMINISTRADOR')) return { bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30' };
+    return { bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-divider' };
 };
 
 export const getDayConflictLocal = (dateStr, history) => {
@@ -155,10 +156,10 @@ export const getDayConflictLocal = (dateStr, history) => {
     );
     if (event) {
         const config = {
-            VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-amber-50',  text: 'text-amber-600',  border: 'border-amber-200' },
-            DISABILITY:  { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-red-50',    text: 'text-red-600',    border: 'border-red-200' },
-            PERMIT:      { label: 'Permiso',     icon: FileText,   bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
-            HOLIDAY:     { label: 'Asueto',      icon: CalendarOff,bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' }
+            VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-chart-7/10', text: 'text-chart-7-text', border: 'border-chart-7/30' },
+            DISABILITY:  { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' },
+            PERMIT:      { label: 'Permiso',     icon: FileText,   bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
+            HOLIDAY:     { label: 'Asueto',      icon: CalendarOff,bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' }
         };
         return config[event.type] || config.PERMIT;
     }
@@ -173,9 +174,9 @@ export const getDayConflictLocal = (dateStr, history) => {
             type: 'SUPPORT',
             label: `Apoyo en ${targetBranch}`,
             icon: Building2,
-            bg: 'bg-orange-50',
-            text: 'text-orange-600',
-            border: 'border-orange-200',
+            bg: 'bg-chart-4/10',
+            text: 'text-chart-4-text',
+            border: 'border-chart-4/30',
             targetBranchId: meta.targetBranchId || null
         };
     }

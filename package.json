@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "gate:design": "node scripts/design-gate.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

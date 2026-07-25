@@ -438,7 +438,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     <button
                                         onClick={() => setBrushType('erase')}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                                            brushType === 'erase' ? 'bg-slate-800 text-white' : 'text-content-3 hover:text-content-2'
+                                            brushType === 'erase' ? 'bg-chart-8 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <Eraser size={11} strokeWidth={2} /> Borrar
                                     </button>
@@ -468,7 +468,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                         onClick={() => setBrushShape('round')}
                                         title="Redonda"
                                         className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
-                                            brushShape === 'round' ? 'bg-slate-700 text-white' : 'text-content-3 hover:text-content-2'
+                                            brushShape === 'round' ? 'bg-chart-8 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <span style={{
                                             display: 'inline-block', width: 9, height: 9,
@@ -480,7 +480,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                         onClick={() => setBrushShape('h')}
                                         title="Recta horizontal"
                                         className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
-                                            brushShape === 'h' ? 'bg-slate-700 text-white' : 'text-content-3 hover:text-content-2'
+                                            brushShape === 'h' ? 'bg-chart-8 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <span style={{
                                             display: 'inline-block', width: 16, height: 3,
@@ -492,7 +492,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                         onClick={() => setBrushShape('v')}
                                         title="Recta vertical"
                                         className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
-                                            brushShape === 'v' ? 'bg-slate-700 text-white' : 'text-content-3 hover:text-content-2'
+                                            brushShape === 'v' ? 'bg-chart-8 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <span style={{
                                             display: 'inline-block', width: 3, height: 16,

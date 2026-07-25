@@ -114,7 +114,7 @@ export default function VentasPperdidasView() {
             <div className="flex flex-col gap-4 p-4 pb-8">
 
                 {/* Tab explanation */}
-                <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-slate-800/6 border border-divider">
+                <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                     <ShoppingCart size={13} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2} />
                     <p className="text-[11px] text-content-2 font-medium leading-snug flex-1">{TAB_HELP[activeTab]}</p>
                     {rows.length > 0 && (

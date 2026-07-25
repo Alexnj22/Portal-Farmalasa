@@ -3,6 +3,7 @@ import { Loader2, Sparkles, AlertTriangle, Save, X, Utensils, Baby, Users } from
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
+import AlertModal from '../common/AlertModal';
 
 const AI_LOADING_PHRASES = [
     "Analizando horarios de apertura y cierre...",
@@ -67,6 +68,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [aiResult, setAiResult] = useState(null);
     const [error, setError] = useState(null);
+    const [saveError, setSaveError] = useState('');
     const [phraseIndex, setPhraseIndex] = useState(0);
 
     const [editableSchedule, setEditableSchedule] = useState({});
@@ -161,7 +163,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
             if(onClose) onClose();
         } catch (err) {
-            alert("Error al guardar: " + err.message);
+            setSaveError("Error al guardar: " + err.message);
             setIsSaving(false);
         }
     };
@@ -288,7 +290,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200/60 bg-white">
+                    <tbody className="divide-y divide-divider bg-white">
                         {branchEmployees.map(emp => {
                             const empSch = editableSchedule[emp.id] || {};
                             const weeklyHrs = calculateWeeklyHours(empSch);
@@ -421,6 +423,14 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                     {isSaving ? 'Guardando...' : 'Aplicar Horario'}
                 </button>
             </div>
+
+            <AlertModal
+                isOpen={!!saveError}
+                onClose={() => setSaveError('')}
+                type="error"
+                title="Error al Guardar"
+                message={saveError}
+            />
         </div>
     );
 };

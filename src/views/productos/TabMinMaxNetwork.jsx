@@ -239,7 +239,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
                 <button onClick={() => { setShowAll(s => !s); setPage(1); }}
                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all ${
-                        showAll ? 'bg-slate-800 text-white border-slate-800' : 'bg-surface-card border-divider text-content-3 hover:border-divider'
+                        showAll ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card border-divider text-content-3 hover:border-divider'
                     }`}>
                     {showAll ? 'Solo alertas' : 'Ver todos'}
                 </button>

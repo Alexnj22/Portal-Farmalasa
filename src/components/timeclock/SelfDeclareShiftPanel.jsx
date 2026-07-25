@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, SkipForward, CheckCircle } from 'lucide-react';
+import TimePicker12 from '../common/TimePicker12';
 
 const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
     const [start, setStart] = useState('08:00');
@@ -35,24 +36,20 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                             <label className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-1.5">
                                 Hora Entrada
                             </label>
-                            <input
-                                type="time"
+                            <TimePicker12
                                 value={start}
-                                onChange={(e) => setStart(e.target.value)}
-                                required
-                                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-3 px-2 rounded-2xl text-lg font-bold tracking-widest focus:outline-none focus:border-warning/50 focus:bg-black/40 transition-all"
+                                onChange={setStart}
+                                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl"
                             />
                         </div>
                         <div>
                             <label className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-1.5">
                                 Hora Salida
                             </label>
-                            <input
-                                type="time"
+                            <TimePicker12
                                 value={end}
-                                onChange={(e) => setEnd(e.target.value)}
-                                required
-                                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-3 px-2 rounded-2xl text-lg font-bold tracking-widest focus:outline-none focus:border-warning/50 focus:bg-black/40 transition-all"
+                                onChange={setEnd}
+                                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl"
                             />
                         </div>
                     </div>

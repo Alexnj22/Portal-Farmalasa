@@ -106,7 +106,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
     const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
-    const tc        = TYPE_COLORS[req.type] || { circle: 'bg-content-3', ring: 'ring-slate-200', border: 'border-border-card', hover: '', sectionIcon: '' };
+    const tc        = TYPE_COLORS[req.type] || { circle: 'bg-content-3', ring: 'ring-divider', border: 'border-border-card', hover: '', sectionIcon: '' };
     const meta      = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
     const isRejected = req.status === 'REJECTED';
     const isUrgent   = req.type === 'DISABILITY' && req.status === 'PENDING';
@@ -771,7 +771,7 @@ const RequestsView = () => {
                         <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
                             disabled={isActioning}
-                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
+                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
                             <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
                                 className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-[13px] font-medium hover:bg-surface-card transition-all disabled:opacity-50">
@@ -877,7 +877,7 @@ const RequestsView = () => {
                                 rows={3}
                                 placeholder="Describe la solicitud..."
                                 disabled={isCreatingReq}
-                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
+                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
                             />
                         </div>
 

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarClock, History, X, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import TimePicker12 from '../../components/common/TimePicker12';
 
-function fmtEntrada(iso) {
-    if (!iso) return '';
+function fmtEntradaParts(iso) {
+    if (!iso) return { date: '', time: '' };
     const d = new Date(iso);
     const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return {
+        date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+        time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    };
 }
 
 function fmtDisplay(iso) {
@@ -21,11 +26,18 @@ function fmtDisplay(iso) {
 }
 
 export default function ProgramarEntregaModal({ open, onClose, numero, currentAt, historial = [], empMap = new Map(), onConfirm, saving }) {
-    const [value, setValue] = useState('');
+    const [dateVal, setDateVal] = useState('');
+    const [timeVal, setTimeVal] = useState('');
 
     useEffect(() => {
-        if (open) setValue(fmtEntrada(currentAt));
+        if (open) {
+            const { date, time } = fmtEntradaParts(currentAt);
+            setDateVal(date);
+            setTimeVal(time);
+        }
     }, [open, currentAt]);
+
+    const value = dateVal && timeVal ? `${dateVal}T${timeVal}` : '';
 
     const isEditing = !!currentAt;
 
@@ -55,12 +67,14 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                     <label className="text-[11px] font-semibold text-content-3 uppercase tracking-wide">
                         Fecha y hora estimada de llegada
                     </label>
-                    <input
-                        type="datetime-local"
-                        value={value}
-                        onChange={e => setValue(e.target.value)}
-                        className="w-full text-[16px] text-content-2 bg-surface-card border border-divider rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-chart-3/30 focus:border-chart-3"
-                    />
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-surface-card border border-divider rounded-xl">
+                            <LiquidDatePicker value={dateVal} onChange={setDateVal} />
+                        </div>
+                        <div className="bg-surface-card border border-divider rounded-xl">
+                            <TimePicker12 value={timeVal} onChange={setTimeVal} />
+                        </div>
+                    </div>
                 </div>
 
                 {historial.length > 0 && (

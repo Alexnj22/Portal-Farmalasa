@@ -287,7 +287,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
         style={{ animation: `inv-fade-up 0.28s ease both`, animationDelay: `${(animOffset + bi) * 55}ms` }}
       >
         <div className="flex items-center gap-2 mb-1.5 sticky top-0 z-10 py-0.5">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-200/80" />
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-divider" />
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
             <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
@@ -295,7 +295,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
             <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{branchTotal}</span>
             <span className="text-[9px] font-semibold text-content-3 ml-0.5">uds</span>
           </div>
-          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-divider" />
         </div>
 
         <div className="space-y-2">
@@ -560,7 +560,7 @@ export default function WidgetInventorySearch() {
                   style={{ animation: `inv-fade-up 0.22s ease both`, animationDelay: `${bi * 45}ms` }}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`h-px flex-1 bg-gradient-to-r from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-slate-200/80'}`} />
+                    <div className={`h-px flex-1 bg-gradient-to-r from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-divider'}`} />
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
                       {branch.isVencidos
                         ? <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
@@ -570,7 +570,7 @@ export default function WidgetInventorySearch() {
                       <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{total}</span>
                       <span className="text-[9px] font-semibold text-content-3 ml-0.5">uds</span>
                     </div>
-                    <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-slate-200/80'}`} />
+                    <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-divider'}`} />
                   </div>
                   <div
                     className="rounded-xl overflow-hidden backdrop-blur-sm shadow-sm"
@@ -628,7 +628,7 @@ export default function WidgetInventorySearch() {
           value={query}
           onChange={e => handleInput(e.target.value)}
           placeholder="Buscar por nombre o principio activo..."
-          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
+          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
           spellCheck={false}
           autoComplete="off"
         />

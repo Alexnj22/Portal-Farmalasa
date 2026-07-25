@@ -359,7 +359,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
     const presetChipOn  = 'bg-warning/10 text-warning border-warning/40';
-    const presetChipOff = 'bg-white text-content-3 border-divider hover:border-slate-400 hover:text-content-2';
+    const presetChipOff = 'bg-white text-content-3 border-divider hover:border-chart-8/50 hover:text-content-2';
 
     return (
         <div className="space-y-2">
@@ -831,7 +831,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
                             <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-right text-content-2">Costo unit.</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-divider">
                         {visible.map((row, i) => (
                             <tr key={i} className="hover:bg-surface-card-hover/40 transition-colors">
                                 <td className="px-3 py-2 text-[11px] text-content-2 whitespace-nowrap">
@@ -901,7 +901,7 @@ function PriceHistorySection({ history, allowedPriceFields }) {
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-divider">
                         {visible.map((row, i) => (
                             <tr key={row.id_presentacion + '-' + row.valid_from + '-' + i} className="hover:bg-surface-card-hover/40 transition-colors">
                                 <td className="px-3 py-2 text-[11px] text-content-2 whitespace-nowrap">{fmtDate(row.valid_from)}</td>
@@ -933,8 +933,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
 
     // ── Expanded-row theme tokens ────────────────────────────────────────────
     const xk = {
-        container: 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-brand/[0.12]',
-        loadingRow: 'bg-gradient-to-br from-chart-1/10 via-white/60 to-slate-50/30 border-t border-chart-1/30',
+        container: 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-divider border-t border-brand/[0.12]',
+        loadingRow: 'bg-gradient-to-br from-chart-1/10 via-white/60 to-divider border-t border-chart-1/30',
         loadingText: 'text-content-3',
         alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
         alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',
@@ -948,7 +948,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         pricingWrapper: 'bg-white border-divider shadow-sm',
         pricingThead: 'bg-brand/[0.05] border-b border-brand/[0.08]',
         pricingThText: 'text-content-3',
-        pricingDivide: 'divide-y divide-slate-50',
+        pricingDivide: 'divide-y divide-divider',
         pricingRowChanged: 'bg-warning/10',
         pricingRowLoss: 'bg-danger/10',
         pricingRowNormal: 'bg-white',
@@ -1432,7 +1432,7 @@ export default function TabCatalogo({
         rowExpanded: 'bg-brand/[0.05]',
         textStrong: 'text-content',
         textMid: 'text-content-3',
-        textInactive: 'text-content-3 line-through decoration-slate-300',
+        textInactive: 'text-content-3 line-through decoration-content-3',
         avatarBg: 'bg-brand/[0.07]',
         avatarIcon: 'text-brand/50',
         filterPill: 'bg-surface-card border-divider shadow-[var(--shadow-glow-brand)]',
@@ -1872,7 +1872,7 @@ export default function TabCatalogo({
                                     onClick={() => toggleRow(p.id)}
                                     onMouseEnter={() => prefetchRow(p.id)}
                                     onMouseLeave={cancelPrefetch}
-                                    style={{ borderLeftColor: isExpanded ? '#0052CC' : 'transparent' }}
+                                    style={{ borderLeftColor: isExpanded ? 'var(--brand)' : 'transparent' }}
                                     className={`border-l-[3px] ${isExpanded ? tk.rowExpanded : isInactive ? 'opacity-50' : ''}`}
                                 >
                                     <DataCell>

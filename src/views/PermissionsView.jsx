@@ -225,7 +225,7 @@ const ROLE_META = {
     EMPLEADO: {
         label: 'Empleado', locked: false,
         desc: 'Acceso al portal de autogestión personal solamente.',
-        color: 'from-slate-400 to-slate-500', textColor: 'text-content-2',
+        color: 'from-chart-8 to-chart-8-text', textColor: 'text-content-2',
         bg: 'bg-surface-card-hover', border: 'border-border-card',
     },
 };
@@ -241,7 +241,7 @@ const ROLE_COLORS = [
     { color: 'from-chart-6 to-chart-3', textColor: 'text-chart-6-text',   bg: 'bg-chart-6/10',   border: 'border-chart-6/30'   },
     { color: 'from-warning to-chart-4', textColor: 'text-chart-4-text', bg: 'bg-chart-4/10', border: 'border-chart-4/30' },
     { color: 'from-chart-5 to-chart-1', textColor: 'text-chart-5-text',   bg: 'bg-chart-5/10',   border: 'border-chart-5/30'   },
-    { color: 'from-slate-400 to-slate-600',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-border-card'  },
+    { color: 'from-chart-8 to-chart-8-text',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-border-card'  },
 ];
 
 const PERMISSION_TYPES = [
@@ -312,7 +312,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 <div className="flex items-start gap-3 mb-3.5">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                         hasAnyPerm
-                            ? 'bg-gradient-to-br from-brand to-[#6929C4] text-white shadow-[var(--shadow-glow-brand)] scale-100'
+                            ? 'bg-gradient-to-br from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] scale-100'
                             : 'bg-surface-card backdrop-blur-sm border border-border-card text-content-3 scale-90'
                     }`}>
                         <ModIcon size={15} strokeWidth={1.8} />
@@ -684,7 +684,7 @@ const PermissionsView = () => {
     // Header flotante
     const headerLeft = (
         <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-tr from-brand to-[#6929C4] rounded-xl md:rounded-2xl shadow-[var(--shadow-glow-brand)] p-2 md:p-2.5 flex items-center justify-center shrink-0">
+            <div className="bg-gradient-to-tr from-brand to-brand-purple rounded-xl md:rounded-2xl shadow-[var(--shadow-glow-brand)] p-2 md:p-2.5 flex items-center justify-center shrink-0">
                 <Lock className="text-white" size={20} strokeWidth={1.5} />
             </div>
             <h2 className="font-semibold text-[18px] md:text-[22px] text-content tracking-tight">
@@ -958,7 +958,7 @@ const PermissionsView = () => {
                                     { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-warning to-chart-4'  },
                                     { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-danger to-chart-6'     },
                                     { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-chart-5 to-chart-1'      },
-                                    { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-slate-600 to-slate-800'   },
+                                    { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-chart-8 to-chart-8-text'   },
                                     { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-chart-4 to-danger'    },
                                 ];
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];

@@ -262,8 +262,60 @@ revisar" — fueron evaluadas y decididas explícitamente):
 - **`KpiCard`** (`color + '18'` string-concat para alpha): limitación
   técnica, no puede usar `var()` en ese contexto.
 - **Leaflet/Google Maps markers, Recharts/canvas, plantillas de impresión
-  PDF** (`CotizacionesView.jsx`): colores hex directos, fuera del sistema
-  de tokens CSS por naturaleza de la tecnología.
+  PDF** (`CotizacionesView.jsx`, `PayrollView.jsx`, `CrearRutaModal.jsx`,
+  `RutaMapModal.jsx`): colores hex directos, fuera del sistema de tokens
+  CSS por naturaleza de la tecnología.
+- **Tooltips flotantes dark** (mismo patrón que el punto anterior, ahora
+  con la lista completa de archivos): `FormWfmAnalytics.jsx`,
+  `FormEditPayrollEntry.jsx`, `SidebarSyncStatus.jsx`,
+  `LifecycleTimeline.jsx`, `ScheduleChart.jsx`, `EmployeeDetailView.jsx`,
+  `AttendanceAuditView.jsx`, `VentasView.jsx`, `VacationPlanView.jsx`,
+  `StaffManagementView.jsx`, `DashboardView.jsx` — solo la franja
+  `bg-slate-800/900/950` + `text-white` del tooltip en sí, el resto de
+  cada archivo SÍ está tokenizado.
+- **Caja de IA siempre-oscura** (mismo criterio que el shimmer): `SalyCopilot.jsx`,
+  `TabShifts.jsx`.
+- **Superficies kiosco/cámara/editor** (pantallas que fuerzan
+  `data-theme="dark"` en `<html>` mientras están montadas, o que son
+  herramientas técnicas — canvas, video — donde el fondo oscuro no es
+  negociable): `TimeClockView.jsx`, `KioskConfigModal.jsx`,
+  `FeedbackOverlay.jsx`, `PhotoEditorModal.jsx`, `LoginView.jsx` (solo el
+  scanner de cámara + el fondo splash bespoke, comparte gradiente con
+  `App.jsx`).
+- **`ThemeToggle.jsx`** variante `dark`: documentado inline en el propio
+  archivo — vive dentro de un host siempre-oscuro (`SidebarSettingsMenu`)
+  y usa clases bespoke `bg-white/N`, no tokens (que resolverían claros ahí
+  y quedarían ilegibles).
+- **Ilustraciones/branding de terceros**: `FormAuditDetail.jsx` (semáforo
+  real de ventana macOS — colores exactos de Apple), `AccessDeniedView.jsx`
+  / `NoAccessView.jsx` (verde real de marca WhatsApp `#25D366`),
+  `ThemeMigrationRibbon.jsx` (franja rayada ámbar/naranja bespoke, texto
+  fijo, no reactiva al tema).
+- **Vistas de diagnóstico/QA** (no son UI real de negocio, mismo criterio
+  que el archivo de preview): `RawTestView.jsx`, `IOSTestView.jsx`.
+
+### Gate mecánico permanente (`scripts/design-gate.mjs`, desde 2026-07-25)
+
+Todo lo anterior (T7.1 + T7.1c + esta pasada) se auditó a mano con regex de
+una sola sesión que luego se perdían — la razón real por la que
+`border-slate-*`, `ring-*`/`via-*`, y toda la paleta cromática (purple/
+green/orange/pink/blue/etc., no solo grises) se filtraron sin detectar
+durante meses (ver `feedback_shadow_color_gate_lessons` y este mismo
+hallazgo repetido). Ahora existe un script versionado que corre las DOS
+familias de chequeo (nativo + color) sobre TODO `src/`, no solo un
+grep ad-hoc de la sesión:
+
+```bash
+npm run gate:design
+```
+
+Debe dar `0 hallazgos` — las excepciones de esta sección están *dentro*
+del script (constante `EXCEPTIONS`), así que un `0` real significa "nada
+sin revisar", no "nada que el regex de turno supiera buscar". **Regla
+obligatoria: antes de dar por cerrado cualquier trabajo de
+tema/estandarización visual, correr este comando.** Si aparece un
+hallazgo nuevo: o se corrige, o se agrega a `EXCEPTIONS` en el script Y a
+esta lista (nunca solo uno de los dos lugares).
 
 **Semáforo de riesgo de stock (7 estados)** — el real de `src/views/productos/tabminmax/constants.js` (`STAT_CFGS`), no el que se mencionaba antes en este documento:
 ```
@@ -889,9 +941,9 @@ Large orchestrator with 30+ type variants controlled by `type` string prop. `get
 
 File: `src/components/common/ConfirmModal.jsx`
 
-Destructive / non-destructive confirmation. `createPortal` to body directly (bypasses ModalShell). `z-[99999]`. CSS transitions (no ModalShell). Reads `theme` prop — **dark mode blindspot**.
+Destructive / non-destructive confirmation. `createPortal` to body directly (bypasses ModalShell). `z-[99999]`. CSS transitions (no ModalShell). Ya no lee un prop `theme` — 100% tokens (`bg-surface-card-hover`, `text-content`, etc.), la nota de "dark mode blindspot" quedó stale y se corrigió (2026-07-25).
 
-Props: `isOpen`, `onClose`, `onConfirm`, `title`, `message`, `confirmText`, `cancelText`, `isDestructive` (default `true`), `isProcessing`, `theme` (`'light'|'dark'`).
+Props: `isOpen`, `onClose`, `onConfirm`, `title`, `message`, `confirmText`, `cancelText`, `isDestructive` (default `true`), `isProcessing`.
 
 Processing state: replaces text with spinner, hides cancel button.
 
@@ -899,11 +951,19 @@ Processing state: replaces text with spinner, hides cancel button.
 
 File: `src/components/common/AlertModal.jsx`
 
-Single-button info/success/error. Uses ModalShell. `z-[9999]`. Reads `theme` prop — **dark mode blindspot**.
+Single-button info/success/error. Uses ModalShell. `z-[9999]`. Ya no lee un prop `theme` — 100% tokens, nota stale corregida (2026-07-25).
 
-Props: `isOpen`, `onClose`, `title`, `message`, `type` (`'success'|'error'|'info'`), `buttonText`, `theme`.
+Props: `isOpen`, `onClose`, `title`, `message`, `type` (`'success'|'error'|'info'`), `buttonText`.
 
 Type determines icon (CheckCircle2 / AlertCircle / Info), glow color, button color.
+
+### PromptModal
+
+File: `src/components/common/PromptModal.jsx`
+
+Nuevo (2026-07-25, regla cero-nativo §9.0 — reemplaza `window.prompt()`). Mismo shell visual que `ConfirmModal` (glass modal, glow, footer 2 botones), con un `<textarea>` para pedir una nota corta antes de confirmar.
+
+Props: `isOpen`, `onClose`, `onConfirm` (recibe el texto), `title`, `message`, `placeholder`, `confirmText`, `cancelText`, `isProcessing`, `required` (si `true`, el botón de confirmar queda deshabilitado hasta que haya texto).
 
 ### LiquidTooltip
 

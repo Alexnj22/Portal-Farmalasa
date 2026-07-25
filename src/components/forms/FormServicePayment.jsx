@@ -1,5 +1,6 @@
 import React from 'react';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import LiquidDatePicker from '../common/LiquidDatePicker';
 
 const SERVICE_CONFIG = {
     rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3 focus:ring-chart-3/20', providerLabel: 'Nombre del Arrendador' },
@@ -7,7 +8,7 @@ const SERVICE_CONFIG = {
     water: { title: 'Agua Potable', icon: Droplet, color: 'text-chart-5-text bg-chart-5/10 border-chart-5/30', ring: 'focus:border-chart-5 focus:ring-chart-5/20', providerLabel: 'Servicio de Agua' },
     internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-chart-1-text bg-chart-1/10 border-chart-1/30', ring: 'focus:border-chart-1 focus:ring-chart-1/20', providerLabel: 'Proveedor ISP' },
     phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-success focus:ring-success/20', providerLabel: 'Telefonía Móvil' },
-    taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-divider', ring: 'focus:border-divider0 focus:ring-slate-500/20', providerLabel: 'Alcaldía / Entidad' }
+    taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-divider', ring: 'focus:border-content-3 focus:ring-content-3/20', providerLabel: 'Alcaldía / Entidad' }
 };
 
 const FormServicePayment = ({ formData, setFormData }) => {
@@ -131,12 +132,10 @@ const FormServicePayment = ({ formData, setFormData }) => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-brand ml-1 mb-2 flex items-center gap-2">
                         <CalendarCheck size={14}/> Último Mes Pagado
                     </label>
-                    <input 
-                        required
-                        type="month" 
-                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
-                        value={currentData.paidThrough || ""} 
-                        onChange={(e) => handleChange('paidThrough', e.target.value)} 
+                    <LiquidDatePicker
+                        mode="month"
+                        value={currentData.paidThrough && currentData.paidThrough.split('-').length === 2 ? `${currentData.paidThrough}-01` : currentData.paidThrough}
+                        onChange={(val) => handleChange('paidThrough', val)}
                     />
                     <p className="mt-2 text-[10px] font-semibold text-content-3 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
                 </div>

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
 import PromoModal        from './PromoModal';
+import ConfirmModal      from '../../components/common/ConfirmModal';
 import { fetchPromotionsList, updatePromotionEstado, deletePromotion } from '../../data/promotions';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -252,6 +253,8 @@ export default function TabPromos({ searchTerm, canEdit }) {
     const [loading,    setLoading]    = useState(true);
     const [showModal,  setShowModal]  = useState(false);
     const [filterState, setFilterState] = useState('all'); // 'all' | 'draft' | 'active' | 'paused'
+    const [promoToDelete, setPromoToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -272,11 +275,16 @@ export default function TabPromos({ searchTerm, canEdit }) {
         load();
     };
 
-    const handleDelete = async (promo) => {
-        if (!window.confirm(`¿Eliminar el borrador "${promo.nombre}"?`)) return;
-        const { error } = await deletePromotion(promo.id);
+    const handleDelete = (promo) => setPromoToDelete(promo);
+
+    const confirmDelete = async () => {
+        if (!promoToDelete) return;
+        setIsDeleting(true);
+        const { error } = await deletePromotion(promoToDelete.id);
+        setIsDeleting(false);
+        setPromoToDelete(null);
         if (error) return showToast('Error', error.message, 'error');
-        showToast('Eliminado', promo.nombre, 'success');
+        showToast('Eliminado', promoToDelete.nombre, 'success');
         load();
     };
 
@@ -400,6 +408,18 @@ export default function TabPromos({ searchTerm, canEdit }) {
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
                 onCreated={() => { setShowModal(false); load(); }}
+            />
+
+            <ConfirmModal
+                isOpen={!!promoToDelete}
+                onClose={() => setPromoToDelete(null)}
+                onConfirm={confirmDelete}
+                title="Eliminar Borrador"
+                message={`¿Eliminar el borrador "${promoToDelete?.nombre}"?`}
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                isProcessing={isDeleting}
+                isDestructive={true}
             />
         </div>
     );

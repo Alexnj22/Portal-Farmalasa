@@ -124,7 +124,7 @@ function StepInfo({ form, set, branches }) {
 function ProductRow({ pp, onRemove }) {
     return (
         <div className="bg-white border border-divider rounded-xl p-3 flex gap-3 items-start shadow-sm">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-divider flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-surface-card-hover to-surface-card border border-divider flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {pp.foto_url
                     ? <img src={pp.foto_url} className="w-full h-full object-cover" alt="" />
                     : <Package size={13} className="text-content-3" />}

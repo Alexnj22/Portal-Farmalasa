@@ -3,28 +3,32 @@ import {
   TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign, RefreshCw
 } from 'lucide-react';
 
+// Bucket B (DESIGN.md §6) — categórico genuino, sin jerarquía de severidad.
 export const DOCUMENT_TYPES = {
-  CONTRACT: { label: 'Contrato Laboral', icon: FileText, color: 'text-blue-600 bg-blue-50' },
-  ID: { label: 'DUI / Identidad / Pasaporte', icon: IdCard, color: 'text-purple-600 bg-purple-50' },
-  CV: { label: 'Hoja de Vida (CV)', icon: User, color: 'text-green-600 bg-green-50' },
-  MEDICAL: { label: 'Incapacidad / Constancia', icon: HeartPulse, color: 'text-red-600 bg-red-50' },
-  MEMO: { label: 'Memorándum / Sanción', icon: AlertCircle, color: 'text-orange-600 bg-orange-50' },
-  OTHER: { label: 'Otro Documento', icon: Paperclip, color: 'text-slate-600 bg-slate-50' },
+  CONTRACT: { label: 'Contrato Laboral', icon: FileText, color: 'text-chart-1-text bg-chart-1/10' },
+  ID: { label: 'DUI / Identidad / Pasaporte', icon: IdCard, color: 'text-chart-3-text bg-chart-3/10' },
+  CV: { label: 'Hoja de Vida (CV)', icon: User, color: 'text-chart-2-text bg-chart-2/10' },
+  MEDICAL: { label: 'Incapacidad / Constancia', icon: HeartPulse, color: 'text-chart-6-text bg-chart-6/10' },
+  MEMO: { label: 'Memorándum / Sanción', icon: AlertCircle, color: 'text-chart-4-text bg-chart-4/10' },
+  OTHER: { label: 'Otro Documento', icon: Paperclip, color: 'text-content-3 bg-surface-card-hover' },
 };
 
+// Bucket B categórico (tipos de evento) salvo TERMINATION, que es Bucket A
+// (severidad real — es un desenlace negativo/definitivo, no una categoría
+// más entre pares).
 export const EVENT_TYPES = {
-  VACATION: { label: 'Vacaciones', color: 'bg-green-100 text-green-800', icon: Calendar, requiresDuration: true, defaultDocType: 'MEMO' },
-  DISABILITY: { label: 'Incapacidad Médica', color: 'bg-red-100 text-red-800', icon: HeartPulse, requiresDuration: true, defaultDocType: 'MEDICAL' },
-  PERMIT: { label: 'Permiso / Licencia', color: 'bg-yellow-100 text-yellow-800', icon: ClipboardList, requiresDuration: true, defaultDocType: 'MEMO' },
-  PROMOTION: { label: 'Cambio de Cargo', color: 'bg-purple-100 text-purple-800', icon: TrendingUp, requiresDuration: false, requiresNewRole: true, defaultDocType: 'CONTRACT' },
-  SALARY: { label: 'Ajuste Salarial', color: 'bg-green-100 text-green-800', icon: DollarSign, requiresDuration: false, requiresNewCode: false, defaultDocType: 'OTHER' },
-  TRANSFER: { label: 'Traslado de Sucursal', color: 'bg-blue-100 text-blue-800', icon: ArrowRightLeft, requiresDuration: false, requiresTargetBranch: true, defaultDocType: 'MEMO' },
-  SUPPORT: { label: 'Apoyo Temporal', color: 'bg-orange-100 text-orange-800', icon: Building2, requiresDuration: true, requiresTargetBranch: true, defaultDocType: 'MEMO' },
-  CODE_CHANGE: { label: 'Cambio de Código/ID', color: 'bg-indigo-100 text-indigo-800', icon: IdCard, requiresDuration: false, requiresNewCode: true, defaultDocType: 'OTHER' },
-  INDUCTION: { label: 'Inducción', color: 'bg-teal-100 text-teal-800', icon: GraduationCap, requiresDuration: true, defaultDocType: 'OTHER' },
-  SHIFT_CHANGE: { label: 'Cambio de Turno', color: 'bg-cyan-100 text-cyan-800', icon: Watch, requiresDuration: false, defaultDocType: 'MEMO' },
-  TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-gray-800 text-white', icon: LogOut, requiresDuration: false, defaultDocType: 'CONTRACT' },
-  REHIRE: { label: 'Recontratación', color: 'bg-emerald-100 text-emerald-800', icon: RefreshCw, requiresDuration: false, defaultDocType: 'CONTRACT' },
+  VACATION: { label: 'Vacaciones', color: 'bg-chart-2/10 text-chart-2-text', icon: Calendar, requiresDuration: true, defaultDocType: 'MEMO' },
+  DISABILITY: { label: 'Incapacidad Médica', color: 'bg-chart-6/10 text-chart-6-text', icon: HeartPulse, requiresDuration: true, defaultDocType: 'MEDICAL' },
+  PERMIT: { label: 'Permiso / Licencia', color: 'bg-chart-7/10 text-chart-7-text', icon: ClipboardList, requiresDuration: true, defaultDocType: 'MEMO' },
+  PROMOTION: { label: 'Cambio de Cargo', color: 'bg-chart-3/10 text-chart-3-text', icon: TrendingUp, requiresDuration: false, requiresNewRole: true, defaultDocType: 'CONTRACT' },
+  SALARY: { label: 'Ajuste Salarial', color: 'bg-chart-2/10 text-chart-2-text', icon: DollarSign, requiresDuration: false, requiresNewCode: false, defaultDocType: 'OTHER' },
+  TRANSFER: { label: 'Traslado de Sucursal', color: 'bg-chart-1/10 text-chart-1-text', icon: ArrowRightLeft, requiresDuration: false, requiresTargetBranch: true, defaultDocType: 'MEMO' },
+  SUPPORT: { label: 'Apoyo Temporal', color: 'bg-chart-4/10 text-chart-4-text', icon: Building2, requiresDuration: true, requiresTargetBranch: true, defaultDocType: 'MEMO' },
+  CODE_CHANGE: { label: 'Cambio de Código/ID', color: 'bg-chart-3/10 text-chart-3-text', icon: IdCard, requiresDuration: false, requiresNewCode: true, defaultDocType: 'OTHER' },
+  INDUCTION: { label: 'Inducción', color: 'bg-chart-9/10 text-chart-9-text', icon: GraduationCap, requiresDuration: true, defaultDocType: 'OTHER' },
+  SHIFT_CHANGE: { label: 'Cambio de Turno', color: 'bg-chart-5/10 text-chart-5-text', icon: Watch, requiresDuration: false, defaultDocType: 'MEMO' },
+  TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-danger text-white', icon: LogOut, requiresDuration: false, defaultDocType: 'CONTRACT' },
+  REHIRE: { label: 'Recontratación', color: 'bg-success/10 text-success-text', icon: RefreshCw, requiresDuration: false, defaultDocType: 'CONTRACT' },
 };
 
 

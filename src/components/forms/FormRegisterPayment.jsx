@@ -170,7 +170,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         </label>
                         <div className={isConflict ? "ring-2 ring-danger/50 rounded-2xl transition-all" : ""}>
                             <LiquidDatePicker
-                                type="month"
+                                mode="month"
                                 value={paymentData.billing_month}
                                 onChange={(val) => handleUpdate('billing_month', val)}
                                 placeholder="Selecciona el mes"

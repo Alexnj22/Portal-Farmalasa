@@ -72,9 +72,9 @@ const IOSTestView = () => {
                 <Card title="Prueba de scroll — desplázate hacia abajo">
                     <div className="flex flex-col gap-2 mt-1">
                         {Array.from({ length: 12 }, (_, i) => (
-                            <div key={i} className="flex items-center justify-between rounded-xl bg-gradient-to-r from-brand/8 to-[#6929C4]/8 px-3 py-3 border border-brand/10">
+                            <div key={i} className="flex items-center justify-between rounded-xl bg-gradient-to-r from-brand/8 to-brand-purple/8 px-3 py-3 border border-brand/10">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-brand to-[#6929C4] flex items-center justify-center flex-shrink-0">
+                                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-brand to-brand-purple flex items-center justify-center flex-shrink-0">
                                         <span className="text-white text-[10px] font-black">{i + 1}</span>
                                     </div>
                                     <span className="text-[13px] font-semibold text-content-2">Fila de prueba {i + 1}</span>

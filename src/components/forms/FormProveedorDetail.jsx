@@ -201,7 +201,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             Categoría Contable
                         </label>
                         <div className="h-[44px] flex items-center">
-                            <span className="text-[12px] font-bold text-content-2 bg-slate-500/10 border border-divider0/20 px-3 py-1.5 rounded-full">
+                            <span className="text-[12px] font-bold text-content-2 bg-content-3/10 border border-content-3/20 px-3 py-1.5 rounded-full">
                                 {claseActual ? CLASE_LABELS[claseActual] || claseActual : 'Sin categoría asignada'}
                             </span>
                         </div>

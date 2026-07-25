@@ -204,7 +204,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 const SUMMARY_COLOR = {
     teal:   { bg: 'from-chart-9/10 to-surface-card',     border: 'border-chart-9/30',   icon: 'bg-chart-9/10 text-chart-9-text',    glow: 'shadow-chart-9/20',   text: 'text-chart-9-text'   },
     indigo: { bg: 'from-chart-3/10 to-surface-card',   border: 'border-chart-3/30', icon: 'bg-chart-3/10 text-chart-3-text',glow: 'shadow-chart-3/20', text: 'text-chart-3-text' },
-    slate:  { bg: 'from-slate-50 to-white',    border: 'border-divider',  icon: 'bg-surface-card-hover text-content-3',  glow: 'shadow-slate-100',  text: 'text-content-3'  },
+    slate:  { bg: 'from-surface-card-hover to-surface-card',    border: 'border-divider',  icon: 'bg-surface-card-hover text-content-3',  glow: 'shadow-content-3/10',  text: 'text-content-3'  },
 };
 
 function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
@@ -543,7 +543,7 @@ function GlassInput({ label, value, onChange, placeholder, accent }) {
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
-                className={`flex-1 text-xs px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-slate-300 transition-all font-medium`}
+                className={`flex-1 text-xs px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-content-3 transition-all font-medium`}
             />
         </div>
     );

@@ -22,7 +22,7 @@ const inputCls = [
     'bg-white/[0.22] hover:bg-white/[0.32]',
     'backdrop-blur-md',
     'border border-border-card hover:border-border-card',
-    'text-content placeholder-slate-400/80',
+    'text-content placeholder-content-3/80',
     'outline-none',
     'focus:bg-white/[0.58] focus:border-border-card',
     'focus:shadow-[inset_0_2px_10px_rgba(0,0,0,0.04),0_0_0_3px_rgba(255,255,255,0.38)]',

@@ -5,8 +5,68 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.57.1';
+export const APP_VERSION = '2.58.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.58.0 — feat(design): gate mecánico permanente de estandarización
+// visual (scripts/design-gate.mjs, `npm run gate:design`) + cierre real de
+// las divergencias que quedaban sin detectar.
+//
+// El usuario preguntó directamente si el plan de tema T1-T7 (cerrado
+// 2026-07-24) dejó el proyecto 100% estandarizado. La respuesta real era
+// NO: cada auditoría puntual posterior (menú, Ajustes) seguía encontrando
+// restos, y el propio gate mecánico de T7.1/T7.1c solo cubría
+// text-slate-*/bg-white//bg-slate-*/border-white-/hex — nunca ring-*/via-*
+// (ya documentado), nunca border-slate-* hasta v2.55.0, y NUNCA las demás
+// paletas de color crudo (purple/green/orange/pink/blue/indigo/etc. — solo
+// grises). Se escribió un script real y versionado (no un regex de sesión
+// que se pierde) que cubre las DOS familias completas:
+//   1. Nativo: alert/confirm/prompt, <select>, <input type=date|time|
+//      datetime-local|month|week> (con heurística de comentarios y de tag
+//      real vs. prop inerte en componente propio, para evitar falsos
+//      positivos).
+//   2. Color: TODAS las paletas default de Tailwind (no solo slate) en los
+//      15 prefijos de color (bg/text/border/from/via/to/ring/divide/
+//      placeholder/decoration/outline/accent/caret/fill/stroke) + hex
+//      crudo en className/style.
+//
+// Resultado del barrido completo: 274 hallazgos iniciales (89 archivos) →
+// 342 tras ampliar a toda la paleta → 0 tras corregir o excepcionar cada
+// uno. Elementos nativos (26, todos reales): 8 `alert()`/`window.confirm()`
+// reemplazados por AlertModal/ConfirmModal ya existentes; 1
+// `window.prompt()` reemplazado por PromptModal (canónico NUEVO, mismo
+// shell que ConfirmModal — ver DESIGN.md §14); 14 inputs date/time/
+// datetime-local nativos reemplazados por LiquidDatePicker/TimePicker12
+// (datetime-local compone ambos, un patrón nuevo pero de piezas ya
+// aprobadas). Bugs reales encontrados de paso: `border-divider0` en 5
+// archivos (FormServicePayment, FormProveedorDetail, DashboardView,
+// FacturasCompraView×2) — el regex de la migración de v2.55.0
+// (`border-slate-*→border-divider`) truncó mal `border-slate-500` dejando
+// basura pegada al token; `bg-[#E6F0FF]` (el hex que T1 ya había
+// corregido en App.jsx) seguía crudo en EmployeeDetailView.jsx y
+// NoAccessView.jsx — nunca se buscó fuera de ese archivo. Tokenizadas
+// también las tablas de color categórico que NUNCA habían pasado por
+// T7.1 por usar paletas no-grises: `REQUEST_TYPES`/`REQUEST_STATUS`
+// (requestsSlice.js), `DOCUMENT_TYPES`/`EVENT_TYPES` (data/constants.js),
+// `getRoleTheme`/`getDayConflictLocal` (scheduleHelpers.js),
+// `getTodayAttendanceStatus` (helpers.js), `getExpiryBadge`
+// (documentExpiry.js) — todas con la regla de 3 buckets de DESIGN.md §6
+// (severidad real → success/warning/danger; categórico → chart-1..9,
+// mismo mapeo reusado entre archivos que comparten enum; decorativo →
+// neutro). Excepciones nuevas documentadas en DESIGN.md §6 (tooltips
+// flotantes dark, superficies kiosco/cámara/editor, ilustraciones de
+// terceros, vistas de diagnóstico) — la lista completa de qué NO se
+// tokeniza y por qué vive ahí, no solo en el script.
+//
+// Regla nueva en CLAUDE.md: `npm run gate:design` debe correr (y dar 0)
+// antes de cerrar cualquier trabajo de tema — el gate reemplaza los
+// regex de sesión que se perdían y dejaban huecos reales.
+//
+// Verificado: build limpio, lint 0 errores (mismos warnings preexistentes
+// de antes), captura de LoginView sin regresión visual ni errores de
+// consola. No se pudo hacer QA autenticado (sin credenciales de prueba a
+// mano) — los cambios en vistas post-login no se verificaron visualmente
+// en vivo, solo por revisión de código + compilación.
 
 // v2.57.1 — chore(layout): restaura ThemeMigrationRibbon.jsx.
 //

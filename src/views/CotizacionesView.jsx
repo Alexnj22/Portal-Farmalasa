@@ -10,6 +10,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
@@ -677,8 +678,9 @@ export default function CotizacionesView() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Fecha</label>
-                            <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-                                className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-[16px] font-bold text-content-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+                            <div className="w-full bg-surface-card border border-border-card rounded-2xl">
+                                <LiquidDatePicker value={fecha} onChange={setFecha} />
+                            </div>
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Cliente</label>
@@ -742,7 +744,7 @@ export default function CotizacionesView() {
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
                             <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
                                 placeholder="Observaciones..."
-                                className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-[16px] font-bold text-content-2 placeholder-slate-300 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+                                className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-[16px] font-bold text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
                         </div>
                     </div>
                 </div>

@@ -6,6 +6,7 @@ import {
 import { useStaffStore } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import AlertModal from '../../components/common/AlertModal';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
@@ -195,6 +196,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     const handleSearchClick = () => {
         setIsSearchExpanded(true);
@@ -219,7 +221,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             setDocToDelete(null);
         } catch (error) {
             console.error("Error eliminando documento:", error);
-            alert("Ocurrió un error al eliminar el documento.");
+            setDeleteError("Ocurrió un error al eliminar el documento.");
         } finally {
             setIsDeleting(false);
         }
@@ -339,6 +341,14 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                 cancelText="Cancelar"
                 isProcessing={isDeleting}
                 isDestructive={true}
+            />
+
+            <AlertModal
+                isOpen={!!deleteError}
+                onClose={() => setDeleteError('')}
+                type="error"
+                title="Error al Eliminar"
+                message={deleteError}
             />
 
             {/* HEADER REDISEÑADO */}

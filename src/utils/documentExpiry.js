@@ -18,9 +18,9 @@ export function daysUntilExpiry(expiryDateStr) {
 export function getExpiryBadge(expiryDateStr) {
     const daysLeft = daysUntilExpiry(expiryDateStr);
     if (daysLeft === null) return null;
-    if (daysLeft < 0) return { label: 'Vencido', className: 'text-red-600 bg-red-100 border-red-300', daysLeft };
-    if (daysLeft <= DOC_EXPIRY_DANGER_DAYS) return { label: `Vence en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`, className: 'text-red-600 bg-red-100 border-red-300', daysLeft };
-    if (daysLeft <= DOC_EXPIRY_WARN_DAYS) return { label: `Vence pronto (${daysLeft} días)`, className: 'text-amber-600 bg-amber-100 border-amber-300', daysLeft };
+    if (daysLeft < 0) return { label: 'Vencido', className: 'text-danger-text bg-danger/10 border-danger/30', daysLeft };
+    if (daysLeft <= DOC_EXPIRY_DANGER_DAYS) return { label: `Vence en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`, className: 'text-danger-text bg-danger/10 border-danger/30', daysLeft };
+    if (daysLeft <= DOC_EXPIRY_WARN_DAYS) return { label: `Vence pronto (${daysLeft} días)`, className: 'text-warning-text bg-warning/10 border-warning/30', daysLeft };
     return null;
 }
 

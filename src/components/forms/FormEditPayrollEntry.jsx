@@ -10,7 +10,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full h-10 px-3 bg-surface-card border border-divider hover:border-brand/40 focus:border-brand/50 focus:ring-4 focus:ring-brand/10 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full h-10 px-3 bg-surface-card border border-divider hover:border-brand/40 focus:border-brand/50 focus:ring-4 focus:ring-brand/10 rounded-[1rem] text-[16px] outline-none font-bold text-content transition-all duration-300 placeholder-content-3 placeholder:font-normal";
 
 const NocturnalLegalInfo = () => (
     <div className="relative group inline-flex items-center ml-1.5">

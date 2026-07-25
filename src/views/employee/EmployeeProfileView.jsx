@@ -222,7 +222,7 @@ const EmployeeProfileView = ({ openModal }) => {
                 <div className="w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden border-2 border-border-card shadow-md">
                     {emp.photo || emp.photo_url
                         ? <img src={emp.photo || emp.photo_url} className="w-full h-full object-cover" alt="" />
-                        : <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white">
+                        : <div className="w-full h-full bg-gradient-to-br from-chart-8 to-chart-8-text flex items-center justify-center text-white">
                             <User size={18} strokeWidth={1.8} />
                           </div>
                     }
@@ -405,7 +405,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     }[ev.type] : null;
                                     return (
                                         <div key={d.id} className={`flex flex-col items-center rounded-2xl p-2 transition-all duration-200 ${
-                                            isToday   ? 'bg-slate-800 shadow-md'
+                                            isToday   ? 'bg-chart-8 shadow-md'
                                             : evCfg   ? `${evCfg.light} border`
                                             : d.shift ? 'bg-surface-card border border-border-card'
                                                       : 'bg-surface-card-hover/80 border border-divider'
@@ -456,7 +456,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 />
                                 <button
                                     onClick={() => setShowTimelineFilter(v => !v)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-slate-800 text-white border-slate-800' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                 >
                                     <SlidersHorizontal size={10} strokeWidth={2.5} />
                                     Filtrar
@@ -492,7 +492,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex flex-wrap gap-1.5">
                                         <button
                                             onClick={() => setFilterType('')}
-                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-content-3 border-divider hover:border-divider'}`}
+                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8 text-white border-chart-8' : 'bg-white text-content-3 border-divider hover:border-divider'}`}
                                         >
                                             Todos
                                         </button>

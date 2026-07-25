@@ -494,7 +494,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                             Aplicar {autoQueue.length - autoRejected.size}
                                         </button>
                                     </div>
-                                    <div className="max-h-52 overflow-y-auto divide-y divide-slate-50 bg-white">
+                                    <div className="max-h-52 overflow-y-auto divide-y divide-divider bg-white">
                                         {autoQueue.map(entry => {
                                             const rejected = autoRejected.has(entry.product.id);
                                             return (
@@ -710,7 +710,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 </p>
                                                 <p className="text-[10px] text-content-3">SRS no devolvió ningún candidato</p>
                                             </div>
-                                            <div className="max-h-48 overflow-y-auto divide-y divide-slate-50">
+                                            <div className="max-h-48 overflow-y-auto divide-y divide-divider">
                                                 {noMatchList.map(p => (
                                                     <div key={p.id} className="px-4 py-2.5 flex items-center gap-2">
                                                         <span className="text-[10px] text-content-3 font-mono shrink-0">#{p.id}</span>

@@ -326,7 +326,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     type="checkbox"
                                                     checked={!!d.sinRotulacion}
                                                     onChange={e => setExtraField(i, 'sinRotulacion', e.target.checked)}
-                                                    className="w-3.5 h-3.5 rounded accent-amber-500"
+                                                    className="w-3.5 h-3.5 rounded accent-warning"
                                                 />
                                                 <span className="text-[10px] text-content-3">Sin rotulación</span>
                                             </label>

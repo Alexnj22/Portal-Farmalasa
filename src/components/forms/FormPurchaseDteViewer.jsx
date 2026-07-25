@@ -367,7 +367,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                             <th className="text-right py-2">Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-divider">
                                         {items.map((it, i) => {
                                             const lineTotal = it.ventaGravada ?? it.ventaNoSuj ?? it.ventaExenta ?? ((it.cantidad || 0) * (it.precioUni || 0));
                                             return (

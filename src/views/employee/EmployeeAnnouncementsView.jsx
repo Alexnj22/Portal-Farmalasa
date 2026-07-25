@@ -342,8 +342,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                             style={{
                                 fontVariantNumeric: 'tabular-nums',
                                 background: isUrgent
-                                    ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                                    : 'linear-gradient(135deg, #0052CC, #6929C4)',
+                                    ? 'linear-gradient(135deg, var(--danger), color-mix(in srgb, var(--danger) 70%, black))'
+                                    : 'linear-gradient(135deg, var(--brand), var(--brand-purple))',
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                             }}
@@ -542,7 +542,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 className={`w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-[0.14em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 hover:-translate-y-0.5 hover:scale-[1.01] active:scale-[0.98] group/btn ${
                                     isUrgent
                                         ? 'bg-gradient-to-r from-danger to-chart-4 text-white shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)]'
-                                        : 'bg-gradient-to-r from-brand to-[#6929C4] text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'
+                                        : 'bg-gradient-to-r from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'
                                 }`}
                             >
                                 <CheckCircle2 size={19} strokeWidth={2.5} className="group-hover/btn:scale-110 transition-transform duration-200"/>

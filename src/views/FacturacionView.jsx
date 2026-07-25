@@ -384,9 +384,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes',   value: filtered.length, icon: AlertTriangle, grad: filtered.length > 0 ? 'from-danger to-chart-4' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-danger' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
-                    { label: 'CCF urgentes', value: ccfCount,        icon: AlertTriangle, grad: ccfCount > 0 ? 'from-danger to-danger/70' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',        bg: 'border-border-card bg-surface-card' },
-                    { label: 'Solventadas',  value: resolved.length, icon: CheckCircle2,  grad: resolved.length > 0 ? 'from-success to-chart-9' : 'from-slate-400 to-slate-300', text: resolved.length > 0 ? 'text-success' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
+                    { label: 'Pendientes',   value: filtered.length, icon: AlertTriangle, grad: filtered.length > 0 ? 'from-danger to-chart-4' : 'from-chart-8 to-chart-8/70', text: filtered.length > 0 ? 'text-danger' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
+                    { label: 'CCF urgentes', value: ccfCount,        icon: AlertTriangle, grad: ccfCount > 0 ? 'from-danger to-danger/70' : 'from-chart-8 to-chart-8/70',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',        bg: 'border-border-card bg-surface-card' },
+                    { label: 'Solventadas',  value: resolved.length, icon: CheckCircle2,  grad: resolved.length > 0 ? 'from-success to-chart-9' : 'from-chart-8 to-chart-8/70', text: resolved.length > 0 ? 'text-success' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
                 ].map(({ label, value, icon: Icon, grad, text, bg }) => (
                     <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
                         <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
@@ -839,8 +839,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-warning to-chart-4' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-warning-text' : 'text-content-3', bg: filtered.length > 0 ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-border-card' },
-                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-danger to-chart-4' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',           bg: ccfCount > 0 ? 'bg-danger/10 border-danger/30' : 'bg-surface-card-hover border-border-card' },
+                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-warning to-chart-4' : 'from-chart-8 to-chart-8/70', text: filtered.length > 0 ? 'text-warning-text' : 'text-content-3', bg: filtered.length > 0 ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-border-card' },
+                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-danger to-chart-4' : 'from-chart-8 to-chart-8/70',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',           bg: ccfCount > 0 ? 'bg-danger/10 border-danger/30' : 'bg-surface-card-hover border-border-card' },
                     { label: 'Días restantes', value: daysLeftLabel,  icon: History,        grad: daysLeftGrad, text: daysLeftText, bg: daysLeftBg },
                 ].map(({ label, value, icon: Icon, grad, text, bg }) => (
                     <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
@@ -1254,10 +1254,10 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Saltos',       value: gaps.length,         icon: History,       grad: gaps.length > 0 ? 'from-chart-4 to-warning' : 'from-slate-400 to-slate-300',           text: gaps.length > 0 ? 'text-chart-4-text' : 'text-content-3' },
+                    { label: 'Saltos',       value: gaps.length,         icon: History,       grad: gaps.length > 0 ? 'from-chart-4 to-warning' : 'from-chart-8 to-chart-8/70',           text: gaps.length > 0 ? 'text-chart-4-text' : 'text-content-3' },
                     { label: 'Sin resolver', value: pendingGaps.length,  icon: AlertTriangle, grad: pendingGaps.length > 0 ? 'from-danger to-chart-4' : 'from-success to-chart-9',     text: pendingGaps.length > 0 ? 'text-danger' : 'text-success' },
-                    { label: 'Solventados',  value: resolvedGaps.length, icon: CheckCircle2,  grad: resolvedGaps.length > 0 ? 'from-success to-chart-9' : 'from-slate-400 to-slate-300',   text: resolvedGaps.length > 0 ? 'text-success' : 'text-content-3' },
-                    { label: 'Campos nulos', value: activeNulls.length,  icon: AlertTriangle, grad: activeNulls.length > 0 ? 'from-danger to-chart-6' : 'from-slate-400 to-slate-300',        text: activeNulls.length > 0 ? 'text-danger' : 'text-content-3' },
+                    { label: 'Solventados',  value: resolvedGaps.length, icon: CheckCircle2,  grad: resolvedGaps.length > 0 ? 'from-success to-chart-9' : 'from-chart-8 to-chart-8/70',   text: resolvedGaps.length > 0 ? 'text-success' : 'text-content-3' },
+                    { label: 'Campos nulos', value: activeNulls.length,  icon: AlertTriangle, grad: activeNulls.length > 0 ? 'from-danger to-chart-6' : 'from-chart-8 to-chart-8/70',        text: activeNulls.length > 0 ? 'text-danger' : 'text-content-3' },
                 ].map(({ label, value, icon: Icon, grad, text }) => (
                     <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-card bg-surface-card">
                         <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
@@ -2165,7 +2165,7 @@ export default function FacturacionView() {
 
                 <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
+                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-chart-8 hover:opacity-90 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
                     <ExternalLink size={12} /> Admin Facturas
                 </a>
 

@@ -13,6 +13,7 @@ import { useToastStore } from "../store/toastStore";
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from '../components/common/LiquidSelect';
+import TimePicker12 from '../components/common/TimePicker12';
 import {
     fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
     closeQuincenaTimesheets, fetchEmployeeExceptions,
@@ -368,9 +369,9 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             </p>
             <div className="grid grid-cols-2 gap-2">
               <LiquidSelect value={newType} onChange={setNewType} options={availablePunchTypes} placeholder="Tipo" compact clearable={false} />
-              <input
-                type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
-                className="bg-white border border-black/[0.09] rounded-2xl px-3 py-2 text-[16px] font-bold text-content focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all"
+              <TimePicker12
+                value={newTime} onChange={setNewTime}
+                className="bg-white border border-black/[0.09] rounded-2xl"
               />
             </div>
             <textarea
@@ -874,7 +875,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               <React.Fragment key={dateStr}>
                 {isMonday && idx > 0 && (
                   <div className="flex items-center gap-2 pt-1">
-                    <div className="h-px flex-1 bg-gradient-to-r from-slate-200/60 to-transparent" />
+                    <div className="h-px flex-1 bg-gradient-to-r from-divider to-transparent" />
                     <span className="text-[7px] font-black uppercase tracking-[0.2em] text-content-3">nueva semana</span>
                     <div className="h-px w-8 bg-divider" />
                   </div>
@@ -1327,7 +1328,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               </span>
               <span className="ml-auto bg-chart-3 text-white text-[9px] font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
             </div>
-            <div className="divide-y divide-violet-200/40">
+            <div className="divide-y divide-chart-3/20">
               {shiftExceptions.map(req => {
                 const meta = req.metadata || {};
                 const emp = employees.find(e => String(e.id) === String(req.employee_id));
@@ -1352,11 +1353,11 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                     </div>
                     {isEditing ? (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)}
-                          className="bg-surface-card border border-chart-3/40 rounded-xl px-3 py-1.5 text-sm font-bold text-chart-3-text outline-none focus:border-chart-3" />
+                        <TimePicker12 value={editStart} onChange={setEditStart}
+                          className="bg-surface-card border border-chart-3/40 rounded-xl" />
                         <span className="text-content-3 text-xs">–</span>
-                        <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)}
-                          className="bg-surface-card border border-chart-3/40 rounded-xl px-3 py-1.5 text-sm font-bold text-chart-3-text outline-none focus:border-chart-3" />
+                        <TimePicker12 value={editEnd} onChange={setEditEnd}
+                          className="bg-surface-card border border-chart-3/40 rounded-xl" />
                         <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}
                           className="bg-success hover:bg-success-hover text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
                           {isBusy ? '…' : 'Aplicar'}
@@ -1449,7 +1450,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                             {branchEmployees.length} empleado{branchEmployees.length !== 1 ? 'es' : ''}
                           </p>
                         </div>
-                        <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
+                        <div className="flex-1 h-px bg-gradient-to-r from-divider to-transparent" />
                         {bReg > 0 && (
                           <span className="text-[11px] font-black text-content-3 tabular-nums shrink-0">{bReg.toFixed(1)}h regulares</span>
                         )}

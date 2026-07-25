@@ -8,7 +8,10 @@ import GlassViewLayout from '../../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidModal from '../../components/common/LiquidModal';
+import ConfirmModal from '../../components/common/ConfirmModal';
+import PromptModal from '../../components/common/PromptModal';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -346,7 +349,7 @@ function EditLoteModal({ item, onClose, onSave }) {
                 </div>
                 <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
-                    <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full text-[16px] bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <LiquidDatePicker value={fecha} onChange={setFecha} />
                 </div>
                 <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-[11px] font-bold text-white bg-chart-9 rounded-xl hover:bg-chart-9/80 disabled:opacity-50 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección
@@ -390,6 +393,8 @@ export default function ConteoDetailView() {
     const [expanded, setExpanded] = useState({});
     const [itemsByProduct, setItemsByProduct] = useState({});
     const [loadingExpand, setLoadingExpand] = useState({});
+    const [confirmFinalizarOpen, setConfirmFinalizarOpen] = useState(false);
+    const [promptAprobarOpen, setPromptAprobarOpen] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -478,8 +483,9 @@ export default function ConteoDetailView() {
         showToast('Lote corregido', 'Se actualizó la etiqueta del renglón', 'success');
     };
 
-    const handleFinalizar = async () => {
-        if (!window.confirm('¿Finalizar el conteo? Los ítems sin contar quedarán marcados como pendientes y ya no se podrán editar cantidades.')) return;
+    const handleFinalizar = () => setConfirmFinalizarOpen(true);
+
+    const confirmFinalizar = async () => {
         setBusy(true);
         try {
             await finalizarConteoInventario(id);
@@ -489,11 +495,13 @@ export default function ConteoDetailView() {
             showToast('Error', err.message, 'error');
         } finally {
             setBusy(false);
+            setConfirmFinalizarOpen(false);
         }
     };
 
-    const handleAprobar = async () => {
-        const nota = window.prompt('Nota de aprobación (opcional):', '') ?? '';
+    const handleAprobar = () => setPromptAprobarOpen(true);
+
+    const confirmAprobar = async (nota) => {
         setBusy(true);
         try {
             await aprobarConteoInventario(id, nota);
@@ -503,6 +511,7 @@ export default function ConteoDetailView() {
             showToast('Error', err.message, 'error');
         } finally {
             setBusy(false);
+            setPromptAprobarOpen(false);
         }
     };
 
@@ -682,6 +691,30 @@ export default function ConteoDetailView() {
                 onClose={() => setEditLoteItem(null)}
                 onSave={(itemId, payload) => handleEditLote(itemId, payload, editLoteItem?.erp_product_id)}
             />
+
+            <ConfirmModal
+                isOpen={confirmFinalizarOpen}
+                onClose={() => setConfirmFinalizarOpen(false)}
+                onConfirm={confirmFinalizar}
+                title="Finalizar Conteo"
+                message="¿Finalizar el conteo? Los ítems sin contar quedarán marcados como pendientes y ya no se podrán editar cantidades."
+                confirmText="Finalizar"
+                cancelText="Cancelar"
+                isProcessing={busy}
+                isDestructive={false}
+            />
+
+            <PromptModal
+                isOpen={promptAprobarOpen}
+                onClose={() => setPromptAprobarOpen(false)}
+                onConfirm={confirmAprobar}
+                title="Aprobar Conteo"
+                message="Queda cerrado y con firma auditable."
+                placeholder="Nota de aprobación (opcional)"
+                confirmText="Aprobar"
+                cancelText="Cancelar"
+                isProcessing={busy}
+            />
         </GlassViewLayout>
     );
 }
@@ -798,7 +831,9 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
             <div className="flex items-center gap-2">
                 <div>
                     <label className="text-[9px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Vencimiento</label>
-                    <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} disabled={lote !== '__OTRO__'} className="text-[16px] bg-white border border-divider rounded-xl px-3 py-2 outline-none focus:border-chart-9 disabled:bg-surface-card-hover disabled:text-content-3" />
+                    <div className={lote !== '__OTRO__' ? 'opacity-50 pointer-events-none' : ''}>
+                        <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
+                    </div>
                 </div>
                 <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold text-white bg-chart-9 rounded-xl hover:bg-chart-9/80 disabled:opacity-40 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo

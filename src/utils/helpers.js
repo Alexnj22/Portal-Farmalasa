@@ -166,37 +166,37 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
     };
 };
 
-export const getTodayAttendanceStatus = (emp, shifts) => { 
-    if (!emp) return { status: 'UNKNOWN', label: 'Desconocido', color: 'bg-gray-100 text-gray-500 border-gray-200' };
-    
-    const todayStr = toLocalISO(new Date()); 
+export const getTodayAttendanceStatus = (emp, shifts) => {
+    if (!emp) return { status: 'UNKNOWN', label: 'Desconocido', color: 'bg-surface-card-hover text-content-3 border-divider' };
+
+    const todayStr = toLocalISO(new Date());
     const todayConfig = getTodayScheduleConfig(emp, shifts);
     const effectiveStatus = getEffectiveStatus(emp);
 
     if (effectiveStatus !== 'Activo' && effectiveStatus !== 'En Apoyo') {
-        return { status: 'OTHER', label: effectiveStatus, color: 'bg-purple-100 text-purple-700 border-purple-200' };
+        return { status: 'OTHER', label: effectiveStatus, color: 'bg-chart-3/10 text-chart-3-text border-chart-3/30' };
     }
-    
-    if (todayConfig.isOffDay) return { status: 'OFF', label: 'Día Libre', color: 'bg-gray-100 text-gray-500 border-gray-200' };
-    
-    const p = (emp.attendance || []).filter(a => a.timestamp?.startsWith(todayStr)); 
-    
-    if (p.length === 0) return { status: 'ABSENT', label: 'Sin Marcar', color: 'bg-gray-100 text-gray-500 border-gray-200' }; 
-    
-    const l = p[p.length - 1]; 
+
+    if (todayConfig.isOffDay) return { status: 'OFF', label: 'Día Libre', color: 'bg-surface-card-hover text-content-3 border-divider' };
+
+    const p = (emp.attendance || []).filter(a => a.timestamp?.startsWith(todayStr));
+
+    if (p.length === 0) return { status: 'ABSENT', label: 'Sin Marcar', color: 'bg-surface-card-hover text-content-3 border-divider' };
+
+    const l = p[p.length - 1];
     const lastType = l.type || '';
-    
+
     if (lastType === 'IN' || lastType === 'IN_LUNCH' || lastType === 'IN_LACTATION' || lastType === 'IN_RETURN' || lastType === 'IN_EXTRA')
-        return { status: 'WORKING', label: 'En Labores', color: 'bg-green-100 text-green-700 border-green-200' };
+        return { status: 'WORKING', label: 'En Labores', color: 'bg-success/10 text-success-text border-success/30' };
     else if (lastType === 'OUT_LUNCH')
-        return { status: 'LUNCH', label: 'En Almuerzo', color: 'bg-orange-100 text-orange-700 border-orange-200' };
+        return { status: 'LUNCH', label: 'En Almuerzo', color: 'bg-warning/10 text-warning-text border-warning/30' };
     else if (lastType === 'OUT_LACTATION')
-        return { status: 'LACTATION', label: 'En Lactancia', color: 'bg-pink-100 text-pink-700 border-pink-200' };
+        return { status: 'LACTATION', label: 'En Lactancia', color: 'bg-chart-6/10 text-chart-6-text border-chart-6/30' };
     else if (lastType === 'OUT_BUSINESS')
         // 🚨 NUEVO: Etiqueta especial para Gestión Externa
-        return { status: 'BUSINESS', label: 'Gestión Externa', color: 'bg-blue-100 text-blue-700 border-blue-200' };
-    else 
-        return { status: 'OUT', label: 'Salida Laboral', color: 'bg-slate-100 text-slate-700 border-slate-200' }; 
+        return { status: 'BUSINESS', label: 'Gestión Externa', color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' };
+    else
+        return { status: 'OUT', label: 'Salida Laboral', color: 'bg-surface-card-hover text-content-3 border-divider' };
 };
 
 export const getScheduleForDate = (emp, dateStr, shifts) => {

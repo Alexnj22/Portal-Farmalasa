@@ -157,8 +157,8 @@ const PermissionGuard = ({ moduleKey, children }) => {
 const RouteLoadingFallback = () => (
     <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-40">
         <div className="relative bg-white/35 backdrop-blur-3xl border border-white/70 rounded-[2rem] px-10 py-8 shadow-[0_32px_80px_rgba(0,82,204,0.10),0_8px_32px_rgba(0,0,0,0.04),inset_0_2px_24px_rgba(255,255,255,0.85)] flex flex-col items-center gap-3">
-            <Loader2 className="text-[#0052CC] animate-spin" size={28} strokeWidth={2.5} />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Cargando…</span>
+            <Loader2 className="text-brand animate-spin" size={28} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-content-3">Cargando…</span>
         </div>
     </div>
 );
@@ -169,7 +169,7 @@ const RouteLoadingFallback = () => (
 // más cercano al suspender, no solo el componente lazy).
 const ContentLoadingFallback = () => (
     <div className="w-full h-full flex items-center justify-center">
-        <Loader2 className="text-[#0052CC] animate-spin" size={28} strokeWidth={2.5} />
+        <Loader2 className="text-brand animate-spin" size={28} strokeWidth={2.5} />
     </div>
 );
 
@@ -483,27 +483,27 @@ function MainApp() {
 
                         {/* Brand text */}
                         <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-[21px] font-black text-slate-800 tracking-tight leading-none">Portal Farmalasa</span>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#0052CC]/60">Sistema de Gestión</span>
+                            <span className="text-[21px] font-black text-content tracking-tight leading-none">Portal Farmalasa</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand/60">Sistema de Gestión</span>
                         </div>
 
                         {/* Animated dots */}
                         <div className="flex items-center gap-2">
                             {[0, 1, 2, 3].map(i => (
                                 <div key={i}
-                                    className="w-1.5 h-1.5 rounded-full bg-[#0052CC]/40 animate-bounce"
+                                    className="w-1.5 h-1.5 rounded-full bg-brand/40 animate-bounce"
                                     style={{ animationDelay: `${i * 0.14}s`, animationDuration: '0.9s' }}
                                 />
                             ))}
                         </div>
 
                         {/* Status */}
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 -mt-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-content-3 -mt-2">
                             Verificando sesión...
                         </span>
 
                         {/* Shimmer line bottom */}
-                        <div className="absolute bottom-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#0052CC]/25 to-transparent" />
+                        <div className="absolute bottom-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-brand/25 to-transparent" />
                     </div>
                 </div>
             </div>
@@ -757,10 +757,10 @@ const GlobalBackground = () => (
     // se vea como continuación del app y no un recuadro blanco cortado. En
     // standalone/desktop 100lvh == viewport, sin cambio.
     <div className="fixed top-0 left-0 right-0 w-full h-[100vh] z-0 pointer-events-none overflow-hidden" style={{ height: '100lvh' }}>
-        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#0052CC]/25 rounded-full filter blur-[100px] animate-ambient-drift" />
-        <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#6929C4]/25 rounded-full filter blur-[100px] animate-ambient-drift-reverse" />
+        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-brand/25 rounded-full filter blur-[100px] animate-ambient-drift" />
+        <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-brand-purple/25 rounded-full filter blur-[100px] animate-ambient-drift-reverse" />
         <div
-            className="absolute bottom-[-20%] left-[20%] w-[70vw] h-[70vw] bg-[#12B76A]/15 rounded-full filter blur-[120px] animate-ambient-drift"
+            className="absolute bottom-[-20%] left-[20%] w-[70vw] h-[70vw] bg-success/15 rounded-full filter blur-[120px] animate-ambient-drift"
             style={{ animationDelay: "3s" }}
         />
     </div>

@@ -77,7 +77,7 @@ const OrphanObjectsView = () => {
     return (
         <GlassViewLayout icon={Ghost} title="Objetos Huérfanos" filtersContent={filtersContent}>
             <div className="p-4 md:p-6">
-                <div className="mb-4 px-3 py-2 rounded-xl bg-slate-800/6 border border-divider">
+                <div className="mb-4 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                     <p className="text-[11px] text-content-2 font-medium leading-snug">
                         Tablero de seguimiento de candidatos a código muerto (componentes/funciones/edge
                         functions sin caller real). No es detección automática — cada fila se agrega vía

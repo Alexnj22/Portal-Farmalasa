@@ -21,10 +21,10 @@ const ScheduleChart = ({
                     </span>
                     {/* Legend inline */}
                     <div className="hidden md:flex items-center gap-2">
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#64748b]" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Muerta</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-brand" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Normal</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#F79009]" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Pico</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55]" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Crítica</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-muerta" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Muerta</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-normal" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Normal</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-pico" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Pico</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-critica" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Crítica</span></div>
                     </div>
                 </div>
 
@@ -59,8 +59,8 @@ const ScheduleChart = ({
             {/* Bars — flex-1, labels inside each bar */}
             <div className="flex items-end gap-[3px] flex-1 w-full relative overflow-visible">
                 <div className="absolute inset-0 flex flex-col justify-between opacity-15 pointer-events-none z-0">
-                    <div className="border-t border-dashed border-slate-400 w-full" />
-                    <div className="border-t border-dashed border-slate-400 w-full" />
+                    <div className="border-t border-dashed border-divider w-full" />
+                    <div className="border-t border-dashed border-divider w-full" />
                 </div>
 
                 {isLoadingSales ? (

@@ -419,7 +419,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {/* Ranking + urgency % badge — top-left, siempre visible */}
                                 {stat && !dashLoading && urgPct != null && urgPct > 0 && (
                                     <span className="absolute top-2 left-2 flex items-center gap-1 z-10">
-                                        <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none bg-slate-700 text-white">
+                                        <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none bg-chart-8 text-white">
                                             {urgRankMap[id]}
                                         </span>
                                         <span className={`min-w-[34px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none border ${urgBadgeCls}`}>

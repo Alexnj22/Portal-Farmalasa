@@ -824,7 +824,7 @@ export default function RecepcionModal({
                             </div>
                         )}
 
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-divider">
                             {extras.map((e, ei) => {
                                 const eOpts     = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
                                 const fRaw      = e.fQty * e.fPres;
@@ -889,7 +889,7 @@ export default function RecepcionModal({
                                             <div className="px-5 pb-2">
                                                 <input type="text" placeholder="Nota (opcional)…" value={e.nota}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
-                                                    className="w-full text-[16px] border border-brand/30 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-brand placeholder-slate-300"
+                                                    className="w-full text-[16px] border border-brand/30 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-brand placeholder-content-3"
                                                 />
                                             </div>
                                         )}
@@ -915,7 +915,7 @@ export default function RecepcionModal({
                                     setExtraDropCoords({ top: r.top, left: r.left, width: r.width });
                                 }
                             }}
-                            className="flex-1 text-[16px] bg-transparent focus:outline-none placeholder-indigo-300 text-content-2"
+                            className="flex-1 text-[16px] bg-transparent focus:outline-none placeholder-content-3 text-content-2"
                         />
                         {extraBusy
                             ? <Loader2 size={12} className="animate-spin text-brand shrink-0" />
@@ -1041,7 +1041,7 @@ export default function RecepcionModal({
                                     <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3" />
                                     <input ref={searchRef} type="text" placeholder="Buscar producto…"
                                         value={prodSearch} onChange={e => setProdSearch(e.target.value)}
-                                        className="w-full text-[16px] border border-brand/30 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-brand bg-brand/10 placeholder-slate-300"
+                                        className="w-full text-[16px] border border-brand/30 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-brand bg-brand/10 placeholder-content-3"
                                     />
                                     {prodSearch && (
                                         <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-3 hover:text-content-3">
@@ -1098,7 +1098,7 @@ export default function RecepcionModal({
                     <p className="text-center text-[12px] text-content-3 py-6">No se encontraron productos.</p>
                 )}
 
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-divider">
                     {visibleRows.map((r, rowIdx) => {
                         const erpFactor  = Number(r.factor) || 1;
                         const dispFactor = Number(r.dispatch_factor) || erpFactor;
@@ -1231,7 +1231,7 @@ export default function RecepcionModal({
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
                                             onKeyDown={e => e.key === 'Enter' && confirmProblema()}
-                                            className="flex-1 min-w-0 text-[16px] border border-chart-4/30 rounded-full px-3 py-1 focus:outline-none focus:border-chart-4 bg-white placeholder-slate-300"
+                                            className="flex-1 min-w-0 text-[16px] border border-chart-4/30 rounded-full px-3 py-1 focus:outline-none focus:border-chart-4 bg-white placeholder-content-3"
                                         />
                                         <button onClick={confirmProblema}
                                             className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-chart-4 text-white hover:bg-chart-4/80 transition-colors">

@@ -286,7 +286,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     // 🚨 MODO PRO 4: Fallback Skeleton en lugar de pantalla blanca (return null)
     if (!emp) return (
-        <div className="w-full h-[100dvh] flex items-center justify-center bg-[#E6F0FF]">
+        <div className="w-full h-[100dvh] flex items-center justify-center bg-surface-page">
             <div className="flex flex-col items-center gap-4">
                 <div className="w-24 h-24 skeleton rounded-full" />
                 <div className="h-4 w-40 skeleton rounded-full" />
@@ -774,7 +774,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <input autoFocus type="text" value={ausenciasSearch}
                                                             onChange={e => setAusenciasSearch(e.target.value)}
                                                             placeholder="Buscar..."
-                                                            className="flex-1 min-w-0 text-[16px] font-medium text-content-2 placeholder-slate-300 outline-none bg-transparent" />
+                                                            className="flex-1 min-w-0 text-[16px] font-medium text-content-2 placeholder-content-3 outline-none bg-transparent" />
                                                     )}
                                                 </div>
                                             </div>
@@ -867,7 +867,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-white rounded-xl shadow-xl z-[999] min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 transition-opacity duration-200 text-left">
                                                                     <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1.5">{ds}</p>
                                                                     {tooltipLines.map((item, li) => (
-                                                                        <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-slate-700' : ''}>
+                                                                        <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-white/10' : ''}>
                                                                             <div className="flex items-center justify-between gap-3">
                                                                                 <span className="text-[11px] font-black">{item.label}</span>
                                                                                 {item.hoursStr && <span className="text-[10px] font-bold text-warning whitespace-nowrap">{item.hoursStr}</span>}
@@ -1021,7 +1021,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                             
                                             <div className="bg-surface-card border border-border-card rounded-[2rem] overflow-hidden shadow-sm">
-                                                <div className="grid grid-cols-1 divide-y divide-slate-100/50">
+                                                <div className="grid grid-cols-1 divide-y divide-divider">
                                                     {scheduleData.map((dia, idx) => {
                                                         const isToday = dia.day === todayName; 
 
@@ -1162,7 +1162,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
         {resetResult && createPortal(
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setResetResult(null)} />
+                <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={() => setResetResult(null)} />
                 <div className="relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] overflow-hidden shadow-[var(--shadow-elevation-xl)]">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-success" />
                     <div className="p-6 sm:p-8 flex flex-col items-center relative z-10">
@@ -1200,7 +1200,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         {cancelModalRender && createPortal(
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                 <div
-                    className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${showCancelModal ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-300 ${showCancelModal ? 'opacity-100' : 'opacity-0'}`}
                     onClick={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : undefined}
                 />
                 <div className={`relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] overflow-hidden shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>

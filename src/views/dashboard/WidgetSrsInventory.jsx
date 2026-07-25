@@ -78,7 +78,7 @@ export default function WidgetSrsInventory() {
         <input
           type="text" value={query} onChange={e => handleInput(e.target.value)}
           placeholder="Buscar en Registro SRS..."
-          className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-chart-3 focus:ring-2 focus:ring-chart-3/10 transition-all"
+          className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-chart-3 focus:ring-2 focus:ring-chart-3/10 transition-all"
           spellCheck={false} autoComplete="off"
         />
         {query && (

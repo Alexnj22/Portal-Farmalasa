@@ -541,7 +541,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 {isExpanded && (
                                     <tr>
                                         <td colSpan={colCount} className="p-0 border-b border-chart-1/30">
-                                            <div className="bg-gradient-to-br from-chart-1/10 via-white/60 to-slate-50/30 px-10 py-3">
+                                            <div className="bg-gradient-to-br from-chart-1/10 via-white/60 to-divider px-10 py-3">
                                                 {expandLoading.has(key) ? (
                                                     <div className="flex items-center gap-2 text-content-3 py-2">
                                                         <Loader2 size={14} className="animate-spin" />

@@ -48,7 +48,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -648,7 +648,7 @@ const VacationPlanView = () => {
                         placeholder="Buscar empleado o sucursal…"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-slate-400 w-full"
+                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-content-3 w-full"
                     />
                     {searchTerm && (
                         <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors">
@@ -944,7 +944,7 @@ const VacationPlanView = () => {
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-50">
+                                        <tbody className="divide-y divide-divider">
                                             {Array.from({ length: 5 }).map((_, i) => (
                                                 <tr key={i} className="border-b border-black/[0.04]">
                                                     <td className="py-3 pr-4">
@@ -986,7 +986,7 @@ const VacationPlanView = () => {
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-50">
+                                        <tbody className="divide-y divide-divider">
                                             {filtered.map(p => {
                                                 const isEditing = editingPlan?.id === p.id;
                                                 const usedDays  = usedDaysByEmpId.get(String(p.employee_id)) || 0;

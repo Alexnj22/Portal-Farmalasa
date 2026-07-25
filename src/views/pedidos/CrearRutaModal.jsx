@@ -590,11 +590,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               <div className="max-h-[42vh] overflow-y-auto pr-1 -mr-1">
               <div className="relative">
                 {/* Línea vertical de fondo */}
-                <div className="absolute left-[13px] top-7 bottom-7 w-px bg-gradient-to-b from-slate-300 via-chart-3/30 to-slate-300" />
+                <div className="absolute left-[13px] top-7 bottom-7 w-px bg-gradient-to-b from-divider via-chart-3/30 to-divider" />
 
                 {/* Bodega (partida) */}
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-7 h-7 rounded-full bg-slate-800 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-10">
+                  <div className="w-7 h-7 rounded-full bg-chart-8 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-10">
                     <Warehouse size={11} className="text-white" />
                   </div>
                   <div className="flex-1 py-1">
@@ -747,7 +747,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-slate-800 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-10">
+                      <div className="w-7 h-7 rounded-full bg-chart-8 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-10">
                         <Warehouse size={11} className="text-white" />
                       </div>
                       <div className="flex-1 bg-surface-card-hover border border-divider rounded-xl px-3 py-2">

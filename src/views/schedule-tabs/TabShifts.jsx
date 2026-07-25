@@ -475,7 +475,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                 value={currentForm.name}
                                 onChange={e => setCurrentForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder={`Nombre personalizado (ej: ${autoName})`}
-                                className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-xl px-3 py-2.5 text-[16px] font-semibold text-content placeholder-slate-400 outline-none focus:border-brand/40 focus:bg-surface-card transition-all"
+                                className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-xl px-3 py-2.5 text-[16px] font-semibold text-content placeholder-content-3 outline-none focus:border-brand/40 focus:bg-surface-card transition-all"
                             />
                         </div>
 

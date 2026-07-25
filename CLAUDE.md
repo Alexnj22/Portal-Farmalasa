@@ -182,3 +182,10 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
 - Badges `es_antibiotico=true` → "Bajo Receta" (NUNCA "Abx")
 - Toda acción de usuario → `appendAuditLog` (staffStore → `audit_logs`)
 - Bumpar `APP_VERSION` en `src/version.js` en cada commit
+- **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
+  crudos, elementos nativos del navegador), correr `npm run gate:design`.**
+  Debe dar 0 hallazgos — las excepciones legítimas viven en
+  `scripts/design-gate.mjs` (const `EXCEPTIONS`) y en `DESIGN.md` §6/§14. Este
+  gate reemplaza los regex ad-hoc de sesiones anteriores que se perdían y
+  dejaban huecos reales sin detectar (ver `AUDITORIA-TEMA-2026-07.md` y
+  memoria `project_theme_audit_2026_07_22`).

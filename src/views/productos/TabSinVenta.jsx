@@ -277,7 +277,7 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-3',
           numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
         { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados',
-          activeBg: 'bg-surface-card-hover/80 border-slate-400 shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
+          activeBg: 'bg-surface-card-hover/80 border-chart-8 shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-2',
           numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
     ];

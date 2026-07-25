@@ -693,7 +693,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas(); loadActive();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-8 text-white hover:opacity-90 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Home size={9} />Base
                                                 </button>

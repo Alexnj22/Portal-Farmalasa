@@ -222,7 +222,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                 <button
                   onClick={handleVueltaBase}
                   disabled={busyRuta === 'vuelta'}
-                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-8 text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                 >
                   {busyRuta === 'vuelta' ? <Loader2 size={12} className="animate-spin" /> : <Home size={12} />}
                   Vuelta en base

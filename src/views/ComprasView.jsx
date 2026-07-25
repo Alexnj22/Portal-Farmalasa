@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShoppingCart, Package, ChevronDown, ChevronRight, Calendar, Users, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import LiquidSelect from '../components/common/LiquidSelect';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import {
     fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
     fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
@@ -99,7 +100,7 @@ function ItemsExpand({ receiptId }) {
                             <th className="text-center px-3 py-2 font-semibold text-content-3 hidden md:table-cell">Vencimiento</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100/70">
+                    <tbody className="divide-y divide-divider">
                         {items.map((it) => {
                             const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
                             return (
@@ -190,28 +191,12 @@ function TabFacturas({
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex items-center justify-end gap-3 rounded-2xl bg-surface-card border border-divider px-4 py-2 flex-wrap">
                 {/* Date start */}
-                <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-content-3" />
-                    <input
-                        type="date"
-                        value={dateStart}
-                        onChange={e => setDateStart(e.target.value)}
-                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
-                    />
-                </div>
+                <LiquidDatePicker value={dateStart} onChange={setDateStart} />
 
                 <div className="h-5 w-px bg-divider" />
 
                 {/* Date end */}
-                <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-content-3" />
-                    <input
-                        type="date"
-                        value={dateEnd}
-                        onChange={e => setDateEnd(e.target.value)}
-                        className="text-[16px] font-semibold text-content-2 bg-transparent border-none outline-none cursor-pointer"
-                    />
-                </div>
+                <LiquidDatePicker value={dateEnd} onChange={setDateEnd} />
 
                 <div className="h-5 w-px bg-divider" />
 

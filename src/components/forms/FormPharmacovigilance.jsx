@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { UploadCloud, Users, ShieldCheck, FileText, AlertCircle } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
+import AlertModal from '../common/AlertModal';
 
 const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
     const legalData = formData?.settings?.legal || {};
+    const [fileAlert, setFileAlert] = useState('');
 
     const possibleReferents = useMemo(() => {
         return employees.filter(emp => (emp.role || '').toUpperCase().includes('REFERENTE'));
@@ -116,8 +118,8 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                                 const f = e.target.files?.[0] || null;
                                 if (f) {
                                     const ALLOWED = ['application/pdf','image/jpeg','image/png','image/webp'];
-                                    if (!ALLOWED.includes(f.type)) { alert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
-                                    if (f.size > 10 * 1024 * 1024) { alert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
+                                    if (!ALLOWED.includes(f.type)) { setFileAlert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
+                                    if (f.size > 10 * 1024 * 1024) { setFileAlert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
                                 }
                                 updateLegalField('farmacovigilanciaAuthFile', f);
                             }}
@@ -139,6 +141,14 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                 </div>
 
             </div>
+
+            <AlertModal
+                isOpen={!!fileAlert}
+                onClose={() => setFileAlert('')}
+                type="error"
+                title="Archivo Inválido"
+                message={fileAlert}
+            />
         </div>
     );
 };

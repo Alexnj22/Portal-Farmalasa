@@ -13,6 +13,7 @@ import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import ViewTabBar from '../components/common/ViewTabBar';
 
 import { getLocalMonday, formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM } from '../utils/scheduleHelpers';
@@ -101,8 +102,7 @@ const HolidaysPanel = ({
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
-                            <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
-                                className="w-full bg-white border border-divider rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
+                            <LiquidDatePicker value={hDate} onChange={setHDate} />
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">

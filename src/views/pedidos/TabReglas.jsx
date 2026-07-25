@@ -17,7 +17,7 @@ import {
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
 
-const EXPAND_BG     = 'bg-gradient-to-br from-chart-1/10 via-white/50 to-slate-50/30';
+const EXPAND_BG     = 'bg-gradient-to-br from-chart-1/10 via-white/50 to-divider';
 const EXPAND_BORDER = 'border-chart-1/30';
 
 const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '', caja_especial: false };
@@ -50,7 +50,7 @@ function ruleTypeLabel(rule) {
 const presStyle = (tipo) => {
     const t = (tipo || '').toUpperCase();
     if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
-        return { Icon: Box,     bg: 'bg-slate-800', text: 'text-white', iconInactive: 'text-content-3' };
+        return { Icon: Box,     bg: 'bg-chart-8', text: 'text-white', iconInactive: 'text-content-3' };
     if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
         return { Icon: Layers,  bg: 'bg-chart-3', text: 'text-white', iconInactive: 'text-chart-3-text' };
     if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
@@ -260,8 +260,8 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         onClick={() => selectLabel(label)}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             vals.dispatch_label === label
-                                                ? 'bg-slate-800 border-slate-700 text-white shadow-md'
-                                                : 'bg-white border-divider text-content-3 hover:border-slate-400 hover:text-content-2'
+                                                ? 'bg-chart-8 border-chart-8 text-white shadow-md'
+                                                : 'bg-white border-divider text-content-3 hover:border-chart-8/50 hover:text-content-2'
                                         }`}
                                     >
                                         <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-content-3'} />

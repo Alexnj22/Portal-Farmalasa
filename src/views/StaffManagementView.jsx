@@ -46,6 +46,7 @@ import { shortEmployeeName } from '../utils/nameUtils';
 import { useToastStore } from '../store/toastStore';
 import { calcAge, MINOR_AGE } from '../utils/ageUtils';
 import PracticanteModal from '../components/practicantes/PracticanteModal';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -562,6 +563,8 @@ const StaffManagementView = ({
   const [activeStatFilter, setActiveStatFilter] = useState('ALL');
   const [showPracticanteModal, setShowPracticanteModal] = useState(false);
   const [editingPracticante, setEditingPracticante] = useState(null);
+  const [practicanteToDelete, setPracticanteToDelete] = useState(null);
+  const [isDeletingPracticante, setIsDeletingPracticante] = useState(false);
 
   const normalizedSearch = (searchTerm || '').trim();
 
@@ -750,15 +753,23 @@ const StaffManagementView = ({
     setShowPracticanteModal(true);
   }, []);
 
-  const handleDeletePracticante = useCallback(async (p) => {
-    if (!window.confirm(`¿Eliminar el registro de "${p.first_names} ${p.last_names}"? Esta acción no se puede deshacer.`)) return;
+  const handleDeletePracticante = useCallback((p) => {
+    setPracticanteToDelete(p);
+  }, []);
+
+  const confirmDeletePracticante = useCallback(async () => {
+    if (!practicanteToDelete) return;
+    setIsDeletingPracticante(true);
     try {
-      await deletePracticante(p.id);
-      useToastStore.getState().showToast('Eliminado', `${p.first_names} ${p.last_names}`, 'success');
+      await deletePracticante(practicanteToDelete.id);
+      useToastStore.getState().showToast('Eliminado', `${practicanteToDelete.first_names} ${practicanteToDelete.last_names}`, 'success');
+      setPracticanteToDelete(null);
     } catch (err) {
       useToastStore.getState().showToast('Error', err.message, 'error');
+    } finally {
+      setIsDeletingPracticante(false);
     }
-  }, [deletePracticante]);
+  }, [deletePracticante, practicanteToDelete]);
 
 
   // Justo tras un boot fresco (login, F5, pestaña nueva), `employees` arranca
@@ -1033,6 +1044,18 @@ const StaffManagementView = ({
         onClose={() => setShowPracticanteModal(false)}
         practicante={editingPracticante}
         onSaved={() => fetchPracticantes()}
+      />
+
+      <ConfirmModal
+        isOpen={!!practicanteToDelete}
+        onClose={() => setPracticanteToDelete(null)}
+        onConfirm={confirmDeletePracticante}
+        title="Eliminar Registro"
+        message={`¿Eliminar el registro de "${practicanteToDelete?.first_names} ${practicanteToDelete?.last_names}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isProcessing={isDeletingPracticante}
+        isDestructive={true}
       />
     </GlassViewLayout>
   );

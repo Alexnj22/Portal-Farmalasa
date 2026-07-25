@@ -492,7 +492,7 @@ const PayrollView = ({ openModal }) => {
                     <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                     <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-slate-400 w-full" />
+                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-content-3 w-full" />
                     {searchTerm && <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
                 </div>
                 <button onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}

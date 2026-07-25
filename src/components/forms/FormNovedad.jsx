@@ -7,6 +7,7 @@ import {
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
+import AlertModal from '../common/AlertModal';
 import { EVENT_TYPES } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
@@ -18,6 +19,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const { holidays = [], employees = [], roles = [] } = useStaffStore();
     const [permPickerKey, setPermPickerKey] = useState(0);
     const [codeConflict, setCodeConflict] = useState(null);
+    const [fileAlert, setFileAlert] = useState('');
     const now = useNowTick();
 
     const type = formData?.type;
@@ -530,7 +532,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>
                         <label className="flex items-center gap-2 cursor-pointer mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-white">
-                            <input type="checkbox" className="accent-red-500 w-4 h-4 cursor-pointer" checked={formData?.hasFiniquito || false} onChange={(e) => setFormData(prev => ({...prev, hasFiniquito: e.target.checked}))} />
+                            <input type="checkbox" className="accent-danger w-4 h-4 cursor-pointer" checked={formData?.hasFiniquito || false} onChange={(e) => setFormData(prev => ({...prev, hasFiniquito: e.target.checked}))} />
                             <span className="text-[10px] font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>
                         </label>
                     </div>
@@ -541,7 +543,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className={labelClasses}>Código Actual</label>
-                                <div className="h-[40px] bg-surface-card-hover/50 border border-divider rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-content-3 line-through decoration-slate-300 opacity-60">
+                                <div className="h-[40px] bg-surface-card-hover/50 border border-divider rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-content-3 line-through decoration-content-3 opacity-60">
                                     {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
                                 </div>
                             </div>
@@ -613,7 +615,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     win.document.close();
                                     setTimeout(() => win.print(), 600);
                                 }}
-                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97]">
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-chart-8 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97]">
                                 <Printer size={14} strokeWidth={2.5} /> Imprimir Nuevo Carné
                             </button>
                         )}
@@ -706,8 +708,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 const f = e.target.files?.[0];
                                 if (!f) return;
                                 const ALLOWED = ['application/pdf','image/jpeg','image/png','image/webp'];
-                                if (!ALLOWED.includes(f.type)) { alert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
-                                if (f.size > 10 * 1024 * 1024) { alert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
+                                if (!ALLOWED.includes(f.type)) { setFileAlert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
+                                if (f.size > 10 * 1024 * 1024) { setFileAlert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
                                 setFormData(prev => ({ ...prev, file: f }));
                             }} />
                         </label>
@@ -715,6 +717,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 </>
             )}
 
+            <AlertModal
+                isOpen={!!fileAlert}
+                onClose={() => setFileAlert('')}
+                type="error"
+                title="Archivo Inválido"
+                message={fileAlert}
+            />
         </div>
     );
 };

@@ -1221,7 +1221,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('shifts',
         <WidgetCard title="Estado de Turnos" icon={Clock} category="personal"
           action={getScope('dash_shifts') !== 'BRANCH' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
-          <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
+          <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
             {employees.length === 0 ? (
               <div className="px-4 py-3 space-y-5">
                 {[0,1,2].map(i => (
@@ -1276,7 +1276,7 @@ const DashboardView = ({ openModal }) => {
           }>
           <div className="px-5 pb-5 pt-3 overflow-visible h-full flex flex-col">
             <div className="relative flex-1 min-h-0">
-              <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-divider0 w-full"/><div className="border-t border-dashed border-divider0 w-full"/></div>
+              <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-divider w-full"/><div className="border-t border-dashed border-divider w-full"/></div>
               <div className="flex items-end gap-1.5 w-full h-full relative overflow-visible">
                 {!effectiveSalesBranch?(
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-[9px] font-black text-content-2/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
@@ -1392,7 +1392,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('absences',
         <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
           action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
-          <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
+          <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0" />
@@ -1433,7 +1433,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
           action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todas <ChevronRight size={11}/></button>}>
-          <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
+          <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0" />
@@ -1564,7 +1564,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('announcements',
         <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
           action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todos <ChevronRight size={11}/></button>}>
-          <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
+          <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
                 <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0 mt-0.5" />
@@ -1706,7 +1706,7 @@ const DashboardView = ({ openModal }) => {
                   <Skel className="h-2 w-14" />
                 </div>
               </div>
-              <div className="flex-1 divide-y divide-slate-50">
+              <div className="flex-1 divide-y divide-divider">
                 {[0,1,2,3].map(i => (
                   <div key={i} className="flex items-center gap-3 px-4 py-2.5">
                     <Skel className="w-6 h-6 rounded-lg flex-shrink-0" />
@@ -1731,7 +1731,7 @@ const DashboardView = ({ openModal }) => {
                 <p className="text-[9px] font-bold text-content-2 uppercase tracking-wide">monto total</p>
               </div>
             </div>
-            <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-slate-50">
+            <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
               {cotizStats.recent.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-content-3"><Receipt size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin cotizaciones activas</p></div>
               ) : cotizStats.recent.map(c => (
@@ -2147,7 +2147,7 @@ const DashboardView = ({ openModal }) => {
         <div style={{position:'fixed',top:calTooltip.y-10,left:calTooltip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
           className="bg-slate-900 text-white rounded-xl shadow-xl overflow-hidden max-w-[220px] min-w-[140px] animate-in fade-in zoom-in-95 duration-150">
           {calTooltip.holidays?.length>0&&(
-            <div className="px-3 py-2 border-b border-slate-700/60">
+            <div className="px-3 py-2 border-b border-white/10">
               {calTooltip.holidays.map((h,i)=>(
                 <div key={i} className="flex items-center gap-1.5 text-[11px] font-medium text-danger">
                   <span>📅</span><span>{h}</span>

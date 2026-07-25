@@ -664,7 +664,7 @@ export default function EncuestaView() {
                             {[
                                 { label: 'Participantes',  value: RESPUESTAS.length, sub: '100% del total', Icon: Users,    grad: 'from-chart-1 to-brand' },
                                 { label: 'Jefes',          value: RESPUESTAS.filter(r => r.isJefe).length,  sub: 'de sala / área', Icon: UserCheck, grad: 'from-chart-3 to-chart-6' },
-                                { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-slate-500 to-slate-400' },
+                                { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-chart-8 to-chart-8/70' },
                                 { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-chart-9 to-success' },
                             ].map(({ label, value, sub, Icon, grad }) => (
                                 <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-divider bg-white shadow-sm">
@@ -1302,7 +1302,7 @@ export default function EncuestaView() {
                                                                                 <div className={`px-4 py-2 flex items-center gap-2 ${c.bg}`}>
                                                                                     <span className={`text-[10px] font-black uppercase tracking-wider ${c.text}`}>{bloque.nombre}</span>
                                                                                 </div>
-                                                                                <div className="divide-y divide-slate-50">
+                                                                                <div className="divide-y divide-divider">
                                                                                     {bqs.map(p => {
                                                                                         const ans = row.r[p.idx];
                                                                                         const ABCD = ['A','B','C','D'];

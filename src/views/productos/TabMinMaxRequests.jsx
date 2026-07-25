@@ -31,7 +31,7 @@ function Avatar({ emp, name }) {
   const initial = (name || '?').trim().charAt(0).toUpperCase();
   if (photo) return <img src={photo} alt="" className="w-9 h-9 rounded-full object-cover border border-border-card shadow-sm shrink-0" />;
   return (
-    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 text-content-2 flex items-center justify-center text-[13px] font-black shrink-0 border border-border-card">
+    <div className="w-9 h-9 rounded-full bg-surface-card-hover text-content-2 flex items-center justify-center text-[13px] font-black shrink-0 border border-border-card">
       {initial}
     </div>
   );
@@ -118,7 +118,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         <div className="flex flex-col gap-2 mt-auto">
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} autoFocus
             placeholder="Motivo del rechazo (opcional)…"
-            className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-[16px] text-content-2 placeholder-slate-400 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
+            className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-[16px] text-content-2 placeholder-content-3 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
           <div className="flex items-center gap-2">
             <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
               className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-danger hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">

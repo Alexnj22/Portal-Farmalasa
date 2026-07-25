@@ -639,7 +639,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     return [
                         { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
-                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-content-2',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
+                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
                         { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
@@ -1094,7 +1094,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     return [
                         { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    pct: null,     sub: undefined },
                         { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
-                        { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
+                        { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
@@ -1129,7 +1129,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
                     const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
-                    const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-white/40 to-slate-50/20';
+                    const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-white/40 to-divider';
                     const expandBorder = 'border-chart-1/30';
                     const cardNormal   = 'bg-surface-card border-border-card';
                     const cardCross    = 'bg-warning/10 border-warning/30';
@@ -1811,7 +1811,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-success to-chart-9',  text: 'text-success-text', pct: null,        sub: undefined },
                         { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-warning to-chart-7',  text: 'text-warning-text',   pct: null,        sub: undefined },
                         ...(hiddenCount > 0 || showHidden ? [
-                            { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-slate-500 to-slate-400', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
+                            { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-chart-8 to-chart-8/70', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
                         ] : []),
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
@@ -1869,7 +1869,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
                                         className={isExpanded ? 'bg-chart-1/10' : ''}>
                                         <DataCell className="text-[11px] font-bold">
-                                            {globalIdx === 0 ? <Star size={15} className="text-chart-7 fill-yellow-400" />
+                                            {globalIdx === 0 ? <Star size={15} className="text-chart-7 fill-chart-7" />
                                                 : <span className="text-content-3">{globalIdx + 1}</span>}
                                         </DataCell>
                                         <DataCell className="max-w-[220px]">
@@ -1989,7 +1989,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </DataCell>
                                     </DataRow>
                                     {isExpanded && !privacyMode && (
-                                        <tr className="bg-gradient-to-b from-chart-1/10 to-slate-50/10">
+                                        <tr className="bg-gradient-to-b from-chart-1/10 to-divider">
                                             <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
@@ -2045,7 +2045,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                                                     {/* Branch rotation */}
                                                                     {showBranch && (
-                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
+                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-divider p-4 shadow-sm">
                                                                             <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
                                                                             <div className="space-y-2.5">
                                                                                 {branchAgg.entries.map(([bid, neto], ci) => {
@@ -2075,7 +2075,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                                     {/* Trend */}
                                                                     {showTrend && (
-                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
+                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-divider p-4 shadow-sm">
                                                                             <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
                                                                             <div className="flex items-end gap-1.5" style={{ height: 80 }}>
                                                                                 {drillMonthly.map((m, i) => {
@@ -2200,7 +2200,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <DH col="neto_display"     label="Total" right />
                                                                                 </tr>
                                                                             </thead>
-                                                                            <tbody className="divide-y divide-slate-100">
+                                                                            <tbody className="divide-y divide-divider">
                                                                                 {paginatedDrill.map((line, li) => {
                                                                                     const emp        = employees?.find(e => e.code === line.cod_vendedor);
                                                                                     const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
@@ -2398,7 +2398,7 @@ export default function VentasView() {
                 <button type="button" onClick={() => setPrivacyMode(v => !v)}
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode
-                            ? 'bg-slate-700 text-white border-slate-700 shadow-[var(--shadow-elevation-xl)]'
+                            ? 'bg-chart-8 text-white border-chart-8 shadow-[var(--shadow-elevation-xl)]'
                             : 'bg-surface-card text-content-3 border-border-card hover:bg-white hover:shadow-md hover:text-content-2'
                     }`}>
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}

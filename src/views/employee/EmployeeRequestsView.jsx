@@ -920,7 +920,7 @@ const EmployeeRequestsView = () => {
                             value={payload.amount || ''}
                             onChange={e => setPayload(prev => ({ ...prev, amount: e.target.value }))}
                             placeholder="0.00"
-                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 transition-all duration-300 placeholder-slate-300"
+                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 transition-all duration-300 placeholder-content-3"
                         />
                     </div>
                 </div>
@@ -983,7 +983,7 @@ const EmployeeRequestsView = () => {
                                 value={payload.days || ''}
                                 onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
                                 placeholder="Ej. 3"
-                                className="w-full py-2.5 px-4 bg-white border border-divider focus:bg-white focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-slate-300 h-10"
+                                className="w-full py-2.5 px-4 bg-white border border-divider focus:bg-white focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
                             />
                         </div>
                     </div>
@@ -1181,7 +1181,7 @@ const EmployeeRequestsView = () => {
                                     onChange={e => { setFormNote(e.target.value); if (error) setError(''); }}
                                     rows={4}
                                     placeholder="Describe tu solicitud..."
-                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
+                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
                                     disabled={isSubmitting}
                                 />
                             </div>

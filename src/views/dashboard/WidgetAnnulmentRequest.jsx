@@ -87,7 +87,7 @@ function VendorAvatar({ employee, size = 6 }) {
   if (employee.photo || employee.photo_url)
     return <div className={base}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
   return (
-    <div className={`${base} bg-gradient-to-br from-slate-200 to-slate-300`}>
+    <div className={`${base} bg-surface-card-hover`}>
       <span className="text-content-2 font-black text-[10px] leading-none">{employee.name?.charAt(0)}</span>
     </div>
   );
@@ -177,7 +177,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Info 2 columnas compacta */}
         <div className="rounded-2xl border border-divider bg-white overflow-hidden shrink-0">
-          <div className="grid grid-cols-2 divide-x divide-slate-50">
+          <div className="grid grid-cols-2 divide-x divide-divider">
             <div>
               {[
                 { label: 'Tipo Doc.',     value: inv.tipo_documento || '—' },
@@ -394,7 +394,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             </div>
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={ccfAck} onChange={e => setCcfAck(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded accent-red-500 shrink-0" />
+                className="mt-0.5 w-4 h-4 rounded accent-danger shrink-0" />
               <span className="text-[11px] font-black text-danger-text">Entiendo y confirmo que tengo autorización para solicitarlo</span>
             </label>
           </div>
@@ -426,7 +426,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
-            className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:ring-2 transition-all resize-none ${
+            className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:ring-2 transition-all resize-none ${
               commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger focus:ring-danger/20' : 'border-divider focus:border-brand focus:ring-brand/10'
             }`}
           />
@@ -515,7 +515,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica el motivo del cambio..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
@@ -631,7 +631,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe reasignar esta venta..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
@@ -725,7 +725,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-divider">
           <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
               <span className="text-content-2 font-black text-[11px] leading-none">{(inv.cliente || '?').charAt(0)}</span>
             </div>
             <p className="text-[13px] font-black text-content-2 truncate">{inv.cliente || 'Sin nombre'}</p>
@@ -743,7 +743,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
               type="text" value={query}
               onChange={e => { setQuery(e.target.value); setNewClient(null); }}
               placeholder="Nombre, NIT, DUI o teléfono..."
-              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
+              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
               spellCheck={false}
             />
             {query && (
@@ -800,7 +800,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe cambiar el cliente..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
@@ -939,7 +939,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cliente, vendedor, factura..."
-            className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
+            className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
             spellCheck={false}
           />
           {search && (

@@ -19,7 +19,7 @@ test.describe('Login', () => {
         await page.locator('button[type="submit"]').first().click();
 
         await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
-        await expect(page.getByText('Dashboard').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText('Inicio').first()).toBeVisible({ timeout: 15_000 });
     });
 
     test('login por carné (lector físico simulado) entra al portal', async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe('Login', () => {
         await page.keyboard.press('Enter');
 
         await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
-        await expect(page.getByText('Dashboard').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText('Inicio').first()).toBeVisible({ timeout: 15_000 });
     });
 });
 
@@ -46,10 +46,10 @@ test.describe('Flujos autenticados', () => {
         await page.locator('#username').fill(E2E_USER);
         await page.locator('#password').fill(E2E_PASSWORD);
         await page.locator('button[type="submit"]').first().click();
-        await expect(page.getByText('Dashboard').first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText('Inicio').first()).toBeVisible({ timeout: 15_000 });
     });
 
-    test('Dashboard carga sin errores', async ({ page }) => {
+    test('Inicio carga sin errores', async ({ page }) => {
         await expect(page.getByText('Empleados activos')).toBeVisible({ timeout: 15_000 });
     });
 
@@ -64,10 +64,12 @@ test.describe('Flujos autenticados', () => {
         // pueden verse vacíos y guardarse como NULL. Este smoke no fuerza la
         // ventana de carrera exacta, pero confirma el síntoma que dejaría: el
         // campo DUI debe llegar poblado, nunca vacío, al abrir el modal.
-        // "Personal" es un grupo colapsable de sidebar SOLO si el rol tiene ≥2
-        // módulos visibles ahí (Listado + Nómina); con un solo módulo visible
-        // (ej. el rol de la cuenta QA, que no ve Nómina) el sidebar aplana el
-        // grupo y "Listado" aparece directo, sin "Personal" para hacer clic.
+        // "Personal" es un grupo colapsable de sidebar solo si el rol tiene ≥2
+        // módulos visibles ahí (Listado + Nómina) — desde 2026-07-25 la cuenta
+        // QA tiene los 60 módulos (ver project_qa_ci_test_account), así que
+        // hoy SIEMPRE ve el grupo. El `if (isVisible)` se deja de todos modos:
+        // si en el futuro se vuelve a acotar el rol, este test sigue pasando
+        // sin cambios (aplanaría a "Listado" directo, igual que antes).
         const personalGroup = page.getByText('Personal', { exact: true });
         if (await personalGroup.isVisible({ timeout: 3_000 }).catch(() => false)) {
             await personalGroup.click();

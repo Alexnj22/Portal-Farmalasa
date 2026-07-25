@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.59.0';
+export const APP_VERSION = '2.59.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.59.1 — fix(test): corrige tests/e2e/smoke.spec.js — buscaba el texto
+// "Dashboard", renombrado a "Inicio" hace semanas (project_menu_
+// restructure_2026_07_22). El test nunca se había corrido con
+// E2E_PASSWORD real desde entonces, así que el fallo no se había
+// detectado. Hallado al hacer QA autenticado real de v2.58.0/v2.59.0 con
+// Playwright — la cuenta qa.test (role_id=33) recibió password nueva +
+// acceso a los 60 módulos (antes 3, minimalista a propósito para CI) con
+// OK explícito del usuario, específicamente para poder auditar
+// visualmente el portal completo en vez de solo por build/lint/gate.
+//
+// QA en vivo contra datos reales de producción confirmó sin regresiones:
+// ConfirmModal (Finalizar Conteo en ConteoDetailView), LiquidDatePicker
+// (filter pill de ComprasView), TimePicker12 (AttendanceAuditView),
+// colores de VentasView/StaffManagementView/PermissionsView — cero
+// errores de consola atribuibles a v2.58.0/v2.59.0. Ruido de consola no
+// relacionado (fotos de empleado bloqueadas por COEP — config
+// pre-existente para el editor de fotos con remoción de fondo; CORS al
+// probar contra localhost en vez del dominio real) documentado como
+// limitación de entorno, no como bug.
+//
+// Suite corregida (login por usuario + carné, Inicio, Pedidos, modal de
+// Editar Empleado) verificada en verde: 4 passed, 1 skipped (sin
+// E2E_CARNE_CODE, a propósito).
 
 // v2.59.0 — feat(a11y): consolida el patrón de validación "Requerido" +
 // corrige contraste real de --text-tertiary + auditoría de touch

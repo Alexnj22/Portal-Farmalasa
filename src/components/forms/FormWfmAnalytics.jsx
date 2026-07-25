@@ -129,10 +129,10 @@ const FormWfmAnalytics = ({ branches }) => {
         const applyColorsStatistical = (arr) => {
             return arr.map(item => {
                 const v = item.avgTransactions;
-                let fill = '#64748b';                // ≤4  muerta   — 1 persona ociosa
-                if      (v > 18) fill = '#FF2D55';  // >18 crítica  — 3+ personas
-                else if (v > 12) fill = '#F79009';  // >12 pico     — 2-3 personas
-                else if (v >  4) fill = '#0052CC';  // >4  normal   — 1-2 personas
+                let fill = 'var(--txvol-muerta)';                // ≤4  muerta   — 1 persona ociosa
+                if      (v > 18) fill = 'var(--txvol-critica)';  // >18 crítica  — 3+ personas
+                else if (v > 12) fill = 'var(--txvol-pico)';  // >12 pico     — 2-3 personas
+                else if (v >  4) fill = 'var(--txvol-normal)';  // >4  normal   — 1-2 personas
                 return { ...item, fill };
             });
         };

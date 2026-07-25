@@ -5,8 +5,36 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.58.0';
+export const APP_VERSION = '2.58.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.58.1 — fix(design): cierra los últimos huecos reales encontrados al
+// volver a preguntar "¿ya quedó TODO completo?" tras v2.58.0.
+//
+// Dos hallazgos, ninguno cubierto por el gate mecánico nuevo (que solo
+// mira className/style crudos, no strings de JS sueltos):
+// (1) DESIGN.md §22 "Known Dark Mode Blindspots" tenía 7 puntos, los 7
+// YA CORREGIDOS en el código real (LiquidModal/DataTable/LiquidToast/
+// LiquidSelect/AlertModal/ConfirmModal/ViewTabBar/GlassViewLayout) — el
+// doc nunca se actualizó, exactamente el mismo patrón de stale-doc que
+// motivó el gate en v2.58.0. Verificado línea por línea contra el código
+// y corregido.
+// (2) El semáforo de volumen de transacciones (--txvol-muerta/normal/
+// pico/critica, ya tokenizado en index.css) seguía duplicado a mano como
+// hex crudo en 4 archivos productores (DashboardView.jsx ×2 funciones,
+// SchedulesView.jsx, FormWfmAnalytics.jsx) + 1 consumidor que comparaba
+// contra esos mismos hex por igualdad de string (ScheduleCalendar.jsx,
+// 3 sitios) — invisible al gate porque son strings de JS, no clases
+// Tailwind. Migrados los 5 a `var(--txvol-*)`, consumidor incluido (si
+// solo se cambia el productor sin el consumidor, la comparación de
+// string se rompe en silencio — se migraron ambos lados juntos).
+//
+// Quedan documentados en DESIGN.md §6/§23 los hex de Recharts/canvas que
+// SÍ son excepción legítima (DashboardView.jsx Area/gradient,
+// TabExpenses.jsx BarChart, KpiCard prop) y el único ítem real que sigue
+// abierto sin ser color/nativo: 3 patrones de error de validación
+// coexistiendo (§23.7) — fuera del alcance de este gate, es
+// consolidación de patrón de componente, no tokens.
 
 // v2.58.0 — feat(design): gate mecánico permanente de estandarización
 // visual (scripts/design-gate.mjs, `npm run gate:design`) + cierre real de

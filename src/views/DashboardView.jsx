@@ -883,10 +883,10 @@ const DashboardView = ({ openModal }) => {
       const max = Math.max(...arr.map(o => o.avg), 1);
       return arr.map(item => {
         const txPerHr = item.avg / scale;
-        let color = '#64748b';                     // ≤4  muerta   — 1 persona ociosa
-        if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
-        else if (txPerHr > 12) color = '#F79009';  // >12 pico     — 2-3 personas
-        else if (txPerHr >  4) color = '#0052CC';  // >4  normal   — 1-2 personas
+        let color = 'var(--txvol-muerta)';                     // ≤4  muerta   — 1 persona ociosa
+        if      (txPerHr > 18) color = 'var(--txvol-critica)';  // >18 crítica  — 3+ personas
+        else if (txPerHr > 12) color = 'var(--txvol-pico)';  // >12 pico     — 2-3 personas
+        else if (txPerHr >  4) color = 'var(--txvol-normal)';  // >4  normal   — 1-2 personas
         const hi = item.avg / max;
         return { ...item, color, height: hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%' };
       });
@@ -1313,7 +1313,7 @@ const DashboardView = ({ openModal }) => {
               </div>
             </div>
             <div className="flex flex-wrap gap-3 mt-6 shrink-0">
-              {[['#64748b','Muerta'],['#0052CC','Normal'],['#F79009','Pico'],['#FF2D55','Crítica']].map(([c,l])=>(
+              {[['var(--txvol-muerta)','Muerta'],['var(--txvol-normal)','Normal'],['var(--txvol-pico)','Pico'],['var(--txvol-critica)','Crítica']].map(([c,l])=>(
                 <div key={l} className="flex items-center gap-1 text-[8px] font-bold text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
               ))}
             </div>
@@ -1337,7 +1337,7 @@ const DashboardView = ({ openModal }) => {
       const allH=Array.from(new Set([...Array.from({length:Math.max(closeH-openH+1,1)},(_,i)=>openH+i),...dH])).sort((a,z)=>a-z);
       const aV=dH.map(h=>hourMap[h]).filter(v=>v>0).sort((a,b)=>a-b);
       const maxV=aV[aV.length-1]??1;
-      const bC=v=>{if(!v)return'#64748b'; if(v>18)return'#FF2D55'; if(v>12)return'#F79009'; if(v>4)return'#0052CC'; return'#64748b';};
+      const bC=v=>{if(!v)return'var(--txvol-muerta)'; if(v>18)return'var(--txvol-critica)'; if(v>12)return'var(--txvol-pico)'; if(v>4)return'var(--txvol-normal)'; return'var(--txvol-muerta)';};
       const fS=v=>v>0?`$${v.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`:null;
       const hourSalesMap=bd?.hourSales||{};
       const nowH=new Date().getHours();

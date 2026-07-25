@@ -263,8 +263,15 @@ revisar" — fueron evaluadas y decididas explícitamente):
   técnica, no puede usar `var()` en ese contexto.
 - **Leaflet/Google Maps markers, Recharts/canvas, plantillas de impresión
   PDF** (`CotizacionesView.jsx`, `PayrollView.jsx`, `CrearRutaModal.jsx`,
-  `RutaMapModal.jsx`): colores hex directos, fuera del sistema de tokens
-  CSS por naturaleza de la tecnología.
+  `RutaMapModal.jsx`, props SVG de Recharts en `DashboardView.jsx`/
+  `TabExpenses.jsx` — `stopColor`/`stroke`/`fill`/`tick`): colores hex
+  directos, fuera del sistema de tokens CSS por naturaleza de la
+  tecnología. **Excepción — no exención**: si el hex duplica un valor que
+  YA tiene token (ej. el semáforo de volumen de transacciones), sigue
+  debiendo consumir el token vía `var(--token)` como string — ver el caso
+  de `DashboardView.jsx`/`SchedulesView.jsx`/`FormWfmAnalytics.jsx`/
+  `ScheduleCalendar.jsx` corregido 2026-07-25 (5 archivos duplicaban
+  `--txvol-*` a mano, sin sincronía si el token cambiaba).
 - **Tooltips flotantes dark** (mismo patrón que el punto anterior, ahora
   con la lista completa de archivos): `FormWfmAnalytics.jsx`,
   `FormEditPayrollEntry.jsx`, `SidebarSyncStatus.jsx`,
@@ -1200,23 +1207,26 @@ Before first APK build: update `versionCode` and `versionName` in `android/app/b
 
 ---
 
-## 22. Known Dark Mode Blindspots
+## 22. Known Dark Mode Blindspots — RESUELTO (verificado 2026-07-25)
 
-Components that hardcode light-only values or read a manually-passed `theme` prop instead of consuming CSS vars from ThemeContext. These do not automatically respond to `[data-theme="dark"]`:
+Esta sección quedó completamente stale: los 7 puntos que listaba ya
+estaban corregidos en el código (la migración real pasó, el doc nunca se
+actualizó — el mismo patrón que motivó el gate mecánico de §6). Verificado
+línea por línea contra el código actual el 2026-07-25:
 
-| Component | Blindspot |
+| Componente | Estado real verificado |
 |---|---|
-| `LiquidModal` inner glass layer | `bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%]` hardcoded |
-| `LiquidModal` shadow | Hardcoded light shadow |
-| `DataTable` `useTokens()` hook | All values hardcoded — entire table ignores theme |
-| `LiquidToast` | Reads `theme` from `toastStore`, not ThemeContext |
-| `LiquidSelect` | `isDark` is caller-provided via `theme` prop |
-| `AlertModal` | `theme` prop → manual `isDark = theme === 'dark'` |
-| `ConfirmModal` | `theme` prop → manual `isDark = theme === 'dark'` |
-| `ViewTabBar` pill | `bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%]` hardcoded |
-| `GlassViewLayout` body card | Hardcoded Tailwind classes, not `[data-surface="card"]` CSS var |
+| `LiquidModal` inner glass layer | Usa clase `modal-glass-layer`, color por tema definido en `index.css` (no hardcoded) |
+| `DataTable` `useTokens()` | Devuelve tokens reactivos (`bg-brand/[0.04]`, `text-content-3`, etc.), container con `data-surface="card"` |
+| `LiquidToast` | Solo lee `{isOpen,title,message,type,hideToast}` de `toastStore` — sin campo `theme`, 100% tokens |
+| `LiquidSelect` | Sin prop `isDark`/`theme` en absoluto |
+| `AlertModal` / `ConfirmModal` | Sin prop `theme`, sin `isDark` — 100% tokens (`text-danger`, `bg-brand`, `text-content-3`) |
+| `ViewTabBar` pill | Usa `data-surface="tab-track"`, mapeado a `--surface-tab-track` por tema en `index.css` |
+| `GlassViewLayout` body card | Ya usa `data-surface={transparentBody ? undefined : 'card'}` |
 
-These are the next wave of work to complete dark mode coverage.
+No queda ninguna acción pendiente de esta lista. Si aparece un blindspot
+real nuevo, documentarlo aquí con fecha — no reabrir esta tabla completa
+sin verificar cada punto contra el código primero.
 
 ---
 
@@ -1224,17 +1234,17 @@ These are the next wave of work to complete dark mode coverage.
 
 1. **Framer-motion** — present in 14 files. Standard is CSS keyframes + Tailwind transitions. No new framer-motion usage. Existing usages are noted per-component above.
 
-2. **Dark mode blindspots** — listed in §22. Migration path: replace `theme` prop logic with CSS custom property consumption everywhere.
+2. ~~Dark mode blindspots~~ — RESUELTO, ver §22.
 
-3. **GlassViewLayout body card** — uses hardcoded `bg-white/[0.12] backdrop-blur-[44px]` instead of `[data-surface="card"]`. Should adopt the attribute selector.
+3. ~~GlassViewLayout body card~~ — RESUELTO, ver §22 (ya usa `data-surface`).
 
 4. **ConfirmModal / AlertModal scroll lock** — both have own `document.body.style.overflow = 'hidden'` logic separate from ModalShell's scroll lock. Two scroll-lock paths exist. Acceptable given their `z-[99999]` requirement but worth unifying.
 
 5. **Sidebar always dark** — `data-surface="sidebar"` intentionally deviates from the theme system. The sidebar is always dark glass regardless of app theme. By design.
 
-6. **Hardcoded `#0052CC`** — brand blue appears as literal hex throughout. Should eventually become `--color-brand` CSS variable.
+6. **Hardcoded `#0052CC`** — ACOTADO (2026-07-25): la duplicación real (el semáforo de volumen de transacciones — `DashboardView.jsx`×2, `SchedulesView.jsx`, `FormWfmAnalytics.jsx`, consumido por `ScheduleCalendar.jsx`) se migró a `var(--txvol-normal)` etc. Lo que queda crudo son casos ya cubiertos por la excepción de Recharts/canvas (`DashboardView.jsx` Area/gradient SVG, `TabExpenses.jsx` BarChart SVG) y por la excepción de `KpiCard` (`color` prop, string-concat de alpha) — ambas ya documentadas en §6, no son deuda nueva.
 
-7. **Three validation error patterns coexist** — inline text (FormSetPassword), "Requerido" glow badge next to label (BranchTabInmueble), and banner with AlertCircle (FormRegisterPayment). The standard defined in §28 is: inline text under the field + global banner. The glow badge is deprecated.
+7. **Three validation error patterns coexist** — inline text (FormSetPassword), "Requerido" glow badge next to label (BranchTabInmueble), and banner with AlertCircle (FormRegisterPayment). The standard defined in §28 is: inline text under the field + global banner. The glow badge is deprecated. **Sigue sin resolver** (verificado 2026-07-25, los 3 patrones coexisten tal cual) — no es una violación de color/nativo, es consolidación de patrón de componente; queda fuera del alcance del gate mecánico de §6.
 
 ---
 

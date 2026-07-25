@@ -481,10 +481,10 @@ const SchedulesView = ({ openModal, setView }) => {
                     const max = Math.max(...arr.map(o => o.avg), 1);
                     return arr.map(item => {
                         const txPerHr = item.avg;
-                        let color = '#64748b';
-                        if      (txPerHr > 18) color = '#FF2D55';
-                        else if (txPerHr > 12) color = '#F79009';
-                        else if (txPerHr >  4) color = '#0052CC';
+                        let color = 'var(--txvol-muerta)';
+                        if      (txPerHr > 18) color = 'var(--txvol-critica)';
+                        else if (txPerHr > 12) color = 'var(--txvol-pico)';
+                        else if (txPerHr >  4) color = 'var(--txvol-normal)';
                         const hi = item.avg / max;
                         item.height = hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%';
                         item.color  = color;

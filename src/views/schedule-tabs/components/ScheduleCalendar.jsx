@@ -114,7 +114,7 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
             }
             if (minActiveInHour === 999) minActiveInHour = 0;
             
-            if (stat.color === '#FF2D55' && minActiveInHour < 3) {
+            if (stat.color === 'var(--txvol-critica)' && minActiveInHour < 3) {
                 rawGaps.push(h);
             }
         });
@@ -717,15 +717,15 @@ const ScheduleCalendar = memo(({
                                 let headerTextColor = "text-content-3";
                                 let dayTextColor = "text-content-3";
                                 
-                                if (dayColor === '#FF2D55') { // Crítico (Rojo)
+                                if (dayColor === 'var(--txvol-critica)') { // Crítico (Rojo)
                                     headerBg = "bg-danger/10 border-danger/30 shadow-[0_4px_15px_rgba(244,63,94,0.05)]";
                                     headerTextColor = "text-danger-text";
                                     dayTextColor = "text-danger-text";
-                                } else if (dayColor === '#F79009') { // Pico (Naranja)
+                                } else if (dayColor === 'var(--txvol-pico)') { // Pico (Naranja)
                                     headerBg = "bg-warning/10 border-warning/30 shadow-[var(--shadow-glow-warning)]";
                                     headerTextColor = "text-warning-text";
                                     dayTextColor = "text-warning";
-                                } else if (dayColor === '#0052CC') { // Normal (Azul)
+                                } else if (dayColor === 'var(--txvol-normal)') { // Normal (Azul)
                                     headerBg = "bg-chart-1/10 border-chart-1/30 shadow-[var(--shadow-glow-brand)]";
                                     headerTextColor = "text-brand";
                                     dayTextColor = "text-chart-1-text";

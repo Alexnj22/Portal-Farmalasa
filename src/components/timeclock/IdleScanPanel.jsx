@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScanBarcode, ShieldAlert, LogIn, Utensils, Baby, LogOut, XCircle, Bell } from 'lucide-react';
+import { ScanBarcode, ShieldAlert, XCircle, Bell } from 'lucide-react';
 
 // Anillo "esperando escaneo" — reemplaza el <input> que simulaba tecleo
 // manual. El carné ya no se escribe: el escáner alimenta un listener global
@@ -31,13 +31,6 @@ function ScanReadyRing({ specialMode }) {
     </div>
   );
 }
-
-const ACTION_ITEMS = [
-  { icon: LogIn, glassColor: 'bg-success/10 border-success/30 text-success', glow: 'group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] group-hover:bg-success/20', label: 'Entrada' },
-  { icon: Utensils, glassColor: 'bg-chart-4/10 border-chart-4/30 text-chart-4-text', glow: 'group-hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] group-hover:bg-chart-4/20', label: 'Almuerzo' },
-  { icon: Baby, glassColor: 'bg-chart-6/10 border-chart-6/30 text-chart-6', glow: 'group-hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:bg-chart-6/20', label: 'Lactancia' },
-  { icon: LogOut, glassColor: 'bg-slate-400/10 border-slate-400/30 text-slate-500', glow: 'group-hover:shadow-[0_0_20px_rgba(148,163,184,0.3)] group-hover:bg-slate-400/20', label: 'Salida' },
-];
 
 export default function IdleScanPanel({
   specialMode,
@@ -81,24 +74,6 @@ export default function IdleScanPanel({
           </div>
         </div>
 
-        {/* 🚨 COMPORTAMIENTO 1: LEYENDA POR DEFECTO (ADENTRO ABAJO)
-            - hidden: por defecto (celulares).
-            - sm:flex: aparece en pantallas anchas.
-            - [@media(max-height:800px)]:hidden: SE OCULTA si la pantalla es "bajita" para no aplastar el formulario.
-        */}
-        <div className="hidden sm:flex [@media(max-height:800px)]:hidden mt-4 pt-6 border-t border-white/10 w-full justify-between items-center px-1 shrink-0 animate-in fade-in">
-          {ACTION_ITEMS.map((item, index) => (
-            <div key={index} className="flex flex-col items-center gap-2 group cursor-default">
-              <div className={`w-12 h-12 rounded-[1rem] flex items-center justify-center border backdrop-blur-md transition-all duration-300 group-hover:-translate-y-1 ${item.glassColor} ${item.glow}`}>
-                <item.icon size={20} className="drop-shadow-md" strokeWidth={2} />
-              </div>
-              <span className="text-white/40 font-semibold text-[9px] uppercase tracking-[0.15em] group-hover:text-white transition-colors">
-                {item.label}
-              </span>
-            </div>
-          ))}
-        </div>
-
       </div>
 
       {/* Lunch alerts banner */}
@@ -126,24 +101,6 @@ export default function IdleScanPanel({
           </div>
         </div>
       )}
-
-      {/* 🚨 COMPORTAMIENTO 2: DOCK FLOTANTE DERECHO (PANTALLAS CHAPARRITAS PERO ANCHAS)
-          - hidden: por defecto.
-          - md:[@media(max-height:800px)]:flex : SOLO APARECE si la altura es menor a 800px Y el ancho es mayor a 768px (md).
-            (Si no le ponemos 'md', chocaría con la caja del centro en celulares acostados).
-      */}
-      <div className="hidden md:[@media(max-height:800px)]:flex flex-col gap-4 fixed right-6 top-1/2 -translate-y-1/2 bg-white/[0.02] backdrop-blur-3xl border border-white/5 p-4 rounded-[2rem] shadow-2xl animate-in slide-in-from-right-8 z-30">
-        {ACTION_ITEMS.map((item, index) => (
-          <div key={`side-${index}`} className="flex flex-col items-center gap-1.5 group cursor-default">
-            <div className={`w-12 h-12 rounded-[1rem] flex items-center justify-center border backdrop-blur-md transition-all duration-300 group-hover:-translate-x-1 ${item.glassColor} ${item.glow}`}>
-              <item.icon size={18} className="drop-shadow-md" strokeWidth={2} />
-            </div>
-            <span className="text-white/40 font-semibold text-[8px] uppercase tracking-[0.15em] group-hover:text-white transition-colors">
-              {item.label}
-            </span>
-          </div>
-        ))}
-      </div>
 
     </div>
   );

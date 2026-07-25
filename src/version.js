@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.1';
+export const APP_VERSION = '2.60.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.60.2 — chore(kiosk): quita los íconos decorativos Entrada/Almuerzo/
+// Lactancia/Salida de IdleScanPanel.jsx (leyenda inline + dock flotante
+// lateral) — a pedido del usuario: no eran un menú ni tenían acción real,
+// solo decoración visual copiada de un mockup anterior. ACTION_ITEMS y los
+// imports de íconos ahora sin uso (LogIn/Utensils/Baby/LogOut) eliminados.
+// La alerta real de almuerzo (banner con nombre + minutos de retraso,
+// alimentada por datos reales de turno) NO se tocó — es información real,
+// no decoración.
 
 // v2.60.1 — fix(kiosk): modo compacto bajo 800px de alto — el contenido
 // SIEMPRE debe verse completo, sin importar la resolución.

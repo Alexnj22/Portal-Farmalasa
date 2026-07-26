@@ -446,13 +446,12 @@ const EmployeeProfileView = ({ openModal }) => {
                                 <span className="text-[10px] font-black text-content-3 bg-surface-card-hover/80 border border-divider px-2.5 py-1 rounded-full">
                                     {visibleTimeline.length}/{timeline.length}
                                 </span>
-                                {/* Buscador — Tipo 2 (widget inline), ver DESIGN.md §24 */}
+                                {/* Buscador expandible — Tipo 2b (widget inline con filtro al lado), ver DESIGN.md §24 */}
                                 <SearchInput
+                                    expandable
                                     value={searchQuery}
                                     onChange={setSearchQuery}
                                     placeholder="Buscar…"
-                                    size="sm"
-                                    className="w-28 sm:w-36"
                                 />
                                 <button
                                     onClick={() => setShowTimelineFilter(v => !v)}

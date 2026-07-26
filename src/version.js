@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.0';
+export const APP_VERSION = '2.61.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.1 — fix(profile): migra el buscador de "Historial de Eventos"
+// (EmployeeProfileView.jsx) al modo `expandable` de SearchInput (v2.61.0).
+// Único otro uso real de SearchInput fuera del dashboard encontrado en
+// todo el proyecto — vivía apretado en un `w-28 sm:w-36` fijo compitiendo
+// con el badge de conteo y el botón "Filtrar" en la misma fila estrecha
+// de la card. Sin accentColor (no aplica CATEGORY_META fuera del
+// dashboard) — cae al gris neutro por default. Verificado en vivo:
+// crece hacia la izquierda, "Filtrar" y el badge quedan intactos a la
+// derecha, igual que en los widgets de Operación.
 
 // v2.61.0 — feat(dashboard): buscador expandible para widgets de Operación,
 // aprobado por mockup interactivo antes de implementar.

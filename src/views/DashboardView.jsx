@@ -288,9 +288,6 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
       <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
       {/* Glass shine */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
-      {/* Left category stripe */}
-      <div className="absolute left-0 top-5 bottom-5 w-[3px] rounded-r-full pointer-events-none"
-        style={{ background: cat.color, opacity: 0.55 }} />
       {/* Header */}
       <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-border-card shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
@@ -1101,17 +1098,20 @@ const DashboardView = ({ openModal }) => {
           transition: isActive ? 'opacity 0.12s' : 'opacity 0.2s',
           '--stagger-delay': `${staggerIdx * 45}ms`,
         }}
-        onPointerDown={isMobile ? (e) => handleLongPressStart(e, id) : undefined}
-        onPointerMove={isMobile ? handleLongPressMoveCancel : undefined}
-        onPointerUp={isMobile ? handleLongPressEnd : undefined}
-        onPointerCancel={isMobile ? handleLongPressEnd : undefined}
+        onPointerDown={isMobile && showConfig ? (e) => handleLongPressStart(e, id) : undefined}
+        onPointerMove={isMobile && showConfig ? handleLongPressMoveCancel : undefined}
+        onPointerUp={isMobile && showConfig ? handleLongPressEnd : undefined}
+        onPointerCancel={isMobile && showConfig ? handleLongPressEnd : undefined}
       >
-        {/* Grip handle — always visible on mobile, hover-only on desktop.
-            before:-inset-2.5 en mobile amplía la zona de toque a ~44px sin
-            agrandar la píldora visible (v2.47.4) */}
+        {/* Grip handle — en mobile solo visible/activo con "Personalizar" abierto
+            (showConfig): antes se armaba un long-press en CUALQUIER pointerdown
+            del widget sin importar el modo, así que un scroll con una pausa breve
+            podía disparar el drag y reordenar widgets por accidente. Hover-only
+            en desktop, sin cambios. before:-inset-2.5 en mobile amplía la zona de
+            toque a ~44px sin agrandar la píldora visible (v2.47.4). */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-100 scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? "relative before:absolute before:content-[''] before:-inset-2.5" : ''}`}
+          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-30 scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
         >
           <div className="bg-white border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />

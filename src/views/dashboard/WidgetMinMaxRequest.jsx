@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, X, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import SearchInput from '../../components/common/SearchInput';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
@@ -293,18 +294,8 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <div className="relative shrink-0">
-        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-content-3 pointer-events-none" />
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar producto para ajustar Min/Max…"
-          className="w-full pl-9 pr-8 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
-          spellCheck={false} />
-        {search && (
-          <button onClick={() => setSearch('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover">
-            <X size={11} strokeWidth={2.5} />
-          </button>
-        )}
+      <div className="shrink-0">
+        <SearchInput size="sm" value={search} onChange={setSearch} placeholder="Buscar producto para ajustar Min/Max…" />
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

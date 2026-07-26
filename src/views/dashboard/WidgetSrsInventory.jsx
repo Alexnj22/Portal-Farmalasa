@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Search, Loader2, X, FlaskConical, Building2, Pill, CheckCircle2, Package } from 'lucide-react';
+import { Loader2, FlaskConical, Building2, Pill, CheckCircle2, Package } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchInventoryStockFlags } from '../../data/inventory';
+import SearchInput from '../../components/common/SearchInput';
 
 async function srsFetch(q, page = 1) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -69,24 +70,8 @@ export default function WidgetSrsInventory() {
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Search */}
-      <div className="relative shrink-0">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          {loading
-            ? <Loader2 size={14} className="text-chart-3-text animate-spin" />
-            : <Search size={14} className="text-content-3" />}
-        </div>
-        <input
-          type="text" value={query} onChange={e => handleInput(e.target.value)}
-          placeholder="Buscar en Registro SRS..."
-          className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-chart-3 focus:ring-2 focus:ring-chart-3/10 transition-all"
-          spellCheck={false} autoComplete="off"
-        />
-        {query && (
-          <button onClick={() => { setQuery(''); setResults(null); setInStock(new Set()); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">
-            <X size={11} strokeWidth={2.5} />
-          </button>
-        )}
+      <div className="shrink-0">
+        <SearchInput size="sm" value={query} onChange={handleInput} placeholder="Buscar en Registro SRS..." loading={loading} />
       </div>
 
       {error && (

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Search, Loader2, AlertTriangle, CheckCircle2, X, Clock,
+  Search, Loader2, AlertTriangle, CheckCircle2, Clock,
   Eye, ArrowLeft, AlertCircle, Ban, CreditCard, UserCog,
   ChevronRight, Info, ShieldAlert, User, CalendarDays, Contact,
 } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import SearchInput from '../../components/common/SearchInput';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
@@ -735,24 +736,13 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         {/* Buscador de cliente nuevo */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Cliente nuevo *</label>
-          <div className="relative">
-            {searching
-              ? <Loader2 size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3 animate-spin" />
-              : <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3 pointer-events-none" />}
-            <input
-              type="text" value={query}
-              onChange={e => { setQuery(e.target.value); setNewClient(null); }}
-              placeholder="Nombre, NIT, DUI o teléfono..."
-              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
-              spellCheck={false}
-            />
-            {query && (
-              <button onClick={() => { setQuery(''); setNewClient(null); setResults([]); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-content-3 hover:text-content-2">
-                <X size={10} strokeWidth={2.5} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            size="sm"
+            value={query}
+            onChange={v => { setQuery(v); setNewClient(null); }}
+            placeholder="Nombre, NIT, DUI o teléfono..."
+            loading={searching}
+          />
 
           {/* Seleccionado */}
           {newClient && (
@@ -934,20 +924,8 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       {/* Controls: search flexible + LiquidDatePicker fijo */}
       <div className="flex items-stretch gap-2 shrink-0">
         {/* Search */}
-        <div className="flex-1 relative">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3 pointer-events-none" />
-          <input
-            type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cliente, vendedor, factura..."
-            className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
-            spellCheck={false}
-          />
-          {search && (
-            <button onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-content-3 hover:text-content-2">
-              <X size={10} strokeWidth={2.5} />
-            </button>
-          )}
+        <div className="flex-1">
+          <SearchInput size="sm" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
         </div>
 
         {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}

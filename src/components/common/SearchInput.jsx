@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, Loader2, X } from 'lucide-react';
 
 /**
  * Buscador inline para widgets, modales y tabs internos (Tipo 2).
@@ -10,6 +10,7 @@ import { Search, X } from 'lucide-react';
  *   onChange    – (value: string) => void
  *   placeholder – string
  *   size        – 'sm' | 'md'  (default: 'md')
+ *   loading     – bool, muestra un spinner en vez del ícono de lupa
  *   autoFocus   – bool
  *   className   – string extra para el wrapper
  */
@@ -18,24 +19,26 @@ export default function SearchInput({
     onChange,
     placeholder = 'Buscar...',
     size = 'md',
+    loading = false,
     autoFocus = false,
     className = '',
 }) {
     const inputRef = useRef(null);
 
+    // text-[16px] obligatorio en TODO input de texto (§25 DESIGN.md) — por
+    // debajo de 16px, Safari/iOS hace zoom automático al enfocar. sm/md solo
+    // difieren en padding/ícono, nunca en tamaño de fuente.
     const sizeMap = {
-        sm: { text: 'text-[12px]', icon: 14, px: 'pl-8 pr-7 py-2',   iconLeft: 'left-2.5', clearRight: 'right-2' },
-        md: { text: 'text-[13px]', icon: 15, px: 'pl-9 pr-8 py-2.5', iconLeft: 'left-3',   clearRight: 'right-2.5' },
+        sm: { text: 'text-[16px]', icon: 14, px: 'pl-8 pr-7 py-1.5', iconLeft: 'left-2.5', clearRight: 'right-2' },
+        md: { text: 'text-[16px]', icon: 15, px: 'pl-9 pr-8 py-2',   iconLeft: 'left-3',   clearRight: 'right-2.5' },
     };
     const s = sizeMap[size] ?? sizeMap.md;
 
     return (
         <div className={`relative flex items-center ${className}`}>
-            <Search
-                size={s.icon}
-                strokeWidth={2.5}
-                className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand pointer-events-none shrink-0`}
-            />
+            {loading
+                ? <Loader2 size={s.icon} className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand animate-spin pointer-events-none shrink-0`} />
+                : <Search size={s.icon} strokeWidth={2.5} className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand pointer-events-none shrink-0`} />}
             <input
                 ref={inputRef}
                 type="text"

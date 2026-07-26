@@ -1,8 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
+import SearchInput from '../../components/common/SearchInput';
 import {
   fetchProductPhotoMap,
   fetchProductsByPrincipioActivo,
@@ -617,29 +618,14 @@ export default function WidgetInventorySearch() {
     <div className="flex flex-col gap-2.5 h-full">
 
       {/* Search input */}
-      <div className="relative shrink-0">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          {loading
-            ? <Loader2 size={13} className="text-brand animate-spin" />
-            : <Search size={13} className="text-content-3" />}
-        </div>
-        <input
-          type="text"
+      <div className="shrink-0">
+        <SearchInput
+          size="sm"
           value={query}
-          onChange={e => handleInput(e.target.value)}
+          onChange={handleInput}
           placeholder="Buscar por nombre o principio activo..."
-          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
-          spellCheck={false}
-          autoComplete="off"
+          loading={loading}
         />
-        {query && (
-          <button
-            onClick={() => { setQuery(''); setResults(null); setDrillProduct(null); setSrsResults(null); setAlternatives([]); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors"
-          >
-            <X size={10} strokeWidth={2.5} />
-          </button>
-        )}
       </div>
 
       {error && <p className="shrink-0 px-1 text-[11px] text-danger font-medium">{error}</p>}

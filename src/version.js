@@ -5,8 +5,39 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.4';
+export const APP_VERSION = '2.60.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.60.5 — fix(dashboard): auditoría de diseño de DashboardView contra
+// DESIGN.md (5 puntos planteados por el usuario).
+//
+// 1. Cards SÍ estandarizadas: los 16 widgets + KpiCard pasan por WidgetCard/
+//    CATEGORY_META (mismo shell, mismo mapeo de color por categoría) — no
+//    hay ninguno hecho a mano. La única inconsistencia real era compartida
+//    por los 16 (ver punto 4).
+// 2. Mobile: el long-press-para-mover ahora solo se arma si "Personalizar"
+//    está activo (showConfig) — antes CUALQUIER pointerdown en la card lo
+//    armaba, así que un scroll con una pausa breve podía disparar el drag
+//    y reordenar widgets por accidente. Grip handle también oculto
+//    (opacity-0 pointer-events-none) fuera de modo edición en mobile.
+//    Desktop sin cambios (ya era hover-only).
+// 3. Buscador/selector de fecha "enormes" en Operación: SearchInput.jsx (el
+//    componente canónico §Tipo 2) violaba su propia regla de piso de 16px
+//    para inputs de texto (tenía 12-13px) — real bug encontrado en la
+//    auditoría. Se corrigió a 16px (obligatorio, previene el zoom
+//    automático de iOS Safari) y se migraron los 5 <input> crudos
+//    duplicados (WidgetAnnulmentRequest ×2, WidgetMinMaxRequest,
+//    WidgetInventorySearch, WidgetSrsInventory) a <SearchInput>, quitando
+//    la duplicación de markup. El texto no puede bajar de 16px sin
+//    reintroducir el bug de zoom — la sensación de "grande" es tensión
+//    inherente entre esa regla y el resto del widget en 8-11px, no un bug
+//    adicional corregible. LiquidDatePicker (mismo piso de 16px, mismo
+//    ancho mínimo en toda la app) se dejó intacto por la misma razón.
+// 4. Violación real de DESIGN.md §1 ("No left-border color indicators...
+//    ever"): WidgetCard renderizaba un "left category stripe" de 3px en
+//    TODOS los widgets. Eliminado — eran solo 2 líneas, mismo bug en los
+//    16 widgets a la vez.
+// 5. `npm run gate:design` → 0 hallazgos tras los cambios.
 
 // v2.60.4 — feat(theme): el tema (Liquid/Solid × Claro/Oscuro) ahora se
 // guarda por usuario en BD, no solo en localStorage del navegador/dispositivo.

@@ -1605,8 +1605,12 @@ const DashboardView = ({ openModal }) => {
         : birthdaysOfMonth;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
-        <div className="h-full rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden relative">
+        <div data-surface="card" className="h-full relative rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col overflow-hidden">
           <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
+          {/* Mismas 2 capas que WidgetCard — este widget era hand-rolled sin
+              el glass shine ni data-surface="card" (mismo bug que
+              sales_branch_*, encontrado en la misma auditoría). */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
           {/* Header */}
           <div className="relative px-4 py-3 border-b border-border-card shrink-0">
             <div className="relative flex items-center justify-between">

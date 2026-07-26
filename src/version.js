@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.6';
+export const APP_VERSION = '2.60.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.60.7 — fix(dashboard): tercera pasada — lectura completa del archivo
+// de punta a punta (2183 líneas), no reactiva a lo que se veía en captura.
+// El widget "Cumpleaños" tenía EXACTAMENTE el mismo bug que sales_branch_*
+// (v2.60.6): hand-rolled sin <WidgetCard>, sin la capa de glass shine ni
+// data-surface="card" — encontrable con el mismo diff wrapWidget()-vs-
+// <WidgetCard> que ya se había corrido, solo que no se cruzó contra los
+// 17 widgets, solo contra el que el usuario señaló. Corregido igual que
+// sales_branch_*. Verificado con Playwright (data-surface + shine layer
+// presentes en el DOM, no solo visual). Confirmado además, explícitamente
+// contra las reglas de DESIGN.md §1 que el gate automático no cubre
+// (ring-*/semántica color→severidad ya se sabía que tenía huecos, ver
+// feedback_shadow_color_gate_lessons): 0 text-slate-300/400 en el archivo;
+// las 42 clases hover: del archivo cumplen "solo en pointer devices" gratis
+// vía el default de Tailwind v4 (hover: ya compila a @media(hover:hover)
+// desde v4, confirmado comparando con los @media(hover:hover) manuales que
+// sí existen en index.css — esos son solo para el CSS a mano de
+// [data-surface], no para las utilities de Tailwind); los 2 widgets que
+// crean mutaciones reales (Min/Max, Anulación) sí llaman appendAuditLog.
+// npm run gate:design → 0 hallazgos (recordatorio: el gate no sustituye
+// esta lectura completa — tiene puntos ciegos documentados).
 
 // v2.60.6 — fix(dashboard): auditoría de diseño completa, segunda pasada
 // (usuario correctamente señaló que la primera se quedó corta).

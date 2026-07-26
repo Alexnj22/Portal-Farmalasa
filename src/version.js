@@ -5,8 +5,52 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.62.0';
+export const APP_VERSION = '2.62.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.62.1 — fix(monitor): 5 correcciones sobre el rediseño de v2.62.0,
+// pedidas por el usuario tras revisar capturas reales.
+//
+// 1. Header no seguía el estándar real ("Floating Header Search", el mismo
+// patrón de StaffManagementView/RequestsView — un solo pill glass que
+// alterna entre buscador expandido+ChevronRight y controles inactivos).
+// Tenía un botón de búsqueda a medida (chip bordeado) en vez del FAB
+// circular `bg-brand` de siempre. Reemplazado por el patrón real; el reloj
+// se quitó y el filtro de sucursal (antes en la fila de stat cards) ahora
+// vive en ese mismo pill, en el lugar de los controles inactivos.
+//
+// 2/4. Las tarjetas de empleado no usaban el mismo material que el resto
+// del proyecto (`backdrop-blur-xl` en vez de `-2xl`, sin la curva de easing
+// ni el shadow de hover reales) — alineadas a la receta de `RequestCard`
+// (`RequestsView.jsx:121`): `backdrop-blur-2xl`, `hover:-translate-y-1`,
+// `hover:shadow-[var(--shadow-elevation-md)]`, easing
+// `cubic-bezier(0.23,1,0.32,1)`. Además la vista entera estaba envuelta en
+// el `data-surface="card"` global de `GlassViewLayout` (transparentBody
+// no estaba seteado) — con las columnas y las tarjetas como capas
+// translúcidas ADICIONALES adentro, todo se aplanaba visualmente (three
+// capas de vidrio apiladas). Fix: `transparentBody` en `GlassViewLayout`,
+// igual que `RequestsView` — las columnas y tarjetas son ahora las únicas
+// superficies de vidrio, con más contraste/sombra real.
+//
+// 3. Sub-secciones de sucursal ahora colapsables (chevron, clic en el
+// título de la sucursal) y paginadas (`PAGE_SIZE=6`, botón "Ver más" por
+// sub-sección) — necesario porque algunas sucursales tienen 6-9 empleados
+// y las columnas se volvían muy largas. Estado se reinicia al cambiar
+// filtro/búsqueda/tab de estado.
+//
+// 5. Márgenes superiores: el body pasó de `px-4 md:px-6 pb-8` (sin padding
+// superior, tarjetas pegadas al header) a `p-4 md:p-6 lg:p-8` — mismo
+// patrón que `StaffManagementView`.
+//
+// Regresión encontrada y corregida en la propia verificación: el filtro de
+// sucursal en el header (ahora ~190px) squeezeaba el título a "Mo…" en
+// móvil (<768px) — oculto con `hidden md:block` en ese breakpoint; el
+// buscador sigue disponible siempre, y en móvil las sub-secciones
+// colapsables ya cubren la necesidad de enfocarse en una sucursal.
+//
+// Verificado con Playwright: header pill, buscador, colapso, "Ver más" y
+// el layout en 390/768/1440px — todo en vivo contra datos reales (9
+// sucursales). gate:design y ESLint limpios.
 
 // v2.62.0 — feat(monitor): rediseño completo de "Monitor en Tiempo Real"
 // (AttendanceMonitorView.jsx) — pedido del usuario ("monitor realtime aplica

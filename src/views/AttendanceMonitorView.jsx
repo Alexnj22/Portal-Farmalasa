@@ -19,6 +19,8 @@ import {
   Zap,
   X,
   Users,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -40,28 +42,28 @@ const KANBAN_COLUMNS = [
     id: "working",
     label: "Trabajando",
     match: (status) => status === "WORKING" || status === "EXTRA_WORKING",
-    tint: "bg-success/8 border-success/25",
+    tint: "bg-success/10 border-success/30",
     dot: "bg-success",
   },
   {
     id: "pause",
     label: "En Pausa",
     match: (status) => status === "LUNCH" || status === "LACTATION" || status === "BUSINESS_OUT",
-    tint: "bg-chart-4/8 border-chart-4/25",
+    tint: "bg-chart-4/10 border-chart-4/30",
     dot: "bg-chart-4",
   },
   {
     id: "pending",
     label: "Sin Marcar",
     match: (status) => status === "PENDING",
-    tint: "bg-surface-card-hover/60 border-divider",
+    tint: "bg-surface-card-hover border-divider",
     dot: "bg-content-3",
   },
   {
     id: "finished",
     label: "Finalizado / Libre",
     match: (status) => status === "FINISHED" || status === "EARLY_EXIT" || status === "OFF_DAY",
-    tint: "bg-black/[0.02] border-black/[0.06]",
+    tint: "bg-surface-card/60 border-border-card",
     dot: "bg-content-3",
   },
 ];
@@ -82,6 +84,28 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   // Filtros visuales
   const [statusTab, setStatusTab] = useState("ALL");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Sub-secciones de sucursal dentro de cada columna: colapsables + paginadas
+  const PAGE_SIZE = 6;
+  const [collapsedSections, setCollapsedSections] = useState(() => new Set());
+  const [visibleCounts, setVisibleCounts] = useState({});
+
+  useEffect(() => {
+    setVisibleCounts({}); // eslint-disable-line react-hooks/set-state-in-effect -- reinicia la paginación al cambiar de filtro/búsqueda, no tiene sentido arrastrar "ver más" de un resultado distinto
+  }, [filterBranch, searchTerm, statusTab]);
+
+  const toggleSectionCollapsed = (key) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const showMoreInSection = (key) => {
+    setVisibleCounts((prev) => ({ ...prev, [key]: (prev[key] ?? PAGE_SIZE) + PAGE_SIZE }));
+  };
 
   const searchInputRef = useRef(null);
 
@@ -445,7 +469,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const renderEmployeeCard = ({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => (
     <div
       key={emp.id}
-      className="p-4 rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-md)]"
+      className="p-4 rounded-[2rem] border border-border-card bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-md)] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu"
     >
       <button
         type="button"
@@ -556,119 +580,58 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     </div>
   );
 
+  // Header Estándar "Floating Header Search" (mismo patrón que StaffManagementView/
+  // RequestsView: un solo pill que alterna entre [buscador expandido + cierre]
+  // y [controles inactivos]) — el filtro de sucursal vive acá (pedido explícito
+  // del usuario, reemplaza al reloj) en vez de un botón chip a medida.
   const filtersContent = (
-    <div className="flex items-center gap-2 md:gap-3">
-      <div className="hidden md:flex items-center gap-2 bg-surface-card backdrop-blur-sm border border-border-card px-4 py-2 rounded-2xl">
-        <Clock size={15} className="text-brand" />
-        <span className="text-[14px] font-black tracking-[0.12em] font-mono text-content">
-          {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
-        </span>
-      </div>
-      <button
-        type="button"
-        onClick={() => setSearchOpen((v) => !v)}
-        className={[
-          "w-11 h-11 flex-shrink-0 rounded-[0.875rem] border flex items-center justify-center",
-          "transition-all duration-200 hover:shadow-md active:scale-[0.97]",
-          searchOpen
-            ? "ring-2 ring-brand bg-white border-brand/30 text-brand"
-            : "border-border-card bg-surface-card backdrop-blur-md text-content-3 hover:bg-white hover:text-brand",
-        ].join(" ")}
-        title="Buscar empleado"
-      >
-        {searchOpen ? <X size={17} strokeWidth={2.5} /> : <Search size={17} strokeWidth={2.5} />}
-      </button>
-    </div>
-  );
-
-  return (
-    <GlassViewLayout icon={Clock} title="Monitor en Tiempo Real" liveIndicator filtersContent={filtersContent}>
-      <div className="px-4 md:px-6 pb-8 space-y-5">
-
-      {/* BUSCADOR */}
+    <div
+      {...searchContainerRef}
+      className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden"
+    >
+      {/* Buscador activo */}
       <div
-        {...searchContainerRef}
         className={[
-          "overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] relative z-10",
-          searchOpen ? "max-h-24 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0",
+          "flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left",
+          searchOpen ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0",
         ].join(" ")}
       >
-        <div className="glass-surface p-2 rounded-[1.5rem] border border-border-card shadow-sm flex items-center bg-surface-card">
-          <Search className="ml-4 text-content-3" size={18} />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Escribe nombre o código..."
-            className="w-full bg-transparent border-none outline-none p-3 text-[16px] font-bold text-content-2 placeholder-content-3"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => setSearchTerm("")}
-              className="mr-4 text-xs font-black text-content-3 hover:text-danger uppercase transition-colors"
-            >
-              Borrar
-            </button>
-          )}
-        </div>
+        <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder="Buscar por nombre o código..."
+          className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {searchTerm && (
+          <button
+            type="button"
+            onClick={() => setSearchTerm("")}
+            className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setSearchOpen(false)}
+          className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2 border border-white"
+        >
+          <ChevronRight size={18} strokeWidth={2.5} />
+        </button>
       </div>
 
-      {/* STATS + FILTRO DE SUCURSAL (DESIGN.md §17: stats a la izquierda, pill de filtro a la derecha) */}
-      <div className="flex items-start gap-3 md:gap-4 flex-wrap">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 flex-1 min-w-0">
-          {statCards.map((card) => {
-            const isActive = statusTab === card.id;
-            const Icon = card.icon;
-
-            return (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => setStatusTab(card.id)}
-                className={[
-                  "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
-                  isActive
-                    ? "bg-white border-brand shadow-[var(--shadow-glow-brand)] scale-[1.02] ring-1 ring-brand"
-                    : `${card.bg} ${card.border} hover:bg-white hover:border-white hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1`,
-                ].join(" ")}
-              >
-                {Icon && (
-                  <div
-                    className={[
-                      "absolute -right-3 -top-3 opacity-10 transition-transform group-hover:scale-110 group-hover:rotate-12",
-                      card.id === "LATE" ? "text-danger" : "",
-                    ].join(" ")}
-                  >
-                    <Icon size={70} />
-                  </div>
-                )}
-
-                <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
-                  {card.label}
-                </p>
-                <p
-                  className={[
-                    "text-[28px] font-black relative z-10 leading-none",
-                    isActive ? "text-brand" : card.color,
-                  ].join(" ")}
-                >
-                  {card.count}
-                </p>
-
-                {isActive && (
-                  <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
-                    <div className="w-2.5 h-2.5 rounded-full bg-brand shadow-[var(--shadow-glow-brand)]" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
+      {/* Controles inactivos: filtro de sucursal + botón de buscar */}
+      <div
+        className={[
+          "flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right",
+          searchOpen ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[520px] opacity-100 pl-2 pr-2 gap-3",
+        ].join(" ")}
+      >
         {getScope('monitor') !== 'BRANCH' && (
-          <div className="shrink-0 w-full sm:w-auto sm:min-w-[200px] flex items-center rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06)] px-2 py-2">
+          <div className="hidden md:block md:w-[190px] shrink-0">
             <LiquidSelect
               value={filterBranch}
               onChange={setFilterBranch}
@@ -681,11 +644,77 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             />
           </div>
         )}
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+          title="Buscar empleado"
+        >
+          <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+          {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <GlassViewLayout icon={Clock} title="Monitor en Tiempo Real" liveIndicator filtersContent={filtersContent} transparentBody>
+      <div className="p-4 md:p-6 lg:p-8 space-y-5">
+
+      {/* STATS */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+        {statCards.map((card) => {
+          const isActive = statusTab === card.id;
+          const Icon = card.icon;
+
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => setStatusTab(card.id)}
+              className={[
+                "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
+                isActive
+                  ? "bg-white border-brand shadow-[var(--shadow-glow-brand)] scale-[1.02] ring-1 ring-brand"
+                  : `${card.bg} ${card.border} hover:bg-white hover:border-white hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1`,
+              ].join(" ")}
+            >
+              {Icon && (
+                <div
+                  className={[
+                    "absolute -right-3 -top-3 opacity-10 transition-transform group-hover:scale-110 group-hover:rotate-12",
+                    card.id === "LATE" ? "text-danger" : "",
+                  ].join(" ")}
+                >
+                  <Icon size={70} />
+                </div>
+              )}
+
+              <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
+                {card.label}
+              </p>
+              <p
+                className={[
+                  "text-[28px] font-black relative z-10 leading-none",
+                  isActive ? "text-brand" : card.color,
+                ].join(" ")}
+              >
+                {card.count}
+              </p>
+
+              {isActive && (
+                <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand shadow-[var(--shadow-glow-brand)]" />
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* TABLERO POR ESTADO */}
       {employeeDataList.length === 0 ? (
-        <div className="glass-surface rounded-[2rem] p-20 text-center border border-border-card shadow-sm flex flex-col items-center gap-4 mt-8">
+        <div className="rounded-[2rem] p-20 text-center border border-border-card bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] flex flex-col items-center gap-4 mt-8">
           <div className="w-20 h-20 bg-surface-card-hover rounded-full flex items-center justify-center animate-pulse">
             <Users size={32} className="text-content-3" />
           </div>
@@ -705,7 +734,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             const groups = groupRowsByBranch(rows);
 
             return (
-              <div key={col.id} className={`rounded-[2rem] border p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
+              <div key={col.id} className={`rounded-[2rem] border backdrop-blur-xl p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${col.dot}`} />
@@ -718,18 +747,47 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                   <p className="text-[11px] text-content-3 italic px-1 pb-2">Sin empleados</p>
                 ) : (
                   <div className="flex flex-col gap-4">
-                    {groups.map((group) => (
-                      <div key={group.branchId ?? "flat"} className="flex flex-col gap-3">
-                        {group.branchName && (
-                          <p className="text-[10px] font-black uppercase tracking-wider text-content-3 px-1">
-                            {group.branchName}
-                          </p>
-                        )}
-                        <div className="flex flex-col gap-3">
-                          {group.rows.map((row) => renderEmployeeCard(row))}
+                    {groups.map((group) => {
+                      const sectionKey = `${col.id}:${group.branchId ?? "flat"}`;
+                      const isCollapsed = group.branchName && collapsedSections.has(sectionKey);
+                      const visible = visibleCounts[sectionKey] ?? PAGE_SIZE;
+                      const shownRows = group.rows.slice(0, visible);
+                      const remaining = group.rows.length - shownRows.length;
+
+                      return (
+                        <div key={sectionKey} className="flex flex-col gap-3">
+                          {group.branchName && (
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionCollapsed(sectionKey)}
+                              className="w-full flex items-center justify-between px-1 py-1 -my-1 rounded-lg hover:bg-black/[0.03] transition-colors"
+                            >
+                              <span className="text-[10px] font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
+                                <ChevronDown size={12} className={`transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`} />
+                                {group.branchName}
+                              </span>
+                              <span className="text-[10px] font-bold text-content-3">{group.rows.length}</span>
+                            </button>
+                          )}
+                          {!isCollapsed && (
+                            <>
+                              <div className="flex flex-col gap-3">
+                                {shownRows.map((row) => renderEmployeeCard(row))}
+                              </div>
+                              {remaining > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => showMoreInSection(sectionKey)}
+                                  className="text-[10px] font-black uppercase tracking-widest text-brand hover:text-brand-hover text-center py-2 rounded-xl hover:bg-brand/5 transition-colors"
+                                >
+                                  Ver más ({remaining} restantes)
+                                </button>
+                              )}
+                            </>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -5,8 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.62.1';
+export const APP_VERSION = '2.62.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.62.2 — fix(theme): 2 bugs de dark mode PROYECTO-WIDE encontrados al
+// auditar el Monitor en dark, reportados por el usuario ("se ve blanco/
+// feo en modo oscuro, ese efecto no se pasa a modo oscuro").
+//
+// 1. GlassViewLayout.jsx: el sheen decorativo del header desktop estaba
+// hardcodeado a `bg-gradient-to-b from-white/60 to-transparent`, sin pasar
+// por el sistema de temas — pintaba un borrón blanco/gris feo encima de
+// CUALQUIER header en dark/solid-dark (confirmado también en Nómina, no
+// solo Monitor: bug de un componente compartido, no de esta vista). Fix:
+// token nuevo `--header-sheen` (index.css, por tema: 0.60 en :root, 0.05 en
+// dark, transparent en solid/solid-dark — coherente con su `--backdrop-
+// header: none`), consumido vía `style` inline en vez de la clase Tailwind.
+//
+// 2. `--shadow-elevation-xs/sm/md/lg/xl` (el token que usan ~35 archivos
+// del proyecto para el "lift" de tarjetas, incl. las cards nuevas del
+// Monitor) solo estaba definido en :root con alphas de rgba(0,0,0,.04-.16)
+// — invisibles sobre un fondo YA oscuro, de ahí "no veo el efecto de cada
+// card, solo de los elementos [con color propio]". Nunca se había
+// redefinido para dark/solid-dark. Fix: alias en ambos temas oscuros a los
+// tokens de superficie que sí son theme-aware (--card-shadow/-hover/
+// --modal-shadow) — mismo lenguaje visual que el resto del glass/solid
+// oscuro, sin números mágicos nuevos.
+//
+// De paso, en AttendanceMonitorView.jsx: la stat card "Total" activa tenía
+// `bg-white` hardcodeado (arrastrado de antes del rediseño v2.62.0) que
+// volvía invisible la etiqueta "TOTAL" en dark — reemplazado por el patrón
+// real de StaffManagementView (tinte + ring de acento, sin bg sólido).
+//
+// Verificado con Playwright forzando `localStorage['portal-theme']` a
+// dark/solid-dark/liquid y comparando Monitor + Nómina — el shadow ahora
+// resuelve a rgba(0,0,0,.5) con inset de brillo (antes: rgba(0,0,0,.06),
+// invisible); tema claro sin cambios (los overrides solo tocan los bloques
+// dark/solid-dark, :root/solid intactos). gate:design limpio.
 
 // v2.62.1 — fix(monitor): 5 correcciones sobre el rediseño de v2.62.0,
 // pedidas por el usuario tras revisar capturas reales.

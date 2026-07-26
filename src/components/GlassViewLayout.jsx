@@ -66,7 +66,11 @@ const GlassViewLayout = ({
                         py-3 px-5 xl:py-3.5 xl:px-6 relative"
                     style={{ willChange: 'backdrop-filter' }}>
 
-                        <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
+                        {/* Sheen decorativo — bug real 2026-07-26: estaba hardcodeado a
+                            `from-white/60` sin pasar por el sistema de temas, así que en
+                            dark/solid-dark pintaba un borrón blanco feo encima del header
+                            oscuro. Ahora usa --header-sheen (token por tema, ver index.css). */}
+                        <div className="absolute inset-0 rounded-[2.5rem] pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--header-sheen), transparent)' }} />
 
                         <div className="relative z-10 flex flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-2.5 min-w-0 shrink-0">

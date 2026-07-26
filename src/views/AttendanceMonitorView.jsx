@@ -674,9 +674,10 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               onClick={() => setStatusTab(card.id)}
               className={[
                 "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
+                card.bg, card.border,
                 isActive
-                  ? "bg-white border-brand shadow-[var(--shadow-glow-brand)] scale-[1.02] ring-1 ring-brand"
-                  : `${card.bg} ${card.border} hover:bg-white hover:border-white hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1`,
+                  ? "shadow-[var(--shadow-glow-brand)] ring-2 ring-brand scale-[1.02] -translate-y-0.5"
+                  : "hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1",
               ].join(" ")}
             >
               {Icon && (

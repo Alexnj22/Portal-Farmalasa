@@ -11,6 +11,7 @@ import { DataTable, DataRow, DataCell } from '../../../components/common/DataTab
 import TablePagination from '../../../components/common/TablePagination';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { calcSolicitado } from './helpers';
+import SearchInput from '../../../components/common/SearchInput';
 import { fetchStockParamsForRevision, updateStockParams, effectiveMinMax } from '../../../data/stockParams';
 
 const MINI_PAGE = 15;
@@ -241,21 +242,18 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                 </button>
                 <AnimatePresence mode="wait">
                     {searchOpen ? (
-                        <motion.div key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 160, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0">
-                            <div className="relative flex items-center">
-                                <Search size={10} className="absolute left-2 text-content-3 pointer-events-none" />
-                                <input
-                                    ref={searchRef}
-                                    value={search}
-                                    onChange={e => { setSearch(e.target.value); setPage(1); }}
-                                    onKeyDown={e => e.key === 'Escape' && closeSearch()}
-                                    placeholder="Buscar…"
-                                    className="w-full pl-6 pr-5 py-1 text-[16px] bg-white border border-chart-1/30 rounded-lg focus:outline-none focus:ring-1 focus:ring-chart-1/30 focus:border-chart-1 text-content-2 placeholder:text-content-3 shadow-sm"
-                                />
-                                <button onClick={closeSearch} className="absolute right-1.5 text-content-3 hover:text-content-2">
-                                    <X size={9} />
-                                </button>
-                            </div>
+                        <motion.div key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 190, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
+                            <SearchInput
+                                ref={searchRef}
+                                size="sm"
+                                value={search}
+                                onChange={val => { setSearch(val); setPage(1); }}
+                                onKeyDown={e => e.key === 'Escape' && closeSearch()}
+                                placeholder="Buscar…"
+                            />
+                            <button onClick={closeSearch} className="text-content-3 hover:text-content-2 shrink-0">
+                                <X size={9} />
+                            </button>
                         </motion.div>
                     ) : (
                         <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-brand/10 transition-colors shrink-0">

@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useEffect, useState } from 'react';
-import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon, Search } from 'lucide-react';
+import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon } from 'lucide-react';
+import SearchInput from '../../../components/common/SearchInput';
 import { AnimatePresence, motion } from 'framer-motion';
 import { tokenMatch } from '../../../utils/searchUtils';
 import { shortEmployeeName } from '../../../utils/nameUtils';
@@ -843,17 +844,14 @@ const ScheduleCalendar = memo(({
                                     ) : (
                                         <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <div className="flex-1 flex items-center gap-2 bg-white border border-divider rounded-xl px-3 py-2 shadow-sm">
-                                                    <Search size={12} className="text-content-3 shrink-0" />
-                                                    <input
-                                                        autoFocus
-                                                        type="text"
-                                                        value={coverageSearchTerm}
-                                                        onChange={e => setCoverageSearchTerm(e.target.value)}
-                                                        placeholder="Buscar empleado de otra sucursal..."
-                                                        className="flex-1 bg-transparent text-[16px] text-content-2 outline-none placeholder:text-content-3"
-                                                    />
-                                                </div>
+                                                <SearchInput
+                                                    autoFocus
+                                                    size="sm"
+                                                    value={coverageSearchTerm}
+                                                    onChange={setCoverageSearchTerm}
+                                                    placeholder="Buscar empleado de otra sucursal..."
+                                                    className="flex-1"
+                                                />
                                                 <button onClick={() => { setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
                                                     className="w-8 h-8 rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 flex items-center justify-center transition-colors shrink-0">
                                                     <XIcon size={14} />

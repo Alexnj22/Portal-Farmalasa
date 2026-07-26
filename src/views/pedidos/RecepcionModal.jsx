@@ -13,6 +13,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import SearchInput from '../../components/common/SearchInput';
 import {
     fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, fetchPedidoApoyoBasic,
     searchAvailableProducts, fetchLastDispatchInfo, insertPedidoRecepcionExtras,
@@ -903,24 +904,20 @@ export default function RecepcionModal({
 
                 {/* Buscador para agregar productos */}
                 <div className="flex-none border-t border-divider px-5 py-3">
-                    <div ref={extraBuscarRef}
-                        className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-3 py-2">
-                        <Search size={13} className="text-brand shrink-0" />
-                        <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
+                    <div ref={extraBuscarRef}>
+                        <SearchInput
+                            ref={extraRef}
                             value={extraSearch}
-                            onChange={e => {
-                                setExtraSearch(e.target.value);
+                            loading={extraBusy}
+                            onChange={val => {
+                                setExtraSearch(val);
                                 if (extraBuscarRef.current) {
                                     const r = extraBuscarRef.current.getBoundingClientRect();
                                     setExtraDropCoords({ top: r.top, left: r.left, width: r.width });
                                 }
                             }}
-                            className="flex-1 text-[16px] bg-transparent focus:outline-none placeholder-content-3 text-content-2"
+                            placeholder="Buscar producto extra recibido…"
                         />
-                        {extraBusy
-                            ? <Loader2 size={12} className="animate-spin text-brand shrink-0" />
-                            : extraSearch && <button onClick={() => setExtraSearch('')} className="text-content-3 hover:text-content-3 shrink-0"><X size={13} /></button>
-                        }
                     </div>
                     {extraResults.length > 0 && createPortal(
                         <div style={{
@@ -1037,18 +1034,7 @@ export default function RecepcionModal({
                             <motion.div key="search" className="flex-1 min-w-0"
                                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-                                <div className="relative">
-                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-3" />
-                                    <input ref={searchRef} type="text" placeholder="Buscar producto…"
-                                        value={prodSearch} onChange={e => setProdSearch(e.target.value)}
-                                        className="w-full text-[16px] border border-brand/30 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-brand bg-brand/10 placeholder-content-3"
-                                    />
-                                    {prodSearch && (
-                                        <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-3 hover:text-content-3">
-                                            <X size={12} />
-                                        </button>
-                                    )}
-                                </div>
+                                <SearchInput ref={searchRef} size="sm" value={prodSearch} onChange={setProdSearch} placeholder="Buscar producto…" />
                             </motion.div>
                         )}
                     </AnimatePresence>

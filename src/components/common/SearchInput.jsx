@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
 import { Search, Loader2, X } from 'lucide-react';
 
 /**
@@ -12,6 +12,8 @@ import { Search, Loader2, X } from 'lucide-react';
  *   size         – 'sm' | 'md'  (default: 'md') — ignorado si expandable
  *   loading      – bool, muestra un spinner en vez del ícono de lupa
  *   autoFocus    – bool
+ *   disabled     – bool
+ *   onKeyDown    – (e) => void — pass-through al <input> real (ej. Escape para cerrar)
  *   className    – string extra para el wrapper
  *   expandable   – bool. Toolbar de widget con filtros (ej. dashboard
  *                  Operación): arranca colapsado a un cuadrado de 32px y
@@ -26,22 +28,30 @@ import { Search, Loader2, X } from 'lucide-react';
  *   accentColor  – hex de categoría (CATEGORY_META) para el ícono cuando
  *                  está colapsado — nunca azul genérico, se integra con el
  *                  color del propio widget. Solo aplica con expandable.
+ *
+ * ref — se resuelve al <input> real (forwardRef), para callers que
+ * necesitan enfocarlo programáticamente (ej. `searchRef.current?.focus()`
+ * al abrir un buscador toggleado por un botón externo).
  */
-export default function SearchInput({
+const SearchInput = forwardRef(function SearchInput({
     value = '',
     onChange,
     placeholder = 'Buscar...',
     size = 'md',
     loading = false,
     autoFocus = false,
+    disabled = false,
+    onKeyDown,
     className = '',
     expandable = false,
     accentColor,
-}) {
+}, forwardedRef) {
     const inputRef = useRef(null);
     const wrapRef = useRef(null);
     const [isOpen, setIsOpen] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+
+    useImperativeHandle(forwardedRef, () => inputRef.current, []);
 
     // text-[16px] obligatorio en TODO input de texto (§25 DESIGN.md) — por
     // debajo de 16px, Safari/iOS hace zoom automático al enfocar. sm/md solo
@@ -70,13 +80,13 @@ export default function SearchInput({
             <div
                 ref={wrapRef}
                 {...(open ? { 'data-surface': 'input' } : {})}
-                onClick={() => { if (!open) { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 120); } }}
+                onClick={() => { if (!open && !disabled) { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 120); } }}
                 style={open && isFocused ? { borderColor: accentColor || 'var(--brand)' } : undefined}
                 className={`flex items-center h-8 transition-[flex-grow,flex-basis,background-color,border-color] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${
                     open
                         ? 'flex-1 min-w-0 cursor-text'
                         : 'flex-none w-8 rounded-[0.65rem] bg-surface-card-hover border border-border-card cursor-pointer'
-                } ${className}`}
+                } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
             >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0" style={accentColor ? { color: accentColor } : undefined}>
                     {loading
@@ -91,8 +101,10 @@ export default function SearchInput({
                     onClick={e => e.stopPropagation()}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
+                    onKeyDown={onKeyDown}
                     placeholder={placeholder}
                     autoFocus={autoFocus}
+                    disabled={disabled}
                     tabIndex={open ? 0 : -1}
                     className={`min-w-0 flex-1 bg-transparent border-none outline-none text-[16px] font-semibold text-content placeholder:text-content-3 transition-opacity duration-200 ${
                         open ? 'opacity-100 pr-1' : 'opacity-0 w-0 pointer-events-none'
@@ -122,12 +134,15 @@ export default function SearchInput({
                 data-surface="input"
                 value={value}
                 onChange={e => onChange?.(e.target.value)}
+                onKeyDown={onKeyDown}
                 placeholder={placeholder}
                 autoFocus={autoFocus}
+                disabled={disabled}
                 className={`w-full ${s.px} ${s.text} font-semibold
                     text-content placeholder:text-content-3
                     outline-none transition-[outline-color] duration-200
-                    focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60`}
+                    focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60
+                    disabled:opacity-50 disabled:cursor-not-allowed`}
             />
             {value && (
                 <button
@@ -140,4 +155,6 @@ export default function SearchInput({
             )}
         </div>
     );
-}
+});
+
+export default SearchInput;

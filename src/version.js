@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.2';
+export const APP_VERSION = '2.61.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.3 — fix(design): migra los 5 buscadores hand-rolled restantes a
+// SearchInput (cierre de gap, misma sesión que v2.61.2).
+//
+// AnnouncementsView.jsx (picker de destinatarios), RecepcionModal.jsx
+// (buscador de producto extra + buscador de producto), ScheduleCalendar.jsx
+// (cobertura entre sucursales) e ItemSections.jsx (filtro por sección de
+// ítems) usaban <input> crudo — violación de la regla "nunca <input> crudo
+// para búsquedas" (DESIGN.md §24 Tipo 2/3). Ninguno tenía el bug de línea/
+// ring roto (v2.61.2), pero se migraron igual: no dejar deuda de compliance
+// mientras se solidifican las bases del portal.
+//
+// SearchInput.jsx ganó 3 capacidades reales que estos 5 casos necesitaban:
+// ref forwarding (forwardRef + useImperativeHandle, para
+// `searchRef.current?.focus()` externo), `disabled`, y `onKeyDown`
+// (pass-through, para cerrar con Escape en ItemSections). Verificado en
+// vivo con Playwright: AnnouncementsView (tipeo + filtrado + selección).
+// Los otros 4 requieren estado de datos no disponible en el entorno de
+// prueba de esta sesión (pedido pendiente de recepción / semana de horario
+// editable) — verificados por revisión de diff + eslint limpio +
+// gate:design en 0.
 
 // v2.61.2 — fix(design): corrige el foco de SearchInput y LiquidSelect —
 // "línea interna" fea al enfocar (mockup de 4 opciones aprobado, se eligió

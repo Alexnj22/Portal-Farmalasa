@@ -11,6 +11,7 @@ import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import LiquidSelect from '../components/common/LiquidSelect';
+import SearchInput from '../components/common/SearchInput';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 
@@ -683,8 +684,7 @@ const AnnouncementsView = ({ openModal }) => {
                         </div>
                       )}
                       <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3" size={16} />
-                        <input type="text" placeholder="Buscar persona por nombre..." className="w-full pl-11 pr-4 py-3.5 bg-surface-card border border-border-card focus:bg-white rounded-2xl text-[16px] outline-none font-bold text-content-2" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} disabled={isSubmitting} />
+                        <SearchInput value={empSearch} onChange={setEmpSearch} placeholder="Buscar persona por nombre..." disabled={isSubmitting} />
                         {empSearch.trim() && (
                           <div className="absolute z-20 w-full mt-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.25rem] shadow-[var(--shadow-elevation-lg)] max-h-60 overflow-y-auto p-1">
                             {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-brand/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand" /></button>)) : <div className="p-3 text-[12px] text-content-3 font-bold text-center">Sin resultados.</div>}

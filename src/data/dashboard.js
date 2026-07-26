@@ -14,6 +14,17 @@ export function upsertUserDashboardPrefs(payload) {
     return supabase.from('user_dashboard_prefs').upsert(payload, { onConflict: 'user_id' });
 }
 
+export function fetchUserTheme(userId) {
+    return supabase.from('user_dashboard_prefs')
+        .select('theme')
+        .eq('user_id', userId)
+        .maybeSingle();
+}
+
+export function upsertUserTheme(userId, theme) {
+    return supabase.from('user_dashboard_prefs').upsert({ user_id: userId, theme }, { onConflict: 'user_id' });
+}
+
 export function fetchSalesBranchIdsSince(sinceDateStr) {
     return supabase.from('branch_hourly_sales').select('branch_id').gte('sale_date', sinceDateStr);
 }

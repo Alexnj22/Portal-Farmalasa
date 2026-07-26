@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.3';
+export const APP_VERSION = '2.60.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.60.4 — feat(theme): el tema (Liquid/Solid × Claro/Oscuro) ahora se
+// guarda por usuario en BD, no solo en localStorage del navegador/dispositivo.
+// Nueva columna user_dashboard_prefs.theme (misma tabla que ya persiste el
+// layout del Dashboard — PK user_id, RLS existente, sin cambios de policy).
+// Nuevo hook useThemeSync.js, montado una vez en AppLayout: al iniciar
+// sesión trae el tema guardado del usuario y lo aplica (sobreescribiendo el
+// default local de OS/localStorage), y al cambiarlo con sesión activa lo
+// guarda (debounced 800ms) — así el tema viaja entre dispositivos, igual que
+// ya pasa con el layout del Dashboard. localStorage se mantiene como caché
+// rápida para pintar sin flash antes de que resuelva el fetch a BD; antes de
+// login (LoginView) y en el kiosco (TimeClockView) sigue siendo puramente
+// local, sin cambios ahí.
+//
+// Bug encontrado y arreglado en el mismo commit: ThemeContext.jsx redefinía
+// setTheme/cycleTheme en cada render (sin useCallback) — como useThemeSync
+// depende de setTheme en su efecto de carga, cada cambio de tema generaba una
+// referencia nueva de la función, lo que re-disparaba el efecto (re-fetch a
+// BD) y revertía el tema recién elegido antes de que el guardado debounced
+// llegara a persistirlo. Confirmado en vivo con Playwright: sin el fix, la
+// BD quedaba en el tema viejo pese a que la UI mostraba el nuevo; con el fix
+// (setTheme/cycleTheme envueltos en useCallback), el valor correcto persiste
+// y sobrevive tanto a un reload como a un login desde un navegador nuevo
+// (probado con un browser context limpio simulando otro dispositivo).
 
 // v2.60.3 — fix(login): LoginView siempre debe verse en tema claro/liquid,
 // sin importar el tema (dark/solid/solid-dark) que el usuario haya dejado

@@ -18,6 +18,7 @@ import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { useToastStore } from '../../store/toastStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
+import { useThemeSync } from '../../hooks/useThemeSync';
 import NotificationBell from '../common/NotificationBell';
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
@@ -178,6 +179,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     useSyncMonitor();
     useNotificationsChannel();
+    useThemeSync();
 
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
     const [isWide, setIsWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);

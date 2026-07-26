@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const ThemeContext = createContext(null);
 
@@ -51,8 +51,12 @@ export function ThemeProvider({ children }) {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR_MAP[theme]);
   }, [theme]);
 
-  const setTheme = (t) => { if (THEMES.includes(t)) setThemeState(t); };
-  const cycleTheme = () => setThemeState(t => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]);
+  // useCallback: identidad estable — useThemeSync.js depende de setTheme en un
+  // array de efecto; sin memoizar, cada cambio de tema re-renderiza
+  // ThemeProvider con una función setTheme nueva, lo que re-dispara ese efecto
+  // (re-fetch a la BD) y revierte el tema recién elegido por el usuario.
+  const setTheme = useCallback((t) => { if (THEMES.includes(t)) setThemeState(t); }, []);
+  const cycleTheme = useCallback(() => setThemeState(t => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]), []);
 
   const value = {
     theme,

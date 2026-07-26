@@ -227,7 +227,7 @@ const Skel = ({ className = '', style }) => (
 
 const KpiCardSkeleton = () => (
   <div className="relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3">
-    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
+    <div className="absolute inset-0 pointer-events-none rounded-[1.5rem]" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     <div className="flex items-center gap-2">
       <Skel className="w-7 h-7 rounded-[0.7rem] flex-shrink-0" />
       <Skel className="h-2.5 flex-1 max-w-[110px]" />
@@ -263,7 +263,7 @@ const SalesBranchSkeleton = () => (
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
   <div data-surface="card" onClick={onClick}
     className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
-    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
+    <div className="absolute inset-0 pointer-events-none rounded-[1.5rem]" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
       <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: color + '18', border: `1px solid ${color}20` }}>
@@ -287,7 +287,7 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
       {/* backdrop-filter on inner absolute div — Chrome bug: overflow-hidden + backdrop-filter on same element breaks blur */}
       <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
       {/* Glass shine */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+      <div className="absolute inset-0 pointer-events-none rounded-[1.75rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
       {/* Header */}
       <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-border-card shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
@@ -1348,7 +1348,7 @@ const DashboardView = ({ openModal }) => {
               mini-card se pintaba a mano sin la capa de brillo, por eso se
               veía más opaca/gris que el resto de widgets del dashboard. */}
           <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+          <div className="absolute inset-0 pointer-events-none rounded-[1.75rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           <div className="relative h-full p-3.5 flex flex-col gap-1.5">
             <div className="flex items-start justify-between gap-1">
               <p className="text-[12px] font-black text-content-2 leading-tight truncate">{b.name}</p>
@@ -1610,7 +1610,7 @@ const DashboardView = ({ openModal }) => {
           {/* Mismas 2 capas que WidgetCard — este widget era hand-rolled sin
               el glass shine ni data-surface="card" (mismo bug que
               sales_branch_*, encontrado en la misma auditoría). */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+          <div className="absolute inset-0 pointer-events-none rounded-[1.75rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           {/* Header */}
           <div className="relative px-4 py-3 border-b border-border-card shrink-0">
             <div className="relative flex items-center justify-between">

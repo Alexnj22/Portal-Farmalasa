@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.62.2';
+export const APP_VERSION = '2.62.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.62.3 — fix(theme): mismo bug del sheen blanco (v2.62.2), esta vez en
+// DashboardView.jsx — el usuario lo detectó en Inicio (KpiCard/WidgetCard:
+// stat cards de arriba, widgets de sucursal La Popular/Salud 1-5,
+// Facturación Hoy, Ventas por día, Calendario, Cotizaciones, Solicitudes,
+// Cumpleaños). 5 divs con `bg-gradient-to-br/b from-white/35-40`
+// hardcodeado, mismo patrón que el header de GlassViewLayout — confirmado
+// con getComputedStyle que pintaban blanco al 35-40% sin importar el tema.
+//
+// Fix: 2 tokens nuevos (paralelos a --header-sheen) — --card-sheen (0.35,
+// sheen vertical de WidgetCard) y --card-sheen-strong (0.40, diagonal de
+// KpiCard), con overrides en dark (0.05/0.06) y solid/solid-dark
+// (transparent, coherente con su `--backdrop-card: none`). Los 5 divs de
+// DashboardView.jsx pasaron de la clase Tailwind hardcodeada a `style`
+// inline con `var(--card-sheen[-strong])`.
+//
+// Verificado con Playwright: getComputedStyle de los 5 divs en tema dark
+// resuelve a rgba(255,255,255,0.05-0.06) (antes 0.35-0.40 fijo); captura
+// completa de Inicio en dark confirma sheen sutil, sin blanco. gate:design
+// limpio. Tema claro sin cambios (:root conserva los valores originales
+// 0.35/0.40 exactos).
 
 // v2.62.2 — fix(theme): 2 bugs de dark mode PROYECTO-WIDE encontrados al
 // auditar el Monitor en dark, reportados por el usuario ("se ve blanco/

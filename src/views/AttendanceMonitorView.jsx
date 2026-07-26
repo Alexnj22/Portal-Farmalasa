@@ -19,7 +19,6 @@ import {
   Zap,
   X,
   Users,
-  Moon,
 } from "lucide-react";
 
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -27,11 +26,45 @@ import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
 import { tokenMatch } from '../utils/searchUtils';
 import { useSearchToggle } from '../hooks/useSearchToggle';
 import GlassViewLayout from "../components/GlassViewLayout";
+import LiquidSelect from "../components/common/LiquidSelect";
 import { toLocalISODate } from "../utils/timeClock.helpers";
-import BranchChips from "../components/common/BranchChips";
 import { useAuth } from '../context/AuthContext';
 
 const EMPTY_ARRAY = [];
+
+// Las 4 columnas del tablero cubren, entre todas, los 9 estados posibles de
+// evaluateEmployeeStatus (WORKING/EXTRA_WORKING/LUNCH/LACTATION/BUSINESS_OUT/
+// EARLY_EXIT/FINISHED/OFF_DAY/PENDING) — ningún empleado queda sin columna.
+const KANBAN_COLUMNS = [
+  {
+    id: "working",
+    label: "Trabajando",
+    match: (status) => status === "WORKING" || status === "EXTRA_WORKING",
+    tint: "bg-success/8 border-success/25",
+    dot: "bg-success",
+  },
+  {
+    id: "pause",
+    label: "En Pausa",
+    match: (status) => status === "LUNCH" || status === "LACTATION" || status === "BUSINESS_OUT",
+    tint: "bg-chart-4/8 border-chart-4/25",
+    dot: "bg-chart-4",
+  },
+  {
+    id: "pending",
+    label: "Sin Marcar",
+    match: (status) => status === "PENDING",
+    tint: "bg-surface-card-hover/60 border-divider",
+    dot: "bg-content-3",
+  },
+  {
+    id: "finished",
+    label: "Finalizado / Libre",
+    match: (status) => status === "FINISHED" || status === "EARLY_EXIT" || status === "OFF_DAY",
+    tint: "bg-black/[0.02] border-black/[0.06]",
+    dot: "bg-content-3",
+  },
+];
 
 const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const employees = useStaff(s => s.employees) || EMPTY_ARRAY;
@@ -45,7 +78,6 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     getScope('monitor') === 'BRANCH' ? String(user?.branchId || "ALL") : "ALL"
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [isDarkConcept, setIsDarkConcept] = useState(false);
 
   // Filtros visuales
   const [statusTab, setStatusTab] = useState("ALL");
@@ -77,9 +109,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   }, [searchOpen]);
 
   // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-  // cierra Y limpia; click afuera cierra SOLO si está vacío. Declarado acá
-  // (antes del `if (isDarkConcept) return` de más abajo) por las reglas de
-  // hooks de React.
+  // cierra Y limpia; click afuera cierra SOLO si está vacío.
   const { containerProps: searchContainerRef } = useSearchToggle({
     active: searchOpen,
     value: searchTerm,
@@ -94,6 +124,17 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     (branches || []).forEach((b) => m.set(String(b.id), b.name));
     return m;
   }, [branches]);
+
+  const branchOrder = useMemo(() => {
+    const m = new Map();
+    (branches || []).forEach((b, idx) => m.set(String(b.id), idx));
+    return m;
+  }, [branches]);
+
+  const branchOptions = useMemo(() => [
+    { value: "ALL", label: "Todas las Sucursales" },
+    ...(branches || []).map((b) => ({ value: String(b.id), label: b.name })),
+  ], [branches]);
 
   // --- HELPERS DE TIEMPO ---
   const formatTime12h = (time24) => {
@@ -299,31 +340,6 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-divider", bg: "bg-surface-card-hover/40" },
   ];
 
-  const getStatusCardStyle = (status, isLate) => {
-    if (isLate && status !== "FINISHED")
-      return "border-danger/30 bg-surface-card shadow-[0_10px_30px_rgba(255,59,48,0.10)]";
-    switch (status) {
-      case "WORKING":
-        return "border-success/30 bg-surface-card shadow-[0_10px_30px_rgba(52,199,89,0.10)]";
-      case "EXTRA_WORKING":
-        return "border-chart-3/30 bg-surface-card shadow-[0_10px_30px_rgba(88,86,214,0.10)]";
-      case "LUNCH":
-        return "border-chart-4/30 bg-surface-card shadow-[0_10px_30px_rgba(255,149,0,0.10)]";
-      case "LACTATION":
-        return "border-chart-6/30 bg-surface-card shadow-[0_10px_30px_rgba(255,45,85,0.10)]";
-      case "FINISHED":
-        return "border-black/[0.08] bg-surface-card opacity-70 hover:opacity-100 transition-opacity";
-      case "EARLY_EXIT":
-        return "border-brand/20 bg-surface-card shadow-[var(--shadow-glow-brand)]";
-      case "BUSINESS_OUT":
-        return "border-chart-7/30 bg-surface-card shadow-[0_10px_30px_rgba(14,165,233,0.08)]";
-      case "OFF_DAY":
-        return "border-black/[0.08] bg-surface-card border-dashed opacity-60";
-      default:
-        return "border-black/[0.08] bg-surface-card border-dashed";
-    }
-  };
-
   const getStatusBadge = (status, isLate, lateText) => {
     if (isLate && status !== "FINISHED") {
       return (
@@ -405,6 +421,141 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     setView?.("employee-detail");
   };
 
+  // Agrupa las filas de una columna por sucursal cuando el filtro está en
+  // "Todas" — cada sucursal se muestra como sub-sección dentro de la
+  // columna. Con una sucursal específica seleccionada no hay nada que
+  // agrupar (todas las filas ya son de esa sucursal).
+  const groupRowsByBranch = (rows) => {
+    if (filterBranch !== "ALL") return [{ branchId: null, branchName: null, rows }];
+    const groups = new Map();
+    rows.forEach((row) => {
+      const bId = String(row.emp.branchId);
+      if (!groups.has(bId)) groups.set(bId, []);
+      groups.get(bId).push(row);
+    });
+    return Array.from(groups.entries())
+      .map(([branchId, groupRows]) => ({
+        branchId,
+        branchName: branchNameById.get(branchId) || "Sin Sucursal",
+        rows: groupRows,
+      }))
+      .sort((a, b) => (branchOrder.get(a.branchId) ?? 99) - (branchOrder.get(b.branchId) ?? 99));
+  };
+
+  const renderEmployeeCard = ({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => (
+    <div
+      key={emp.id}
+      className="p-4 rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-md)]"
+    >
+      <button
+        type="button"
+        onClick={() => goToProfile(emp)}
+        className="flex items-center gap-3 text-left group w-full mb-3"
+      >
+        <div className="relative shrink-0">
+          <div
+            className={[
+              "h-11 w-11 rounded-xl border-2 overflow-hidden flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-105",
+              isLate && status !== "FINISHED"
+                ? "border-danger/30 bg-danger/10 text-danger"
+                : "border-white bg-white text-content-3",
+            ].join(" ")}
+          >
+            {emp.photo ? (
+              <img src={emp.photo} className="w-full h-full object-cover" alt="Foto" />
+            ) : (
+              String(emp?.name || "?").charAt(0)
+            )}
+          </div>
+          {emp.hasLactation && (
+            <div
+              className="absolute -bottom-1 -right-1 bg-pink-100 p-1 rounded-full border border-pink-200 text-pink-600 shadow-sm"
+              title="Lactancia Activa"
+            >
+              <Baby size={9} strokeWidth={3} />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-bold text-content text-[13px] leading-tight truncate group-hover:text-brand transition-colors">
+            {emp.name}
+          </h3>
+          <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
+            {emp.role || "Empleado"}
+          </p>
+        </div>
+      </button>
+
+      <div className="mb-2.5">{getStatusBadge(status, isLate, lateText)}</div>
+
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold text-content-3 mb-2 px-0.5">
+        <MapPin size={11} className="shrink-0" />
+        <span className="truncate">{shiftName}</span>
+      </div>
+
+      {scheduleDetails?.start && (
+        <div className="bg-surface-card-hover/50 rounded-lg p-2 border border-black/[0.04] space-y-1 mb-2">
+          <div className="flex items-center gap-1.5 text-[9px] font-semibold text-content-2">
+            <Clock size={11} className="text-brand shrink-0" />
+            <span className="truncate">
+              {formatTime12h(scheduleDetails.start)} - {formatTime12h(scheduleDetails.end)}
+            </span>
+          </div>
+          {scheduleDetails.lunch && (
+            <div className="flex items-center gap-1.5 text-[9px] font-semibold text-content-3">
+              <Utensils size={11} className="text-chart-4-text shrink-0" />
+              <span className="truncate">{formatTime12h(scheduleDetails.lunch)} Almuerzo</span>
+            </div>
+          )}
+          {scheduleDetails.lactation && (
+            <div className="flex items-center gap-1.5 text-[9px] font-semibold text-content-3">
+              <Baby size={11} className="text-chart-6-text shrink-0" />
+              <span className="truncate">{formatTime12h(scheduleDetails.lactation)} Lactancia</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between text-[10px] pt-2 border-t border-black/[0.04]">
+        <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1">
+          <Timer size={11} /> Último
+        </span>
+        <span
+          className={[
+            "font-black text-[12px]",
+            isLate && status !== "FINISHED" ? "text-danger" : "text-content",
+          ].join(" ")}
+        >
+          {lastActionTime || "--:--"}
+        </span>
+      </div>
+
+      {punches?.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-black/[0.04] flex flex-wrap gap-1.5">
+          {punches.slice(-3).reverse().map((p, idx) => {
+            const Icon = punchIcon(p.type);
+            const t = new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            const isLatest = idx === 0;
+            return (
+              <div
+                key={`${p.timestamp}-${idx}`}
+                className={[
+                  "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[8px] font-bold uppercase tracking-wider",
+                  isLatest
+                    ? "bg-surface-card border-chart-1/30 text-chart-1-text shadow-sm"
+                    : "bg-surface-card border-black/5 text-content-3",
+                ].join(" ")}
+              >
+                <Icon size={9} strokeWidth={2.5} />
+                {t}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   const filtersContent = (
     <div className="flex items-center gap-2 md:gap-3">
       <div className="hidden md:flex items-center gap-2 bg-surface-card backdrop-blur-sm border border-border-card px-4 py-2 rounded-2xl">
@@ -413,7 +564,6 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
         </span>
       </div>
-      {getScope('monitor') !== 'BRANCH' && <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />}
       <button
         type="button"
         onClick={() => setSearchOpen((v) => !v)}
@@ -428,279 +578,8 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       >
         {searchOpen ? <X size={17} strokeWidth={2.5} /> : <Search size={17} strokeWidth={2.5} />}
       </button>
-      <button
-        type="button"
-        onClick={() => setIsDarkConcept(true)}
-        title="Ver concepto oscuro"
-        className="w-11 h-11 flex-shrink-0 rounded-[0.875rem] border border-border-card bg-surface-card backdrop-blur-md text-content-3 hover:bg-white hover:text-brand flex items-center justify-center transition-all duration-200 hover:shadow-md active:scale-[0.97]"
-      >
-        <Moon size={16} strokeWidth={2} />
-      </button>
     </div>
   );
-
-  const getDarkCardBg = (status, isLate) => {
-    if (isLate && status !== "FINISHED") return "rgba(239,68,68,0.08)";
-    switch (status) {
-      case "WORKING":       return "rgba(16,185,129,0.07)";
-      case "EXTRA_WORKING": return "rgba(105,41,196,0.09)";
-      case "LUNCH":         return "rgba(249,115,22,0.07)";
-      case "LACTATION":     return "rgba(236,72,153,0.07)";
-      case "FINISHED":      return "rgba(255,255,255,0.03)";
-      case "OFF_DAY":       return "rgba(255,255,255,0.02)";
-      default:              return "rgba(255,255,255,0.05)";
-    }
-  };
-  const getDarkCardBorder = (status, isLate) => {
-    if (isLate && status !== "FINISHED") return "rgba(239,68,68,0.28)";
-    switch (status) {
-      case "WORKING":       return "rgba(16,185,129,0.25)";
-      case "EXTRA_WORKING": return "rgba(105,41,196,0.28)";
-      case "LUNCH":         return "rgba(249,115,22,0.25)";
-      case "LACTATION":     return "rgba(236,72,153,0.25)";
-      case "FINISHED":      return "rgba(255,255,255,0.06)";
-      case "OFF_DAY":       return "rgba(255,255,255,0.05)";
-      default:              return "rgba(255,255,255,0.09)";
-    }
-  };
-
-  if (isDarkConcept) {
-    return (
-      <div className="fixed inset-0 z-50 overflow-auto"
-        style={{ background: "radial-gradient(ellipse at 78% 12%, rgba(0,82,204,0.13) 0%, transparent 52%), radial-gradient(ellipse at 12% 88%, rgba(105,41,196,0.09) 0%, transparent 52%), #050E1F" }}>
-
-        {/* ── Sticky dark header ── */}
-        <div className="sticky top-0 z-30 flex items-center gap-3 px-5 md:px-6 py-4"
-          style={{ background: "rgba(5,14,31,0.90)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="w-9 h-9 rounded-[0.875rem] flex items-center justify-center shrink-0"
-            style={{ background: "linear-gradient(135deg, #0052CC, #6929C4)" }}>
-            <Clock size={15} className="text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-white font-black text-[15px] leading-none">Monitor en Tiempo Real</h1>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.22)" }}>
-                <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-success">En vivo</span>
-              </div>
-            </div>
-            <p className="hidden md:block text-[10px] font-black tracking-[0.12em] font-mono mt-0.5"
-              style={{ color: "rgba(255,255,255,0.30)" }}>
-              {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {getScope('monitor') !== 'BRANCH' && <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />}
-            <button type="button" onClick={() => setSearchOpen(v => !v)}
-              className="w-10 h-10 flex-shrink-0 rounded-[0.875rem] flex items-center justify-center transition-all duration-200 active:scale-[0.97]"
-              style={searchOpen
-                ? { background: "#0052CC", border: "1px solid rgba(0,82,204,0.60)", color: "white", boxShadow: "0 4px 12px rgba(0,82,204,0.35)" }
-                : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.45)" }}>
-              {searchOpen ? <X size={16} strokeWidth={2.5} /> : <Search size={16} strokeWidth={2.5} />}
-            </button>
-            <button onClick={() => setIsDarkConcept(false)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-200 active:scale-[0.97]"
-              style={{ color: "rgba(255,255,255,0.38)", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "rgba(255,255,255,0.80)"; e.currentTarget.style.background = "rgba(255,255,255,0.09)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.38)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
-              <X size={11} /> Diseño original
-            </button>
-          </div>
-        </div>
-
-        <div className="px-4 md:px-6 py-5 space-y-5">
-          {/* Search */}
-          <div {...searchContainerRef} className={["overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]", searchOpen ? "max-h-24 opacity-100" : "max-h-0 opacity-0"].join(" ")}>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-[1.5rem]"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <Search size={16} style={{ color: "rgba(255,255,255,0.28)", flexShrink: 0 }} />
-              <input ref={searchInputRef} type="text" placeholder="Escribe nombre o código..."
-                className="w-full bg-transparent border-none outline-none text-[16px] font-bold text-white placeholder-white/25"
-                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-              {searchTerm && (
-                <button type="button" onClick={() => setSearchTerm("")}
-                  className="text-xs font-black uppercase transition-colors shrink-0"
-                  style={{ color: "rgba(255,255,255,0.30)" }}
-                  onMouseEnter={e => e.currentTarget.style.color = "rgb(248,113,113)"}
-                  onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.30)"}>
-                  Borrar
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-            {statCards.map(card => {
-              const isActive = statusTab === card.id;
-              const Icon = card.icon;
-              return (
-                <button key={card.id} type="button" onClick={() => setStatusTab(card.id)}
-                  className="text-left p-5 rounded-[2rem] transition-all duration-300 group relative overflow-hidden"
-                  style={isActive
-                    ? { background: "rgba(0,82,204,0.22)", border: "1px solid rgba(0,82,204,0.45)", boxShadow: "0 12px 24px rgba(0,82,204,0.22)", transform: "scale(1.02)" }
-                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  {Icon && (
-                    <div className="absolute -right-3 -top-3 opacity-[0.08] transition-transform group-hover:scale-110 group-hover:rotate-12">
-                      <Icon size={70} className="text-danger" />
-                    </div>
-                  )}
-                  <p className="text-[10px] font-black uppercase tracking-widest mb-1 relative z-10"
-                    style={{ color: "rgba(255,255,255,0.35)" }}>{card.label}</p>
-                  <p className="text-[28px] font-black relative z-10 leading-none"
-                    style={{ color: isActive ? "#4D94FF" : "rgba(255,255,255,0.85)" }}>
-                    {card.count}
-                  </p>
-                  {isActive && (
-                    <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#4D94FF]" style={{ boxShadow: "0 0 10px #0052CC" }} />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Employee grid */}
-          {employeeDataList.length === 0 ? (
-            <div className="rounded-[2rem] p-20 text-center flex flex-col items-center gap-4 mt-8"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="w-20 h-20 rounded-full flex items-center justify-center animate-pulse"
-                style={{ background: "rgba(255,255,255,0.06)" }}>
-                <Users size={32} style={{ color: "rgba(255,255,255,0.20)" }} />
-              </div>
-              <p className="text-[14px] font-black uppercase tracking-widest"
-                style={{ color: "rgba(255,255,255,0.35)" }}>
-                No hay empleados en esta categoría
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10">
-              {employeeDataList.map(({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => {
-                const bName = branchNameById.get(String(emp.branchId)) || "N/A";
-                const dBg     = getDarkCardBg(status, isLate);
-                const dBorder = getDarkCardBorder(status, isLate);
-                return (
-                  <div key={emp.id}
-                    className="p-5 rounded-[2.5rem] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]"
-                    style={{ background: dBg, border: `1px solid ${dBorder}`, boxShadow: "0 10px 28px rgba(0,0,0,0.40)" }}>
-                    {/* Card header */}
-                    <div className="flex justify-between items-start mb-5">
-                      <button type="button" onClick={() => goToProfile(emp)}
-                        className="flex items-center gap-4 text-left group w-full">
-                        <div className="relative">
-                          <div className="h-14 w-14 rounded-2xl overflow-hidden flex items-center justify-center font-black text-lg transition-transform group-hover:scale-105"
-                            style={{
-                              background: isLate && status !== "FINISHED" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.08)",
-                              border: `1px solid ${dBorder}`,
-                              color: isLate && status !== "FINISHED" ? "rgb(248,113,113)" : "rgba(255,255,255,0.50)",
-                            }}>
-                            {emp.photo ? (
-                              <img src={emp.photo} className="w-full h-full object-cover" alt="Foto" />
-                            ) : String(emp?.name || "?").charAt(0)}
-                          </div>
-                          {emp.hasLactation && (
-                            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full shadow-sm"
-                              style={{ background: "rgba(236,72,153,0.15)", border: "1px solid rgba(236,72,153,0.25)", color: "rgb(249,168,212)" }}
-                              title="Lactancia Activa">
-                              <Baby size={10} strokeWidth={3} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-bold text-[15px] leading-tight truncate"
-                            style={{ color: "rgba(255,255,255,0.88)" }}>{emp.name}</h3>
-                          <p className="text-[10px] font-bold uppercase tracking-widest truncate mt-0.5"
-                            style={{ color: "rgba(255,255,255,0.35)" }}>
-                            {emp.role || "Empleado"}
-                          </p>
-                        </div>
-                      </button>
-                    </div>
-
-                    <div className="mb-5">{getStatusBadge(status, isLate, lateText)}</div>
-
-                    <div className="space-y-2.5 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold uppercase tracking-wider flex items-center gap-1.5"
-                          style={{ color: "rgba(255,255,255,0.35)" }}>
-                          <Building2 size={12} /> Sucursal
-                        </span>
-                        <span className="font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>{bName}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold uppercase tracking-wider flex items-center gap-1.5"
-                          style={{ color: "rgba(255,255,255,0.35)" }}>
-                          <MapPin size={12} /> Turno
-                        </span>
-                        <span className="font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>{shiftName}</span>
-                      </div>
-                      {scheduleDetails?.start && (
-                        <div className="p-2.5 rounded-xl space-y-1.5"
-                          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                          <div className="flex items-center gap-2 text-[10px] font-semibold"
-                            style={{ color: "rgba(255,255,255,0.60)" }}>
-                            <Clock size={12} className="text-[#4D94FF]" />
-                            {formatTime12h(scheduleDetails.start)} - {formatTime12h(scheduleDetails.end)}
-                          </div>
-                          {scheduleDetails.lunch && (
-                            <div className="flex items-center gap-2 text-[10px] font-semibold"
-                              style={{ color: "rgba(255,255,255,0.45)" }}>
-                              <Utensils size={12} className="text-chart-4-text" />
-                              {formatTime12h(scheduleDetails.lunch)} (Almuerzo)
-                            </div>
-                          )}
-                          {scheduleDetails.lactation && (
-                            <div className="flex items-center gap-2 text-[10px] font-semibold"
-                              style={{ color: "rgba(255,255,255,0.45)" }}>
-                              <Baby size={12} className="text-pink-400" />
-                              {formatTime12h(scheduleDetails.lactation)} (Lactancia)
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center text-[11px] pt-1">
-                        <span className="font-bold uppercase tracking-wider flex items-center gap-1.5"
-                          style={{ color: "rgba(255,255,255,0.35)" }}>
-                          <Timer size={12} /> Último Reg.
-                        </span>
-                        <span className="font-black text-[13px]"
-                          style={{ color: isLate && status !== "FINISHED" ? "rgb(248,113,113)" : "rgba(255,255,255,0.85)" }}>
-                          {lastActionTime || "--:--"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {punches?.length > 0 && (
-                      <div className="mt-4 pt-3 flex flex-wrap gap-2"
-                        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                        {punches.slice(-4).reverse().map((p, idx) => {
-                          const PIcon = punchIcon(p.type);
-                          const t = new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
-                          const isLatest = idx === 0;
-                          return (
-                            <div key={`${p.timestamp}-${idx}`}
-                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider"
-                              style={isLatest
-                                ? { background: "rgba(0,82,204,0.22)", border: "1px solid rgba(0,82,204,0.38)", color: "#4D94FF" }
-                                : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.45)" }}>
-                              <PIcon size={10} strokeWidth={2.5} />
-                              {t}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <GlassViewLayout icon={Clock} title="Monitor en Tiempo Real" liveIndicator filtersContent={filtersContent}>
@@ -736,58 +615,75 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         </div>
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 relative z-0">
-        {statCards.map((card) => {
-          const isActive = statusTab === card.id;
-          const Icon = card.icon;
+      {/* STATS + FILTRO DE SUCURSAL (DESIGN.md §17: stats a la izquierda, pill de filtro a la derecha) */}
+      <div className="flex items-start gap-3 md:gap-4 flex-wrap">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 flex-1 min-w-0">
+          {statCards.map((card) => {
+            const isActive = statusTab === card.id;
+            const Icon = card.icon;
 
-          return (
-            <button
-              key={card.id}
-              type="button"
-              onClick={() => setStatusTab(card.id)}
-              className={[
-                "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
-                isActive
-                  ? "bg-white border-brand shadow-[var(--shadow-glow-brand)] scale-[1.02] ring-1 ring-brand"
-                  : `${card.bg} ${card.border} hover:bg-white hover:border-white hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1`,
-              ].join(" ")}
-            >
-              {Icon && (
-                <div
-                  className={[
-                    "absolute -right-3 -top-3 opacity-10 transition-transform group-hover:scale-110 group-hover:rotate-12",
-                    card.id === "LATE" ? "text-danger" : "",
-                  ].join(" ")}
-                >
-                  <Icon size={70} />
-                </div>
-              )}
-
-              <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
-                {card.label}
-              </p>
-              <p
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => setStatusTab(card.id)}
                 className={[
-                  "text-[28px] font-black relative z-10 leading-none",
-                  isActive ? "text-brand" : card.color,
+                  "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
+                  isActive
+                    ? "bg-white border-brand shadow-[var(--shadow-glow-brand)] scale-[1.02] ring-1 ring-brand"
+                    : `${card.bg} ${card.border} hover:bg-white hover:border-white hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1`,
                 ].join(" ")}
               >
-                {card.count}
-              </p>
+                {Icon && (
+                  <div
+                    className={[
+                      "absolute -right-3 -top-3 opacity-10 transition-transform group-hover:scale-110 group-hover:rotate-12",
+                      card.id === "LATE" ? "text-danger" : "",
+                    ].join(" ")}
+                  >
+                    <Icon size={70} />
+                  </div>
+                )}
 
-              {isActive && (
-                <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
-                  <div className="w-2.5 h-2.5 rounded-full bg-brand shadow-[0_0_10px_#0052CC]" />
-                </div>
-              )}
-            </button>
-          );
-        })}
+                <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
+                  {card.label}
+                </p>
+                <p
+                  className={[
+                    "text-[28px] font-black relative z-10 leading-none",
+                    isActive ? "text-brand" : card.color,
+                  ].join(" ")}
+                >
+                  {card.count}
+                </p>
+
+                {isActive && (
+                  <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
+                    <div className="w-2.5 h-2.5 rounded-full bg-brand shadow-[var(--shadow-glow-brand)]" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {getScope('monitor') !== 'BRANCH' && (
+          <div className="shrink-0 w-full sm:w-auto sm:min-w-[200px] flex items-center rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06)] px-2 py-2">
+            <LiquidSelect
+              value={filterBranch}
+              onChange={setFilterBranch}
+              options={branchOptions}
+              placeholder="Todas"
+              icon={Building2}
+              compact
+              bare
+              clearable={false}
+            />
+          </div>
+        )}
       </div>
 
-      {/* GRID DE EMPLEADOS */}
+      {/* TABLERO POR ESTADO */}
       {employeeDataList.length === 0 ? (
         <div className="glass-surface rounded-[2rem] p-20 text-center border border-border-card shadow-sm flex flex-col items-center gap-4 mt-8">
           <div className="w-20 h-20 bg-surface-card-hover rounded-full flex items-center justify-center animate-pulse">
@@ -803,151 +699,37 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10">
-          {employeeDataList.map(({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => {
-            const bName = branchNameById.get(String(emp.branchId)) || "N/A";
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
+          {KANBAN_COLUMNS.map((col) => {
+            const rows = employeeDataList.filter((row) => col.match(row.status));
+            const groups = groupRowsByBranch(rows);
 
             return (
-              <div
-                key={emp.id}
-                className={[
-                  "p-5 rounded-[2.5rem] border bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-sm)] transition-all duration-300",
-                  "hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-md)]",
-                  getStatusCardStyle(status, isLate),
-                ].join(" ")}
-              >
-                {/* Header Card */}
-                <div className="flex justify-between items-start mb-5">
-                  <button
-                    type="button"
-                    onClick={() => goToProfile(emp)}
-                    className="flex items-center gap-4 text-left group w-full"
-                  >
-                    <div className="relative">
-                      <div
-                        className={[
-                          "h-14 w-14 rounded-2xl border-2 overflow-hidden flex items-center justify-center font-black text-lg shadow-sm transition-transform group-hover:scale-105",
-                          isLate && status !== "FINISHED"
-                            ? "border-danger/30 bg-danger/10 text-danger"
-                            : "border-white bg-white text-content-3",
-                        ].join(" ")}
-                      >
-                        {emp.photo ? (
-                          <img src={emp.photo} className="w-full h-full object-cover" alt="Foto" />
-                        ) : (
-                          String(emp?.name || "?").charAt(0)
+              <div key={col.id} className={`rounded-[2rem] border p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${col.dot}`} />
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-content-2">{col.label}</h3>
+                  </div>
+                  <span className="text-[11px] font-bold text-content-3">{rows.length}</span>
+                </div>
+
+                {rows.length === 0 ? (
+                  <p className="text-[11px] text-content-3 italic px-1 pb-2">Sin empleados</p>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {groups.map((group) => (
+                      <div key={group.branchId ?? "flat"} className="flex flex-col gap-3">
+                        {group.branchName && (
+                          <p className="text-[10px] font-black uppercase tracking-wider text-content-3 px-1">
+                            {group.branchName}
+                          </p>
                         )}
+                        <div className="flex flex-col gap-3">
+                          {group.rows.map((row) => renderEmployeeCard(row))}
+                        </div>
                       </div>
-
-                      {emp.hasLactation && (
-                        <div
-                          className="absolute -bottom-1 -right-1 bg-pink-100 p-1.5 rounded-full border border-pink-200 text-pink-600 shadow-sm"
-                          title="Lactancia Activa"
-                        >
-                          <Baby size={10} strokeWidth={3} />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-content text-[15px] leading-tight truncate group-hover:text-brand transition-colors">
-                        {emp.name}
-                      </h3>
-                      <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
-                        {emp.role || "Empleado"}
-                      </p>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Status Badge */}
-                <div className="mb-5">{getStatusBadge(status, isLate, lateText)}</div>
-
-                {/* Detalles Info */}
-                <div className="space-y-2.5 pt-4 border-t border-black/[0.04]">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                      <Building2 size={12} /> Sucursal
-                    </span>
-                    <span className="font-semibold text-content">{bName}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                      <MapPin size={12} /> Turno
-                    </span>
-                    <span className="font-semibold text-content">{shiftName}</span>
-                  </div>
-
-                  {scheduleDetails?.start && (
-                    <div className="bg-surface-card rounded-xl p-2.5 border border-black/[0.04] space-y-1.5">
-                      <div className="flex items-center gap-2 text-[10px] font-semibold text-content-2">
-                        <Clock size={12} className="text-brand" />
-                        <span>
-                          {formatTime12h(scheduleDetails.start)} - {formatTime12h(scheduleDetails.end)}
-                        </span>
-                      </div>
-
-                      {scheduleDetails.lunch && (
-                        <div className="flex items-center gap-2 text-[10px] font-semibold text-content-3">
-                          <Utensils size={12} className="text-chart-4-text" />
-                          <span>{formatTime12h(scheduleDetails.lunch)} (Almuerzo)</span>
-                        </div>
-                      )}
-
-                      {scheduleDetails.lactation && (
-                        <div className="flex items-center gap-2 text-[10px] font-semibold text-content-3">
-                          <Baby size={12} className="text-pink-500" />
-                          <span>{formatTime12h(scheduleDetails.lactation)} (Lactancia)</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center text-[11px] pt-1">
-                    <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                      <Timer size={12} /> Último Reg.
-                    </span>
-                    <span
-                      className={[
-                        "font-black text-[13px]",
-                        isLate && status !== "FINISHED" ? "text-danger" : "text-content",
-                      ].join(" ")}
-                    >
-                      {lastActionTime || "--:--"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Chips de Marcajes Recientes */}
-                {punches?.length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-black/[0.04] flex flex-wrap gap-2">
-                    {punches
-                      .slice(-4)
-                      .reverse()
-                      .map((p, idx) => {
-                        const Icon = punchIcon(p.type);
-                        const t = new Date(p.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        });
-                        const isLatest = idx === 0;
-
-                        return (
-                          <div
-                            key={`${p.timestamp}-${idx}`}
-                            className={[
-                              "flex items-center gap-1 px-2 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider",
-                              isLatest
-                                ? "bg-surface-card border-chart-1/30 text-chart-1-text shadow-sm"
-                                : "bg-surface-card border-black/5 text-content-3",
-                            ].join(" ")}
-                          >
-                            <Icon size={10} strokeWidth={2.5} />
-                            {t}
-                          </div>
-                        );
-                      })}
+                    ))}
                   </div>
                 )}
               </div>

@@ -5,8 +5,51 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.8';
+export const APP_VERSION = '2.62.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.62.0 — feat(monitor): rediseño completo de "Monitor en Tiempo Real"
+// (AttendanceMonitorView.jsx) — pedido del usuario ("monitor realtime aplica
+// todo design.md"), aprobado tras 3 rondas de mockups (Opción B / "Status
+// Wall", color en el contenedor).
+//
+// Eliminado por completo: el estado `isDarkConcept` y sus ~250 líneas de
+// implementación duplicada a mano (header + stats + grid, hand-rolled en
+// paralelo a la versión "clara"). Instrucción explícita del usuario: el
+// selector de tema real ya vive en Ajustes — esta vista ya no tiene su
+// propio toggle de tema, solo sigue el tema global de la app vía tokens.
+//
+// Rediseño: de una grilla plana de tarjetas a un tablero de 4 columnas por
+// estado (Trabajando+Extra / En Pausa / Sin Marcar / Finalizado+Libre —
+// cubren los 9 estados posibles de evaluateEmployeeStatus sin dejar a nadie
+// afuera), cada columna con tinte de color en el contenedor (success/
+// chart-4/neutral/neutral) y tarjetas de empleado en glass estándar sin
+// borde de color (el color vive en el badge de estado, no en la tarjeta).
+//
+// Fix DESIGN.md §17: el filtro de sucursal (antes `BranchChips` dentro de
+// `filtersContent`, en el header) se movió al body, en la misma fila que
+// las stat cards (stats flex-1 a la izquierda, pill de filtro shrink-0 a la
+// derecha) — `filtersContent` ahora solo tiene el buscador. Cambiado de
+// `BranchChips` (usado solo en este archivo en todo el proyecto) a
+// `LiquidSelect` para seguir el patrón canónico de VentasView/FilterControls.
+//
+// Feat (pedido de último momento): dentro de cada columna, si el filtro de
+// sucursal está en "Todas", los empleados se agrupan en sub-secciones por
+// sucursal (ordenadas según el orden real de `branches`); con una sucursal
+// específica seleccionada no hay sub-secciones (ya son todas de esa
+// sucursal).
+//
+// Bug real encontrado y corregido durante la verificación: `LiquidSelect`
+// es `clearable` por defecto y el valor inicial del filtro es el string
+// "ALL" (no ''), así que el botón "×" de limpiar hubiera puesto
+// `filterBranch=''` — que no calza con "ALL" ni con ningún id de sucursal,
+// ocultando a TODOS los empleados en silencio. Fix: `clearable={false}` en
+// este uso puntual.
+//
+// Verificado con Playwright: gate:design y ESLint limpios; responsive real
+// (no un div resizeable) en 360/390/768/1024/1440px — sin cramping en
+// ningún breakpoint; agrupación por sucursal confirmada (9 sub-secciones
+// reales: La Popular, Salud 1-5, Bodega, Administración, Sin Sucursal).
 
 // v2.61.8 — fix+feat(attendance-audit): fotos de empleados no salían en
 // Auditoría de Tiempos + buscador nuevo en el header (pedido del usuario).

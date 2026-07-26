@@ -219,7 +219,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
     // SearchInput más abajo, que llama a closeSearch — este hook solo agrega
     // el click-afuera; declarado antes del `if (!count)` porque un hook
     // después de un return temprano se saltearía en algunos renders).
-    const { containerRef: searchContainerRef } = useSearchToggle({
+    const { containerProps: searchContainerRef } = useSearchToggle({
         active: searchOpen,
         value: search,
         onClear: () => setSearch(''),
@@ -255,7 +255,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                 </button>
                 <AnimatePresence mode="wait">
                     {searchOpen ? (
-                        <motion.div ref={searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 190, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
+                        <motion.div {...searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 190, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
                             <SearchInput
                                 ref={searchRef}
                                 size="sm"

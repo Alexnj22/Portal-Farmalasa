@@ -211,7 +211,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerRef: searchContainerRef } = useSearchToggle({
+    const { containerProps: searchContainerRef } = useSearchToggle({
         active: isSearchExpanded,
         value: searchTerm,
         onClear: () => setSearchTerm(''),
@@ -418,7 +418,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         </button>
                     </div>
 
-                    <div ref={searchContainerRef} className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
+                    <div {...searchContainerRef} className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
                         <div className="relative w-full shadow-[var(--shadow-glow-brand)] rounded-full overflow-hidden border border-brand/20 bg-surface-card backdrop-blur-xl">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-brand" />

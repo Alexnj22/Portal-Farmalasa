@@ -5,8 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.6';
+export const APP_VERSION = '2.61.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.7 — fix(design): CRÍTICO — el buscador toggleable no funcionaba en
+// Nómina, Plan de Vacaciones y potencialmente los otros ~14 hand-rolled de
+// v2.61.4/v2.61.5. Regresión propia, reportada por el usuario ("no funciona
+// el buscador" en Nómina y Plan de Vacaciones).
+//
+// Causa raíz: `GlassViewLayout` renderiza `filtersContent` DOS VECES (copia
+// desktop + copia móvil, una oculta por CSS según breakpoint) — un patrón
+// preexistente del proyecto que nunca importó mientras el buscador no tenía
+// lógica de click-afuera. `useSearchToggle` devolvía un `containerRef`
+// (objeto ref de nodo DOM) que el caller adjuntaba con `ref={...}` a esa
+// misma pieza de JSX — como las dos copias montadas comparten el MISMO
+// objeto ref, solo la última en commitear se queda con `.current`. Al
+// clickear DENTRO de la copia visible, el chequeo de contención comparaba
+// contra la copia OCULTA → se detectaba como "click afuera" → cerraba el
+// buscador antes de poder escribir una letra. `ViewTabBar`/`SearchInput`
+// no tenían este bug porque el ref vive DENTRO del componente reutilizable
+// (cada copia montada tiene su propio ref interno); el bug solo afectaba a
+// los ~20 buscadores hand-rolled donde el ref se crea en el padre y se
+// pasa a una pieza de JSX que GlassViewLayout duplica.
+//
+// Fix: `useSearchToggle` cambia de `containerRef` (ref de nodo) a
+// `containerProps` (objeto `{ 'data-search-toggle-id': id }` con `useId()`,
+// para spread vía `{...containerProps}`) — un atributo data-* no tiene el
+// problema de "un solo dueño", ambas copias montadas lo llevan, y
+// `e.target.closest(selector)` encuentra cualquiera de las dos sin
+// importar cuál se clickeó. Actualizados los 22 call sites (`ref={x}` →
+// `{...x}`, destructuring `containerRef:` → `containerProps:`).
+//
+// Verificado en vivo con Playwright reproduciendo el bug exacto (abrir →
+// click en el input vacío → antes se cerraba, ahora se queda abierto) en
+// Nómina y Plan de Vacaciones, más el ciclo completo (tipeo/Escape/
+// click-afuera con y sin texto); + verificación rápida en Sucursales y
+// Roles. gate:design y eslint en 0.
 
 // v2.61.6 — feat(design): extiende gate:design a 3 categorías más (pedido
 // explícito del usuario: "extendamos el gate, para detectar más elementos").

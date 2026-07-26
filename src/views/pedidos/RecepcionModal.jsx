@@ -134,7 +134,7 @@ export default function RecepcionModal({
     // (no cerca de donde se usa, más abajo) porque este componente tiene
     // returns tempranos por pantalla (cajas/extras) — un hook después de esos
     // returns se saltearía en algunos renders, violando las reglas de hooks.
-    const { containerRef: prodSearchContainerRef } = useSearchToggle({
+    const { containerProps: prodSearchContainerRef } = useSearchToggle({
         active: showSearch,
         value: prodSearch,
         onClear: () => setProdSearch(''),
@@ -986,7 +986,7 @@ export default function RecepcionModal({
 
             {/* Header */}
             <PedidoModal.Header className="px-5 py-4">
-                <div ref={prodSearchContainerRef} className="flex items-center gap-2">
+                <div {...prodSearchContainerRef} className="flex items-center gap-2">
                     {hasCajaMap && (
                         <button onClick={goBack} disabled={saving}
                             className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">

@@ -1459,17 +1459,17 @@ sin ir caso por caso:
 ```jsx
 import { useSearchToggle } from '../hooks/useSearchToggle';
 
-const { containerRef } = useSearchToggle({
+const { containerProps } = useSearchToggle({
     active: isSearchMode,        // bool — el buscador está abierto
     value: searchTerm,           // string actual del input
     onClear: () => setSearchTerm(''),
     onClose: () => setIsSearchMode(false),
 });
 
-// ref en el contenedor que delimita "adentro" del buscador (incluye el
+// spread en el contenedor que delimita "adentro" del buscador (incluye el
 // botón que lo abre/cierra, así un click en ese botón nunca cuenta como
 // "afuera" y dispara un doble toggle)
-<div ref={containerRef}>...</div>
+<div {...containerProps}>...</div>
 ```
 
 **Gotcha de reglas de hooks:** varios componentes con esta necesidad tienen
@@ -1477,6 +1477,27 @@ const { containerRef } = useSearchToggle({
 screen, `ItemSection` por `if (!count) return null`). El hook SIEMPRE debe
 llamarse antes de esos returns — nunca después — o se salta en algunos
 renders y rompe las reglas de hooks de React.
+
+**Bug crítico real (2026-07-26, reportado por el usuario: "no funciona el
+buscador" en Nómina y Plan de Vacaciones) — por qué es `containerProps`
+(atributo data-*) y NO `containerRef` (ref de nodo DOM), como se implementó
+originalmente:** `GlassViewLayout` renderiza `filtersContent` DOS VECES —
+una copia desktop y una copia móvil, cada una oculta por CSS según
+breakpoint pero AMBAS montadas en el DOM simultáneamente. Un `ref` es un
+objeto con un solo `.current` — si la misma pieza de JSX (creada una vez en
+el padre, con el ref ya adjunto) se monta dos veces, ambas copias comparten
+el MISMO objeto ref, y solo la última en commitear se queda con `.current`.
+Resultado: clickear DENTRO de la copia visible se comparaba contra
+`containerRef.current`, que apuntaba a la copia OCULTA → se leía como
+"click afuera" → cerraba el buscador antes de poder escribir la primera
+letra. `ViewTabBar`/`SearchInput` nunca tuvieron este bug porque el hook se
+llama DENTRO del componente reutilizable — cada copia montada crea su
+propio ref interno, no uno compartido desde afuera. Fix: un atributo
+`data-search-toggle-id` (vía `useId()`) en vez de un ref — ambas copias
+montadas lo llevan por igual, y `e.target.closest(selector)` encuentra
+cualquiera de las dos sin importar cuál se clickeó. Ver `src/hooks/useSearchToggle.js`
+para la implementación completa y el comentario in-line con el mismo
+razonamiento.
 
 **Migrado 2026-07-26, en dos pasadas** — la primera (8 archivos) se hizo
 grepeando por placeholder de texto (`"Buscar..."`) y sampleando resultados
@@ -1494,8 +1515,9 @@ canónico — antes solo cerraba con el botón, sin Escape ni click-afuera),
 `TabHistory`, `FacturacionView`, `ConteoInventarioView`, `RolesView`,
 `PermissionsView`, `AuditView`, `StaffManagementView`, `VacationPlanView`,
 `AttendanceMonitorView` (dos copias del mismo buscador — variante clara y
-variante "dark concept" — mismo `containerRef` en ambas, solo una está
-montada a la vez), `EmployeeDocumentsView`, `EmployeeAnnouncementsView`,
+variante "dark concept" — mismo `containerProps` spreadeado en ambas, solo
+una está montada a la vez, sin conflicto porque es un atributo data-*, no un
+ref), `EmployeeDocumentsView`, `EmployeeAnnouncementsView`,
 `ConteoDetailView`, `EmployeeDetailView` (`ausenciasSearchOpen`),
 `TabExpediente` — estos eran duplicados hand-rolled del patrón de
 `ViewTabBar`/`SearchInput expandable` con Escape parcial o nada; y

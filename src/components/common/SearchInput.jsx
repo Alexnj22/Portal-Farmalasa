@@ -57,7 +57,7 @@ const SearchInput = forwardRef(function SearchInput({
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío (con texto se
     // queda abierto — no se pierde un resultado por accidente).
-    const { containerRef } = useSearchToggle({
+    const { containerProps } = useSearchToggle({
         active: open,
         value,
         onClear: () => onChange?.(''),
@@ -76,7 +76,7 @@ const SearchInput = forwardRef(function SearchInput({
     if (expandable) {
         return (
             <div
-                ref={containerRef}
+                {...containerProps}
                 {...(open ? { 'data-surface': 'input' } : {})}
                 onClick={() => { if (!open && !disabled) { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 120); } }}
                 style={open && isFocused ? { borderColor: accentColor || 'var(--brand)' } : undefined}

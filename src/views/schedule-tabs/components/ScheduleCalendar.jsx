@@ -619,7 +619,7 @@ const ScheduleCalendar = memo(({
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerRef: coverageSearchContainerRef } = useSearchToggle({
+    const { containerProps: coverageSearchContainerRef } = useSearchToggle({
         active: showCoverageSearch,
         value: coverageSearchTerm,
         onClear: () => setCoverageSearchTerm(''),
@@ -852,7 +852,7 @@ const ScheduleCalendar = memo(({
                                             <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
                                         </button>
                                     ) : (
-                                        <div ref={coverageSearchContainerRef} className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
+                                        <div {...coverageSearchContainerRef} className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <SearchInput
                                                     autoFocus

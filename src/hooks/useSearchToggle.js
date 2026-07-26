@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 // Contrato estándar para TODO buscador toggleable (Tipo 1 header, Tipo 2b
 // widget, o cualquier buscador hand-rolled con su propio show/hide): Escape
@@ -7,8 +7,23 @@ import { useEffect, useRef } from 'react';
 // abrir queda a cargo de cada caller (autoFocus prop o
 // `inputRef.current?.focus()` tras el timeout de su propia animación de
 // apertura), porque el timing exacto depende de cada transición.
+//
+// Usa un marcador data-* (vía `containerProps`, para spread en el JSX) en
+// vez de un `ref` de nodo DOM — bug real encontrado 2026-07-26:
+// `GlassViewLayout` renderiza `filtersContent` DOS VECES (copia desktop +
+// copia móvil, una oculta por CSS según breakpoint). Si `filtersContent` es
+// un valor JSX creado UNA vez en el padre con `ref={containerRef}`, ambas
+// copias montadas comparten el MISMO objeto ref — solo la última en
+// commitear gana `.current`. El resultado: clickear DENTRO de la copia
+// visible se detectaba como "afuera" (porque el ref apuntaba a la copia
+// oculta), cerrando el buscador antes de poder escribir — exactamente el
+// reporte de "no funciona el buscador" en Nómina/Plan de Vacaciones. Un
+// atributo data-* no tiene este problema: ambas copias montadas lo llevan,
+// y `closest()` encuentra cualquiera de las dos sin importar cuál se
+// clickeó.
 export function useSearchToggle({ active, value, onClear, onClose }) {
-    const containerRef = useRef(null);
+    const id = useId();
+    const selector = `[data-search-toggle-id="${id}"]`;
     // refs para no reatachar listeners en cada render solo porque el caller
     // pasó una arrow function nueva — solo active/value deben reiniciar el efecto.
     // Se actualizan en un efecto (no durante el render) porque el React
@@ -32,7 +47,7 @@ export function useSearchToggle({ active, value, onClear, onClose }) {
         };
         const handleClickOutside = (e) => {
             if (valueRef.current) return;
-            if (containerRef.current && !containerRef.current.contains(e.target)) {
+            if (!e.target.closest?.(selector)) {
                 onCloseRef.current?.();
             }
         };
@@ -43,7 +58,7 @@ export function useSearchToggle({ active, value, onClear, onClose }) {
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [active]);
+    }, [active, selector]);
 
-    return { containerRef };
+    return { containerProps: { 'data-search-toggle-id': id } };
 }

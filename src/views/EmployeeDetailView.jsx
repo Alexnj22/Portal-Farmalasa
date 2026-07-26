@@ -112,7 +112,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerRef: ausenciasSearchContainerRef } = useSearchToggle({
+    const { containerProps: ausenciasSearchContainerRef } = useSearchToggle({
         active: ausenciasSearchOpen,
         value: ausenciasSearch,
         onClear: () => setAusenciasSearch(''),
@@ -774,7 +774,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <X size={10} strokeWidth={3}/> {ausenciasSelectedDay}
                                                     </button>
                                                 )}
-                                                <div ref={ausenciasSearchContainerRef} className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-white border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
+                                                <div {...ausenciasSearchContainerRef} className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-white border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
                                                     <button type="button"
                                                         onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}
                                                         className="flex-shrink-0 text-content-3 hover:text-content-2 transition-colors">

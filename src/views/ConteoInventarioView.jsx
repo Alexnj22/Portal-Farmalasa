@@ -7,6 +7,7 @@ import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
+import { useSearchToggle } from '../hooks/useSearchToggle';
 
 const ESTADO_CFG = {
     BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-divider',  icon: Clock,       label: 'Borrador' },
@@ -50,13 +51,22 @@ export default function ConteoInventarioView() {
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
 
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: isSearchActive,
+        value: search,
+        onClear: () => setSearch(''),
+        onClose: () => setIsSearchActive(false),
+    });
+
     const { results: filtered, isFuzzy: isSearchFuzzy } = useMemo(() => {
         if (!search.trim()) return { results: conteos, isFuzzy: false };
         return smartFilter(search, conteos, (c) => [c.branches?.name]);
     }, [conteos, search]);
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div ref={searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
                 <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />

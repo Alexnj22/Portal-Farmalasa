@@ -25,6 +25,7 @@ import {
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
 import { tokenMatch } from '../utils/searchUtils';
+import { useSearchToggle } from '../hooks/useSearchToggle';
 import GlassViewLayout from "../components/GlassViewLayout";
 import { toLocalISODate } from "../utils/timeClock.helpers";
 import BranchChips from "../components/common/BranchChips";
@@ -74,6 +75,17 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       setSearchTerm(""); // eslint-disable-line react-hooks/set-state-in-effect -- limpia el buscador al cerrarlo
     }
   }, [searchOpen]);
+
+  // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+  // cierra Y limpia; click afuera cierra SOLO si está vacío. Declarado acá
+  // (antes del `if (isDarkConcept) return` de más abajo) por las reglas de
+  // hooks de React.
+  const { containerRef: searchContainerRef } = useSearchToggle({
+    active: searchOpen,
+    value: searchTerm,
+    onClear: () => setSearchTerm(""),
+    onClose: () => setSearchOpen(false),
+  });
 
   const todayStr = useMemo(() => toLocalISODate(currentTime), [currentTime]);
 
@@ -499,7 +511,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
         <div className="px-4 md:px-6 py-5 space-y-5">
           {/* Search */}
-          <div className={["overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]", searchOpen ? "max-h-24 opacity-100" : "max-h-0 opacity-0"].join(" ")}>
+          <div ref={searchContainerRef} className={["overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]", searchOpen ? "max-h-24 opacity-100" : "max-h-0 opacity-0"].join(" ")}>
             <div className="flex items-center gap-3 px-4 py-3 rounded-[1.5rem]"
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <Search size={16} style={{ color: "rgba(255,255,255,0.28)", flexShrink: 0 }} />
@@ -696,6 +708,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
       {/* BUSCADOR */}
       <div
+        ref={searchContainerRef}
         className={[
           "overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] relative z-10",
           searchOpen ? "max-h-24 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0",

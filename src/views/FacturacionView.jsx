@@ -11,6 +11,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
+import { useSearchToggle } from '../hooks/useSearchToggle';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
@@ -2118,6 +2119,15 @@ export default function FacturacionView() {
     const openSearch = () => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); };
     const closeSearch = () => { setIsSearchMode(false); setRawSearch(''); };
 
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: isSearchMode,
+        value: rawSearch,
+        onClear: () => setRawSearch(''),
+        onClose: () => setIsSearchMode(false),
+    });
+
     const hasSearch = activeTab !== 'saltos';
 
     const searchPlaceholder = {
@@ -2127,7 +2137,7 @@ export default function FacturacionView() {
     }[activeTab] || 'Buscar...';
 
     const filtersContent = (
-        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div ref={searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>

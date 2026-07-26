@@ -5,8 +5,38 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.4';
+export const APP_VERSION = '2.61.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.5 — fix(design): cierra el gap real de v2.61.4 — 14 buscadores
+// toggleables más (22 en total, no 8) sin el contrato de foco/Escape/
+// click-afuera, encontrados tras el usuario preguntar directamente si se
+// había auditado archivo por archivo (respuesta honesta: no — grepeaba por
+// placeholder de texto y sampleaba, se saltó EmployeeDocumentsView.jsx
+// pese a estar en el mismo grep. /my-documents no funcionaba por esto).
+//
+// Segunda pasada con grep ESTRUCTURAL (por nombre de state, no por texto
+// de placeholder) encontró: FacturacionView, ConteoInventarioView,
+// RolesView, PermissionsView, AuditView, StaffManagementView,
+// VacationPlanView, AttendanceMonitorView (2 copias del mismo buscador —
+// modo claro + "dark concept" — mismo hook, solo una montada a la vez),
+// EmployeeDocumentsView, EmployeeAnnouncementsView, ConteoDetailView,
+// EmployeeDetailView, TabExpediente. Todos migrados a useSearchToggle.
+//
+// Se agregó una 3ra categoría de chequeo a scripts/design-gate.mjs
+// (npm run gate:design): detecta cualquier useState(false) cuyo nombre
+// termina en Search{Open,Mode,Active,Expanded,Visible} o empieza con
+// showSearch, sin useSearchToggle importado — para que este gap no
+// dependa de que alguien lo recuerde grepear a mano otra vez. Es
+// heurística de nombre, no un parser — documentado en DESIGN.md §24 con
+// su propio falso positivo real (isSearching/productSearching, un flag
+// de loading, no de toggle — el regex exige el sufijo, no solo la palabra
+// "search"). Excepción: AppLayout.jsx (searchOpen es el modal ⌘K, tiene
+// su propio contrato de modal).
+//
+// Verificado en vivo con Playwright en /my-documents (tipeo, Escape,
+// click-afuera con/sin texto — los 3 casos correctos); el resto por
+// revisión de diff + eslint limpio + gate:design en 0.
 
 // v2.61.4 — feat(design): contrato uniforme de apertura/cierre para TODO
 // buscador toggleable — "TODOS deben funcionar así siempre" (pedido

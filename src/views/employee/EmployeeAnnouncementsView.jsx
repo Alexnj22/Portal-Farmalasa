@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { smartFilter } from '../../utils/searchUtils';
+import { useSearchToggle } from '../../hooks/useSearchToggle';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 
 const TABS = [
@@ -609,6 +610,15 @@ const EmployeeAnnouncementsView = () => {
     const [searchQuery, setSearchQuery]   = useState('');
     const [showOldRead, setShowOldRead]   = useState(false);
     const searchInputRef                  = useRef(null);
+
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: isSearchMode,
+        value: searchQuery,
+        onClear: () => setSearchQuery(''),
+        onClose: () => setIsSearchMode(false),
+    });
     const isStoreLoading = employees.length === 0 && announcements.length === 0;
     const currentYM = new Date().toISOString().slice(0, 7);
 
@@ -686,7 +696,7 @@ const EmployeeAnnouncementsView = () => {
     };
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+        <div ref={searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
                 <Search size={16} className="text-brand shrink-0" strokeWidth={2.5} />

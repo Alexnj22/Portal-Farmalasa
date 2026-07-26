@@ -13,6 +13,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
+import { useSearchToggle } from '../hooks/useSearchToggle';
 import { smartFilter } from '../utils/searchUtils';
 
 const SCOPE_OPTIONS = [
@@ -60,21 +61,22 @@ const RolesView = ({ openModal }) => {
     // ============================================================================
     // ⚙️ ESCAPE GLOBAL
     // ============================================================================
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: isSearchExpanded,
+        value: searchQuery,
+        onClear: () => setSearchQuery(''),
+        onClose: () => setIsSearchExpanded(false),
+    });
+
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                if (isSearchExpanded) {
-                    setIsSearchExpanded(false);
-                    setSearchQuery('');
-                }
-                if (editingRoleId) {
-                    handleCancelEdit();
-                }
-            }
+            if (e.key === 'Escape' && editingRoleId) handleCancelEdit();
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isSearchExpanded, editingRoleId]);
+    }, [editingRoleId]);
 
 
     // ============================================================================
@@ -433,6 +435,7 @@ const RolesView = ({ openModal }) => {
     // ==========================================================
     const renderFiltersContent = () => (
         <div
+            ref={searchContainerRef}
             className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
         >
             {isSearchExpanded ? (

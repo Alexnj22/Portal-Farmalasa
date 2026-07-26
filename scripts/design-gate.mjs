@@ -1,13 +1,25 @@
 #!/usr/bin/env node
 // Gate mecánico de estandarización visual (DESIGN.md §9.0, §6).
 //
-// Corre dos familias de chequeo sobre src/:
+// Corre tres familias de chequeo sobre src/:
 //   1. Elementos nativos del navegador prohibidos (alert/confirm/prompt,
 //      <select> crudo, <input type=date|time|datetime-local|month|week>).
 //   2. Clases Tailwind de color crudo (paletas gris slate/gray/zinc/neutral/
 //      stone en cualquier prefijo, + hex de 3-8 dígitos en className/style)
 //      que deberían ser un token semántico (text-content-*, bg-surface-*,
 //      border-divider, etc. — ver DESIGN.md §3/§6).
+//   3. Buscadores toggleables (un `useState(false)` cuyo nombre contiene
+//      "search") sin el hook `useSearchToggle` — contrato obligatorio de
+//      DESIGN.md §24 (foco al abrir, Escape cierra+limpia, click afuera
+//      cierra solo si está vacío). Nació 2026-07-26 después de que una
+//      migración manual (grep por placeholder="Buscar...", 1 sesión) se
+//      saltó 12 de 22 archivos reales — la detección por nombre de variable
+//      generaliza mejor que grepear texto de placeholder, pero es una
+//      heurística de nombre, no un parser: un toggle sin la palabra "search"
+//      en su nombre no lo detecta. Si aparece uno así, agregarlo a mano a
+//      EXCEPTIONS con la categoría 'search-toggle' documentando por qué NO
+//      necesita el hook (ej. AppLayout.jsx: es el modal ⌘K, ya tiene su
+//      propio Escape/click-afuera vía el patrón de modal).
 //
 // Uso: `npm run gate:design` — exit code 1 si hay hallazgos sin excepción.
 // Las excepciones viven en EXCEPTIONS más abajo (archivo → motivo), tal
@@ -27,10 +39,17 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 //    §14 componentes que SON el propio canónico) ──────────────────────────
 // Formato: 'ruta/relativa.jsx': ['categoria1', 'categoria2', ...]
 // Categorías: 'color' (paletas gris/hex crudo permitido en TODO el archivo),
-//             'native' (alert/confirm/prompt/select/date permitido).
+//             'native' (alert/confirm/prompt/select/date permitido),
+//             'search-toggle' (toggle con "search" en el nombre que NO es
+//             un buscador con input — no necesita useSearchToggle).
 const EXCEPTIONS = {
   // Superficies fijas-oscuras (no siguen el tema activo, confirmado en DESIGN.md §6)
-  'src/components/layout/AppLayout.jsx': ['color'], // sidebar + blobs ambientales
+  // sidebar + blobs ambientales ('color'); 'search-toggle': searchOpen es el
+  // modal ⌘K de navegación global — ya tiene su propio Escape + click en el
+  // backdrop para cerrar (patrón de modal estándar, cierra siempre sin
+  // importar el texto tipeado, a diferencia de un buscador inline donde
+  // perder el texto por accidente sí importa). Ver MenuSearchModal.jsx.
+  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle'],
   'src/views/branch-tabs/TabStaff.jsx': ['color', 'native'], // panel WFM dark + shimmer IA
   'src/components/forms/FormWfmAnalytics.jsx': ['color'], // tooltip flotante dark
   'src/components/timeclock/IdleScanPanel.jsx': ['color'], // kiosco
@@ -142,6 +161,17 @@ const GRAY_RE = new RegExp(
 // Hex crudo dentro de className/style (evita falsos positivos de hashes/ids sueltos)
 const HEX_RE = /(?:className|style)=[^>]*?#[0-9a-fA-F]{3,8}\b/g;
 
+// ── Categoría 3: buscador toggleable sin useSearchToggle ────────────────
+// Heurística de nombre: un `useState(false)` cuya variable termina en
+// Search+{Open,Mode,Active,Expanded,Visible} o empieza con show+Search —
+// cubre isSearchMode/isSearchOpen/isSearchActive/isSearchExpanded/
+// showSearch/searchOpen/ausenciasSearchOpen, todas las variantes reales
+// encontradas en el proyecto. Exige el sufijo (no solo "contiene search")
+// para no confundir un buscador toggleable con un flag de loading tipo
+// isSearching/productSearching ("estoy buscando ahora", no "el buscador
+// está abierto") — encontrado como falso positivo real al escribir esto.
+const SEARCH_TOGGLE_STATE_RE = /const\s*\[\s*(\w*[Ss]earch(?:Open|Mode|Active|Expanded|Visible)|show[Ss]earch)\s*,\s*set\w+\s*\]\s*=\s*useState\(false\)/g;
+
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
 // completo en una sola línea) para no confundir código prohibido mencionado
 // EN PROSA (ej. "nunca un <select> nativo", "abre ConfirmModal en vez de
@@ -212,6 +242,17 @@ function scanFile(path) {
       HEX_RE.lastIndex = 0;
       if (HEX_RE.test(line)) {
         findings.push({ line: i + 1, label: 'hex crudo', category: 'color', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'search-toggle') && !text.includes('useSearchToggle')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      SEARCH_TOGGLE_STATE_RE.lastIndex = 0;
+      let m;
+      while ((m = SEARCH_TOGGLE_STATE_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `buscador toggleable "${m[1]}" sin useSearchToggle`, category: 'search-toggle', text: line.trim().slice(0, 120) });
       }
     });
   }

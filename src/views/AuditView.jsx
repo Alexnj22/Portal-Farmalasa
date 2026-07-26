@@ -12,6 +12,7 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { smartFilter } from '../utils/searchUtils';
+import { useSearchToggle } from '../hooks/useSearchToggle';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -140,11 +141,20 @@ const AuditView = ({ openModal }) => {
     const [isActionPickerOpen, setIsActionPickerOpen] = useState(false);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: isSearchMode,
+        value: rawSearchTerm,
+        onClear: () => setRawSearchTerm(''),
+        onClose: () => setIsSearchMode(false),
+    });
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
-                // Cerramos cualquier popover o buscador activo en la píldora
-                if (isSearchMode) setIsSearchMode(false);
+                // Cerramos cualquier popover activo en la píldora (el buscador ya
+                // lo maneja useSearchToggle arriba)
                 if (isActionPickerOpen) setIsActionPickerOpen(false);
                 if (isDatePickerOpen) setIsDatePickerOpen(false);
             }
@@ -152,7 +162,7 @@ const AuditView = ({ openModal }) => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isSearchMode, isActionPickerOpen, isDatePickerOpen]);
+    }, [isActionPickerOpen, isDatePickerOpen]);
 
     useEffect(() => {
         // 🚨 FIX: Disparamos el fetch SIEMPRE al montar la vista para asegurar datos frescos de Supabase, ignorando la caché local.
@@ -271,6 +281,7 @@ const AuditView = ({ openModal }) => {
 
 const filtersContent = (
         <div
+            ref={searchContainerRef}
             // 🚨 CONTENEDOR DINÁMICO: "w-max" abraza el contenido y "max-w-full" evita que se rompa en móviles.
             className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
         >

@@ -12,6 +12,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import { smartFilter } from '../utils/searchUtils';
+import { useSearchToggle } from '../hooks/useSearchToggle';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -325,6 +326,15 @@ const VacationPlanView = () => {
     const searchInputRef = useRef(null);
     const panelRef = useRef(null);
 
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: isSearchMode,
+        value: searchTerm,
+        onClear: () => setSearchTerm(''),
+        onClose: () => setIsSearchMode(false),
+    });
+
     // Panel edit state — when set, left panel is in edit mode
     const [editingPlan, setEditingPlan] = useState(null); // { id, employee_id, start_date, end_date, notes, employee_obj }
     const [confirmingEdit, setConfirmingEdit] = useState(false);
@@ -636,7 +646,7 @@ const VacationPlanView = () => {
     }, [vacStatusFiltered, searchTerm]);
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+        <div ref={searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
 
             {/* Search mode */}
             <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>

@@ -1478,18 +1478,51 @@ screen, `ItemSection` por `if (!count) return null`). El hook SIEMPRE debe
 llamarse antes de esos returns — nunca después — o se salta en algunos
 renders y rompe las reglas de hooks de React.
 
-**Migrado 2026-07-26** (mismo día del pedido) a los 8 buscadores toggleables
-del proyecto: `SearchInput` (`expandable`), `ViewTabBar` (Tipo 1 canónico —
-antes solo cerraba con el botón, sin Escape ni click-afuera),
-`BranchesView`, `AnnouncementsView` (header, no el picker de destinatarios),
-`PayrollView`, `RequestsView`, `TabHistory` (branch-tabs) — estos 5 eran
-duplicados hand-rolled del patrón de `ViewTabBar` que ya tenían Escape
-parcial o nada; y `RecepcionModal` (`showSearch`), `ScheduleCalendar`
-(`showCoverageSearch`), `ItemSections` (`searchOpen`, ya tenía Escape+clear,
-le faltaba click-afuera). Verificado en vivo con Playwright (tipeo, Escape,
-click-afuera con y sin texto) en el widget Ajuste de Min/Max y en
-`ViewTabBar`/Productos; el resto por revisión de diff + eslint limpio +
-`gate:design` en 0 (mismo criterio de verificación que v2.61.3).
+**Migrado 2026-07-26, en dos pasadas** — la primera (8 archivos) se hizo
+grepeando por placeholder de texto (`"Buscar..."`) y sampleando resultados
+a mano; el usuario preguntó explícitamente si se había revisado archivo
+por archivo, y la respuesta honesta fue no — un caso real
+(`EmployeeDocumentsView.jsx`, `/my-documents`) quedó afuera pese a estar en
+el mismo grep original. Segunda pasada: grep estructural por el NOMBRE del
+state (`const [xSearchOpen/Mode/Active/Expanded, ...] = useState(false)`
+en vez de por texto de placeholder) encontró **22 archivos reales en
+total**, 14 más que la primera pasada.
+
+Lista completa: `SearchInput` (`expandable`), `ViewTabBar` (Tipo 1
+canónico — antes solo cerraba con el botón, sin Escape ni click-afuera),
+`BranchesView`, `AnnouncementsView` (header), `PayrollView`, `RequestsView`,
+`TabHistory`, `FacturacionView`, `ConteoInventarioView`, `RolesView`,
+`PermissionsView`, `AuditView`, `StaffManagementView`, `VacationPlanView`,
+`AttendanceMonitorView` (dos copias del mismo buscador — variante clara y
+variante "dark concept" — mismo `containerRef` en ambas, solo una está
+montada a la vez), `EmployeeDocumentsView`, `EmployeeAnnouncementsView`,
+`ConteoDetailView`, `EmployeeDetailView` (`ausenciasSearchOpen`),
+`TabExpediente` — estos eran duplicados hand-rolled del patrón de
+`ViewTabBar`/`SearchInput expandable` con Escape parcial o nada; y
+`RecepcionModal` (`showSearch`), `ScheduleCalendar` (`showCoverageSearch`),
+`ItemSections` (`searchOpen`, ya tenía Escape+clear, le faltaba
+click-afuera). Verificado en vivo con Playwright (tipeo, Escape,
+click-afuera con y sin texto) en el widget Ajuste de Min/Max, en
+`ViewTabBar`/Productos, y en `/my-documents`; el resto por revisión de
+diff + eslint limpio + `gate:design` en 0.
+
+**Gate automático (`npm run gate:design`), agregado en la misma sesión
+para que esto no vuelva a pasar:** una tercera categoría de chequeo en
+`scripts/design-gate.mjs` detecta cualquier `useState(false)` cuyo nombre
+termina en `Search{Open,Mode,Active,Expanded,Visible}` o empieza con
+`showSearch`, y falla si ese archivo no importa `useSearchToggle`. Es una
+heurística de nombre (no un parser), documentada con su propio falso
+positivo real encontrado al escribirla (`isSearching`/`productSearching` —
+un flag de "estoy buscando ahora", no "el buscador está abierto" — el
+regex exige el sufijo Open/Mode/Active/Expanded/Visible, no solo que el
+nombre contenga "search", para no confundir los dos). Excepción
+documentada: `AppLayout.jsx` (`searchOpen` del modal ⌘K — ya tiene su
+propio Escape/click-en-backdrop vía el patrón de modal estándar, semántica
+distinta a la de "no perder texto por accidente"). Cualquier buscador
+toggleable nuevo que el gate no detecte porque su variable no contiene
+"search" en el nombre es un hueco conocido de esta heurística, no un
+`gate:design` en verde falso — si aparece uno así, agregar el nombre al
+regex o una excepción documentada, no ignorarlo.
 
 `LiquidSelect` (Tipo 3 combobox) ya tenía Escape+click-afuera propios desde
 antes (2026-07-15, ver §25 ARIA) — cierra y limpia el filtro SIEMPRE al

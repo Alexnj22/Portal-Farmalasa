@@ -1350,15 +1350,15 @@ import SearchInput from '../components/common/SearchInput';
 
 **Origen:** mockup aprobado 2026-07-25 para los 4 widgets de Operación del Dashboard (`WidgetInventorySearch`, `WidgetMinMaxRequest`, `WidgetAnnulmentRequest`, `WidgetSrsInventory`) — antes cada uno tenía su propio `<input>` a mano apilado sobre los filtros, compitiendo por el mismo ancho angosto de la card.
 
-**Cuándo usar esto en vez de un `SearchInput` normal — la pregunta real es "¿hay presión de espacio?":**
+**Cuándo usar esto en vez de un `SearchInput` normal — no es una cuestión de espacio disponible, es de qué rol cumple el buscador ahí:**
 
 | Contexto | Componente |
 |---|---|
-| Vive en una **card/widget angosto** (dashboard, panel compacto) que además tiene filtros (fecha, sucursal) compitiendo por la misma fila | `SearchInput expandable` — este apartado |
-| Vive en un **modal, RecepcionModal, o cuerpo de tab** con ancho generoso, y la búsqueda es la acción principal de esa pantalla (no compite por espacio) | `SearchInput` normal (Tipo 2 de arriba) — abierto siempre, sin fricción extra del click-para-abrir |
+| El buscador es un **control aparte** dentro de un widget, modal o cuerpo de tab — no importa si sobra ancho o no | `SearchInput expandable` — **siempre arranca colapsado por defecto**, incluso con espacio de sobra. El espacio disponible no es el criterio. |
+| El buscador vive **pegado a una lista de selección que ya está abierta en pantalla** (Tipo 3 — picker más abajo): la lista y el campo son una sola pieza, no un control que tenga sentido ocultar | `SearchInput` estático (`size="sm"`/`"md"`) |
 | Filtra el **contenido principal de toda la vista** (la tabla/lista que el usuario vino a ver a esta página) | Buscador de `ViewTabBar` en el header (Tipo 1) — nunca un input local dentro de un tab |
 
-Regla corta: si el buscador comparte fila con filtros y el ancho es de widget (no de vista completa ni de modal), usar `expandable`. Si es la única/principal acción de una pantalla con espacio de sobra, dejarlo siempre abierto (`SearchInput` normal). Si filtra la vista entera, es del header, no un componente aparte.
+Regla corta: si el buscador es un control que se puede mostrar/ocultar sin romper nada a su alrededor, arranca colapsado, punto — un modal ancho con espacio de sobra no es excusa para dejarlo abierto por defecto. Solo se muestra siempre abierto cuando el campo y la lista que filtra son la misma pieza visual (picker). Si filtra la vista entera, es del header.
 
 **Comportamiento:**
 - Arranca colapsado a un cuadrado de 32px (solo ícono) — no un input vacío ocupando ancho.

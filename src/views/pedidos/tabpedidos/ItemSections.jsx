@@ -12,6 +12,7 @@ import TablePagination from '../../../components/common/TablePagination';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { calcSolicitado } from './helpers';
 import SearchInput from '../../../components/common/SearchInput';
+import { useSearchToggle } from '../../../hooks/useSearchToggle';
 import { fetchStockParamsForRevision, updateStockParams, effectiveMinMax } from '../../../data/stockParams';
 
 const MINI_PAGE = 15;
@@ -213,6 +214,18 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
         if (!open) { setSearch(''); setSearchOpen(false); setPage(1); } // eslint-disable-line react-hooks/set-state-in-effect -- resetea búsqueda/paginación al cerrar
     }, [open]);
 
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): click
+    // afuera cierra SOLO si está vacío (Escape ya lo maneja el onKeyDown de
+    // SearchInput más abajo, que llama a closeSearch — este hook solo agrega
+    // el click-afuera; declarado antes del `if (!count)` porque un hook
+    // después de un return temprano se saltearía en algunos renders).
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: searchOpen,
+        value: search,
+        onClear: () => setSearch(''),
+        onClose: () => setSearchOpen(false),
+    });
+
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
     const pageRows   = filteredRows.slice((page - 1) * pageSize, page * pageSize);
 
@@ -242,7 +255,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                 </button>
                 <AnimatePresence mode="wait">
                     {searchOpen ? (
-                        <motion.div key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 190, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
+                        <motion.div ref={searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 190, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">
                             <SearchInput
                                 ref={searchRef}
                                 size="sm"

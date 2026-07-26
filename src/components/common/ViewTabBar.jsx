@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Search, X, ChevronRight } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
+import { useSearchToggle } from '../../hooks/useSearchToggle';
 
 const spring = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
 
@@ -32,6 +33,15 @@ export default function ViewTabBar({
   const [isSearchMode, setIsSearchMode] = useState(false);
   const inputRef = useRef(null);
 
+  // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+  // cierra Y limpia; click afuera cierra SOLO si está vacío.
+  const { containerRef } = useSearchToggle({
+    active: isSearchMode,
+    value: searchValue,
+    onClear: () => onSearchChange?.(''),
+    onClose: () => setIsSearchMode(false),
+  });
+
   const openSearch = () => {
     setIsSearchMode(true);
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -52,7 +62,7 @@ export default function ViewTabBar({
   const clearBtnCls  = 'text-content-3 hover:text-danger';
 
   return (
-    <div data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
+    <div ref={containerRef} data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
       hover:-translate-y-[2px] transform-gpu
       h-12 md:h-[3.25rem] p-0.5 md:p-1 w-max max-w-full
       shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]`}>

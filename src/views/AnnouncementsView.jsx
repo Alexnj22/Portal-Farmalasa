@@ -14,6 +14,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import SearchInput from '../components/common/SearchInput';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
+import { useSearchToggle } from '../hooks/useSearchToggle';
 
 
 // ============================================================================
@@ -252,16 +253,22 @@ const AnnouncementsView = ({ openModal }) => {
     setScheduledDate('');
   }, [isBranchScoped, user?.branchId]);
 
+  // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+  // cierra Y limpia; click afuera cierra SOLO si está vacío.
+  const { containerRef: searchContainerRef } = useSearchToggle({
+    active: isSearchMode,
+    value: announcementSearch,
+    onClear: () => setAnnouncementSearch(''),
+    onClose: () => setIsSearchMode(false),
+  });
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (isSearchMode) { setIsSearchMode(false); setAnnouncementSearch(''); }
-        if (editingAnnId) { handleCancelEdit(); }
-      }
+      if (e.key === 'Escape' && editingAnnId) handleCancelEdit();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSearchMode, editingAnnId, handleCancelEdit]);
+  }, [editingAnnId, handleCancelEdit]);
 
   const branchNameById = useMemo(() => {
     const m = new Map();
@@ -551,12 +558,12 @@ const AnnouncementsView = ({ openModal }) => {
   }, [processedAnnouncements]);
 
   const renderFiltersContent = () => (
-    <div className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
+    <div ref={searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
         <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
         {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-content-3 hover:text-danger transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => setIsSearchMode(false)} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
+        <button onClick={() => { setIsSearchMode(false); setAnnouncementSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3"}`}>

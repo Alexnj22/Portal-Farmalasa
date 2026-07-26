@@ -5,8 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.3';
+export const APP_VERSION = '2.61.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.4 — feat(design): contrato uniforme de apertura/cierre para TODO
+// buscador toggleable — "TODOS deben funcionar así siempre" (pedido
+// explícito del usuario, misma sesión que v2.61.2/v2.61.3).
+//
+// Nuevo hook compartido src/hooks/useSearchToggle.js: al abrir, foco
+// automático (ya lo tenía cada caller); Escape cierra Y limpia; click
+// afuera cierra SOLO si está vacío (con texto se queda abierto, no se
+// pierde un resultado por accidente).
+//
+// Aplicado a los 8 buscadores toggleables del proyecto: SearchInput
+// (expandable), ViewTabBar (Tipo 1 canónico — antes solo cerraba con el
+// botón, sin Escape ni click-afuera), BranchesView, AnnouncementsView
+// (header), PayrollView, RequestsView, TabHistory (branch-tabs) — estos 5
+// eran duplicados hand-rolled del patrón de ViewTabBar con Escape parcial
+// o nada; y RecepcionModal (showSearch), ScheduleCalendar
+// (showCoverageSearch), ItemSections (searchOpen, solo le faltaba
+// click-afuera). LiquidSelect ya tenía su propio Escape+click-afuera desde
+// 2026-07-15 — no se tocó (semántica distinta: ahí el texto es un filtro
+// de la lista abierta, no un resultado que se pueda perder).
+//
+// Gotcha real encontrado al implementar: RecepcionModal e ItemSections
+// tienen `return` tempranos por pantalla/condición — el hook se declaró
+// ANTES de esos returns (no cerca de donde se usa) para no violar las
+// reglas de hooks de React (un hook después de un return temprano se
+// saltea en algunos renders). Verificado en vivo con Playwright (tipeo,
+// Escape, click-afuera con/sin texto) en el widget Ajuste de Min/Max y en
+// ViewTabBar/Productos; el resto por revisión de diff + eslint limpio +
+// gate:design en 0.
 
 // v2.61.3 — fix(design): migra los 5 buscadores hand-rolled restantes a
 // SearchInput (cierre de gap, misma sesión que v2.61.2).

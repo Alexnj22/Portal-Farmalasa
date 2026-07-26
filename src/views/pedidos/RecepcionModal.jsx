@@ -14,6 +14,7 @@ import PedidoModal from './PedidoModal';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
+import { useSearchToggle } from '../../hooks/useSearchToggle';
 import {
     fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, fetchPedidoApoyoBasic,
     searchAvailableProducts, fetchLastDispatchInfo, insertPedidoRecepcionExtras,
@@ -127,6 +128,18 @@ export default function RecepcionModal({
     const extrasEndRef    = useRef(null);
     const extraBuscarRef  = useRef(null);
     const [extraDropCoords, setExtraDropCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío. Declarado acá
+    // (no cerca de donde se usa, más abajo) porque este componente tiene
+    // returns tempranos por pantalla (cajas/extras) — un hook después de esos
+    // returns se saltearía en algunos renders, violando las reglas de hooks.
+    const { containerRef: prodSearchContainerRef } = useSearchToggle({
+        active: showSearch,
+        value: prodSearch,
+        onClear: () => setProdSearch(''),
+        onClose: () => setShowSearch(false),
+    });
 
     // ── Sorted all rows ─────────────────────────────────────────────────────────
     const sortedRows = useMemo(() => [...rows].sort((a, b) => {
@@ -973,7 +986,7 @@ export default function RecepcionModal({
 
             {/* Header */}
             <PedidoModal.Header className="px-5 py-4">
-                <div className="flex items-center gap-2">
+                <div ref={prodSearchContainerRef} className="flex items-center gap-2">
                     {hasCajaMap && (
                         <button onClick={goBack} disabled={saving}
                             className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">

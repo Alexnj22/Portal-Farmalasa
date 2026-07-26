@@ -4,6 +4,7 @@ import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, P
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { smartFilter } from '../../utils/searchUtils';
+import { useSearchToggle } from '../../hooks/useSearchToggle';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
 
@@ -56,6 +57,15 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
     const [collapsedYears, setCollapsedYears] = useState({});
     const [collapsedMonths, setCollapsedMonths] = useState({});
+
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: searchContainerRef } = useSearchToggle({
+        active: isSearchOpen,
+        value: searchQuery,
+        onClear: () => setSearchQuery(''),
+        onClose: () => setIsSearchOpen(false),
+    });
 
     const openDateStr = liveBranch?.opening_date || liveBranch?.openingDate;
 
@@ -285,6 +295,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                 {/* CONTENEDOR PRINCIPAL TIPO PÍLDORA */}
                 <div
+                    ref={searchContainerRef}
                     className={`flex items-center bg-surface-card backdrop-blur-[40px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
                 >
                     {isSearchOpen ? (

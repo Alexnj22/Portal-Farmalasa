@@ -1,5 +1,6 @@
-import { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Search, Loader2, X } from 'lucide-react';
+import { useSearchToggle } from '../../hooks/useSearchToggle';
 
 /**
  * Buscador inline para widgets, modales y tabs internos (Tipo 2).
@@ -47,11 +48,21 @@ const SearchInput = forwardRef(function SearchInput({
     accentColor,
 }, forwardedRef) {
     const inputRef = useRef(null);
-    const wrapRef = useRef(null);
     const [isOpen, setIsOpen] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const open = expandable && (isOpen || !!value);
 
     useImperativeHandle(forwardedRef, () => inputRef.current, []);
+
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío (con texto se
+    // queda abierto — no se pierde un resultado por accidente).
+    const { containerRef } = useSearchToggle({
+        active: open,
+        value,
+        onClear: () => onChange?.(''),
+        onClose: () => setIsOpen(false),
+    });
 
     // text-[16px] obligatorio en TODO input de texto (§25 DESIGN.md) — por
     // debajo de 16px, Safari/iOS hace zoom automático al enfocar. sm/md solo
@@ -62,23 +73,10 @@ const SearchInput = forwardRef(function SearchInput({
     };
     const s = sizeMap[size] ?? sizeMap.md;
 
-    // Colapsa al clickear afuera — pero no si hay texto: una búsqueda activa
-    // se queda abierta hasta que el usuario la borre explícitamente (mismo
-    // criterio que el mockup aprobado: no perder el resultado por accidente).
-    useEffect(() => {
-        if (!expandable) return;
-        const onDocClick = (e) => {
-            if (!wrapRef.current?.contains(e.target) && !value) setIsOpen(false);
-        };
-        document.addEventListener('mousedown', onDocClick);
-        return () => document.removeEventListener('mousedown', onDocClick);
-    }, [expandable, value]);
-
     if (expandable) {
-        const open = isOpen || !!value;
         return (
             <div
-                ref={wrapRef}
+                ref={containerRef}
                 {...(open ? { 'data-surface': 'input' } : {})}
                 onClick={() => { if (!open && !disabled) { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 120); } }}
                 style={open && isFocused ? { borderColor: accentColor || 'var(--brand)' } : undefined}

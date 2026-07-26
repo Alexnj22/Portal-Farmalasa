@@ -1439,6 +1439,66 @@ const { results, isFuzzy } = !searchTerm.trim()
 
 ---
 
+### Contrato de apertura/cierre — OBLIGATORIO en todo buscador toggleable
+
+**Regla del usuario, 2026-07-26: "TODOS deben funcionar así siempre."** Aplica
+a cualquier buscador que se puede mostrar/ocultar (Tipo 1 header, Tipo 2b
+widget, o un toggle hand-rolled con su propio show/hide) — sin excepción,
+sin ir caso por caso:
+
+1. **Al abrir, foco automático** en el input (cada caller ya lo hacía con
+   `autoFocus` o `inputRef.current?.focus()` tras el timeout de su propia
+   animación de apertura — eso no cambia).
+2. **Escape cierra Y limpia** — nunca solo una de las dos cosas.
+3. **Click afuera cierra SOLO si está vacío** — con texto se queda abierto
+   (no se pierde un resultado por accidente, mismo criterio que el
+   buscador expandible de widget).
+
+**Implementación:** hook compartido `useSearchToggle` en `src/hooks/useSearchToggle.js`.
+
+```jsx
+import { useSearchToggle } from '../hooks/useSearchToggle';
+
+const { containerRef } = useSearchToggle({
+    active: isSearchMode,        // bool — el buscador está abierto
+    value: searchTerm,           // string actual del input
+    onClear: () => setSearchTerm(''),
+    onClose: () => setIsSearchMode(false),
+});
+
+// ref en el contenedor que delimita "adentro" del buscador (incluye el
+// botón que lo abre/cierra, así un click en ese botón nunca cuenta como
+// "afuera" y dispara un doble toggle)
+<div ref={containerRef}>...</div>
+```
+
+**Gotcha de reglas de hooks:** varios componentes con esta necesidad tienen
+`return` tempranos por pantalla/condición (`RecepcionModal` por
+screen, `ItemSection` por `if (!count) return null`). El hook SIEMPRE debe
+llamarse antes de esos returns — nunca después — o se salta en algunos
+renders y rompe las reglas de hooks de React.
+
+**Migrado 2026-07-26** (mismo día del pedido) a los 8 buscadores toggleables
+del proyecto: `SearchInput` (`expandable`), `ViewTabBar` (Tipo 1 canónico —
+antes solo cerraba con el botón, sin Escape ni click-afuera),
+`BranchesView`, `AnnouncementsView` (header, no el picker de destinatarios),
+`PayrollView`, `RequestsView`, `TabHistory` (branch-tabs) — estos 5 eran
+duplicados hand-rolled del patrón de `ViewTabBar` que ya tenían Escape
+parcial o nada; y `RecepcionModal` (`showSearch`), `ScheduleCalendar`
+(`showCoverageSearch`), `ItemSections` (`searchOpen`, ya tenía Escape+clear,
+le faltaba click-afuera). Verificado en vivo con Playwright (tipeo, Escape,
+click-afuera con y sin texto) en el widget Ajuste de Min/Max y en
+`ViewTabBar`/Productos; el resto por revisión de diff + eslint limpio +
+`gate:design` en 0 (mismo criterio de verificación que v2.61.3).
+
+`LiquidSelect` (Tipo 3 combobox) ya tenía Escape+click-afuera propios desde
+antes (2026-07-15, ver §25 ARIA) — cierra y limpia el filtro SIEMPRE al
+click afuera, sin la excepción de "si tiene texto" — eso es intencional:
+ahí el texto es un filtro de la lista abierta, no un resultado de búsqueda
+que se pueda perder, así que no aplica el mismo criterio. No se tocó.
+
+---
+
 ## 25. Accessibility
 
 ### Focus visible

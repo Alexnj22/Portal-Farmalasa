@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useEffect, useState } from 'react';
 import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon } from 'lucide-react';
 import SearchInput from '../../../components/common/SearchInput';
+import { useSearchToggle } from '../../../hooks/useSearchToggle';
 import { AnimatePresence, motion } from 'framer-motion';
 import { tokenMatch } from '../../../utils/searchUtils';
 import { shortEmployeeName } from '../../../utils/nameUtils';
@@ -616,6 +617,15 @@ const ScheduleCalendar = memo(({
     const [showCoverageSearch, setShowCoverageSearch] = useState(false);
     const [coverageSearchTerm, setCoverageSearchTerm] = useState('');
 
+    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
+    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    const { containerRef: coverageSearchContainerRef } = useSearchToggle({
+        active: showCoverageSearch,
+        value: coverageSearchTerm,
+        onClear: () => setCoverageSearchTerm(''),
+        onClose: () => setShowCoverageSearch(false),
+    });
+
     const allSchedulesArray = useMemo(() => {
         return employeesInView.map(emp => {
             let rawSchedule = weeklyRosters[emp.id] || {};
@@ -842,7 +852,7 @@ const ScheduleCalendar = memo(({
                                             <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
                                         </button>
                                     ) : (
-                                        <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
+                                        <div ref={coverageSearchContainerRef} className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <SearchInput
                                                     autoFocus

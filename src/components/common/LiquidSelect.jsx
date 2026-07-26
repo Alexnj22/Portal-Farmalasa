@@ -385,7 +385,7 @@ const LiquidSelect = ({
     const pillBaseClasses = `w-full transition-all duration-300 outline-none ${minHeightClass} flex items-center text-content ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
     } ${bare ? 'bg-transparent' : ''} ${
-        !bare && isOpen ? 'outline outline-2 outline-offset-0 outline-brand/30' : ''
+        !bare && isOpen ? 'outline-solid outline-1 outline-offset-[-1px] outline-brand/60' : ''
     }`;
 
     return (

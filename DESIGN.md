@@ -1313,12 +1313,25 @@ Cubierto en §14 ViewTabBar. El `searchTerm` vive en la vista y se pasa como pro
 
 **Visual spec:**
 ```
-Input:  rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm
-        text-slate-700 placeholder:text-slate-400
-        focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 focus:bg-white
-Ícono:  <Search> text-[#0052CC] strokeWidth={2.5}  — izquierda
-Clear:  <X>     hover:text-red-500 strokeWidth={2.5} — aparece solo cuando value truthy
+Input:  data-surface="input" (borde + fondo vidrio del tema activo)
+        text-content placeholder:text-content-3
+        focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60
+        — 1px, offset negativo = se dibuja EXACTO sobre el borde existente
+          (mismo grosor), se ve como un simple cambio de color de borde,
+          nunca como un ring/línea aparte
+Ícono:  <Search> text-brand strokeWidth={2.5}  — izquierda
+Clear:  <X>     hover:text-danger strokeWidth={2.5} — aparece solo cuando value truthy
 ```
+
+**Foco — decisión 2026-07-26 (mockup aprobado, 4 opciones comparadas):** el estilo previo (`focus:outline focus:outline-2 focus:outline-offset-0`) dibujaba un outline de 2px por FUERA del borde de 1px ya existente — dos líneas concéntricas, se leía como una "línea interna" fea. La opción elegida (mockup "A": cambio de color de borde puro, sin ring/glow/lift) se implementa con `outline-solid outline-1 outline-offset-[-1px]` en vez de `border-*`: el input tiene `data-surface="input"`, y esa regla vive fuera de cualquier `@layer` de Tailwind (ver comentario en `src/utils/inputStyles.js:6-8`) — un unlayered `border` de stylesheet le gana SIEMPRE a un `focus:border-*` de Tailwind (capa `utilities`), sin importar especificidad. `outline` es una propiedad distinta que no compite por esa regla, y con offset `-1px`/ancho `1px` queda dibujado exactamente sobre el borde existente — visualmente idéntico a "cambiarle el color al borde", sin las dos líneas del bug original. Mismo criterio que `inputHoverClass` (`src/utils/inputStyles.js`), que ya usaba outline por la misma razón.
+
+**Gotcha de Tailwind v4 encontrado al implementar esto:** `outline-none` fija la custom property compartida `--tw-outline-style: none`, y la utilidad simple `outline`/`outline-1` en foco solo LEE esa variable (`outline-style: var(--tw-outline-style)`) — no la sobreescribe. Como `.outline-none` no tiene pseudo-clase, sigue matcheando incluso con el input enfocado y su `--tw-outline-style: none` gana por especificidad, así que un `focus:outline` de foco quedaba con `outline-style: none` computado pese a tener color/ancho/offset seteados (verificado con `getComputedStyle` — el outline nunca se pintaba). Hace falta `focus:outline-solid` explícito, que sí escribe `--tw-outline-style: solid` con la especificidad de `:focus` y gana la cascada.
+
+**Auditoría 2026-07-26 — mismo bug encontrado en `LiquidSelect` (Tipo 3, `serverSearch`):** el pill trigger (`src/components/common/LiquidSelect.jsx`, `pillBaseClasses`) también combinaba `outline-none` (unconditional) con `outline outline-2 outline-offset-0 outline-brand/30` (condicional a `isOpen`, sin `-solid`) — mismo gotcha, pero con el efecto opuesto al de `SearchInput`: en vez de verse feo, el anillo de foco simplemente **nunca se pintaba** (confirmado con `getComputedStyle`: `outlineStyle: "none"` estando abierto). Corregido con el mismo patrón (`outline-solid outline-1 outline-offset-[-1px] outline-brand/60`), verificado en vivo contra el picker de productos de `CotizacionesView` — ahora se ve un borde de acento limpio, sin doble línea. Afecta a los ~30 usos de `LiquidSelect` en el proyecto (cualquiera con `serverSearch`/combobox abierto, no bare). Fix aplicado con confirmación explícita del usuario por el cambio de comportamiento visual (algo que nunca se vio se vuelve visible en todos esos lugares).
+
+Otros buscadores hand-rolled auditados (no usan `SearchInput`, violación menor de la regla Tipo 2/3 pero SIN el bug de línea/ring roto — no se tocaron en esta pasada): `AnnouncementsView.jsx:687` (picker de destinatarios, solo `focus:bg-white`), `RecepcionModal.jsx:909/1042`, `ScheduleCalendar.jsx:853`, `ItemSections.jsx:252` (usa `ring-*` real, no `outline`, sin conflicto). Migrarlos a `SearchInput` queda pendiente como limpieza de compliance, no como bug visual.
+
+En la variante `expandable` abierta, el borde toma el `accentColor` del widget (o `--brand` si no se pasa uno) vía estado `isFocused` + `style` inline en el wrapper — un inline `style` sí gana sobre la regla unlayered de `data-surface="input"` (los estilos inline superan cualquier CSS de hoja de estilos, con o sin capas), así que ahí no hace falta el truco del outline; el color además es un hex dinámico que no puede resolverse con una clase Tailwind estática de todos modos.
 
 **Sizes:**
 

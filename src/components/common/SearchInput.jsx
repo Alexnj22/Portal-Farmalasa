@@ -41,6 +41,7 @@ export default function SearchInput({
     const inputRef = useRef(null);
     const wrapRef = useRef(null);
     const [isOpen, setIsOpen] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
 
     // text-[16px] obligatorio en TODO input de texto (§25 DESIGN.md) — por
     // debajo de 16px, Safari/iOS hace zoom automático al enfocar. sm/md solo
@@ -70,6 +71,7 @@ export default function SearchInput({
                 ref={wrapRef}
                 {...(open ? { 'data-surface': 'input' } : {})}
                 onClick={() => { if (!open) { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 120); } }}
+                style={open && isFocused ? { borderColor: accentColor || 'var(--brand)' } : undefined}
                 className={`flex items-center h-8 transition-[flex-grow,flex-basis,background-color,border-color] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${
                     open
                         ? 'flex-1 min-w-0 cursor-text'
@@ -87,6 +89,8 @@ export default function SearchInput({
                     value={value}
                     onChange={e => onChange?.(e.target.value)}
                     onClick={e => e.stopPropagation()}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     placeholder={placeholder}
                     autoFocus={autoFocus}
                     tabIndex={open ? 0 : -1}
@@ -122,8 +126,8 @@ export default function SearchInput({
                 autoFocus={autoFocus}
                 className={`w-full ${s.px} ${s.text} font-semibold
                     text-content placeholder:text-content-3
-                    outline-none transition-[outline-color,outline-width,outline-offset] duration-200
-                    focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-brand/30`}
+                    outline-none transition-[outline-color] duration-200
+                    focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60`}
             />
             {value && (
                 <button

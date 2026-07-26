@@ -5,8 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.1';
+export const APP_VERSION = '2.61.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.2 — fix(design): corrige el foco de SearchInput y LiquidSelect —
+// "línea interna" fea al enfocar (mockup de 4 opciones aprobado, se eligió
+// "A": borde de acento puro, sin ring/glow/lift).
+//
+// SearchInput.jsx: variante `expandable` (borde vía `style` inline con
+// `accentColor` del widget) y variante default (nuevo
+// `focus:outline-solid focus:outline-1 focus:outline-offset-[-1px]
+// focus:outline-brand/60` en vez de `outline-2 outline-offset-0` — el
+// viejo dibujaba un segundo anillo por FUERA del borde de 1px existente).
+//
+// Auditando el resto del proyecto se encontró el mismo patrón roto en
+// LiquidSelect.jsx (pill trigger, Tipo 3 `serverSearch`, ~30 usos) — con
+// el efecto contrario: el anillo de foco nunca se pintaba (gotcha de
+// Tailwind v4, ver DESIGN.md §24 — `outline-none` fija
+// `--tw-outline-style: none` y un `outline`/`outline-2` sin `-solid` solo
+// LEE esa variable, nunca la sobreescribe). Corregido con el mismo
+// patrón, con OK explícito del usuario por revelar un anillo que nunca
+// fue visible en ~30 lugares del portal. Verificado en vivo con
+// Playwright contra el widget Ajuste de Min/Max y el picker de productos
+// de CotizacionesView.
+//
+// Otros buscadores hand-rolled fuera de SearchInput (AnnouncementsView,
+// RecepcionModal, ScheduleCalendar, ItemSections) no tenían el bug —
+// quedan pendientes solo como limpieza de compliance (migrar a
+// SearchInput), no como fix visual.
 
 // v2.61.1 — fix(profile): migra el buscador de "Historial de Eventos"
 // (EmployeeProfileView.jsx) al modo `expandable` de SearchInput (v2.61.0).

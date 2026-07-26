@@ -5,8 +5,41 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.5';
+export const APP_VERSION = '2.61.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.6 — feat(design): extiende gate:design a 3 categorías más (pedido
+// explícito del usuario: "extendamos el gate, para detectar más elementos").
+//
+// scripts/design-gate.mjs gana:
+// - 'small-input': input/textarea con font-size < 16px (dispara zoom
+//   automático iOS Safari, §25 DESIGN.md) — re-auditado y encontradas 11
+//   instancias reales nuevas en 8 archivos (FormRegisterPayment,
+//   FormAddCustomDocument, KioskConfigModal, EarlyExitForm,
+//   FacturacionView ×3, AttendanceMonitorView ×2, TabLaboratorios), todas
+//   corregidas a text-[16px]. Excluye utilidades bajo `placeholder:` (solo
+//   afectan al placeholder, no al valor tipeado — falso positivo real
+//   encontrado en AuthPromptPanel.jsx, un PIN gigante con placeholder
+//   chico aparte).
+// - 'scale-tap': active:scale-90/95 (mínimo permitido: active:scale-[0.97],
+//   §31 DESIGN.md) — 0 instancias reales encontradas.
+// - 'left-border': border-l-{2,4,8} decorativo sin border-r emparejado en
+//   la misma línea (el border-r es la señal de que es un spinner vía
+//   animate-spin, no un indicador de color prohibido, §31 DESIGN.md) —
+//   0 instancias reales encontradas.
+//
+// Se evaluaron y se descartaron explícitamente por bajo valor/alto ruido:
+// "raw button" (no hay un solo Button canónico — CTA/pill/ícono son
+// componentes distintos por diseño, no drift) y "raw text input general"
+// (dos patrones documentados en §29, Glass/Solid, ninguno canónico único —
+// un gate ahí generaría ruido masivo sin señal real). text-slate-300/400
+// de contraste sigue fuera del gate a propósito (1,288 violaciones
+// pre-existentes documentadas, decisión ya tomada de no gatearlas).
+//
+// Verificado: inyectado un archivo temporal con las 4 violaciones (color
+// ya cubierto + las 3 nuevas) + un spinner border-l/border-r legítimo —
+// las 4 dispararon, el spinner no. gate:design en 0 tras corregir las 11
+// instancias reales de 'small-input'.
 
 // v2.61.5 — fix(design): cierra el gap real de v2.61.4 — 14 buscadores
 // toggleables más (22 en total, no 8) sin el contrato de foco/Escape/

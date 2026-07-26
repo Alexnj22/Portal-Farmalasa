@@ -120,7 +120,7 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
             <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
                 <div className="flex items-start gap-3 max-w-2xl">
                     <textarea
-                        className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-sm text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                        className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                         rows={2} autoFocus
                         placeholder={placeholder || 'Comentario (opcional)'}
                         value={comment} onChange={e => setComment(e.target.value)}
@@ -1832,7 +1832,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <div className="flex items-start gap-3 max-w-3xl">
                                                                 <div className="flex-1 space-y-2">
                                                                     <textarea
-                                                                        className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                        className={`w-full bg-white border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                         rows={2} autoFocus
                                                                         placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
                                                                         value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
@@ -1941,7 +1941,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className="flex items-start gap-3 max-w-3xl">
                                                                         <div className="flex-1 space-y-2">
                                                                             <textarea
-                                                                                className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                                className={`w-full bg-white border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                                 rows={2} autoFocus
                                                                                 placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
                                                                                 value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}

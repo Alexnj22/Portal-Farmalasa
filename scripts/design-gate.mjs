@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Gate mecánico de estandarización visual (DESIGN.md §9.0, §6).
 //
-// Corre tres familias de chequeo sobre src/:
+// Corre seis familias de chequeo sobre src/:
 //   1. Elementos nativos del navegador prohibidos (alert/confirm/prompt,
 //      <select> crudo, <input type=date|time|datetime-local|month|week>).
 //   2. Clases Tailwind de color crudo (paletas gris slate/gray/zinc/neutral/
@@ -20,6 +20,19 @@
 //      EXCEPTIONS con la categoría 'search-toggle' documentando por qué NO
 //      necesita el hook (ej. AppLayout.jsx: es el modal ⌘K, ya tiene su
 //      propio Escape/click-afuera vía el patrón de modal).
+//   4. `<input>`/`<textarea>` de texto (excluye checkbox/radio/range/color/
+//      file) con font-size computado < 16px — dispara zoom automático al
+//      enfocar en iOS Safari (DESIGN.md §25, ~170 inputs arreglados en
+//      2026-07-10; sin gate, volvió a driftar a 11 instancias reales para
+//      2026-07-26). Excluye utilidades bajo `placeholder:` (solo afectan
+//      al placeholder, no al valor tipeado, no dispara el zoom).
+//   5. `active:scale-90`/`active:scale-95` — mínimo permitido
+//      `active:scale-[0.97]` (DESIGN.md §31 Anti-Patterns).
+//   6. `border-l-{2,4,8}` sin `border-r` en la misma línea — indicador de
+//      color de borde izquierdo decorativo en filas/cards/listas, prohibido
+//      (DESIGN.md §31). El `border-r` emparejado es la señal de que en
+//      realidad es un spinner (anillo parcial vía `animate-spin`), no un
+//      indicador — no se penaliza esa forma.
 //
 // Uso: `npm run gate:design` — exit code 1 si hay hallazgos sin excepción.
 // Las excepciones viven en EXCEPTIONS más abajo (archivo → motivo), tal
@@ -41,7 +54,12 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 // Categorías: 'color' (paletas gris/hex crudo permitido en TODO el archivo),
 //             'native' (alert/confirm/prompt/select/date permitido),
 //             'search-toggle' (toggle con "search" en el nombre que NO es
-//             un buscador con input — no necesita useSearchToggle).
+//             un buscador con input — no necesita useSearchToggle),
+//             'small-input' (input/textarea bajo 16px permitido en TODO el
+//             archivo — reservado para casos bespoke ya revisados, ninguno
+//             hoy), 'scale-tap' (active:scale-90/95 permitido — ninguno
+//             hoy), 'left-border' (border-l decorativo permitido — ninguno
+//             hoy).
 const EXCEPTIONS = {
   // Superficies fijas-oscuras (no siguen el tema activo, confirmado en DESIGN.md §6)
   // sidebar + blobs ambientales ('color'); 'search-toggle': searchOpen es el
@@ -172,6 +190,24 @@ const HEX_RE = /(?:className|style)=[^>]*?#[0-9a-fA-F]{3,8}\b/g;
 // está abierto") — encontrado como falso positivo real al escribir esto.
 const SEARCH_TOGGLE_STATE_RE = /const\s*\[\s*(\w*[Ss]earch(?:Open|Mode|Active|Expanded|Visible)|show[Ss]earch)\s*,\s*set\w+\s*\]\s*=\s*useState\(false\)/g;
 
+// ── Categoría 4: input/textarea bajo 16px (zoom automático iOS Safari) ──
+// Excluye utilidades `placeholder:text-*` (y con un breakpoint intermedio,
+// `placeholder:sm:text-*`) — solo cambian el placeholder, no el valor
+// tipeado, así que no disparan el zoom. Encontrado como falso positivo
+// real (`AuthPromptPanel.jsx`, PIN gigante + placeholder chico aparte) al
+// escribir esto.
+const SMALL_TEXT_RE = /(?<!placeholder:)(?<!placeholder:sm:)(?<!placeholder:md:)(?<!placeholder:lg:)\btext-(xs|sm|\[[1-9]px\]|\[1[0-5]px\])\b/g;
+const INPUT_TYPE_EXCLUDE_RE = /type=["'](checkbox|radio|range|color|file)["']/;
+
+// ── Categoría 5: active:scale-90/95 (mínimo permitido: active:scale-[0.97]) ─
+const SCALE_TAP_RE = /active:scale-(90|95)\b/g;
+
+// ── Categoría 6: border-l decorativo (indicador de color en fila/card/lista) ─
+// Un `border-r` en la MISMA línea es la señal de que es un spinner (anillo
+// parcial vía animate-spin), no un indicador — no se penaliza esa forma.
+const LEFT_BORDER_RE = /\bborder-l-[248]\b/g;
+const RIGHT_BORDER_RE = /\bborder-r(-[248])?\b/;
+
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
 // completo en una sola línea) para no confundir código prohibido mencionado
 // EN PROSA (ej. "nunca un <select> nativo", "abre ConfirmModal en vez de
@@ -253,6 +289,44 @@ function scanFile(path) {
       let m;
       while ((m = SEARCH_TOGGLE_STATE_RE.exec(line))) {
         findings.push({ line: i + 1, label: `buscador toggleable "${m[1]}" sin useSearchToggle`, category: 'search-toggle', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'small-input')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      SMALL_TEXT_RE.lastIndex = 0;
+      let m;
+      while ((m = SMALL_TEXT_RE.exec(line))) {
+        const tag = nearestOpenTag(lines, i);
+        if (tag !== 'input' && tag !== 'textarea') continue;
+        const windowText = lines.slice(Math.max(0, i - 5), i + 3).join(' ');
+        if (INPUT_TYPE_EXCLUDE_RE.test(windowText)) continue;
+        findings.push({ line: i + 1, label: `input/textarea bajo 16px: text-${m[1]}`, category: 'small-input', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'scale-tap')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      SCALE_TAP_RE.lastIndex = 0;
+      let m;
+      while ((m = SCALE_TAP_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `active:scale-${m[1]} — mínimo permitido active:scale-[0.97]`, category: 'scale-tap', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'left-border')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      if (RIGHT_BORDER_RE.test(line)) return; // par de spinner, no indicador
+      LEFT_BORDER_RE.lastIndex = 0;
+      let m;
+      while ((m = LEFT_BORDER_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `border-l decorativo: ${m[0]}`, category: 'left-border', text: line.trim().slice(0, 120) });
       }
     });
   }

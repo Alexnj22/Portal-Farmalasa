@@ -516,7 +516,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <Search size={16} style={{ color: "rgba(255,255,255,0.28)", flexShrink: 0 }} />
               <input ref={searchInputRef} type="text" placeholder="Escribe nombre o código..."
-                className="w-full bg-transparent border-none outline-none text-sm font-bold text-white placeholder-white/25"
+                className="w-full bg-transparent border-none outline-none text-[16px] font-bold text-white placeholder-white/25"
                 value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
               {searchTerm && (
                 <button type="button" onClick={() => setSearchTerm("")}
@@ -720,7 +720,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             ref={searchInputRef}
             type="text"
             placeholder="Escribe nombre o código..."
-            className="w-full bg-transparent border-none outline-none p-3 text-sm font-bold text-content-2 placeholder-content-3"
+            className="w-full bg-transparent border-none outline-none p-3 text-[16px] font-bold text-content-2 placeholder-content-3"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

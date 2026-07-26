@@ -1840,9 +1840,9 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 
 ## 31. Anti-Patterns (Never Do)
 
-- Left-border color indicators (`border-l-4 border-red-500`) on rows, cards, or lists.
+- Left-border color indicators (`border-l-4 border-red-500`) on rows, cards, or lists. **Gated automáticamente** desde 2026-07-26 (`gate:design`, categoría `left-border`) — `border-l-{2,4,8}` sin un `border-r` emparejado en la misma línea (el `border-r` es la señal de que es un spinner vía `animate-spin`, no un indicador).
 - `transition-all` — use specific property transitions. Excepción válida: animaciones multi-propiedad sin shorthand CSS (ej. search expand en ViewTabBar) pueden usar `transition-all`.
-- `active:scale-90/95` — minimum `active:scale-[0.97]`.
+- `active:scale-90/95` — minimum `active:scale-[0.97]`. **Gated automáticamente** desde 2026-07-26 (categoría `scale-tap`).
 - `font-normal` or `font-light` on interactive UI elements.
 - `text-slate-300/400` as text color over light surfaces.
 - `animate-bounce` on a decorative element with **no semantic purpose** (e.g. a "look here" arrow with nothing to point at). **Clarified 2026-07-15 (Bloque 5.7a)** after auditing all 16 existing uses — none were this anti-pattern. Three uses are legitimate and should stay `animate-bounce`: (1) loading/typing indicator dots (`App.jsx`, 3-4 sequenced dots — the same industry-standard pattern as iMessage/Slack "escribiendo…"), (2) the birthday cake/confetti badge (`AppLayout.jsx`, `StaffManagementView.jsx`, `EmployeeHomeView.jsx` — a deliberate, consistent celebration, not random motion), (3) the red error icon in `FeedbackOverlay.jsx` (kiosk clock-in/out feedback — draws the eye to an error on a screen used quickly and often unattended). If a new use doesn't fit one of these three categories, don't add it without checking here first.
@@ -1910,6 +1910,8 @@ Applies to every `button`, `a[href]`, checkbox/radio, and any `[role="button"]`.
 ### Inputs — 16px minimum font-size (iOS Safari zoom)
 
 **This was the single highest-impact bug found in the Fase 4 audit.** Any `<input>`/`<textarea>` (excluding `checkbox/radio/range/color/file`) with a computed `font-size < 16px` triggers an automatic page zoom on focus in iOS Safari — jarring, and the user has to manually zoom back out every time. This was found on ~170 inputs across ~60 files (search boxes at 13px was the single most repeated instance, via both `ViewTabBar.jsx`'s shared search input and several views that hand-roll their own duplicate search input instead of using `ViewTabBar`). Fixed project-wide: every text-entry input's font-size floor is now `text-[16px]`. **Rule going forward: never set a text-entry input below `text-[16px]`, full stop** — there is no valid reason to go smaller, since 16px is also comfortably readable at any density this app ships at.
+
+**Sin gate, esto vuelve a driftar** — re-auditado 2026-07-26 (grep estructural, no manual) y encontradas 11 instancias reales nuevas en 8 archivos (`FormRegisterPayment`, `FormAddCustomDocument`, `KioskConfigModal`, `EarlyExitForm`, `FacturacionView` ×3, `AttendanceMonitorView` ×2, `TabLaboratorios`) — todas corregidas. **Gated automáticamente** desde esa misma sesión (`gate:design`, categoría `small-input`) — cualquier `text-xs`/`text-sm`/`text-[Npx]` (N<16) en la línea de apertura de un `<input>`/`<textarea>` real falla el gate, excepto dentro de `placeholder:` (solo afecta al placeholder, no dispara el zoom — falso positivo real encontrado en `AuthPromptPanel.jsx`, un PIN gigante con placeholder chico aparte).
 
 ### Search pattern duplication (structural finding, not fixed)
 

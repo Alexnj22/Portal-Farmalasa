@@ -91,7 +91,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         value={data.title}
                         onChange={(e) => updateField('title', e.target.value)}
                         placeholder="Ej. Permiso de Rótulos Luminosos"
-                        className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl px-4 py-3.5 text-sm font-bold text-content-2 focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white outline-none transition-all shadow-sm placeholder:text-content-3/70"
+                        className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl px-4 py-3.5 text-[16px] font-bold text-content-2 focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white outline-none transition-all shadow-sm placeholder:text-content-3/70"
                     />
                 </div>
             </div>

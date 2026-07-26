@@ -97,7 +97,7 @@ function EarlyExitForm({
               Justificación (Opcional)
             </label>
             <textarea
-              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-sm sm:text-base resize-none h-16 sm:h-20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-[16px] resize-none h-16 sm:h-20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
               placeholder="Detalle brevemente el motivo..."
               value={exitNotes}
               onChange={(e) => onChangeNotes?.(e.target.value)}

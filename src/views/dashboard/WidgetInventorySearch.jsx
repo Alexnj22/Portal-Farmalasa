@@ -617,10 +617,11 @@ export default function WidgetInventorySearch() {
   return (
     <div className="flex flex-col gap-2.5 h-full">
 
-      {/* Search input */}
-      <div className="shrink-0">
+      {/* Toolbar — buscador expandible, filtros (si los hubiera) siempre a la derecha */}
+      <div className="flex items-center justify-end gap-1.5 shrink-0">
         <SearchInput
-          size="sm"
+          expandable
+          accentColor="#F79009"
           value={query}
           onChange={handleInput}
           placeholder="Buscar por nombre o principio activo..."

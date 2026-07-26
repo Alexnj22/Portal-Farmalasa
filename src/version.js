@@ -5,8 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.7';
+export const APP_VERSION = '2.61.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.0 — feat(dashboard): buscador expandible para widgets de Operación,
+// aprobado por mockup interactivo antes de implementar.
+//
+// SearchInput.jsx gana un modo `expandable` (Tipo 2b, documentado en
+// DESIGN.md §24): arranca colapsado a un cuadrado de 32px con el ícono en
+// el color de categoría del widget (`accentColor`, hex de CATEGORY_META —
+// nunca bg-brand/azul genérico) y se abre HACIA LA IZQUIERDA al tocarlo.
+// El caller lo ubica dentro de una fila `flex justify-end`, con los chips
+// de filtro (fecha, sucursal) DESPUÉS en el DOM — así los filtros quedan
+// siempre anclados a la derecha y el buscador crece hacia el espacio
+// vacío sin taparlos ni ocultarlos (a diferencia del buscador de
+// ViewTabBar, que sí oculta los tabs al abrirse). Colapsa solo si está
+// vacío y se hace click afuera — una búsqueda con texto no se pierde por
+// accidente.
+//
+// Migrados los 4 widgets de Operación: WidgetInventorySearch,
+// WidgetMinMaxRequest y WidgetSrsInventory (naranja, categoría productos)
+// y WidgetAnnulmentRequest (verde, categoría ventas — este último es el
+// caso real con filtro de fecha conviviendo con el buscador). Verificado
+// en vivo con Playwright: el filtro de fecha permanece 100% visible e
+// intacto mientras el buscador está abierto y escribiendo.
+//
+// Regla nueva documentada en DESIGN.md §24 y en memoria del proyecto:
+// SearchInput expandable para toolbars de widget angostos con filtros;
+// SearchInput normal (siempre abierto) para modales/tabs con espacio de
+// sobra donde la búsqueda es la acción principal; buscador de ViewTabBar
+// para filtrar el contenido de una vista completa. `npm run gate:design`
+// → 0 hallazgos.
 
 // v2.60.7 — fix(dashboard): tercera pasada — lectura completa del archivo
 // de punta a punta (2183 líneas), no reactiva a lo que se veía en captura.

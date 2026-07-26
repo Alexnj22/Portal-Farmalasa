@@ -294,8 +294,8 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <div className="shrink-0">
-        <SearchInput size="sm" value={search} onChange={setSearch} placeholder="Buscar producto para ajustar Min/Max…" />
+      <div className="flex items-center justify-end gap-1.5 shrink-0">
+        <SearchInput expandable accentColor="#F79009" value={search} onChange={setSearch} placeholder="Buscar producto para ajustar Min/Max…" />
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

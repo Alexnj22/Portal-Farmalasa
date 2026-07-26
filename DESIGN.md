@@ -1346,6 +1346,36 @@ import SearchInput from '../components/common/SearchInput';
 
 ---
 
+### Tipo 2b — Buscador expandible de widget (`SearchInput expandable`)
+
+**Origen:** mockup aprobado 2026-07-25 para los 4 widgets de Operación del Dashboard (`WidgetInventorySearch`, `WidgetMinMaxRequest`, `WidgetAnnulmentRequest`, `WidgetSrsInventory`) — antes cada uno tenía su propio `<input>` a mano apilado sobre los filtros, compitiendo por el mismo ancho angosto de la card.
+
+**Cuándo usar esto en vez de un `SearchInput` normal — la pregunta real es "¿hay presión de espacio?":**
+
+| Contexto | Componente |
+|---|---|
+| Vive en una **card/widget angosto** (dashboard, panel compacto) que además tiene filtros (fecha, sucursal) compitiendo por la misma fila | `SearchInput expandable` — este apartado |
+| Vive en un **modal, RecepcionModal, o cuerpo de tab** con ancho generoso, y la búsqueda es la acción principal de esa pantalla (no compite por espacio) | `SearchInput` normal (Tipo 2 de arriba) — abierto siempre, sin fricción extra del click-para-abrir |
+| Filtra el **contenido principal de toda la vista** (la tabla/lista que el usuario vino a ver a esta página) | Buscador de `ViewTabBar` en el header (Tipo 1) — nunca un input local dentro de un tab |
+
+Regla corta: si el buscador comparte fila con filtros y el ancho es de widget (no de vista completa ni de modal), usar `expandable`. Si es la única/principal acción de una pantalla con espacio de sobra, dejarlo siempre abierto (`SearchInput` normal). Si filtra la vista entera, es del header, no un componente aparte.
+
+**Comportamiento:**
+- Arranca colapsado a un cuadrado de 32px (solo ícono) — no un input vacío ocupando ancho.
+- Se abre **hacia la izquierda** al tocarlo (mismo espíritu que el buscador de `ViewTabBar`, adaptado a un espacio angosto) — el caller lo ubica DENTRO de una fila `flex items-center justify-end gap-1.5`, con los chips de filtro (`LiquidDatePicker`, `LiquidSelect`, etc.) DESPUÉS en el DOM, así quedan siempre anclados a la derecha y el buscador crece hacia el espacio vacío sin taparlos.
+- Colapsa solo si está vacío y se hace click afuera — una búsqueda con texto se queda abierta hasta que el usuario la borra explícitamente (no perder el resultado por accidente).
+- El ícono colapsado usa `accentColor` (hex de `CATEGORY_META` del widget — naranja `productos`, verde `ventas`, etc.), **nunca `bg-brand`/azul genérico** — se integra con el color de categoría que ya tiene el header de la card en vez de leerse como un botón de acción aparte.
+
+**Uso mínimo:**
+```jsx
+<div className="flex items-center justify-end gap-1.5 shrink-0">
+  <SearchInput expandable accentColor="#F79009" value={search} onChange={setSearch} placeholder="Buscar producto..." />
+  {/* filtros después, si los hay — quedan a la derecha del buscador */}
+</div>
+```
+
+---
+
 ### Tipo 3 — Picker / Selección
 
 **Dónde:** selección de destinatarios (AnnouncementsView), selección de productos en modales.

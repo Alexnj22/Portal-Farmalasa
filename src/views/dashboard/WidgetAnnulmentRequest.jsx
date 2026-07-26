@@ -921,15 +921,13 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         </span>
       </div>
 
-      {/* Controls: search flexible + LiquidDatePicker fijo */}
-      <div className="flex items-stretch gap-2 shrink-0">
-        {/* Search */}
-        <div className="flex-1">
-          <SearchInput size="sm" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
-        </div>
+      {/* Toolbar — filtro de fecha siempre a la derecha, buscador expandible
+          crece hacia la izquierda desde su lado (ver DESIGN.md §24). */}
+      <div className="flex items-center justify-end gap-1.5 shrink-0">
+        <SearchInput expandable accentColor="#12B76A" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
 
         {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
-        <div className="w-[150px] shrink-0 rounded-2xl border border-divider bg-white flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
+        <div className="h-8 shrink-0 rounded-[0.65rem] border border-divider bg-white flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
           <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
         </div>
       </div>

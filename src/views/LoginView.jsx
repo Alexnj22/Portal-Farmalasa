@@ -142,6 +142,26 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         return () => clearTimeout(t);
     }, []);
 
+    // El login siempre es claro/liquid, sin importar el tema que el usuario
+    // haya dejado activo antes de cerrar sesión (--content, --brand, etc. se
+    // leen vía [data-theme] en <html> — si queda "dark"/"solid-dark" puesto,
+    // los íconos y textos de esta vista salen con tokens oscuros sobre el
+    // fondo claro hardcodeado de abajo). Mismo patrón que TimeClockView.jsx
+    // (kiosco, siempre-oscuro): forzamos el atributo mientras la vista vive
+    // y restauramos el tema real del usuario al desmontar.
+    useEffect(() => {
+        const root = document.documentElement;
+        const prevTheme = root.getAttribute('data-theme');
+        const meta = document.querySelector('meta[name="theme-color"]');
+        const prevColor = meta?.content;
+        root.removeAttribute('data-theme');
+        if (meta) meta.content = '#e2defc';
+        return () => {
+            if (prevTheme) root.setAttribute('data-theme', prevTheme);
+            if (meta && prevColor) meta.content = prevColor;
+        };
+    }, []);
+
     // Solo mostrar el botón de cámara si el dispositivo tiene una.
     useEffect(() => {
         let alive = true;

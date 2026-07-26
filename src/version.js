@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.2';
+export const APP_VERSION = '2.60.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.60.3 — fix(login): LoginView siempre debe verse en tema claro/liquid,
+// sin importar el tema (dark/solid/solid-dark) que el usuario haya dejado
+// activo antes de cerrar sesión. --content, --brand, --border-card, etc. se
+// leen vía [data-theme] en <html>; si ese atributo quedaba en "dark" tras un
+// logout, los íconos y textos del login salían con tokens oscuros (colores
+// casi blancos) sobre el fondo claro hardcodeado de la vista — casi
+// invisibles. Fix: mismo patrón que TimeClockView.jsx (kiosco, siempre-
+// oscuro) — LoginView fuerza data-theme fuera de <html> (y el meta
+// theme-color de iOS) mientras está montado, restaurando el tema real del
+// usuario al desmontar.
 
 // v2.60.2 — chore(kiosk): quita los íconos decorativos Entrada/Almuerzo/
 // Lactancia/Salida de IdleScanPanel.jsx (leyenda inline + dock flotante

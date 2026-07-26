@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.61.7';
+export const APP_VERSION = '2.61.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.61.8 — fix+feat(attendance-audit): fotos de empleados no salían en
+// Auditoría de Tiempos + buscador nuevo en el header (pedido del usuario).
+//
+// Fix: `AttendanceAuditView.jsx` leía `emp.photo_url` (la URL cruda, sin
+// firmar) para el avatar de cada fila — el bucket `empleados` es privado
+// (regla del proyecto), así que una URL sin firmar nunca carga. El resto
+// del proyecto usa `emp.photo` (firmada en fetchBoot/login) para esto
+// mismo; era el único lugar que tomaba el campo equivocado. Confirmado con
+// curl que la URL firmada real devuelve 200 + PNG válido — el bug era
+// puramente de qué campo se leía, no del signing en sí.
+//
+// Feat: agregado `SearchInput expandable` (Tipo 2b, DESIGN.md §24) al
+// header — filtra por nombre (`smartFilter`) tanto la vista de quincena
+// como el listado agrupado por sucursal. No existía ningún buscador antes.
+//
+// Verificado en vivo con Playwright: el campo de búsqueda abre/tipea/
+// filtra correctamente (47 → 2 filas buscando "edwin"); la carga de fotos
+// no se pudo confirmar visualmente en este sandbox (bloqueo de red
+// específico del entorno de prueba, no relacionado al fix — la URL firmada
+// funciona vía curl directo).
 
 // v2.61.7 — fix(design): CRÍTICO — el buscador toggleable no funcionaba en
 // Nómina, Plan de Vacaciones y potencialmente los otros ~14 hand-rolled de

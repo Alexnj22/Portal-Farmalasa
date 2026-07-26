@@ -13,7 +13,9 @@ import { useToastStore } from "../store/toastStore";
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from '../components/common/LiquidSelect';
+import SearchInput from '../components/common/SearchInput';
 import TimePicker12 from '../components/common/TimePicker12';
+import { smartFilter } from '../utils/searchUtils';
 import {
     fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
     closeQuincenaTimesheets, fetchEmployeeExceptions,
@@ -748,8 +750,8 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">
           <div className="w-11 h-11 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-[14px] overflow-hidden">
-            {emp.photo_url
-              ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
+            {emp.photo
+              ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
               : <span className="text-[16px]">{emp.name?.charAt(0) || '?'}</span>}
           </div>
           {alertColor ? (
@@ -924,6 +926,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const [filterBranch,      setFilterBranch]      = useState(
     getScope('time_audit') === 'BRANCH' ? String(user?.branchId || '') : ''
   );
+  const [search, setSearch] = useState('');
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
   const [selectedQuincena,  setSelectedQuincena]  = useState(() => getCurrentQuincenaStart());
   const [reviewedPunchIds,  setReviewedPunchIds]  = useState(() => new Set());
@@ -1019,14 +1022,15 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   }, [quincenaTS]);
 
   const quincenaSummary = useMemo(() => {
-    const filtered = filterBranch
+    let filtered = filterBranch
       ? employees.filter(e => String(e.branchId) === filterBranch)
       : employees;
+    if (search.trim()) filtered = smartFilter(search, filtered, e => [e.name]).results;
     return filtered.map(emp => ({
       emp,
       stats: quincenaByEmployee.get(String(emp.id)) || { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 },
     })).sort((a, b) => getRoleOrder(a.emp.role) - getRoleOrder(b.emp.role));
-  }, [employees, filterBranch, quincenaByEmployee]);
+  }, [employees, filterBranch, search, quincenaByEmployee]);
 
   const handleApproveAllForEmployee = useCallback(async (emp) => {
     if (isDemoMode) { showToast('Demo', 'En modo demo los timesheets no se aprueban.', 'info'); return; }
@@ -1087,9 +1091,10 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   // ── Group employees by branch ────────────────────────────────────────────
   const employeesByBranch = useMemo(() => {
     const map = new Map();
-    const filtered = filterBranch
+    let filtered = filterBranch
       ? employees.filter(e => String(e.branchId) === filterBranch)
       : employees;
+    if (search.trim()) filtered = smartFilter(search, filtered, e => [e.name]).results;
     // Sort by role hierarchy
     const sorted = [...filtered].sort((a, b) => getRoleOrder(a.role) - getRoleOrder(b.role));
     sorted.forEach(emp => {
@@ -1098,7 +1103,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       map.get(bId).push(emp);
     });
     return map;
-  }, [employees, filterBranch]);
+  }, [employees, filterBranch, search]);
 
   // ── Correction handler ───────────────────────────────────────────────────
   const handleCorrect = useCallback((emp, dateStr, dayPunches, shift, dayConfig) => {
@@ -1228,6 +1233,9 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2 flex-wrap">
+
+      {/* Buscador expandible — Tipo 2b (DESIGN.md §24) */}
+      <SearchInput expandable accentColor="#0052CC" value={search} onChange={setSearch} placeholder="Buscar empleado..." />
 
       {/* Period nav pill — quincena */}
       <div className={pillWrap}>

@@ -67,7 +67,7 @@ function DocBadge({ tipo }) {
   const isCCF = tipo === 'CCF';
   return (
     <span className={`shrink-0 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md ${
-      isCCF ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'
+      isCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'
     }`}>{tipo}</span>
   );
 }
@@ -423,7 +423,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
 
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">
-            Comentarios {commentRequired && <span className="text-danger">*</span>}
+            Comentarios {commentRequired && <span className="text-danger-text">*</span>}
           </label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
@@ -432,7 +432,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             }`}
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de anulación" onClick={handleSubmit} disabled={!canSubmit} loading={submitting} />
@@ -519,7 +519,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
             className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newPayment} loading={submitting} />
@@ -635,7 +635,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
             className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newVendorId} loading={submitting} />
@@ -793,7 +793,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
             className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newClient} loading={submitting} />

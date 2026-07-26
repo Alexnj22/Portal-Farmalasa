@@ -114,7 +114,7 @@ function ExpiryBadge({ date }) {
   const isNear    = days > 0 && days <= 60;
   return (
     <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${
-      isExpired ? 'bg-danger/10 text-danger' :
+      isExpired ? 'bg-danger/10 text-danger-text' :
       isNear    ? 'bg-warning/10 text-warning-text' :
                   'bg-surface-card-hover text-content-3'
     }`}>
@@ -230,7 +230,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
           {activo ? 'ACTIVO' : 'INACTIVO'}
         </span>
         {rState === 'done' ? (
-          <span className="shrink-0 flex items-center gap-1 text-[8px] font-black text-success bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
+          <span className="shrink-0 flex items-center gap-1 text-[8px] font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
             <CheckCircle2 size={8} strokeWidth={2.5} />OK
           </span>
         ) : formOpen ? (
@@ -628,7 +628,7 @@ export default function WidgetInventorySearch() {
         />
       </div>
 
-      {error && <p className="shrink-0 px-1 text-[11px] text-danger font-medium">{error}</p>}
+      {error && <p className="shrink-0 px-1 text-[11px] text-danger-text font-medium">{error}</p>}
 
       {/* Results area */}
       <div className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -742,7 +742,7 @@ export default function WidgetInventorySearch() {
             {/* Alternatives in inventory */}
             {!srsLoading && alternatives.length > 0 && (
               <div className="flex flex-col gap-1">
-                <SectionLabel icon={Package} label="Alternativas en inventario" color="text-success" bg="bg-success/10" />
+                <SectionLabel icon={Package} label="Alternativas en inventario" color="text-success-text" bg="bg-success/10" />
                 <BranchSections
                   branches={alternatives}
                   onDrill={setDrillProduct}

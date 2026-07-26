@@ -75,7 +75,7 @@ export default function WidgetSrsInventory() {
       </div>
 
       {error && (
-        <div className="px-3 py-2 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] text-danger font-medium shrink-0">{error}</div>
+        <div className="px-3 py-2 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] text-danger-text font-medium shrink-0">{error}</div>
       )}
 
       {/* Results */}

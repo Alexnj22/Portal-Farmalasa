@@ -1343,38 +1343,45 @@ const DashboardView = ({ openModal }) => {
       const nowH=new Date().getHours();
       const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
       return wrapWidget(wid,
-        <div className="h-full bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] p-3.5 flex flex-col gap-1.5">
-          <div className="flex items-start justify-between gap-1">
-            <p className="text-[12px] font-black text-content-2 leading-tight truncate">{b.name}</p>
-            <span className={`text-[11px] font-black shrink-0 ${dH.length?'text-success':'text-content-3'}`}>{fS(totalS)??'—'}</span>
-          </div>
-          {todayLoading?(
-            <div className="skeleton rounded-lg flex-1"/>
-          ):(
-            <div className="flex flex-col flex-1 min-h-0">
-              <div className="flex items-end gap-[1px] w-full flex-1">
-                {allH.map(h=>{
-                  const v=hourMap[h]||0, bH=v>0?Math.max(Math.round((v/maxV)*100),4):2;
-                  const isNow=h===nowH&&h>=openH&&h<=closeH;
-                  return (
-                    <div key={h} className="flex-1 flex flex-col justify-end relative h-full"
-                      onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
-                      onMouseLeave={()=>setSalesBarTip(null)}>
-                      {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
-                      <div className="w-full rounded-t-[2px] transition-[height,opacity]" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex gap-[1px] w-full mt-0.5">
-                {allH.map((h)=>(
-                  <div key={h} className="flex-1 text-center overflow-hidden">
-                    <span className={`text-[6px] font-bold leading-none ${h===nowH?'text-success':'text-content-3'}`}>{fHr(h)}</span>
-                  </div>
-                ))}
-              </div>
+        <div data-surface="card" className="h-full relative rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden">
+          {/* Mismas 2 capas que WidgetCard (blur + glass shine) — antes esta
+              mini-card se pintaba a mano sin la capa de brillo, por eso se
+              veía más opaca/gris que el resto de widgets del dashboard. */}
+          <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+          <div className="relative h-full p-3.5 flex flex-col gap-1.5">
+            <div className="flex items-start justify-between gap-1">
+              <p className="text-[12px] font-black text-content-2 leading-tight truncate">{b.name}</p>
+              <span className={`text-[11px] font-black shrink-0 ${dH.length?'text-success-text':'text-content-3'}`}>{fS(totalS)??'—'}</span>
             </div>
-          )}
+            {todayLoading?(
+              <div className="skeleton rounded-lg flex-1"/>
+            ):(
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex items-end gap-[1px] w-full flex-1">
+                  {allH.map(h=>{
+                    const v=hourMap[h]||0, bH=v>0?Math.max(Math.round((v/maxV)*100),4):2;
+                    const isNow=h===nowH&&h>=openH&&h<=closeH;
+                    return (
+                      <div key={h} className="flex-1 flex flex-col justify-end relative h-full"
+                        onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
+                        onMouseLeave={()=>setSalesBarTip(null)}>
+                        {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
+                        <div className="w-full rounded-t-[2px] transition-[height,opacity]" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-[1px] w-full mt-0.5">
+                  {allH.map((h)=>(
+                    <div key={h} className="flex-1 text-center overflow-hidden">
+                      <span className={`text-[6px] font-bold leading-none ${h===nowH?'text-success-text':'text-content-3'}`}>{fHr(h)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       , staggerIdx);
     }
@@ -1495,7 +1502,7 @@ const DashboardView = ({ openModal }) => {
                   <button key={b.id} onClick={canManage('dash_branches')?()=>navigate(`/branches/${b.id}`):undefined}
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${canManage('dash_branches')?'hover:bg-warning/10 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/10`}>
                     <AlertTriangle size={13} className="text-warning shrink-0"/>
-                    <div className="flex-1 min-w-0"><p className="text-[11px] font-black text-content-2 truncate">{b.name}</p><p className="text-[9px] text-warning font-semibold">{issue}</p></div>
+                    <div className="flex-1 min-w-0"><p className="text-[11px] font-black text-content-2 truncate">{b.name}</p><p className="text-[9px] text-warning-text font-semibold">{issue}</p></div>
                     {canManage('dash_branches')&&<ChevronRight size={11} className="text-content-3 shrink-0"/>}
                   </button>
                 );
@@ -1545,7 +1552,7 @@ const DashboardView = ({ openModal }) => {
                       onMouseEnter={e=>{if(!hasH)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({holidays:ev?.holidays||[],x:r.left+r.width/2,y:r.top});}}
                       onMouseLeave={()=>setCalTooltip(null)}
                       className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-[background-color] duration-150 ${isToday?'bg-brand':hasH?'bg-danger/10 hover:bg-danger/10':'hover:bg-surface-card-hover/80'}`}>
-                      <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-danger':'text-content-2'}`}>{day}</span>
+                      <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-danger-text':'text-content-2'}`}>{day}</span>
                       {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-danger"/></div>}
                     </div>
                   );
@@ -1581,7 +1588,7 @@ const DashboardView = ({ openModal }) => {
                     {a.priority==='URGENT'?<Flame size={13} className="text-danger"/>:<Megaphone size={13} className="text-chart-1-text"/>}
                   </div>
                   <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-content truncate">{a.title}</p><p className="text-[10px] text-content-3 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
-                  {a.priority==='URGENT'&&<span className="text-[9px] font-black text-danger bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full shrink-0 mt-1">URGENTE</span>}
+                  {a.priority==='URGENT'&&<span className="text-[9px] font-black text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full shrink-0 mt-1">URGENTE</span>}
                 </button>
               ))}
           </div>
@@ -1669,11 +1676,11 @@ const DashboardView = ({ openModal }) => {
                       </div>
                       {/* Badges */}
                       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        <span className={`text-[10px] font-black ${e.isToday?'text-brand':e.isTomorrow?'text-warning':'text-content-2'}`}>{dayLabel}</span>
+                        <span className={`text-[10px] font-black ${e.isToday?'text-brand':e.isTomorrow?'text-warning-text':'text-content-2'}`}>{dayLabel}</span>
                         {e.isToday
                           ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand/10 text-brand">Hoy</span>
                           :e.isTomorrow
-                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-warning/10 text-warning">Mañana</span>
+                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-warning/10 text-warning-text">Mañana</span>
                           :<span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-surface-card-hover text-content-3':'bg-surface-card-hover text-content-3'}`}>{e.age} años</span>
                         }
                       </div>
@@ -1727,7 +1734,7 @@ const DashboardView = ({ openModal }) => {
                 <p className="text-[10px] font-semibold text-content-3 mt-0.5">últ. 30 días</p>
               </div>
               <div className="mb-1">
-                <p className="text-[13px] font-black text-success">{fmt(cotizStats.total)}</p>
+                <p className="text-[13px] font-black text-success-text">{fmt(cotizStats.total)}</p>
                 <p className="text-[9px] font-bold text-content-2 uppercase tracking-wide">monto total</p>
               </div>
             </div>
@@ -1792,7 +1799,7 @@ const DashboardView = ({ openModal }) => {
               </div>
               <div className="bg-success/10 rounded-2xl p-3">
                 <p className="text-[16px] font-black text-success-text leading-none">{fmt(factStats.total)}</p>
-                <p className="text-[10px] font-semibold text-success mt-1">total emitido</p>
+                <p className="text-[10px] font-semibold text-success-text mt-1">total emitido</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -1800,7 +1807,7 @@ const DashboardView = ({ openModal }) => {
                 <span className="w-2 h-2 rounded-full bg-danger shrink-0"/>
                 <div>
                   <p className="text-[14px] font-black text-danger-text">{factStats.ccf}</p>
-                  <p className="text-[9px] font-bold text-danger uppercase tracking-wide">CCF</p>
+                  <p className="text-[9px] font-bold text-danger-text uppercase tracking-wide">CCF</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-surface-card-hover rounded-xl px-3 py-2">

@@ -138,7 +138,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-black text-content truncate">{product.nombre}</p>
-          {product.principio_activo && <p className="text-[10px] text-success font-semibold truncate">{product.principio_activo}</p>}
+          {product.principio_activo && <p className="text-[10px] text-success-text font-semibold truncate">{product.principio_activo}</p>}
           <p className="text-[10px] text-content-3 truncate">
             {ERP_NAMES[Number(erp)] || 'Sucursal'}{product.laboratorio_nombre ? ` · ${product.laboratorio_nombre}` : ''}
           </p>
@@ -209,7 +209,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
         </div>
 
-        {err && <p className="text-[11px] text-danger font-semibold px-1">{err}</p>}
+        {err && <p className="text-[11px] text-danger-text font-semibold px-1">{err}</p>}
 
         <button onClick={submit} disabled={submitting}
           className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-brand-hover disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
@@ -322,7 +322,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-bold text-content truncate leading-tight">{p.nombre}</p>
-              {p.principio_activo && <p className="text-[9px] text-success font-semibold truncate">{p.principio_activo}</p>}
+              {p.principio_activo && <p className="text-[9px] text-success-text font-semibold truncate">{p.principio_activo}</p>}
               {p.laboratorio_nombre && <p className="text-[9px] text-content-3 truncate">{p.laboratorio_nombre}</p>}
             </div>
             <Building2 size={12} className="text-content-3 shrink-0" />

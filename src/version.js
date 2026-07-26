@@ -5,8 +5,44 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.60.5';
+export const APP_VERSION = '2.60.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.60.6 — fix(dashboard): auditoría de diseño completa, segunda pasada
+// (usuario correctamente señaló que la primera se quedó corta).
+//
+// 1. Las mini-cards de sucursal (sales_branch_*, "La Popular"/"Salud N")
+//    eran el ÚNICO wrapWidget() de los 17 que NO pasaba por <WidgetCard> —
+//    duplicaban las clases a mano pero sin la capa "glass shine"
+//    (bg-gradient-to-b from-white/35) ni data-surface="card", por eso se
+//    veían más opacas/planas y sin el hover-lift que sí tienen las demás.
+//    Ahora usan exactamente las mismas 2 capas que WidgetCard.
+// 2. Causa real del monto verde ilegible: usaban text-success (token BASE,
+//    #12B76A — pensado para íconos, ~2.6:1 de contraste sobre superficie
+//    clara) en vez de text-success-text (#0a7a46, la variante AA-safe,
+//    4.79:1, documentada en DESIGN.md §6). Auditoría completa del mismo
+//    bug (base en vez de -text, para TEXTO no íconos) en todo el dashboard
+//    encontró 16 instancias más — varias con el "hermano" correcto al
+//    lado (ej. Facturación Hoy: el monto grande ya usaba -text pero la
+//    etiqueta "total emitido" debajo, mismo fondo, no) confirmando que era
+//    un error de copiado, no una decisión de diseño. Corregidas todas:
+//    DashboardView.jsx (calendario, avisos urgentes, cumpleaños,
+//    alertas de sucursal, cotizaciones, facturación), WidgetInventorySearch,
+//    WidgetMinMaxRequest, WidgetSrsInventory, WidgetAnnulmentRequest.
+//    Los usos de esos mismos tokens en ÍCONOS (no texto) se dejaron
+//    intactos — ese es el uso correcto de la variante base.
+// 3. Buscador/fecha en Operación — investigado a fondo, NO es un bug: los
+//    5 SearchInput migrados en v2.60.5 ya estaban en el piso obligatorio
+//    de 16px (verificado con getComputedStyle, no a ojo). Es el mismo
+//    tamaño que usa ViewTabBar (el buscador de header de TODAS las vistas
+//    del portal) y que FormTurnos.jsx fija explícitamente incluso en
+//    desktop (`text-[16px] md:text-[16px]`) — cero excepciones en el
+//    proyecto. Bajar de 16px reintroduce el bug de zoom automático de
+//    iOS Safari. Pendiente de decisión del usuario, no aplicado: la única
+//    forma real de que el texto lea más chico sería `maximum-scale=1` en
+//    el viewport (bloquea el pinch-zoom del navegador para toda la app).
+//
+// npm run gate:design → 0 hallazgos.
 
 // v2.60.5 — fix(dashboard): auditoría de diseño de DashboardView contra
 // DESIGN.md (5 puntos planteados por el usuario).

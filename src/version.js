@@ -5,8 +5,46 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.64.0';
+export const APP_VERSION = '2.64.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.64.1 — cierre de los hallazgos abiertos A2, A3, A5 y A6 de la auditoría
+// de diseño (AUDITORIA-DISENO-2026-07-26.md, sección de hallazgos abiertos).
+//
+// A2 · El título de vista se truncaba a "Gestión de …" en móvil porque la
+// prioridad estaba declarada al revés: el título llevaba min-w-0 (encoge hasta
+// desaparecer) y las acciones flex-shrink-0 (nunca ceden), así que ganaba lo
+// secundario. Con flex-wrap + basis-[60%] las acciones bajan a una segunda
+// línea. El título es lo que te dice dónde estás.
+//
+// A3 · 88 elementos a 9px en un teléfono: la densidad táctil de D2.3 resolvió
+// las alturas pero dejó la tipografía con la escala del escritorio. Se mostró
+// el mockup de subir un escalón toda la escala y se veía grande, así que por
+// decisión del usuario suben SOLO micro (9→10) y caption (10→11) bajo
+// (pointer: coarse) — el ~70% del texto móvil, donde está casi toda la
+// ganancia, sin inflar las tablas densas. Medido en iPhone 13 real: 9px pasa
+// de 88 a 25 elementos y el escritorio queda idéntico al píxel.
+//
+// A5 · La rampa ABC/XYZ de MinMax es la única ORDINAL del sistema (A/X
+// importante → B/Y intermedio → C/Z problema). Los extremos ya tenían token y
+// el escalón del medio era un #94a3b8 crudo. Se agrega --chart-8-muted en vez
+// de colapsar B/Y sobre --chart-8, que fundiría dos categorías en un color.
+//
+// A6 · El degradado destructive de Button tenía dos paradas y solo el final
+// era token. Se agrega --danger-light.
+//
+// N4 (mismo bloque) · rounded-full compila a un literal, no a
+// var(--btn-radius), así que la geometría por tema de N3 no llegaba a los
+// botones: en Solid el canónico daba 8px y los 102 escritos a mano seguían
+// redondos. Migrados a rounded-btn, solo dentro de la etiqueta <button> —
+// avatares y puntos de estado siguen siendo círculos en los 4 temas. Y
+// --badge-radius no estaba definido en solid/solid-dark: heredaba 9999px.
+//
+// Lección recurrente de esta sesión, ya en el doc: en Tailwind v4 agregar un
+// token NO garantiza que la clase exista. Dos fallos silenciosos hoy — un
+// bucle de template literals que no emitió bg-chart-2/5/7-solid, y un @theme
+// mal editado que no generó from-danger-light. Siempre confirmar en el bundle.
+
 
 // v2.64.0 — D2 completa + N3: Solid Modern por fin tiene su propia GEOMETRÍA.
 //

@@ -98,6 +98,24 @@
   --text-title-lg:  22px;   /*    45 usos — título de vista */
   --text-display:   26px;   /*     9 usos */
   --text-display-lg:32px;   /*     4 usos */
+  /* ── A3 (2026-07-26) — solo los dos escalones más chicos suben en táctil ──
+     Medido en iPhone 13 real: la vista `staff` renderiza 88 elementos a 9px
+     y 33 a 10px. El móvil tira a PEQUEÑO, no a grande — la densidad táctil de
+     D2.3 resolvió las alturas (piso de 44px para lo que se toca) pero dejó la
+     tipografía con la escala del escritorio.
+
+     Se sube un escalón SOLO micro y caption. Son el ~70% del texto en móvil,
+     así que es donde está casi toda la ganancia de legibilidad, y al no tocar
+     body/title el contenido no se infla: las tablas densas (Ventas, MinMax,
+     Catálogo) siguen entrando sin scroll extra. Decisión del usuario tras ver
+     el mockup de la escala completa, que sí se veía grande.
+
+     Solo aplica a punteros gruesos: en escritorio la escala queda idéntica. */
+  @media (pointer: coarse) {
+    --text-micro:   10px;  /* 9  → 10 */
+    --text-caption: 11px;  /* 10 → 11 */
+  }
+
   /* Fuera de escala a propósito: los 3 numerales hero (72/80/120px) del
      reloj del kiosco y del contador grande. Son piezas únicas, no una
      rampa — quedan como valor arbitrario documentado. */

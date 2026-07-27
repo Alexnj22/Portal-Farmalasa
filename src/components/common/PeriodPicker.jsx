@@ -2,6 +2,7 @@
 // Month-level + Day-level range picker with preset shortcuts
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import SegmentedControl from './SegmentedControl';
 import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -354,19 +355,16 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     {/* Mode toggle */}
                     <div className="flex items-center gap-3 px-5 mb-3">
                         <div className="flex-1 h-px bg-divider" />
-                        <div className="flex items-center bg-surface-card-hover rounded-full p-0.5 border border-border-card shadow-sm">
-                            {[{ key: 'month', label: 'Por mes' }, { key: 'day', label: 'Por días' }].map(opt => (
-                                <button key={opt.key} type="button"
-                                    onClick={() => { setSelMode(opt.key); setDayPhase('idle'); setDayHover(null); }}
-                                    className={`px-3 py-1 rounded-full text-[9.5px] font-black transition-all ${
-                                        selMode === opt.key
-                                            ? 'bg-brand text-white shadow-sm'
-                                            : 'text-content-3 hover:text-content-2'
-                                    }`}>
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
+                        <SegmentedControl
+                            size="sm"
+                            label="Modo de selección"
+                            value={selMode}
+                            onChange={(v) => { setSelMode(v); setDayPhase('idle'); setDayHover(null); }}
+                            options={[
+                                { value: 'month', label: 'Por mes' },
+                                { value: 'day',   label: 'Por días' },
+                            ]}
+                        />
                         <div className="flex-1 h-px bg-divider" />
                     </div>
 

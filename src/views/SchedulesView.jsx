@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
+import SegmentedControl from '../components/common/SegmentedControl';
 import { EmptyState } from '../components/common/StateViews';
 import Button from '../components/common/Button';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -108,16 +109,17 @@ const HolidaysPanel = ({
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
-                        <div className="flex items-center gap-1.5 bg-surface-card-hover rounded-full p-1 border border-divider">
-                            <button onClick={() => setHType('NATIONAL')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black transition-all ${hType === 'NATIONAL' ? 'bg-surface-tab-active text-warning shadow-sm' : 'text-content-3 hover:text-warning'}`}>
-                                <Globe size={11} strokeWidth={2} /> Nacional
-                            </button>
-                            <button onClick={() => setHType('MUNICIPAL')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-surface-tab-active text-chart-1-text shadow-sm' : 'text-content-3 hover:text-chart-1-text'}`}>
-                                <MapPin size={11} strokeWidth={2} /> Municipal
-                            </button>
-                        </div>
+                        <SegmentedControl
+                            size="sm"
+                            tone="warning"
+                            label="Tipo de feriado"
+                            value={hType}
+                            onChange={setHType}
+                            options={[
+                                { value: 'NATIONAL',  label: 'Nacional',  icon: Globe },
+                                { value: 'MUNICIPAL', label: 'Municipal', icon: MapPin },
+                            ]}
+                        />
                         {hType === 'MUNICIPAL' && (
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
                                 className="flex-1 min-w-[140px] bg-surface-card border border-divider rounded-full px-3 py-2 text-body-xl font-bold text-content outline-none focus:border-chart-1 transition-all" />

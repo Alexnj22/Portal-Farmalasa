@@ -341,6 +341,33 @@ es donde aparecen los componentes que faltan.
 
 ---
 
+
+## Observaciones sin confirmar (2026-07-27)
+
+No son hallazgos: son cosas que vi una vez y **no pude reproducir**. Se anotan
+para no perderlas, marcadas como lo que son.
+
+- **Solape en el filtro de fechas de Historia de Sucursal.** En una captura a
+  1600px los dos `DD/MM/AAAA` del rango se pisaban. Al volver a medirlo la
+  barra no llega a renderizar: en este entorno de preview el historial falla
+  con `fetchAllRows error: TypeError: Failed to fetch`, así que no hay campos
+  que medir. Queda pendiente verificarlo contra un entorno donde esos datos
+  carguen.
+- **`ALGO SALIÓ MAL` en `/branches/2` a 1280px.** Ocurrió una vez; en el
+  reintento a 1600/1440/1280/1100px no volvió a pasar. Fue posterior al mismo
+  `Failed to fetch`, así que lo más probable es que sea el ErrorBoundary
+  atrapando la consecuencia de una red caída, no un bug de layout. No se
+  descarta del todo.
+
+## Verificado por código, no en vivo
+
+- Los **5 switches de sucursal** (`BranchHelpers.Switch`). El formulario con
+  las pestañas Horarios/Inmueble/Legal no se alcanza ni desde `/branches` ni
+  desde el detalle: el modal de "Nueva Sucursal" solo trae la sección general.
+  Los 5 call sites pasan `on`/`onToggle`/`disabled`, que es exactamente lo que
+  acepta el alias. Al revisarlos apareció que ninguno pasaba nombre accesible
+  — corregido en los 5 (v2.67.3).
+
 ## Aceptados, no se tocan
 
 | # | Motivo |

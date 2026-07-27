@@ -61,7 +61,7 @@ export default function FeedbackOverlay({
       <div className="flex flex-col items-center justify-center text-center w-full max-w-6xl h-full p-8 relative z-base">
 
         {isLactationAction && (
-          <div className="absolute top-10 right-10 flex items-center gap-2 bg-chart-6/10 backdrop-blur-2xl border border-chart-6/30 px-5 py-2.5 rounded-full text-white font-bold animate-pulse shadow-[0_4px_20px_rgba(244,114,182,0.2),inset_0_1px_2px_rgba(255,255,255,0.15)] overflow-hidden">
+          <div className="absolute top-10 right-10 flex items-center gap-2 bg-chart-6/10 backdrop-blur-2xl border border-chart-6/30 px-5 py-2.5 rounded-full text-white font-bold animate-pulse shadow-[var(--shadow-glass-2)] overflow-hidden">
             <Baby size={20} className="text-chart-6 drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]" /> Periodo de Lactancia
           </div>
         )}
@@ -80,7 +80,7 @@ export default function FeedbackOverlay({
                 
                 {/* Contenedor de la Foto */}
                 <div
-                  className={`relative h-36 w-36 md:h-44 md:w-44 rounded-modal md:rounded-header flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
+                  className={`relative h-36 w-36 md:h-44 md:w-44 rounded-modal md:rounded-header flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[var(--shadow-glass-5)] overflow-hidden transition-all duration-500 ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
                   {(employee?.photo || employee?.photo_url) ? (
                     <img
                       src={employee.photo || employee.photo_url}
@@ -95,7 +95,7 @@ export default function FeedbackOverlay({
                 </div>
 
                 {/* Nombre: Píldora encrustada */}
-                <div className="absolute -bottom-4 z-content px-6 py-2.5 rounded-full bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[0_15px_30px_rgba(0,0,0,0.6),inset_0_1px_2px_rgba(255,255,255,0.1)] max-w-[120%] w-max flex items-center justify-center">
+                <div className="absolute -bottom-4 z-content px-6 py-2.5 rounded-full bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[var(--shadow-glass-3)] max-w-[120%] w-max flex items-center justify-center">
                   <h2 className="text-caption sm:text-label md:text-xs font-black text-white uppercase tracking-[0.2em] drop-shadow-md truncate">
                     {employee?.name}
                   </h2>
@@ -139,7 +139,7 @@ export default function FeedbackOverlay({
                 )}
 
                 {/* Reloj (Mismo ancho automático y misma curvatura de borde que el subtexto) */}
-                <div className="flex items-center justify-center gap-3 text-white font-light tabular-nums text-3xl md:text-4xl bg-white/[0.03] backdrop-blur-2xl px-8 py-4 rounded-3xl border border-white/10 shadow-[inset_0_2px_15px_rgba(255,255,255,0.02)] w-full">
+                <div className="flex items-center justify-center gap-3 text-white font-light tabular-nums text-3xl md:text-4xl bg-white/[0.03] backdrop-blur-2xl px-8 py-4 rounded-3xl border border-white/10 shadow-[var(--shadow-shine-lg)] w-full">
                   <Clock size={32} className="text-white/30 shrink-0" /> 
                   <span className="whitespace-nowrap">{time}</span>
                 </div>
@@ -158,7 +158,7 @@ export default function FeedbackOverlay({
                   </div>
                 )}
                 <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[var(--shadow-shine-lg)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
                     {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
                   <div className="flex flex-col text-left">
@@ -194,7 +194,7 @@ export default function FeedbackOverlay({
               <div
                 className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 rounded-header md:rounded-header flex items-center justify-center border backdrop-blur-3xl transition-all duration-500 
                 ${color === 'red'
-                    ? 'bg-danger/10 border-danger/40 shadow-[0_0_50px_rgba(239,68,68,0.2),inset_0_2px_20px_rgba(255,255,255,0.1)] animate-[pulse_2s_infinite]'
+                    ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-shine-lg)] animate-[pulse_2s_infinite]'
                     : 'bg-white/[0.03] border-white/10 shadow-[var(--shadow-glass-dark)]'
                   }`}>
                 {Icon && (

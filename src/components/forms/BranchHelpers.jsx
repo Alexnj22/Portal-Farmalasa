@@ -53,13 +53,13 @@ export const Switch = ({ on, onToggle }) => (
     <button
         type="button"
         onClick={onToggle}
-        className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-btn transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand/50 active:scale-[0.97] transform-gpu ${
+        className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-btn transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[var(--shadow-shine)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand/50 active:scale-[0.97] transform-gpu ${
             on ? "bg-brand border border-brand-hover" : "bg-surface-card-hover/80 border border-divider"
         }`}
         aria-pressed={on}
     >
         <span
-            className={`absolute top-[2px] left-[2px] w-[22px] h-[22px] rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform-gpu ${
+            className={`absolute top-[2px] left-[2px] w-[22px] h-[22px] rounded-full bg-white shadow-[var(--shadow-glass-1)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform-gpu ${
                 on ? "translate-x-5" : "translate-x-0"
             }`}
         />
@@ -91,8 +91,8 @@ export const FileUploader = ({ label, file, url, onChange }) => {
             
             <div className={`relative flex items-center gap-3 rounded-2xl p-2 transition-all duration-300 border transform-gpu ${
                 !hasFile 
-                    ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[var(--shadow-inset-glow)] hover:bg-warning/10 hover:border-warning/40 hover:shadow-md cursor-pointer group' 
-                    : 'bg-success/10 backdrop-blur-sm border-success/30 shadow-[var(--shadow-inset-glow)] hover:shadow-md'
+                    ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[var(--shadow-shine-lg)] hover:bg-warning/10 hover:border-warning/40 hover:shadow-md cursor-pointer group' 
+                    : 'bg-success/10 backdrop-blur-sm border-success/30 shadow-[var(--shadow-shine-lg)] hover:shadow-md'
             }`}
             onClick={() => !hasFile && fileInputRef.current?.click()}
             >
@@ -157,7 +157,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
                 minLength={minLength}
                 maxLength={maxLength}
                 // 🚨 Fusión de la clase enviada (className) con la estética base Liquidglass
-                className={`w-full py-3.5 bg-surface-card border border-border-card rounded-2xl text-body-xl font-bold text-content-2 placeholder-content-3 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
+                className={`w-full py-3.5 bg-surface-card border border-border-card rounded-2xl text-body-xl font-bold text-content-2 placeholder-content-3 outline-none transition-all duration-300 shadow-[var(--shadow-shine-lg)] focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
                 placeholder={placeholder}
                 value={localValue}
                 onChange={(e) => setLocalValue(e.target.value)}

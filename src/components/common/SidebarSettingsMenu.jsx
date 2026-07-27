@@ -125,7 +125,7 @@ export default function SidebarSettingsMenu({
       transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
       className="fixed z-confirm p-3 flex flex-col gap-3 transform-gpu rounded-3xl
         bg-[#0A1628]/92 backdrop-blur-2xl backdrop-saturate-150 border border-white/12
-        shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]"
+        shadow-[var(--shadow-glass-4)]"
     >
       {(showPin || showSu) && (
         <div>

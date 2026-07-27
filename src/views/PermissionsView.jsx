@@ -303,11 +303,11 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 ? 'bg-surface-card backdrop-blur-xl border-border-card opacity-40 select-none'
                 : hasAnyPerm
                     ? `bg-surface-card backdrop-blur-2xl border-border-card
-                       shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,82,204,0.08)]
-                       hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_16px_48px_rgba(0,82,204,0.16),0_4px_16px_rgba(0,0,0,0.06)]
+                       shadow-[var(--shadow-glass-2)]
+                       hover:shadow-[var(--shadow-glass-4)]
                        hover:-translate-y-2 hover:scale-[1.018] hover:bg-surface-card
-                       ${flash ? 'ring-2 ring-chart-1/50 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_0_0_4px_rgba(0,82,204,0.06),0_8px_32px_rgba(0,82,204,0.18)]' : ''}`
-                    : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-surface-card'
+                       ${flash ? 'ring-2 ring-chart-1/50 shadow-[var(--shadow-glass-3)]' : ''}`
+                    : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-shine)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-surface-card'
         }`}>
             <div className="p-4">
                 {/* Header */}
@@ -333,7 +333,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 {/* Toggles */}
                 <div className={`rounded-xl p-2.5 space-y-1.5 border transition-all duration-300 ${
                     hasAnyPerm
-                        ? 'bg-surface-card backdrop-blur-sm border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'
+                        ? 'bg-surface-card backdrop-blur-sm border-border-card shadow-[var(--shadow-shine)]'
                         : 'bg-surface-card border-border-card'
                 }`}>
                     {PERMISSION_TYPES.map(pt => {
@@ -902,8 +902,8 @@ const PermissionsView = () => {
                                 return (
                                 <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
                                     isRoleSU
-                                        ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-chart-7/5 backdrop-blur-xl border-warning/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
-                                        : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_2px_12px_rgba(0,0,0,0.04)]'
+                                        ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-chart-7/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]'
+                                        : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-glass-1)]'
                                 }`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-warning/30 blur-xl pointer-events-none" />}
                                     <div className="relative p-3.5 flex flex-col gap-3">
@@ -970,7 +970,7 @@ const PermissionsView = () => {
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                                <div className="rounded-2xl border bg-surface-card backdrop-blur-2xl border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,0,0,0.06)] p-4 md:col-span-2">
+                                <div className="rounded-2xl border bg-surface-card backdrop-blur-2xl border-border-card shadow-[var(--shadow-glass-2)] p-4 md:col-span-2">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-300`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />

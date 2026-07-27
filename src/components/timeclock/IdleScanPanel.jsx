@@ -43,7 +43,7 @@ export default function IdleScanPanel({
     <div className="relative z-content w-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-500 pointer-events-auto">
 
       {/* 🚨 CAJA PRINCIPAL CENTRAL */}
-      <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
+      <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
 
         {/* TOP: Ícono y Títulos */}
         <div className="flex flex-col items-center text-center w-full mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">

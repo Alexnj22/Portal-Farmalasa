@@ -608,7 +608,7 @@ const AnnouncementsView = ({ openModal }) => {
         <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
           <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar transform-gpu">
-            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-border-card shadow-[var(--shadow-glass-card)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
+            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]'}`}>              
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-warning-solid' : 'bg-brand'}`}>
@@ -621,7 +621,7 @@ const AnnouncementsView = ({ openModal }) => {
                 )}
               </div>
 
-              {error && <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2"><AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} /><span className="leading-tight">{error}</span></div>}
+              {error && <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[var(--shadow-shine)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2"><AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} /><span className="leading-tight">{error}</span></div>}
 
               <form onSubmit={handlePublish} className="space-y-5 relative z-base">
                 <div>
@@ -651,7 +651,7 @@ const AnnouncementsView = ({ openModal }) => {
                   ) : (
                     <>
                       <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
-                      <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] mb-4">
+                      <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[var(--shadow-shine)] mb-4">
                         {targetTypes.map((type) => {
                           const isActive = targetType === type.id;
                           return (

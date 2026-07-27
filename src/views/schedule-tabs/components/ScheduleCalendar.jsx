@@ -320,7 +320,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
         <tr className="group/row relative transition-[z-index] duration-150 hover:z-sidebar">
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-glass-sm)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
-                    <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card backdrop-blur-md border border-border-card shadow-[inset_0_1px_4px_rgba(255,255,255,0.7)] overflow-hidden flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-shine)] overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-content-3" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
@@ -416,7 +416,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                               hasShift ? 'bg-surface-card border border-divider shadow-[var(--shadow-elevation-xs)]' :
                               'border border-dashed border-divider bg-surface-card-hover/30 backdrop-blur-sm'
                             }
-                            ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-danger/40 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]' : ''}
+                            ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-danger/40 shadow-[var(--shadow-shine)]' : ''}
                         `}>
 
                             {!conf && !isReadOnly && !apoyoBranch && (
@@ -514,7 +514,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
     return (
         <tr className="group/row relative transition-[z-index] duration-150 hover:z-sidebar">
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
-                <div className="min-h-[72px] h-full bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                <div className="min-h-[72px] h-full bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 shadow-[var(--shadow-glass-2)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30 overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-chart-3/40" />}
                     </div>

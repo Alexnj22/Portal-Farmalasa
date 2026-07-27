@@ -13,9 +13,9 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
     
     if (open) {
         if (isInvalid) {
-            cardClass += "bg-danger/10 border border-danger/30 shadow-[0_4px_15px_rgba(239,68,68,0.05),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(239,68,68,0.15),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-danger/10";
+            cardClass += "bg-danger/10 border border-danger/30 shadow-[var(--shadow-glass-2)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-3)] hover:bg-danger/10";
         } else {
-            cardClass += "bg-surface-card border border-white shadow-[0_4px_15px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,82,204,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:border-brand/30";
+            cardClass += "bg-surface-card border border-white shadow-[var(--shadow-glass-2)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-3)] hover:border-brand/30";
         }
     } else {
         cardClass += "bg-surface-card-hover/40 border border-border-card opacity-80 hover:opacity-100 hover:bg-surface-card hover:shadow-sm";
@@ -72,7 +72,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </div>
                 </div>
             ) : (
-                <div className="py-3.5 text-center rounded-2xl bg-surface-card-hover/50 border border-divider shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-colors duration-300 group-hover:bg-surface-card-hover">
+                <div className="py-3.5 text-center rounded-2xl bg-surface-card-hover/50 border border-divider shadow-[var(--shadow-shine)] transition-colors duration-300 group-hover:bg-surface-card-hover">
                     <p className="text-caption font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-300 group-hover:text-content-3">
                         Cerrado
                     </p>
@@ -85,8 +85,8 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
 // Componente Principal
 const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
 
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-card-soft)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-panel)] hover:bg-surface-card";
+    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
 
     return (
         <div className="w-full">
@@ -94,7 +94,7 @@ const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
                 
                 {/* ENCABEZADO PRO */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[var(--shadow-inset-hi)]">
+                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[var(--shadow-shine)]">
                         <Clock size={16} strokeWidth={2.5} />
                     </div>
                     <div className="flex flex-col">

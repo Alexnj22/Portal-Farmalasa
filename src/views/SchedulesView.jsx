@@ -709,9 +709,9 @@ const SchedulesView = ({ openModal, setView }) => {
         <div className="relative flex items-center gap-0 rounded-2xl overflow-hidden
             bg-white/[0.14] backdrop-blur-2xl
             border border-border-card
-            shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)]
+            shadow-[var(--shadow-glass-1)]
             transition-all duration-300
-            hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.95)]
+            hover:bg-white/[0.22] hover:shadow-[var(--shadow-glass-2)]
             hover:-translate-y-0.5 shrink-0">
 
             {/* Shimmer */}

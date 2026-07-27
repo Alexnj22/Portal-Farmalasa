@@ -40,7 +40,7 @@ const safeParse = (obj) => {
     try { return JSON.parse(obj) || {}; } catch { return {}; }
 };
 
-const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] cursor-pointer transition-all duration-300 hover:bg-surface-card-hover hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5 active:scale-[0.97]";
+const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)] cursor-pointer transition-all duration-300 hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:-translate-y-0.5 active:scale-[0.97]";
 
 // ============================================================================
 // 🧠 FUNCIONES PURAS
@@ -177,7 +177,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
         evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
     }
 
-    const baseCardStyles = 'bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_12px_40px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.7)]';
+    const baseCardStyles = 'bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-4)]';
 
     if (alerts.length === 0) {
         return { hasAlerts: false, message: 'Operativa', cardStyles: baseCardStyles, badgeStyles: 'hidden', icon: CheckCircle2, list: [] };
@@ -250,7 +250,7 @@ const BranchCard = memo(({
     };
 
     return (
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]'}`}>
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[var(--shadow-glass-5)]'}`}>
             
             {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
             <div className={`absolute inset-0 z-sidebar bg-surface-card backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
@@ -369,7 +369,7 @@ const BranchCard = memo(({
             <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
                 <div className="flex items-start gap-3">
                     <button onClick={() => handleViewProfile(branch)} className="flex items-center gap-4 min-w-0 text-left group/header focus:outline-none w-full pr-[140px]">
-                        <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
+                        <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 flex-1 flex flex-col justify-center">
@@ -432,7 +432,7 @@ const BranchCard = memo(({
                         </button>
                     </div>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-surface-card-hover hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
                         <div className="flex items-center gap-2">
                             <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand-text'}`} strokeWidth={2.5} />
                             <span className={`text-caption font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
@@ -484,7 +484,7 @@ const BranchCard = memo(({
                 </div>
             </div>
 
-            <div className="px-6 py-4 bg-surface-card backdrop-blur-xl border-t border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">
+            <div className="px-6 py-4 bg-surface-card backdrop-blur-xl border-t border-border-card shadow-[var(--shadow-shine)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">
                 <button
                     type="button"
                     onClick={() => openModal && openModal("viewBranchEmployees", branch)}
@@ -496,7 +496,7 @@ const BranchCard = memo(({
                         <span className="text-caption font-bold uppercase tracking-widest transition-colors duration-300 group-hover/personal:text-content-2">Personal</span>
                     </div>
                     <div className="flex items-center gap-3 w-full pr-4">
-                        <div className="flex-1 h-1.5 bg-surface-card shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] rounded-full overflow-hidden border border-border-card">
+                        <div className="flex-1 h-1.5 bg-surface-card shadow-[var(--shadow-shine)] rounded-full overflow-hidden border border-border-card">
                             <div className="h-full bg-gradient-to-r from-brand to-chart-5" style={{ width: `${pct}%` }} />
                         </div>
                         <span className="text-body-lg font-black text-content leading-none">{count}</span>

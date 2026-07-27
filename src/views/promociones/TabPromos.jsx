@@ -50,7 +50,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
     return (
         <div className={`
             relative bg-surface-card backdrop-blur-sm border rounded-2xl overflow-hidden
-            shadow-[0_2px_12px_rgba(0,0,0,0.05),inset_0_1px_4px_rgba(255,255,255,0.9)]
+            shadow-[var(--shadow-glass-1)]
             transition-all duration-200 hover:shadow-[var(--shadow-elevation-md)]
             ${promo.estado === 'active' ? 'border-success/30' : 'border-border-card'}
         `}>
@@ -320,7 +320,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
         <div>
             {/* Filter pill — glassmorphic, right-aligned */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-chip)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 overflow-visible max-w-full">
+                <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 overflow-visible max-w-full">
                     <div className="flex items-center px-2 py-2">
                         <Tag size={13} className="text-content-3 flex-shrink-0" />
                     </div>

@@ -611,7 +611,7 @@ const RequestsView = () => {
         <div className="flex items-center gap-2 md:gap-3">
             {canCreate && (
                 <button onClick={() => openCreateModal()}
-                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-brand/72 to-brand-hover/78 backdrop-blur-xl border border-border-card hover:border-border-card text-white rounded-full font-black text-caption uppercase tracking-widest shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-200 active:scale-[0.97] shrink-0">
+                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-brand/72 to-brand-hover/78 backdrop-blur-xl border border-border-card hover:border-border-card text-white rounded-full font-black text-caption uppercase tracking-widest shadow-[var(--shadow-glass-2)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-200 active:scale-[0.97] shrink-0">
                     <span className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
                         <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
                     </span>

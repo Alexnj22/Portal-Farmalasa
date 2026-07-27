@@ -46,7 +46,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
   const name      = r.requested_by_name || emp?.name || r.requested_by;
 
   return (
-    <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_20px_rgba(0,0,0,0.05)] p-4 flex flex-col gap-3 transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.09)]">
+    <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-xl shadow-[var(--shadow-glass-2)] p-4 flex flex-col gap-3 transition-shadow hover:shadow-[var(--shadow-glass-3)]">
 
       {/* Header: solicitante + estado */}
       <div className="flex items-center gap-2.5">
@@ -337,7 +337,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         </div>
 
         {/* Filter pill estándar */}
-        <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-chip)] shrink-0">
+        <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] shrink-0">
           <div className="px-2 py-1.5" style={{ minWidth: 150 }}>
             <LiquidSelect value={sucFilter === 'all' ? '' : sucFilter}
               onChange={v => setSucFilter(v || 'all')}

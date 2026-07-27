@@ -32,7 +32,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                     
                     {/* ENCABEZADO CON ÍCONO COLOREADO */}
                     <div className="flex items-center gap-3 mb-5">
-                        <div className={`p-2 ${srv.bgIcon} ${srv.color} rounded-xl border border-white shadow-[var(--shadow-inset-hi)]`}>
+                        <div className={`p-2 ${srv.bgIcon} ${srv.color} rounded-xl border border-white shadow-[var(--shadow-shine)]`}>
                             <srv.icon size={18} strokeWidth={2.5} />
                         </div>
                         <h4 className="text-body-sm font-black uppercase tracking-widest text-content">

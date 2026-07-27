@@ -557,7 +557,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div className="flex items-center justify-center flex-wrap gap-x-3 gap-y-1.5 mt-4 select-none opacity-40 hover:opacity-70 transition-opacity duration-300">
                         {[['↵', 'Enter'], ['→', ''], ['Space', '']].map(([key, label]) => (
                             <div key={key} className="flex items-center gap-1.5">
-                                <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-caption font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">
+                                <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-caption font-black text-content-2 shadow-[var(--shadow-glass-1)] font-mono leading-none">
                                     {key}
                                 </kbd>
                                 {label && <span className="text-micro font-bold text-content-2 uppercase tracking-widest">{label}</span>}
@@ -565,7 +565,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         ))}
                         <span className="text-micro font-bold text-content-2 uppercase tracking-widest">— confirmar</span>
                         <span className="text-content-3">·</span>
-                        <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-caption font-black text-content-2 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">←</kbd>
+                        <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-caption font-black text-content-2 shadow-[var(--shadow-glass-1)] font-mono leading-none">←</kbd>
                         <span className="text-micro font-bold text-content-2 uppercase tracking-widest">— retroceder</span>
                     </div>
                 </div>

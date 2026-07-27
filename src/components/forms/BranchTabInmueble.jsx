@@ -70,7 +70,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {isRented ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-surface-card p-5 rounded-3xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-surface-card p-5 rounded-3xl border border-border-card shadow-[var(--shadow-shine-lg)]">
                         <div className="md:col-span-2">
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -167,7 +167,7 @@ const BranchTabInmueble = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="py-10 text-center bg-surface-card rounded-3xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                    <div className="py-10 text-center bg-surface-card rounded-3xl border border-border-card shadow-[var(--shadow-shine-lg)]">
                         <div className="w-16 h-16 bg-chart-3/10 text-chart-3-text rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                             <Building2 size={28} strokeWidth={2} />
                         </div>
@@ -278,7 +278,7 @@ const BranchTabInmueble = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center bg-surface-card rounded-3xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] p-6">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center bg-surface-card rounded-3xl border border-border-card shadow-[var(--shadow-shine-lg)] p-6">
                             <div className="w-12 h-12 bg-surface-card-hover text-content-3 rounded-full flex items-center justify-center mb-3">
                                 <Trash2 size={20} strokeWidth={2} />
                             </div>

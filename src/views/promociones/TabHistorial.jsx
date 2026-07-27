@@ -60,7 +60,7 @@ export default function TabHistorial({ searchTerm }) {
         <div>
             {/* Info pill — right-aligned, glassmorphic */}
             <div className="flex justify-end mb-4">
-                <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-chip)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 max-w-full">
+                <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 max-w-full">
                     <div className="flex items-center gap-1.5 px-3 py-2">
                         <History size={12} className="text-content-3" />
                         <span className="text-label text-content-3">

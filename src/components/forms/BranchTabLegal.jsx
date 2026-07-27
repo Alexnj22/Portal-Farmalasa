@@ -187,7 +187,7 @@ const BranchTabLegal = ({
                                 {availableNurses.length === 0 ? (
                                     <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-2xl border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
                                 ) : (
-                                    <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-3xl border border-white max-h-[100px] overflow-y-auto custom-scrollbar shadow-[inset_0_2px_10px_rgba(0,0,0,0.03)]">
+                                    <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-3xl border border-white max-h-[100px] overflow-y-auto custom-scrollbar shadow-[var(--shadow-shine-lg)]">
                                         {availableNurses.map(emp => {
                                             const isSelected = (legal.nurses || []).includes(emp.id);
                                             return (
@@ -217,7 +217,7 @@ const BranchTabLegal = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex items-center justify-center py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)]">
+                        <div className="flex-1 flex items-center justify-center py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[var(--shadow-shine-lg)]">
                             <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center gap-1.5">
                                 <AlertCircle size={14} /> Módulo Desactivado
                             </p>
@@ -259,7 +259,7 @@ const BranchTabLegal = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)] animate-in fade-in duration-300">
+                    <div className="py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[var(--shadow-shine-lg)] animate-in fade-in duration-300">
                         <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-1.5">
                             <AlertCircle size={14} /> Módulo Desactivado
                         </p>

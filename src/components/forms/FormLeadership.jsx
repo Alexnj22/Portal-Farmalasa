@@ -85,7 +85,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <input 
                             type="text" 
                             placeholder="Buscar candidato..." 
-                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl pl-10 pr-4 py-3 text-body-xl font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[var(--shadow-inset-glow)]"
+                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl pl-10 pr-4 py-3 text-body-xl font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[var(--shadow-shine-lg)]"
                             value={formData.searchQuery || ''}
                             onChange={(e) => setFormData({...formData, searchQuery: e.target.value})}
                         />
@@ -109,7 +109,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.05)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'border-white text-content-3 bg-surface-card'}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'border-white text-content-3 bg-surface-card'}`}>
                                         {emp.photo ? <img src={emp.photo} alt="" className="w-full h-full object-cover"/> : emp.name.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -143,7 +143,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                     <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-right-4 pb-10">
                         
                         {/* 1. MINI-RESUMEN DEL EMPLEADO (EXPANDIDO) */}
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_15px_rgba(255,255,255,0.6)] relative overflow-hidden">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-5 shadow-[var(--shadow-glass-2)] relative overflow-hidden">
                             <div className="flex items-center gap-4 relative z-base">
                                 <div className="w-16 h-16 rounded-full border-[3px] border-white shadow-md overflow-hidden bg-surface-card-hover shrink-0">
                                     {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-content-3 font-black text-2xl">{selectedEmp.name.charAt(0)}</div>}
@@ -189,7 +189,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         /* ESTADO B: SI EL SELECCIONADO ES NUEVO (Flujo de Cambio) */
                             <>
                                 {/* 2. ANÁLISIS DE MOVIMIENTO */}
-                                <div className="bg-surface-card border border-white rounded-3xl p-4 shadow-[var(--shadow-inset-glow)]">
+                                <div className="bg-surface-card border border-white rounded-3xl p-4 shadow-[var(--shadow-shine-lg)]">
                                     <div className="flex items-center gap-3">
                                         {moveType === 'PROMOTION' && <TrendingUp size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
@@ -276,7 +276,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="space-y-4">
                                     <h3 className="text-caption font-black uppercase tracking-widest text-content-2 ml-1">Configuración del Cargo</h3>
                                     
-                                    <div className="flex p-1.5 bg-surface-card backdrop-blur-md border border-border-card rounded-2xl shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                                    <div className="flex p-1.5 bg-surface-card backdrop-blur-md border border-border-card rounded-2xl shadow-[var(--shadow-shine-lg)]">
                                         <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-label font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-surface-card text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <ShieldCheck size={14}/> Permanente
                                         </button>
@@ -306,7 +306,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         </label>
                                         <textarea 
                                             placeholder={formData.isPermanent === false ? "Ej. Cubre vacaciones de Mónica Castro..." : "Notas sobre la asignación (Opcional)..."}
-                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 text-body-xl font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all resize-none shadow-[var(--shadow-inset-glow)] ${hideScrollbarClass}`}
+                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 text-body-xl font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all resize-none shadow-[var(--shadow-shine-lg)] ${hideScrollbarClass}`}
                                             value={formData.notes || ''}
                                             onChange={(e) => setFormData({...formData, notes: e.target.value})}
                                         ></textarea>

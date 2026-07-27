@@ -1010,8 +1010,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const isExterna = selectedBranch?.type === 'EXTERNA';
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-card-soft)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-panel)] hover:bg-surface-card";
+    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
 
     // 🚨 Propiedades base para que los selects floten libres del Modal
     const portalSelectProps = {
@@ -1303,7 +1303,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[var(--shadow-inset-hi)]">
+                                <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[var(--shadow-shine)]">
                                     <GraduationCap size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Nivel Académico</h4>
@@ -1569,7 +1569,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[var(--shadow-inset-hi)]">
+                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[var(--shadow-shine)]">
                                     <Car size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Vehículo y Acreditaciones</h4>
@@ -1609,7 +1609,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-xl border border-chart-5/20 shadow-[var(--shadow-inset-hi)]">
+                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-xl border border-chart-5/20 shadow-[var(--shadow-shine)]">
                                     <Users size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Personas que Dependen Económicamente</h4>
@@ -2072,7 +2072,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[var(--shadow-inset-hi)]">
+                                <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[var(--shadow-shine)]">
                                     <CreditCard size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Cuentas y Retenciones</h4>
@@ -2109,7 +2109,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className={`${islandClass} ${islandHoverClass}`}>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-chart-8-solid text-white rounded-xl shadow-[var(--shadow-inset-hi)]"><AtSign size={16} strokeWidth={2.5} /></div>
+                                    <div className="p-2 bg-chart-8-solid text-white rounded-xl shadow-[var(--shadow-shine)]"><AtSign size={16} strokeWidth={2.5} /></div>
                                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Login de App Móvil</h4>
                                 </div>
                                 <PortalInput label="Usuario (Auto-generado)" name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
@@ -2135,7 +2135,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <div className="mt-3 animate-in fade-in">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">PIN del Carné (SHA-256)</label>
                                             <div className="flex items-center gap-2">
-                                                <div className="flex-1 h-[40px] bg-chart-8 rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.4)] select-all">
+                                                <div className="flex-1 h-[40px] bg-chart-8 rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[var(--shadow-shine)] select-all">
                                                     {formData.kiosk_pin}
                                                 </div>
                                                 <button type="button"

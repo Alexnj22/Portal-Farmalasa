@@ -308,7 +308,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 animate={isVisible && !isExiting ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
                 transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 onAnimationComplete={() => { if (isExiting) onClose(); }}
-                className="fixed z-popover w-[290px] max-h-[85vh] bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_30px_80px_rgba(0,0,0,0.22)] border border-border-card flex flex-col cursor-default transform-gpu overflow-hidden"
+                className="fixed z-popover w-[290px] max-h-[85vh] bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] rounded-3xl shadow-[var(--shadow-glass-5)] border border-border-card flex flex-col cursor-default transform-gpu overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-border-card bg-white/[0.22] shrink-0 z-header">
@@ -470,7 +470,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         disabled={isSaveDisabled}
                         className={`w-full py-3.5 text-body-sm font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
                         ${isSaveDisabled 
-                            ? 'bg-surface-card-hover text-content-3 border border-divider shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
+                            ? 'bg-surface-card-hover text-content-3 border border-divider shadow-[var(--shadow-shine)] cursor-not-allowed' 
                             : 'bg-gradient-to-r from-brand to-brand-hover text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
                     >
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}

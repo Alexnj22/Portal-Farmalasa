@@ -350,7 +350,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const headerControls = (
         <div className="flex items-center gap-2 md:gap-3 bg-surface-card backdrop-blur-2xl border border-border-card p-2 md:p-2.5 rounded-header shadow-sm w-max max-w-full overflow-x-auto hide-scrollbar">
             
-            <div className="flex items-center relative bg-surface-card border border-border-card rounded-full p-1 shrink-0 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]">
+            <div className="flex items-center relative bg-surface-card border border-border-card rounded-full p-1 shrink-0 shadow-[var(--shadow-shine)]">
                 <div
                     className="absolute top-1 bottom-1 w-[calc(20%-2px)] bg-white rounded-full shadow-[var(--shadow-elevation-md)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                     style={{
@@ -1027,7 +1027,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         const isToday = dia.day === todayName; 
 
                                                         return (
-                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-surface-card' : 'opacity-50 grayscale bg-surface-card-hover/50'} ${isToday ? 'bg-chart-1/10 ring-1 ring-brand/20 shadow-[inset_0_0_20px_rgba(0,82,204,0.05)]' : ''}`}>
+                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-surface-card' : 'opacity-50 grayscale bg-surface-card-hover/50'} ${isToday ? 'bg-chart-1/10 ring-1 ring-brand/20 shadow-[var(--shadow-shine)]' : ''}`}>
                                                                 
                                                                 {isToday && (
                                                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand shadow-[0_0_10px_rgba(0,82,204,0.4)]"></div>

@@ -30,7 +30,7 @@ function EarlyExitForm({
   return (
     <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
       
-      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-7 shadow-[var(--shadow-glass-dark)] overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
+      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-7 shadow-[var(--shadow-glass-dark)] overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
         
         <div className="flex flex-col items-center text-center w-full mb-4 sm:mb-5 shrink-0 group/icon">
           <div className="inline-flex p-3 sm:p-4 rounded-3xl mb-2.5 sm:mb-3 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
@@ -47,7 +47,7 @@ function EarlyExitForm({
 
         <form onSubmit={onSubmit} className="relative z-content w-full flex-1 flex flex-col justify-start min-h-0 shrink-0 gap-3 sm:gap-4 overflow-y-auto scrollbar-hide py-1">
           
-          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2.5 shadow-[inset_0_2px_10px_rgba(255,255,255,0.02)] shrink-0">
+          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2.5 shadow-[var(--shadow-shine-lg)] shrink-0">
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/40 border border-chart-4/40 overflow-hidden flex items-center justify-center text-body-xl sm:text-lg font-bold text-white shadow-[0_0_15px_rgba(249,115,22,0.15)] shrink-0">
               {/* 🚨 Implementado el photoUrl correcto aquí */}
               {photoUrl ? (
@@ -97,7 +97,7 @@ function EarlyExitForm({
               Justificación (Opcional)
             </label>
             <textarea
-              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-body-xl resize-none h-16 sm:h-20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-body-xl resize-none h-16 sm:h-20 shadow-[var(--shadow-shine-lg)] placeholder:text-white/20"
               placeholder="Detalle brevemente el motivo..."
               value={exitNotes}
               onChange={(e) => onChangeNotes?.(e.target.value)}

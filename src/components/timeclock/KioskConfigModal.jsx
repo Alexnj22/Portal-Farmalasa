@@ -65,7 +65,7 @@ const KioskConfigModal = ({
             </p>
 
             {/* Info de Sucursal (Mini Glass Card) */}
-            <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 shadow-[inset_0_2px_10px_rgba(255,255,255,0.02)] mb-6 flex flex-col items-center justify-center">
+            <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 shadow-[var(--shadow-shine-lg)] mb-6 flex flex-col items-center justify-center">
               <p className="text-white/40 text-micro font-semibold uppercase tracking-widest mb-1">
                 Sucursal Asignada
               </p>
@@ -130,7 +130,7 @@ const KioskConfigModal = ({
                 <div className="relative">
                   <Laptop size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" strokeWidth={2} />
                   <input
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-3xl p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-body-xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-3xl p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-body-xl shadow-[var(--shadow-shine-lg)] placeholder:text-white/20"
                     placeholder="Ej: Tablet Entrada"
                     value={deviceNameInput}
                     onChange={(e) => onChangeDeviceName?.(e.target.value)}

@@ -348,22 +348,33 @@
 
   --shadow-glass-sm: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 10px rgba(0,0,0,.06);
 
-  /* D3.8 (2026-07-27) — las 8 sombras multicapa que MÁS se repiten a mano.
-     T7.3 dejó fuera a propósito las combinadas (drop + inset) porque forzarlas
-     a un token de una sola capa las aplanaba con pérdida visual real, y eso
-     sigue siendo cierto para la cola larga: de 400 literales quedan 269
-     valores distintos, casi todos únicos.
-     Pero estas ocho repiten entre 4 y 13 veces cada una: ahí ya no es una
-     sombra a medida, es un patrón sin nombre. Los valores son EXACTOS a los
-     que ya estaban escritos, así que no cambia un pixel. */
-  --shadow-glass-card:      0 8px 30px rgba(0,0,0,.04), inset 0 2px 15px rgba(255,255,255,.7);
-  --shadow-glass-card-soft: 0 8px 30px rgba(0,0,0,.03), inset 0 2px 10px rgba(255,255,255,.8);
-  --shadow-glass-chip:      0 2px 10px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.9);
-  --shadow-glass-raised:    0 8px 28px rgba(0,0,0,.1),  inset 0 1px 0 rgba(255,255,255,.95);
-  --shadow-glass-panel:     0 15px 40px rgba(0,0,0,.08), inset 0 2px 10px rgba(255,255,255,1);
-  --shadow-glass-dark:      0 24px 50px rgba(0,0,0,.3),  inset 0 2px 15px rgba(255,255,255,.05);
-  --shadow-inset-hi:        inset 0 1px 2px rgba(255,255,255,.5);
-  --shadow-inset-glow:      inset 0 2px 10px rgba(255,255,255,.6);
+  /* ── ESCALA DE VIDRIO (D3.8, 2026-07-27) ────────────────────────────────
+     La sombra de este sistema tiene DOS ejes, y ahí estaba el problema: 400
+     sombras escritas a mano con 269 valores distintos no eran 269 decisiones
+     de diseño, eran 5 elevaciones × N brillos × retoques sueltos.
+
+       eje 1 · ELEVACIÓN — cuánto se despega de la superficie.
+                Ya existía: --shadow-elevation-xs…xl, y al agrupar los 400
+                literales por radio de blur caen casi exactos en esas bandas
+                (7-14px, 15-24, 25-34, 35-49, 50+).
+       eje 2 · BRILLO — el inset que hace que la superficie lea como vidrio.
+                Nunca se tokenizó: 154 de los 400 usos son SOLO inset, con 112
+                valores distintos para la misma idea.
+
+     Estos 5 niveles combinan los dos ejes, que es como se usan en la práctica.
+     No reemplazan a --shadow-elevation-* (sirve para lo que no es vidrio):
+     son el par listo para una superficie de vidrio, en 5 escalones. */
+  --shadow-shine:   inset 0 1px 0 rgba(255,255,255,.85);
+  --shadow-shine-lg: inset 0 2px 12px rgba(255,255,255,.6);
+
+  --shadow-glass-1: inset 0 1px 0 rgba(255,255,255,.85), 0 2px 10px rgba(0,0,0,.05);
+  --shadow-glass-2: inset 0 1px 0 rgba(255,255,255,.9),  0 4px 16px rgba(0,0,0,.06);
+  --shadow-glass-3: inset 0 2px 12px rgba(255,255,255,.7), 0 8px 30px rgba(0,0,0,.06);
+  --shadow-glass-4: inset 0 2px 14px rgba(255,255,255,.8), 0 16px 44px rgba(0,0,0,.09);
+  --shadow-glass-5: inset 0 2px 16px rgba(255,255,255,.9), 0 24px 60px rgba(0,0,0,.13);
+  /* Contraparte para superficies oscuras: el brillo blanco al 85% delata el
+     borde en dark, hay que bajarlo mucho. */
+  --shadow-glass-dark: inset 0 2px 15px rgba(255,255,255,.05), 0 24px 50px rgba(0,0,0,.3);
   --shadow-glass-md: inset 0 2px 10px rgba(255,255,255,.4), 0 8px 24px rgba(0,0,0,.08);
   --shadow-glass-lg: inset 0 2px 15px rgba(255,255,255,.7), 0 8px 30px rgba(0,0,0,.04);
 

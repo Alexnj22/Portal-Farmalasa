@@ -296,7 +296,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   return (
     <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" ariaLabel={`Corrección de marcaje — ${fmtDia}`}>
       {/* Glass card — propio contenedor con liquid glass */}
-      <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal shadow-[0_24px_64px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden">
+      <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal shadow-[var(--shadow-glass-5)] overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06]">

@@ -17,7 +17,7 @@ const SCOPE_OPTIONS = [
     { value: 'MANUAL', label: 'Selección manual de productos', icon: Search },
 ];
 
-const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-card-soft)]";
+const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
 const reqBadge = <Badge variant="danger" uppercase={false}>Requerido</Badge>;
 

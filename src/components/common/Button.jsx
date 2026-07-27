@@ -8,17 +8,17 @@ import { Loader2 } from 'lucide-react';
 // primary/secondary/ghost/destructive/icon, tamaños sm/md.
 const VARIANT_CLASSES = {
     primary: `text-white bg-gradient-to-b from-brand-hover to-brand
-        shadow-[0_1px_2px_rgba(0,82,204,0.35),0_4px_10px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.22)]
+        shadow-[var(--shadow-glass-1)]
         hover:from-brand hover:to-brand-dark
-        hover:shadow-[0_2px_4px_rgba(0,82,204,0.4),0_8px_20px_rgba(0,82,204,0.35),inset_0_1px_0_rgba(255,255,255,0.22)]
+        hover:shadow-[var(--shadow-glass-1)]
         hover:-translate-y-px active:translate-y-0 active:scale-[0.98]`,
     secondary: `text-content bg-gradient-to-b from-surface-card to-surface-card-hover
         border border-border-card shadow-sm
         hover:shadow-md hover:-translate-y-px`,
     ghost: `text-content-2 bg-transparent hover:bg-surface-card-hover hover:text-content`,
     destructive: `text-white bg-gradient-to-b from-danger-light to-danger
-        shadow-[0_1px_2px_rgba(240,68,56,0.35),0_4px_10px_rgba(240,68,56,0.25),inset_0_1px_0_rgba(255,255,255,0.2)]
-        hover:shadow-[0_2px_4px_rgba(240,68,56,0.4),0_8px_20px_rgba(240,68,56,0.32),inset_0_1px_0_rgba(255,255,255,0.2)]
+        shadow-[var(--shadow-glass-1)]
+        hover:shadow-[var(--shadow-glass-1)]
         hover:-translate-y-px active:translate-y-0 active:scale-[0.98]`,
 };
 

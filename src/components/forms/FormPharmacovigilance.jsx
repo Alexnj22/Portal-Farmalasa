@@ -96,7 +96,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     </div>
                     
                     {/* NOTA INFORMATIVA */}
-                    <div className="mt-3 flex items-start gap-2.5 bg-chart-3/10 p-3.5 rounded-2xl border border-chart-3/20 shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)]">
+                    <div className="mt-3 flex items-start gap-2.5 bg-chart-3/10 p-3.5 rounded-2xl border border-chart-3/20 shadow-[var(--shadow-shine)]">
                          <FileText size={14} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5}/>
                          <p className="text-caption text-chart-3-text font-bold leading-relaxed">
                             El referente elabora y envía los reportes semestrales a la Dirección General de Medicamentos.

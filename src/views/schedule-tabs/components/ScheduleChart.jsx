@@ -10,7 +10,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="bg-white/[0.14] backdrop-blur-2xl border border-border-card rounded-2xl px-4 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full min-h-[80px] hover:bg-white/[0.22] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-300 group/chart relative overflow-visible z-base">
+        <div className="bg-white/[0.14] backdrop-blur-2xl border border-border-card rounded-2xl px-4 py-1.5 shadow-[var(--shadow-glass-1)] flex flex-col h-full min-h-[80px] hover:bg-white/[0.22] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-300 group/chart relative overflow-visible z-base">
 
             {/* Header: title + legend + toggle — compact single row */}
             <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0">
@@ -30,7 +30,7 @@ const ScheduleChart = ({
 
                 {/* Días / Horas toggle + expand (inline, no overlap) */}
                 <div className="flex items-center gap-1 shrink-0">
-                    <div className="flex items-center bg-surface-card p-0.5 rounded-full border border-border-card shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-6">
+                    <div className="flex items-center bg-surface-card p-0.5 rounded-full border border-border-card shadow-[var(--shadow-shine)] h-6">
                         {typeof chartView === 'number' && (
                             <button onClick={() => setChartView('DAYS')}
                                 className="px-2 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full text-content-3 hover:text-content flex items-center gap-0.5 hover:bg-surface-card active:scale-[0.97] transition-all">

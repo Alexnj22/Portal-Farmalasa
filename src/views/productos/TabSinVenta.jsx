@@ -640,7 +640,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_gestion' ? 'agregar' : 'todos'); }}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label font-bold transition-all duration-200 whitespace-nowrap ${
                                         active
-                                            ? 'bg-brand/[0.12] text-brand-text shadow-[inset_0_1px_3px_rgba(0,82,204,0.10)]'
+                                            ? 'bg-brand/[0.12] text-brand-text shadow-[var(--shadow-shine)]'
                                             : tk.filterBtn
                                     }`}>
                                     {m.label}

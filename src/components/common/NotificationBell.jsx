@@ -316,12 +316,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 className={`relative flex items-center justify-center w-11 h-11 rounded-2xl backdrop-blur-2xl border
                     hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-200
                     ${isDark
-                        ? `shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)]
+                        ? `shadow-[var(--shadow-glass-3)]
                            ${hasUrgentAnn ? 'bg-danger/15 border-danger/40' : 'bg-white/[0.08] border-white/[0.14] hover:bg-white/[0.14]'}`
-                        : `shadow-[0_8px_32px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.06)]
+                        : `shadow-[var(--shadow-glass-3)]
                            ${hasUrgentAnn
-                               ? 'bg-danger/10 border-danger/40 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
-                               : 'bg-surface-card border-chart-1/30 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
+                               ? 'bg-danger/10 border-danger/40 hover:shadow-[var(--shadow-glass-4)]'
+                               : 'bg-surface-card border-chart-1/30 hover:shadow-[var(--shadow-glass-4)]'}`}`}
             >
                 {/* Sheen del botón: ya no va detrás de `!isDark` (eso cubría dark y
                     solid-dark, pero dejaba el reflejo puesto en `solid`, que es claro
@@ -447,7 +447,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 {notifications.length === 0 ? (
                                     <div className="relative flex flex-col items-center justify-center py-12 px-6 text-center">
                                         <div className="absolute w-28 h-28 rounded-full bg-brand/10 blur-2xl" />
-                                        <div className={`relative w-14 h-14 rounded-2xl border shadow-[0_8px_24px_rgba(0,82,204,0.10),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center mb-4 ${cx.emptyIconBox}`}>
+                                        <div className={`relative w-14 h-14 rounded-2xl border shadow-[var(--shadow-glass-2)] flex items-center justify-center mb-4 ${cx.emptyIconBox}`}>
                                             <Bell size={22} strokeWidth={1.5} />
                                         </div>
                                         <p className={`relative text-body-lg font-bold ${cx.emptyTitle}`}>Todo al día</p>

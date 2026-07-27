@@ -351,7 +351,7 @@ const RolesView = ({ openModal }) => {
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
 
         return (
-            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.7)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
+            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[var(--shadow-glass-3)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
@@ -570,8 +570,8 @@ const RolesView = ({ openModal }) => {
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
                         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
                             <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
-                                ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
-                                : 'border border-border-card shadow-[var(--shadow-glass-card)] group-hover/panel:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                ? 'bg-surface-card border border-warning/40 shadow-[var(--shadow-glass-4)]'
+                                : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'
                                 }`}>
 
                                 <div className="flex justify-between items-center mb-6">
@@ -592,7 +592,7 @@ const RolesView = ({ openModal }) => {
                                 </div>
 
                                 {error && (
-                                    <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[var(--shadow-shine)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                         <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <span className="leading-tight">{error}</span>
                                     </div>
@@ -798,7 +798,7 @@ const RolesView = ({ openModal }) => {
                                                 </div>
                                             </div>
 
-                                            <div className={`flex-1 rounded-2xl p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-white' : 'bg-surface-card border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] group-hover:bg-surface-card'}`}>
+                                            <div className={`flex-1 rounded-2xl p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-white' : 'bg-surface-card border-white shadow-[var(--shadow-shine)] group-hover:bg-surface-card'}`}>
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-xl bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm">
                                                         <Users size={14} strokeWidth={2.5} />
@@ -840,7 +840,7 @@ const RolesView = ({ openModal }) => {
                     <div className="animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
-                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
+                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-4)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}

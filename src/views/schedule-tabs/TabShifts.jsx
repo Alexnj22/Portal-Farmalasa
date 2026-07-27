@@ -33,8 +33,8 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
     return (
         <div className={`p-5 rounded-header border bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
             ${isError
-                ? 'border-danger/30 shadow-[inset_0_2px_10px_rgba(244,63,94,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(244,63,94,0.2)]'
-                : 'border-chart-5/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
+                ? 'border-danger/30 shadow-[var(--shadow-glass-3)] hover:shadow-[0_15px_40px_rgba(244,63,94,0.2)]'
+                : 'border-chart-5/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
 
             <div className="absolute inset-0 rounded-header overflow-hidden pointer-events-none">
                 <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-danger' : 'bg-chart-5'}`} />
@@ -98,7 +98,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
     return (
         <div className={`p-5 rounded-header border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
             isEditingThis
-                ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.15),inset_0_2px_10px_rgba(255,255,255,0.9)] animate-subtle-shake z-tabs'
+                ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-warning/40 shadow-[var(--shadow-glass-3)] animate-subtle-shake z-tabs'
                 : isArchived
                     ? 'border-border-card opacity-80 hover:opacity-100 shadow-[var(--shadow-elevation-xs)] bg-surface-card backdrop-blur-xl hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] z-base'
                     : 'border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] z-base hover:z-content'
@@ -170,11 +170,11 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="flex items-center gap-3 mt-auto border-t border-border-card pt-4 relative z-base">
-                <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.9)]">
+                <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[var(--shadow-shine)]">
                     <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Entrada</span>
                     <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.start)}</span>
                 </div>
-                <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.9)]">
+                <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[var(--shadow-shine)]">
                     <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Salida</span>
                     <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.end)}</span>
                 </div>
@@ -418,7 +418,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
             {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
             <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar transform-gpu">
-                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
+                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[var(--shadow-glass-5)] transform-gpu ${editingGroup ? 'border-warning/40 shadow-[var(--shadow-glass-3)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-base">
                         <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
@@ -481,7 +481,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                         {currentForm.start && currentForm.end && (
                             <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-chart-5/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_10px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
+                                <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-chart-5/30 shadow-[var(--shadow-glass-3)] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-chart-5 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-base">
                                         <div className="flex items-center gap-1.5 text-caption font-black text-chart-5 uppercase tracking-widest">
@@ -532,7 +532,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                 {/* Sub-tabs: Activos / Archivo */}
                 <div className="flex items-center px-3 md:px-4 pt-4 pb-2">
-                    <div className="flex items-center bg-surface-card rounded-full p-0.5 border border-border-card shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)]">
+                    <div className="flex items-center bg-surface-card rounded-full p-0.5 border border-border-card shadow-[var(--shadow-shine)]">
                         <button onClick={() => setShiftTab('ACTIVE')}
                             className={`px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ACTIVE' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
                             Activos

@@ -158,7 +158,7 @@ function FilterControls({
     const dateDirty = monthRange !== defaultRange;
 
     return (
-        <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-chip)] transition-all duration-300 hover:shadow-[var(--shadow-glass-raised)] hover:-translate-y-0.5 hover:border-divider shrink-0 overflow-visible max-w-full">
+        <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-glass-3)] hover:-translate-y-0.5 hover:border-divider shrink-0 overflow-visible max-w-full">
 
             {/* Branch select + individual clear */}
             {!branchLocked && <div className="flex items-center">

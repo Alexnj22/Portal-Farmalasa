@@ -82,7 +82,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     }
 
     return (
-        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_10px_rgba(255,255,255,0.6)] ${theme.bg} ${theme.shadow}`}>
+        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
@@ -567,7 +567,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
-                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[var(--shadow-glass-5)] relative overflow-hidden">
 
                             {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">

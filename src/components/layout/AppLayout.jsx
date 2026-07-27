@@ -498,7 +498,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]';
+        const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--shadow-glass-2)]';
         const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-white/42 group-hover:text-white/80';
         const accentBarInactive = 'bg-white/20';
@@ -648,7 +648,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-2xl transition-all duration-200 group text-left overflow-hidden
                         ${hasActiveChild
                             ? 'text-white'
-                            : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]'}
+                            : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--shadow-glass-2)]'}
                         ${focusRing}
                         active:scale-[0.99] active:translate-y-0`}
                 >
@@ -750,7 +750,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-base rounded-header overflow-hidden flex flex-col
                         bg-[#07031a]/95 lg:bg-[#07031a]/80 lg:backdrop-blur-2xl
                         border border-white/[0.10]
-                        shadow-[inset_1px_0_0_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.15),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.40)]">
+                        shadow-[var(--shadow-glass-5)]">
 
                         {/* Eco del logo real (public/Logo512.png): verde arriba, magenta abajo —
                             reemplaza el violeta/azul genérico sin relación con la marca (2026-07-23) */}
@@ -788,7 +788,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
                                         transition-all duration-300 group-hover/logo:scale-105
                                         bg-white/12 border border-logo-magenta/20
-                                        shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.2)]
+                                        shadow-[var(--shadow-glass-2)]
                                         group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-white/18
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
@@ -809,7 +809,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 aria-label={isMobile ? 'Cerrar menú' : isExpanded ? 'Contraer menú' : 'Expandir menú'}
                                 className={`relative z-base w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
                                     bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/50 hover:text-white/80
-                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] ${focusRing}`}>
+                                    shadow-[var(--shadow-shine)] hover:shadow-[var(--shadow-glass-1)] ${focusRing}`}>
                                 {isMobile ? <X size={16} strokeWidth={2} /> : isExpanded ? <ChevronLeft size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}
                             </button>
                         </div>
@@ -829,7 +829,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 className={`w-full flex items-center gap-2.5 rounded-2xl transition-all duration-200 group relative text-left overflow-hidden
                                     px-3 py-3 xl:px-4 xl:py-3.5
                                     bg-white/[0.045] border border-white/[0.07]
-                                    text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
+                                    text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:-translate-y-[1px] hover:shadow-[var(--shadow-glass-2)]
                                     ${focusRing}
                                     active:scale-[0.99] active:translate-y-0`}
                             >
@@ -847,7 +847,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 className={`absolute left-2 right-2 rounded-xl transform-gpu transition-opacity duration-200 pointer-events-none
                                     bg-gradient-to-r from-logo-magenta/[0.22] via-logo-magenta/[0.10] to-logo-green/[0.06]
                                     border border-logo-magenta/[0.20]
-                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_28px_rgba(152,29,151,0.22),0_4px_16px_rgba(0,0,0,0.30)]
+                                    shadow-[var(--shadow-glass-2)]
                                     ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                                 style={{ top: pill.top, height: pill.height }}
                             >
@@ -883,7 +883,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
                                         <button onClick={() => navigate('/profile')}
-                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] ${focusRing}`}
+                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[var(--shadow-shine)] ${focusRing}`}
                                             type="button">
                                             <div className="relative h-9 w-9 flex-shrink-0">
                                                 <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
@@ -933,8 +933,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             onMouseLeave={closeFlyout} aria-label="Mi Perfil" title="Mi Perfil"
                                             className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
                                                 bg-white/[0.08] border border-white/[0.12] text-white/55
-                                                shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_12px_rgba(0,0,0,0.4)]
-                                                hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[0_6px_18px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18)] ${focusRing}`}>
+                                                shadow-[var(--shadow-glass-1)]
+                                                hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[var(--shadow-glass-2)] ${focusRing}`}>
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
                                         </button>
                                         {myBirthday && (
@@ -947,7 +947,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
                                             bg-danger/[0.08] border border-danger/[0.12] text-danger/60
                                             hover:text-danger hover:bg-danger/[0.18] hover:border-danger/[0.22]
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
+                                            shadow-[var(--shadow-shine)] hover:shadow-[var(--shadow-glass-1)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
                                     <span className="text-micro font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
@@ -1081,7 +1081,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <button
                                     onClick={() => { navigate(flyout.path); setFlyout(null); }}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
-                                        backdrop-blur-2xl backdrop-saturate-150 border shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]
+                                        backdrop-blur-2xl backdrop-saturate-150 border shadow-[var(--shadow-glass-3)]
                                         transition-all duration-150 active:scale-[0.97] group/fi ${focusRing}
                                         ${flyout.isActive
                                             ? 'bg-[#1A3560]/85 border-[#2D5499]/60'
@@ -1116,7 +1116,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <div className="relative rounded-3xl overflow-hidden
                                     bg-[#0A1628]/80 backdrop-blur-2xl backdrop-saturate-150
                                     border border-white/12
-                                    shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                                    shadow-[var(--shadow-glass-4)]">
 
                                     <div className="px-4 pt-3.5 pb-2.5 border-b border-white/8 flex items-center gap-2">
                                         <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#7DB8FF] to-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.6)]" />
@@ -1182,7 +1182,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     onClick={() => { navigate('/profile'); setFlyout(null); }}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         bg-[#0D2040]/80 backdrop-blur-2xl backdrop-saturate-150 border border-[#1E3A6E]/60
-                                        shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]
+                                        shadow-[var(--shadow-glass-3)]
                                         hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60 transition-all duration-150 active:scale-[0.97] ${focusRing}`}
                                     type="button"
                                 >

@@ -33,7 +33,7 @@ export default class ErrorBoundary extends React.Component {
                 <div className="relative w-full max-w-sm text-center
                     bg-white/[0.18] backdrop-blur-[48px] backdrop-saturate-[160%]
                     border border-border-card
-                    shadow-[0_40px_100px_rgba(0,0,0,0.30),inset_0_2px_15px_rgba(255,255,255,0.80)]
+                    shadow-[var(--shadow-glass-5)]
                     rounded-header p-10 flex flex-col items-center gap-6">
 
                     <div className="absolute inset-x-0 top-0 h-2/5 pointer-events-none rounded-t-[2.5rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen-strong), transparent)' }} />
@@ -41,7 +41,7 @@ export default class ErrorBoundary extends React.Component {
 
                     <div className="relative z-base w-20 h-20 rounded-3xl flex items-center justify-center
                         bg-surface-card border border-border-card
-                        shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.90)]">
+                        shadow-[var(--shadow-glass-3)]">
                         <AlertTriangle size={36} strokeWidth={2} className="text-danger" />
                     </div>
 
@@ -61,8 +61,8 @@ export default class ErrorBoundary extends React.Component {
                             bg-gradient-to-b from-brand/72 to-brand-hover/78
                             backdrop-blur-xl border border-border-card hover:border-border-card
                             text-white font-black text-label uppercase tracking-widest
-                            shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
-                            hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
+                            shadow-[var(--shadow-glass-2)]
+                            hover:shadow-[var(--shadow-glass-4)]
                             transition-all duration-200 active:scale-[0.97]">
                         <span className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
                             <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent

@@ -132,7 +132,7 @@ const DayRow = memo(({
     return (
         <div className={`rounded-2xl border transition-all duration-200 overflow-visible flex flex-col ${
             conflict ? `${conflict.bg} ${conflict.border} shadow-sm` 
-            : isWorking ? 'bg-surface-card shadow-[0_4px_12px_rgba(0,0,0,0.03),inset_0_1px_1px_rgba(255,255,255,0.9)] border-border-card' 
+            : isWorking ? 'bg-surface-card shadow-[var(--shadow-glass-1)] border-border-card' 
             : 'bg-surface-card border-border-card hover:bg-surface-card'
         }`}>
             <div className="p-3.5 flex flex-col xl:flex-row xl:items-start gap-4 md:gap-5">
@@ -387,7 +387,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         <div className="flex flex-col h-full -mx-6 -my-6 p-4 md:-mx-10 md:-my-8 md:p-10 relative z-base">
             
             {/* 🚨 DASHBOARD COMPACTO Y ELEGANTE */}
-            <div className="bg-surface-card backdrop-blur-md p-3 md:p-4 rounded-2xl border border-border-card shadow-[0_2px_15px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.9)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+            <div className="bg-surface-card backdrop-blur-md p-3 md:p-4 rounded-2xl border border-border-card shadow-[var(--shadow-glass-2)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
                 <div className="flex-1 w-full">
                     <div className="flex justify-between items-end mb-1.5">
                         <div>

@@ -198,8 +198,8 @@ const TimeClockView = ({ setView }) => {
           bg-white/[0.06] hover:bg-white/[0.12]
           border border-white/[0.10] hover:border-white/[0.22]
           rounded-btn backdrop-blur-xl
-          shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)]
-          hover:shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.10)]
+          shadow-[var(--shadow-glass-2)]
+          hover:shadow-[var(--shadow-glass-2)]
           transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]
           cursor-pointer"
         title="Salir del Kiosco (Esc)"
@@ -240,9 +240,9 @@ const TimeClockView = ({ setView }) => {
               backdrop-blur-[60px] backdrop-saturate-[160%]
               border border-white/[0.10]
               rounded-header px-5 py-7 [@media(max-height:800px)]:py-3
-              shadow-[0_32px_72px_rgba(0,0,0,0.45),inset_0_2px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(255,255,255,0.03)]
+              shadow-[var(--shadow-glass-5)]
               transition-all duration-500 hover:border-white/[0.16] hover:-translate-y-1
-              hover:shadow-[0_40px_80px_rgba(0,0,0,0.55),inset_0_2px_0_rgba(255,255,255,0.09)]"
+              hover:shadow-[var(--shadow-glass-5)]"
             style={{ animationDelay: '60ms' }}
           >
             {/* Top highlight */}

@@ -25,7 +25,7 @@ const inputCls = [
     'text-content placeholder-content-3/80',
     'outline-none',
     'focus:bg-white/[0.58] focus:border-border-card',
-    'focus:shadow-[inset_0_2px_10px_rgba(0,0,0,0.04),0_0_0_3px_rgba(255,255,255,0.38)]',
+    'focus:shadow-[var(--shadow-shine-lg)]',
     'transition-all duration-250',
     'font-bold',
 ].join(' ');
@@ -62,8 +62,8 @@ const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h
             backdrop-blur-xl
             border border-border-card hover:border-border-card
             text-white rounded-3xl font-black text-body uppercase tracking-widest
-            shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
-            hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
+            shadow-[var(--shadow-glass-2)]
+            hover:shadow-[var(--shadow-glass-4)]
             flex items-center justify-center gap-2 transition-all duration-200
             active:scale-[0.97] disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`}>
         <span className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
@@ -75,7 +75,7 @@ const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h
 
 const CameraScanner = ({ videoRef }) => (
     <div style={{ animation: 'scannerReveal 450ms cubic-bezier(0.23,1,0.32,1) both' }} className="flex flex-col gap-2.5">
-        <div className="relative w-full overflow-hidden border border-white/[0.14] shadow-[0_20px_60px_rgba(0,0,0,0.30),inset_0_1px_0_rgba(255,255,255,0.14)]"
+        <div className="relative w-full overflow-hidden border border-white/[0.14] shadow-[var(--shadow-glass-5)]"
             style={{ height: 224, borderRadius: '1.5rem' }}>
             <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-sm" />
             <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" autoPlay playsInline muted />
@@ -93,7 +93,7 @@ const CameraScanner = ({ videoRef }) => (
             <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', background:'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.35) 100%)', pointerEvents:'none' }} />
             <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'inset 0 0 32px rgba(0,0,0,0.30)', pointerEvents:'none' }} />
         </div>
-        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-border-card rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.85)]">
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-glass-1)]">
             <div className="relative shrink-0">
                 <div className="w-2 h-2 rounded-full bg-brand" />
                 <div className="absolute inset-0 rounded-full bg-brand/40 animate-ping" />
@@ -379,7 +379,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     st === 'error'   ? 'bg-danger/10 border-danger/30' :
                     st === 'success' ? 'bg-success/10 border-success/30' :
                     paused           ? 'bg-white/[0.14] border-border-card' :
-                                       'bg-brand/[0.05] border-brand/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]',
+                                       'bg-brand/[0.05] border-brand/25 shadow-[var(--shadow-shine)]',
                 ].join(' ')}>
                     <div className={[
                         'relative shrink-0 flex items-center justify-center rounded-2xl border transition-all duration-300',
@@ -387,7 +387,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         st === 'error'   ? 'bg-danger/10 border-danger/30' :
                         st === 'success' ? 'bg-success/10 border-success/30' :
                         paused           ? 'bg-surface-card border-border-card' :
-                                           'bg-surface-card border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]',
+                                           'bg-surface-card border-border-card shadow-[var(--shadow-shine)]',
                     ].join(' ')}>
                         {st === 'reading' || isLoading
                             ? <Loader2 size={compact?17:19} className="text-brand-text animate-spin" strokeWidth={2.2} />
@@ -438,8 +438,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 'transition-all duration-300 active:scale-[0.93]',
                                 compact ? 'w-10 h-10' : 'w-11 h-11',
                                 cameraActive
-                                    ? 'bg-danger/[0.15] border-danger/45 text-danger shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-danger/[0.25]'
-                                    : 'bg-white/[0.28] border-border-card text-content-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-border-card hover:text-brand-text',
+                                    ? 'bg-danger/[0.15] border-danger/45 text-danger shadow-[var(--shadow-shine)] hover:bg-danger/[0.25]'
+                                    : 'bg-white/[0.28] border-border-card text-content-3 shadow-[var(--shadow-shine)] hover:bg-white/[0.55] hover:border-border-card hover:text-brand-text',
                             ].join(' ')}
                         >
                             {cameraActive
@@ -501,10 +501,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 <style>{keyframeStyles}</style>
                 <AmbientBG />
                 <div className={`relative z-base w-full max-w-[420px] mx-5 transition-all duration-600 ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
-                    <div className="rounded-header p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[0_32px_80px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6">
+                    <div className="rounded-header p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[var(--shadow-glass-5)] flex flex-col gap-6">
                         <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-header" />
                         <div className="relative flex flex-col items-center gap-3">
-                            <div className="w-14 h-14 rounded-2xl bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                            <div className="w-14 h-14 rounded-2xl bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[var(--shadow-shine)]">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
                             <h3 className="text-title-lg font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
@@ -537,7 +537,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <div className={`flex flex-col items-center gap-2 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
                 <div className="relative">
                     <div className="absolute -inset-3 rounded-modal blur-xl opacity-40 bg-gradient-to-tr from-chart-3/60 to-chart-1/40" />
-                    <div className="relative w-16 h-16 rounded-3xl bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[0_8px_24px_rgba(110,70,220,0.18),inset_0_2px_0_rgba(255,255,255,1)]">
+                    <div className="relative w-16 h-16 rounded-3xl bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-2)]">
                         <img src="/Logo192.png" alt="FarmaLasa" className="w-10 h-10 object-contain" />
                     </div>
                 </div>
@@ -549,7 +549,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
             <div className={`relative w-full max-w-[420px] transition-all duration-700 delay-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.94] translate-y-5'}`}>
                 <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-header" />
-                <div className="rounded-header p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[0_24px_60px_rgba(0,0,0,0.10),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-4">
+                <div className="rounded-header p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[var(--shadow-glass-5)] flex flex-col gap-4">
                     {renderLoginForm(true)}
                     {!isMobileOrApp() && (
                         <>
@@ -594,14 +594,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <div className={`relative w-full max-w-[480px] z-base transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
                 <div className="absolute -inset-6 rounded-header blur-2xl opacity-18 bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none" />
 
-                <div className="relative rounded-header px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[0_40px_100px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6 overflow-hidden">
+                <div className="relative rounded-header px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[var(--shadow-glass-5)] flex flex-col gap-6 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/26 via-transparent to-transparent pointer-events-none rounded-header" />
 
                     {/* Logo */}
                     <div className="relative flex flex-col items-center gap-3">
                         <div className="relative group/logo">
                             <div className="absolute -inset-4 rounded-header blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-500 bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
-                            <div className="relative w-[88px] h-[88px] rounded-card bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[0_12px_40px_rgba(110,70,220,0.16),inset_0_2px_0_rgba(255,255,255,1)]"
+                            <div className="relative w-[88px] h-[88px] rounded-card bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-4)]"
                                 style={{ animation:'lgn-logo 4.5s ease-in-out infinite' }}>
                                 <img src="/Logo192.png" alt="FarmaLasa" className="w-[58px] h-[58px] object-contain" />
                             </div>
@@ -643,7 +643,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
             {/* Quick links */}
             <div className={`absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-content transition-all duration-700 delay-[300ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-x-0':'opacity-0 translate-x-8'}`}>
-                <div className="rounded-modal p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[0_20px_50px_rgba(0,0,0,0.09),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-3 overflow-hidden">
+                <div className="rounded-modal p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[var(--shadow-glass-5)] flex flex-col gap-3 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-modal" />
                     <div className="relative flex items-center gap-2 px-1 mb-1">
                         <Sparkles size={11} className="text-chart-3-text" strokeWidth={2} />

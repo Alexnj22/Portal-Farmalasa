@@ -378,7 +378,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 <div className="flex-1" />
 
                 {/* RIGHT: pill — glassmorphism, siempre rounded-2xl completo */}
-                <div className="flex items-center shrink-0 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.92)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.11),inset_0_1px_0_rgba(255,255,255,0.95)] transition-shadow duration-300"
+                <div className="flex items-center shrink-0 rounded-2xl shadow-[var(--shadow-glass-2)] hover:shadow-[var(--shadow-glass-3)] transition-shadow duration-300"
                      style={{
                          // D1.2 — era rgba(255,255,255,0.70) + borde blanco fijo. Al ir
                          // en `style` inline no lo veía el gate (que lee clases), pero sí
@@ -599,7 +599,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
                                             transition-[background-color,border-color,color,box-shadow] duration-100
                                             ${active
-                                                ? cfg.chipActive + ' font-bold border shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                                ? cfg.chipActive + ' font-bold border shadow-[var(--shadow-glass-1)]'
                                                 : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                         <motion.span
                                             className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`}
@@ -632,7 +632,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
                                         transition-[background-color,border-color,color,box-shadow] duration-100
                                         ${filterAbc === 'A'
-                                            ? 'bg-danger/10 text-danger-text font-bold border border-danger/30 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                            ? 'bg-danger/10 text-danger-text font-bold border border-danger/30 shadow-[var(--shadow-glass-1)]'
                                             : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                     <AlertTriangle size={9} className={`shrink-0 ${filterAbc === 'A' ? 'text-danger' : 'text-danger/70'}`} />
                                     <span className="font-black">A</span>
@@ -659,7 +659,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
                                         transition-[background-color,border-color,color,box-shadow] duration-100
                                         ${filterSparse
-                                            ? 'bg-warning/10 text-warning-text font-bold border border-warning/30 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                            ? 'bg-warning/10 text-warning-text font-bold border border-warning/30 shadow-[var(--shadow-glass-1)]'
                                             : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                     <motion.span
                                         className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterSparse ? 'bg-warning' : 'bg-warning/60'}`}
@@ -695,7 +695,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
                                         transition-[background-color,border-color,color,box-shadow] duration-100
                                         ${filterDispatchRisk
-                                            ? 'bg-danger/10 text-danger-text font-bold border border-danger/30 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                            ? 'bg-danger/10 text-danger-text font-bold border border-danger/30 shadow-[var(--shadow-glass-1)]'
                                             : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
                                     <motion.span
                                         className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterDispatchRisk ? 'bg-danger' : 'bg-danger/60'}`}

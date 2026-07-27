@@ -141,7 +141,7 @@ function PersonAvatar({ src, name, isJefe, size = 28 }) {
 // ─── Segment Control ──────────────────────────────────────────────────────────
 function SegmentControl({ options, value, onChange, compact = false }) {
     return (
-        <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] ${compact ? 'p-1' : 'p-1.5'}`}>
+        <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-black/[0.05] shadow-[var(--shadow-shine)] ${compact ? 'p-1' : 'p-1.5'}`}>
             {options.map(opt => (
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
                     className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-micro' : 'h-8 text-micro md:text-caption'} ${
@@ -501,8 +501,8 @@ export default function EncuestaAdminView() {
                     {leftPanel === 'survey-form' && canManage && (
                         <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
                             editingSurvey
-                                ? 'border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
-                                : 'border-border-card shadow-[var(--shadow-glass-card)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                ? 'border-warning/40 shadow-[var(--shadow-glass-4)]'
+                                : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]'
                         }`}>
 
                             <div className="flex justify-between items-center mb-4">
@@ -734,7 +734,7 @@ export default function EncuestaAdminView() {
 
                     {/* ── Response form ────────────────────────────────────────── */}
                     {leftPanel === 'response-form' && canManage && (
-                        <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[var(--shadow-glass-card)]">
+                        <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[var(--shadow-glass-3)]">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning-solid' : 'bg-brand'}`}>

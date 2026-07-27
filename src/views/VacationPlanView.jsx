@@ -675,7 +675,7 @@ const VacationPlanView = () => {
             <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
 
                 {/* Year selector */}
-                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
+                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-2)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
                     <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
@@ -747,8 +747,8 @@ const VacationPlanView = () => {
                     <div ref={panelRef} className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div className={`backdrop-blur-[30px] rounded-header p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative ${
                             editingPlan
-                                ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
-                                : 'bg-surface-card border border-border-card shadow-[var(--shadow-glass-card)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                ? 'bg-surface-card border border-warning/40 shadow-[var(--shadow-glass-4)]'
+                                : 'bg-surface-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]'
                         }`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
@@ -873,7 +873,7 @@ const VacationPlanView = () => {
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
 
                         {/* Plan header status card */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-5 shadow-[var(--shadow-glass-card)]">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-5 shadow-[var(--shadow-glass-3)]">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-purple flex items-center justify-center shadow-sm">
@@ -926,7 +926,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Gantt */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[var(--shadow-glass-card)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
                             <div className="flex items-center justify-between mb-5">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
@@ -937,7 +937,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Tabla */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[var(--shadow-glass-card)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>
@@ -1084,7 +1084,7 @@ const VacationPlanView = () => {
 
                         {/* Solicitudes de cambio */}
                         {vacationChangeRequests.length > 0 && (
-                            <div className="bg-surface-card backdrop-blur-[30px] border border-warning/30 rounded-header p-6 shadow-[var(--shadow-glass-card)]">
+                            <div className="bg-surface-card backdrop-blur-[30px] border border-warning/30 rounded-header p-6 shadow-[var(--shadow-glass-3)]">
                                 <p className="text-caption font-black uppercase tracking-widest text-warning flex items-center gap-1.5 mb-4">
                                     <MessageSquare size={10} /> Solicitudes de cambio ({vacationChangeRequests.length})
                                 </p>

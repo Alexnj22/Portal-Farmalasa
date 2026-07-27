@@ -386,7 +386,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
-                    <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                    <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[var(--shadow-glass-5)] relative overflow-hidden">
                         
                         {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -579,7 +579,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     </div>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-content ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
-                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-3xl p-5 transition-all duration-500 hover:bg-surface-card-hover hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,1)] shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.7)] text-left`}>
+                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-3xl p-5 transition-all duration-500 hover:bg-surface-card-hover hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] shadow-[var(--shadow-glass-2)] text-left`}>
 
                                                                                             <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
 

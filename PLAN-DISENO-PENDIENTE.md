@@ -170,6 +170,30 @@ hasta ahora solo importaba `DataTable`.
 
 ### D3.8 — Cerrar el baseline del gate
 
+#### La sombra tenía DOS ejes, no uno (2026-07-27)
+
+400 sombras a mano con **269 valores distintos** parecían 269 decisiones de
+diseño. No lo eran: eran **5 elevaciones × N brillos × retoques sueltos**.
+
+| eje | estado |
+|---|---|
+| **Elevación** — cuánto se despega de la superficie | Ya tokenizado (`--shadow-elevation-xs…xl`). Al agrupar los 400 literales por radio de blur caen casi exactos en esas bandas: 7-14px, 15-24, 25-34, 35-49, 50+. |
+| **Brillo** — el inset que hace que lea como vidrio | **Nunca se tokenizó.** 154 de los 400 usos son *solo* inset, con 112 valores distintos para la misma idea. |
+
+Por eso T7.3 había dejado fuera las combinadas: sin el segundo eje, forzarlas
+a un token de una capa las aplanaba. Con los dos ejes nombrados, la
+consolidación deja de tener pérdida.
+
+**Escala de vidrio de 5 niveles** (`--shadow-glass-1…5`), cada uno con su par
+elevación+brillo, más `--shadow-shine` / `-lg` para el brillo solo y
+`--shadow-glass-dark` para superficie oscura (el brillo blanco al 85% delata
+el borde en dark). No reemplaza a `--shadow-elevation-*`: eso sigue sirviendo
+para lo que no es vidrio.
+
+**242 literales migrados** por su banda de blur. `shadow-literal` de 412 a
+165. Lo que queda son sombras de color (glows de marca/estado) y casos
+realmente únicos.
+
 Al migrar vistas caen solas: `white` 692 · `shadow-literal` 412 ·
 `inline-color` 118. Lo que quede al final se excepciona con motivo o se cierra.
 

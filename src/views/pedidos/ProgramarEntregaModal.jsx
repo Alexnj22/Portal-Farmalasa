@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { CalendarClock, History, X, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -56,9 +57,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                             <p className="text-label text-content-3">Pedido #{numero}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-7 h-7 rounded-btn flex items-center justify-center hover:bg-surface-card-hover text-content-3">
-                        <X size={14} />
-                    </button>
+                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
             </LiquidModal.Header>
 
@@ -107,9 +106,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
 
             <LiquidModal.Footer>
                 <div className="flex gap-2">
-                    <button onClick={onClose} className="flex-1 text-body-sm font-semibold px-4 py-2.5 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all">
-                        Cancelar
-                    </button>
+                    <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                     <button
                         onClick={() => value && onConfirm(new Date(value).toISOString())}
                         disabled={!value || saving}

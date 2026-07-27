@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../common/StateViews';
 import { Laptop, AlertCircle, Loader2, Unplug, PowerOff, Activity } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -109,23 +110,14 @@ const FormDispositivos = ({ formData }) => {
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-surface-card-hover border border-divider text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
-                                                    <PowerOff size={14} strokeWidth={2.5} />
-                                                </button>
+                                                <Button variant="destructive" size="sm" icon={PowerOff} title="Desconectar Kiosco" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
                                             )}
                                         </div>
 
                                         {/* 🚨 FILA 2: BOTONES DE CONFIRMACIÓN (Usamos grid-cols-2 para que se adapten perfecto al 50% de la tarjeta) */}
                                         {isConfirming && (
                                             <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-danger/30 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                <button 
-                                                    type="button" 
-                                                    disabled={isRevoking} 
-                                                    onClick={() => setConfirmingId(null)} 
-                                                    className="w-full py-2.5 bg-surface-card-hover hover:bg-surface-card-hover text-content-3 rounded-xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50"
-                                                >
-                                                    Cancelar
-                                                </button>
+                                                <Button variant="secondary" disabled={isRevoking} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                 <button 
                                                     type="button" 
                                                     disabled={isRevoking} 

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useLayoutEffect, useRef, useEffect } from 'react';
+import Button from '../components/common/Button';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
 import {
     MapPin, Users, Monitor, Clock, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Edit3,
@@ -324,12 +325,12 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {canEdit && (
                         <div inert={!isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
-                                <button onClick={() => openModal && openModal('editBranch', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Edit3 size={13} /> General</button>
-                                <button onClick={() => openModal && openModal('editBranchHorarios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-warning hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><CalendarClock size={13} /> Horarios</button>
-                                <button onClick={() => openModal && openModal('editBranchInmueble', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-chart-4-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Building2 size={13} /> Local</button>
-                                {hasServices && <button onClick={() => openModal && openModal('editBranchServicios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-success hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Zap size={13} /> Serv.</button>}
-                                {hasLegal && <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-chart-3-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>}
-                                {hasKiosk && <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-brand-hover hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>}
+                                <Button variant="secondary" shape="pill" size="sm" icon={Edit3} onClick={() => openModal && openModal('editBranch', liveBranch)}>General</Button>
+                                <Button variant="secondary" shape="pill" size="sm" icon={CalendarClock} onClick={() => openModal && openModal('editBranchHorarios', liveBranch)}>Horarios</Button>
+                                <Button variant="secondary" shape="pill" size="sm" icon={Building2} onClick={() => openModal && openModal('editBranchInmueble', liveBranch)}>Local</Button>
+                                {hasServices && <Button variant="secondary" shape="pill" size="sm" icon={Zap} onClick={() => openModal && openModal('editBranchServicios', liveBranch)}>Serv.</Button>}
+                                {hasLegal && <Button variant="secondary" shape="pill" size="sm" icon={Scale} onClick={() => openModal && openModal('editBranchLegal', liveBranch)}>Legal</Button>}
+                                {hasKiosk && <Button variant="secondary" shape="pill" size="sm" icon={Monitor} onClick={() => openModal && openModal('manageKiosks', liveBranch)}>Kioscos</Button>}
                             </div>
                         </div>
                         )}

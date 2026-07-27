@@ -281,9 +281,7 @@ const EmployeeDocumentsView = () => {
                                 <Filter size={10} /> Filtros avanzados
                             </p>
                             {hasFilters && (
-                                <button onClick={clearFilters} className="flex items-center gap-1 text-caption font-black text-danger hover:text-danger-text transition-colors">
-                                    <X size={10} strokeWidth={2.5} /> Limpiar
-                                </button>
+                                <Button variant="ghost" icon={X} onClick={clearFilters}>Limpiar</Button>
                             )}
                         </div>
 

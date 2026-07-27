@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { Truck, MapPin, CheckCircle2, Clock, AlertTriangle, Home, Play, Plus, Loader2, ChevronDown, ChevronUp, Navigation, Map } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -134,13 +135,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
             </div>
           )}
           {/* Ver mapa */}
-          <button
-            onClick={e => { e.stopPropagation(); setMapOpen(true); }}
-            className="p-1.5 rounded-lg hover:bg-chart-3/10 text-content-3 hover:text-chart-3-text transition-colors"
-            title="Ver mapa de ruta"
-          >
-            <Map size={14} />
-          </button>
+          <Button tone="chart-3" icon={Map} title="Ver mapa de ruta" iconOnly onClick={e => { e.stopPropagation(); setMapOpen(true); }} />
           {expanded ? <ChevronUp size={14} className="text-content-3" /> : <ChevronDown size={14} className="text-content-3" />}
         </div>
       </div>
@@ -316,12 +311,7 @@ export default function TabRutas({ searchTerm = '' }) {
       {/* Header actions */}
       {canEdit && !isBranch && (
         <div className="flex justify-end">
-          <button
-            onClick={() => setCrearOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-body-sm hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
-          >
-            <Plus size={14} /> Nueva Ruta
-          </button>
+          <Button tone="chart-3" icon={Plus} onClick={() => setCrearOpen(true)}>Nueva Ruta</Button>
         </div>
       )}
 
@@ -339,12 +329,7 @@ export default function TabRutas({ searchTerm = '' }) {
             </p>
           </div>
           {canEdit && !isBranch && (
-            <button
-              onClick={() => setCrearOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-body hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
-            >
-              <Plus size={14} /> Nueva Ruta
-            </button>
+            <Button tone="chart-3" icon={Plus} onClick={() => setCrearOpen(true)}>Nueva Ruta</Button>
           )}
         </div>
       ) : (

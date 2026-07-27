@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
 import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, Upload, FileText, Loader2 } from 'lucide-react';
@@ -788,7 +789,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <div className="flex items-center gap-2 bg-surface-card rounded-xl border border-divider h-[40px] px-3">
                         <FileText size={14} className="text-brand-text shrink-0" />
                         <span className="text-body-sm font-bold text-content-2 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
-                        <button type="button" onClick={() => removeDocFile(category)} title="Quitar" className="text-content-3 hover:text-danger shrink-0"><X size={14} /></button>
+                        <Button variant="ghost" icon={X} title="Quitar" iconOnly onClick={() => removeDocFile(category)} />
                     </div>
                 ) : (
                     <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-divider text-content-3 hover:border-brand/40 hover:text-brand-text cursor-pointer transition-colors">
@@ -1034,8 +1035,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <span className="text-label font-bold">Tienes un borrador sin guardar.</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-btn flex items-center justify-center bg-surface-card text-content-3 hover:text-danger transition-colors shadow-sm border border-border-card"><Trash2 size={14}/></button>
-                        <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-brand text-white rounded-btn text-caption font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
+                        <Button variant="secondary" size="sm" icon={Trash2} iconOnly onClick={discardDraft} />
+                        <Button size="sm" onClick={restoreDraft}>Restaurar</Button>
                     </div>
                 </div>
             )}
@@ -1170,9 +1171,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div>
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Teléfono {phoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{phoneErrorMsg}</span>}</span>
-                                        <button type="button" onClick={addPhone} className="text-brand-text hover:text-chart-1-text flex items-center gap-0.5 text-micro font-black uppercase tracking-wider transition-colors">
-                                            <Plus size={11} strokeWidth={3} /> Agregar
-                                        </button>
+                                        <Button variant="ghost" icon={Plus} onClick={addPhone}>Agregar</Button>
                                     </label>
                                     <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] z-base border-divider ${inputHoverClass} ${phoneHasError ? '!border-danger !bg-danger/10' : ''}`}>
                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
@@ -1197,10 +1196,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                     </div>
-                                                    <button type="button" onClick={() => removePhone(idx)} title="Quitar teléfono"
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
-                                                        <X size={14} strokeWidth={2.5} />
-                                                    </button>
+                                                    <Button variant="destructive" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removePhone(idx)} />
                                                 </div>
                                             );
                                         })}
@@ -1249,9 +1245,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
 
                                 <div className="md:col-span-2 -mt-2">
-                                    <button type="button" onClick={addAddress} className="flex items-center gap-1.5 text-micro font-black uppercase tracking-wider text-brand-text hover:text-chart-1-text transition-colors">
-                                        <Plus size={11} strokeWidth={3} /> Agregar Dirección Alterna
-                                    </button>
+                                    <Button variant="ghost" icon={Plus} onClick={addAddress}>Agregar Dirección Alterna</Button>
                                 </div>
 
                                 {(formData.extra_addresses || []).length > 0 && (
@@ -1264,10 +1258,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div key={idx} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
                                                     <div className="flex items-center justify-between mb-3">
                                                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Dirección Alterna {idx + 1}</span>
-                                                        <button type="button" onClick={() => removeAddress(idx)} title="Quitar dirección"
-                                                            className="w-7 h-7 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
-                                                            <X size={13} strokeWidth={2.5} />
-                                                        </button>
+                                                        <Button variant="destructive" size="xs" icon={X} title="Quitar dirección" iconOnly onClick={() => removeAddress(idx)} />
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                         <div>
@@ -1529,10 +1520,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div key={idx} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Curso / Habilidad {idx + 1}</span>
-                                                    <button type="button" onClick={() => removeSkill(idx)} title="Quitar"
-                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
-                                                        <X size={13} strokeWidth={2.5} />
-                                                    </button>
+                                                    <Button variant="destructive" size="xs" icon={X} title="Quitar" iconOnly onClick={() => removeSkill(idx)} />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div className="md:col-span-2">
@@ -1565,9 +1553,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         );
                                     })}
                                 </div>
-                                <button type="button" onClick={addSkill} className="mt-3 flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
-                                    <Plus size={12} strokeWidth={3} /> Agregar Curso / Habilidad
-                                </button>
+                                <Button variant="ghost" icon={Plus} onClick={addSkill}>Agregar Curso / Habilidad</Button>
                             </div>
                         </div>
 
@@ -1639,10 +1625,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div key={idx} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Persona {idx + 1}</span>
-                                                    <button type="button" onClick={() => removeDependent(idx)} title="Quitar persona"
-                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
-                                                        <X size={13} strokeWidth={2.5} />
-                                                    </button>
+                                                    <Button variant="destructive" size="xs" icon={X} title="Quitar persona" iconOnly onClick={() => removeDependent(idx)} />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                     <div>
@@ -1715,9 +1698,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     })}
                                 </div>
                             )}
-                            <button type="button" onClick={addDependent} className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
-                                <Plus size={12} strokeWidth={3} /> Agregar Persona
-                            </button>
+                            <Button variant="ghost" icon={Plus} onClick={addDependent}>Agregar Persona</Button>
                         </div>
 
                         <div className={`bg-danger/10 rounded-3xl p-4 md:p-5 border border-danger/30 shadow-[var(--shadow-elevation-xs)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}>
@@ -1742,10 +1723,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         return (
                                             <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-danger/30 text-danger text-label font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
                                                 {cond}
-                                                <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
-                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-danger hover:text-white hover:bg-danger-solid transition-colors">
-                                                    <X size={11} strokeWidth={2.5} />
-                                                </button>
+                                                <Button variant="destructive" shape="pill" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
                                             </span>
                                         );
                                     })}
@@ -1776,18 +1754,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         />
                                                     )}
                                                 </div>
-                                                <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
-                                                    className="w-10 h-10 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
-                                                    <X size={14} strokeWidth={2.5} />
-                                                </button>
+                                                <Button variant="destructive" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
                                             </div>
                                         );
                                     })}
                                 </div>
                             )}
-                            <button type="button" onClick={addChronicCondition} className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
-                                <Plus size={12} strokeWidth={3} /> Agregar Condición
-                            </button>
+                            <Button variant="ghost" icon={Plus} onClick={addChronicCondition}>Agregar Condición</Button>
 
                             <p className="text-caption font-black uppercase tracking-widest text-danger/70 mt-4 mb-3 pt-4 border-t border-danger/30 flex items-center gap-1.5">
                                 <ShieldCheck size={12} strokeWidth={2.5} /> Discapacidad
@@ -1869,9 +1842,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div>
                                     <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Teléfono de Emergencia {emergPhoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{emergPhoneErrorMsg}</span>}</span>
-                                        <button type="button" onClick={addEmergencyPhone} className="text-brand-text hover:text-chart-1-text flex items-center gap-0.5 text-micro font-black uppercase tracking-wider transition-colors">
-                                            <Plus size={11} strokeWidth={3} /> Agregar
-                                        </button>
+                                        <Button variant="ghost" icon={Plus} onClick={addEmergencyPhone}>Agregar</Button>
                                     </label>
                                     <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] z-base border-divider ${inputHoverClass} ${emergPhoneHasError ? '!border-danger !bg-danger/10' : ''}`}>
                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
@@ -1894,10 +1865,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <input type="tel" value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                     </div>
-                                                    <button type="button" onClick={() => removeEmergencyPhone(idx)} title="Quitar teléfono"
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
-                                                        <X size={14} strokeWidth={2.5} />
-                                                    </button>
+                                                    <Button variant="destructive" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removeEmergencyPhone(idx)} />
                                                 </div>
                                             );
                                         })}
@@ -2132,7 +2100,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <input type="text" name="code" value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
                                             onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
                                             className={`w-full bg-surface-card border border-divider rounded-2xl px-4 h-[40px] text-body-xl font-black text-content-2 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50 hover:shadow-md ${!formData.code?.trim() ? '!border-danger !bg-danger/10' : ''}`} />
-                                        <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-brand-text hover:bg-chart-1/10 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
+                                        <Button tone="chart-1" icon={RefreshCw} iconOnly onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} />
                                     </div>
                                     <p className="text-micro font-bold text-brand-text mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
 
@@ -2144,17 +2112,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div className="flex-1 h-[40px] bg-chart-8 rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[var(--shadow-shine)] select-all">
                                                     {formData.kiosk_pin}
                                                 </div>
-                                                <button type="button"
-                                                    onClick={async () => {
+                                                <Button variant="secondary" icon={Copy} title="Copiar PIN" iconOnly onClick={async () => {
                                                         try {
                                                             await navigator.clipboard.writeText(formData.kiosk_pin);
                                                             useToastStore.getState().showToast('PIN Copiado', `${formData.kiosk_pin} está en el portapapeles.`, 'success');
                                                         } catch { /* sin permiso de clipboard */ }
-                                                    }}
-                                                    className="w-10 h-10 shrink-0 flex items-center justify-center bg-surface-card border border-divider rounded-2xl text-content-3 hover:text-brand-text hover:border-brand/40 hover:shadow-md transition-all active:scale-[0.97]"
-                                                    title="Copiar PIN">
-                                                    <Copy size={15} strokeWidth={2.5} />
-                                                </button>
+                                                    }} />
                                             </div>
                             <p className="text-micro font-bold text-content-3 mt-1.5 ml-1">Este es el valor del código de barras del carné.</p>
                                         </div>
@@ -2233,9 +2196,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center justify-between mb-4">
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Otros Documentos</h4>
-                                <button type="button" onClick={addExtraDoc} className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
-                                    <Plus size={12} strokeWidth={3} /> Agregar Documento
-                                </button>
+                                <Button variant="ghost" icon={Plus} onClick={addExtraDoc}>Agregar Documento</Button>
                             </div>
                             {extraDocs.length === 0 && <p className="text-label text-content-3 font-medium">Sin documentos adicionales.</p>}
                             <div className="flex flex-col gap-3">
@@ -2244,7 +2205,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <div className="flex items-center justify-between mb-2 gap-2">
                                             <input type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
                                                 className="flex-1 bg-transparent text-body-xl font-bold text-content-2 outline-none border-b border-divider pb-1" />
-                                            <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-content-3 hover:text-danger shrink-0"><X size={14} /></button>
+                                            <Button variant="ghost" icon={X} title="Quitar documento" iconOnly onClick={() => removeExtraDoc(doc.category)} />
                                         </div>
                                         {renderDocUploadArea(doc.category)}
                                     </div>

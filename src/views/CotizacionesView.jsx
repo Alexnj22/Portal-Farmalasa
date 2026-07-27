@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import {
     FileText, Plus, Printer, Save, Trash2, X,
@@ -237,10 +238,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     <span className="text-micro font-black text-content-3 bg-surface-card-hover rounded-lg px-2 py-1 shrink-0">#{idx + 1}</span>
                     <p className="text-body-sm font-black text-content leading-tight truncate">{item.productName}</p>
                 </div>
-                <button type="button" onClick={() => removeItem(item._id)}
-                    className="w-7 h-7 shrink-0 rounded-xl bg-danger/10 text-danger border border-danger/30 hover:bg-danger-solid hover:text-white hover:border-danger transition-all flex items-center justify-center">
-                    <X size={12} strokeWidth={3} />
-                </button>
+                <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => removeItem(item._id)} />
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="col-span-1">
@@ -660,10 +658,7 @@ export default function CotizacionesView() {
     if (mode === 'new' || mode === 'edit') return (
         <GlassViewLayout icon={Receipt} title={isEdit ? 'Editar Cotización' : 'Nueva Cotización'}
             filtersContent={
-                <button onClick={() => { resetForm(); setMode('list'); }}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-surface-card text-content-2 text-label font-black uppercase tracking-widest rounded-2xl border border-border-card hover:bg-surface-card hover:-translate-y-0.5 active:scale-[0.97] transition-all">
-                    <ChevronLeft size={14} strokeWidth={3} /> Lista
-                </button>
+                <Button variant="secondary" icon={ChevronLeft} onClick={() => { resetForm(); setMode('list'); }}>Lista</Button>
             }
         >
             <div className="p-4 lg:p-6 space-y-4">
@@ -818,10 +813,7 @@ export default function CotizacionesView() {
                 )}
 
                 <div className="flex items-center justify-end gap-3 pb-4">
-                    <button onClick={() => { resetForm(); setMode('list'); }}
-                        className="px-6 py-3 bg-surface-card text-content-2 text-label font-black uppercase tracking-widest rounded-2xl border border-border-card hover:bg-surface-card hover:-translate-y-0.5 active:scale-[0.97] transition-all">
-                        Cancelar
-                    </button>
+                    <Button variant="secondary" onClick={() => { resetForm(); setMode('list'); }}>Cancelar</Button>
                     <button onClick={isEdit ? handleUpdate : handleSave} disabled={saving || items.length === 0}
                         className={`flex items-center gap-2 px-7 py-3 text-white text-label font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-content-3 cursor-not-allowed' : 'bg-brand hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] active:scale-[0.97]'}`}>
                         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2.5} />}
@@ -843,24 +835,12 @@ export default function CotizacionesView() {
             <GlassViewLayout icon={Receipt} title={cot.numero}
                 filtersContent={
                     <div className="flex items-center gap-2 flex-wrap">
-                        <button onClick={() => setMode('list')}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-surface-card text-content-2 text-label font-black uppercase tracking-widest rounded-2xl border border-border-card hover:bg-surface-card hover:-translate-y-0.5 active:scale-[0.97] transition-all">
-                            <ChevronLeft size={14} strokeWidth={3} /> Lista
-                        </button>
+                        <Button variant="secondary" icon={ChevronLeft} onClick={() => setMode('list')}>Lista</Button>
                         {cot.status === 'ACTIVA' && canEdit && (
                             <>
-                                <button onClick={() => startEdit(cot)}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-surface-card-hover text-content-2 text-label font-black uppercase tracking-widest rounded-2xl border border-divider hover:bg-surface-card-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
-                                    <Edit2 size={13} strokeWidth={2.5} /> Editar
-                                </button>
-                                <button onClick={() => setConfirmAnular(cot.id)}
-                                    className="px-4 py-2.5 bg-danger/10 text-danger text-label font-black uppercase tracking-widest rounded-2xl border border-danger/30 hover:bg-danger-solid hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
-                                    Anular
-                                </button>
-                                <button onClick={() => handlePrint(cot, itemsData)}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-label font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] active:scale-[0.97] transition-all">
-                                    <Printer size={14} strokeWidth={2.5} /> Imprimir / PDF
-                                </button>
+                                <Button variant="secondary" icon={Edit2} onClick={() => startEdit(cot)}>Editar</Button>
+                                <Button variant="destructive" onClick={() => setConfirmAnular(cot.id)}>Anular</Button>
+                                <Button icon={Printer} onClick={() => handlePrint(cot, itemsData)}>Imprimir / PDF</Button>
                             </>
                         )}
                     </div>
@@ -985,10 +965,7 @@ export default function CotizacionesView() {
 
                     {cot.status === 'ACTIVA' && (
                         <div className="flex justify-end pb-4">
-                            <button onClick={() => handlePrint(cot, itemsData)}
-                                className="flex items-center gap-2 px-7 py-3.5 bg-brand text-white text-label font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] active:scale-[0.97] transition-all">
-                                <Printer size={16} strokeWidth={2.5} /> Imprimir / Guardar PDF
-                            </button>
+                            <Button icon={Printer} onClick={() => handlePrint(cot, itemsData)}>Imprimir / Guardar PDF</Button>
                         </div>
                     )}
                 </div>
@@ -1024,10 +1001,7 @@ export default function CotizacionesView() {
         />
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={canEdit ? (
-                <button onClick={() => { resetForm(); setMode('new'); }}
-                    className="flex items-center gap-2 px-5 py-3.5 bg-brand text-white text-body-sm font-black uppercase tracking-widest rounded-2xl shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transition-all">
-                    <Plus size={15} strokeWidth={3} /> Nueva Cotización
-                </button>
+                <Button icon={Plus} onClick={() => { resetForm(); setMode('new'); }}>Nueva Cotización</Button>
             ) : undefined}
         >
             {/* Stats */}
@@ -1110,23 +1084,13 @@ export default function CotizacionesView() {
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
                                     {!isAnulada && canEdit && (
                                         <>
-                                            <button title="Editar" onClick={() => startEdit(cot)}
-                                                className="w-7 h-7 rounded-lg bg-surface-card-hover hover:bg-surface-card-hover text-content-3 hover:text-content-2 flex items-center justify-center transition-colors">
-                                                <Edit2 size={12} strokeWidth={2.5} />
-                                            </button>
-                                            <button title="Imprimir / PDF"
-                                                onClick={async () => {
+                                            <Button variant="secondary" size="xs" icon={Edit2} title="Editar" iconOnly onClick={() => startEdit(cot)} />
+                                            <Button tone="chart-1" size="xs" icon={Printer} title="Imprimir / PDF" iconOnly onClick={async () => {
                                                     const { data, error } = await fetchCotizacionItems(cot.id);
                                                     if (error) console.error('print cotizacion: fetch items failed:', error.message);
                                                     handlePrint(cot, data || []);
-                                                }}
-                                                className="w-7 h-7 rounded-lg bg-chart-1/10 hover:bg-chart-1/20 text-chart-1-text hover:text-chart-1-text flex items-center justify-center transition-colors">
-                                                <Printer size={12} strokeWidth={2.5} />
-                                            </button>
-                                            <button title="Anular" onClick={() => setConfirmAnular(cot.id)}
-                                                className="w-7 h-7 rounded-lg bg-danger/10 hover:bg-danger/10 text-danger hover:text-danger flex items-center justify-center transition-colors">
-                                                <Trash2 size={12} strokeWidth={2.5} />
-                                            </button>
+                                                }} />
+                                            <Button variant="destructive" size="xs" icon={Trash2} title="Anular" iconOnly onClick={() => setConfirmAnular(cot.id)} />
                                         </>
                                     )}
                                 </div>

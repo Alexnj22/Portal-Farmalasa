@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import LiquidModal from '../common/LiquidModal';
 import { supabase } from '../../supabaseClient';
 import {
@@ -387,9 +388,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <p className="text-label text-content-3">Busca y aplica principios activos del Registro Sanitario</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-btn hover:bg-surface-card text-content-3 transition-colors">
-                            <X size={16} strokeWidth={2.5} />
-                        </button>
+                        <Button variant="secondary" size="sm" icon={X} iconOnly onClick={onClose} />
                     </div>
                 </LiquidModal.Header>
 
@@ -413,10 +412,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <span className="flex items-center gap-1.5 text-warning"><span className="w-2.5 h-2.5 rounded-full bg-warning inline-block"/> {'< 70%'} — te consulta</span>
                                 <span className="flex items-center gap-1.5 text-content-3"><span className="w-2.5 h-2.5 rounded-full bg-content-3 inline-block"/> Sin resultados SRS — descarta</span>
                             </div>
-                            <button onClick={handleStart}
-                                className="mt-2 px-8 py-3 rounded-btn text-body font-black text-white bg-chart-3-solid hover:bg-chart-6-solid transition-colors shadow-lg shadow-chart-3/20">
-                                Iniciar escaneo
-                            </button>
+                            <Button tone="chart-3" onClick={handleStart}>Iniciar escaneo</Button>
                         </div>
                     )}
 
@@ -451,10 +447,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 ))}
                             </div>
 
-                            <button onClick={() => { cancelRef.current = true; }}
-                                className="self-center px-4 py-2 rounded-full text-label font-bold text-content-3 hover:bg-surface-card-hover transition-colors border border-divider">
-                                Detener
-                            </button>
+                            <Button variant="secondary" shape="pill" onClick={() => { cancelRef.current = true; }}>Detener</Button>
                         </div>
                     )}
 
@@ -592,14 +585,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 {reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                                                 Aplicar
                                             </button>
-                                            <button onClick={() => handleReviewMarkSinPA(currentReview)} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-body-sm font-bold text-content-3 border border-divider hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
-                                                <Package size={12} /> Insumo/Equipo
-                                            </button>
-                                            <button onClick={handleReviewSkip} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-btn text-body-sm font-bold text-content-3 border border-divider hover:bg-surface-card-hover transition-colors">
-                                                <SkipForward size={12} /> Saltar
-                                            </button>
+                                            <Button tone="chart-4" shape="pill" icon={Package} disabled={reviewApplying} onClick={() => handleReviewMarkSinPA(currentReview)}>Insumo/Equipo</Button>
+                                            <Button variant="secondary" icon={SkipForward} disabled={reviewApplying} onClick={handleReviewSkip}>Saltar</Button>
                                         </div>
 
                                         {/* Toggle panel buttons */}
@@ -655,23 +642,16 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 spellCheck={false} autoComplete="off"
  className="w-[58px] shrink-0 px-2 py-1.5 border border-divider rounded-lg text-body-xl text-content-2 bg-surface-card placeholder:text-content-3 text-center"
                                                             />
-                                                            <button onClick={() => setManualItems(prev =>
+                                                            <Button variant="destructive" shape="pill" size="xs" icon={X} iconOnly onClick={() => setManualItems(prev =>
                                                                 prev.length > 1
                                                                     ? prev.filter(p => p._key !== item._key)
                                                                     : [{ nombre: '', concentracion: '', _key: Date.now() }]
-                                                            )} className="w-6 h-6 rounded-full flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all shrink-0">
-                                                                <X size={10} />
-                                                            </button>
+                                                            )} />
                                                         </div>
                                                     ))}
-                                                    <button onClick={() => setManualItems(prev => [...prev, { nombre: '', concentracion: '', _key: Date.now() }])}
-                                                        className="flex items-center gap-1 text-caption font-bold text-content-3 hover:text-brand-text transition-colors pt-0.5">
-                                                        <Plus size={10} /> Agregar principio
-                                                    </button>
+                                                    <Button variant="ghost" icon={Plus} onClick={() => setManualItems(prev => [...prev, { nombre: '', concentracion: '', _key: Date.now() }])}>Agregar principio</Button>
                                                 </div>
-                                                <button
-                                                    disabled={!manualItems.some(p => p.nombre.trim())}
-                                                    onClick={() => {
+                                                <Button shape="pill" disabled={!manualItems.some(p => p.nombre.trim())} onClick={() => {
                                                         const principios = manualItems
                                                             .filter(p => p.nombre.trim())
                                                             .map((p, i) => ({ nombre: p.nombre.trim(), concentracion: p.concentracion.trim(), orden: i }));
@@ -680,10 +660,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         ));
                                                         setReviewPanel(null);
                                                         setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
-                                                    }}
-                                                    className="self-end px-4 py-1.5 rounded-full bg-brand text-white text-label font-black disabled:opacity-40 hover:bg-brand-hover transition-colors">
-                                                    Usar estos principios
-                                                </button>
+                                                    }}>Usar estos principios</Button>
                                             </div>
                                         )}
                                     </div>
@@ -716,15 +693,9 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         <span className="text-caption text-content-3 font-mono shrink-0">#{p.id}</span>
                                                         <span className="text-body-sm text-content-2 font-medium truncate flex-1">{p.nombre}</span>
                                                         {markedSinPA.has(p.id) ? (
-                                                            <button onClick={() => handleUnmarkSinPA(p.id)}
-                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-bold text-success bg-success/10 border border-success/30 hover:bg-success/10 transition-colors">
-                                                                <Check size={9} strokeWidth={3} /> Insumo
-                                                            </button>
+                                                            <Button tone="success" shape="pill" icon={Check} onClick={() => handleUnmarkSinPA(p.id)}>Insumo</Button>
                                                         ) : (
-                                                            <button onClick={() => handleMarkSinPA(p.id)}
-                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-bold text-content-3 border border-divider hover:border-chart-4/30 hover:text-chart-4-text hover:bg-chart-4/10 transition-colors">
-                                                                <Package size={9} /> Insumo
-                                                            </button>
+                                                            <Button tone="chart-4" shape="pill" icon={Package} onClick={() => handleMarkSinPA(p.id)}>Insumo</Button>
                                                         )}
                                                     </div>
                                                 ))}
@@ -732,10 +703,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         </div>
                                     )}
 
-                                    <button onClick={onClose}
-                                        className="self-center px-6 py-2.5 rounded-btn text-body-sm font-black text-white bg-brand hover:bg-brand-hover transition-colors">
-                                        Cerrar
-                                    </button>
+                                    <Button  onClick={onClose}>Cerrar</Button>
                                 </div>
                             )}
                         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import {
@@ -351,10 +352,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     />
                                 </div>
                                 {selectedErp !== null && (
-                                    <button onClick={() => setSelectedErp(null)}
-                                        className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0 hover:scale-110">
-                                        <X size={9} strokeWidth={3} />
-                                    </button>
+                                    <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={() => setSelectedErp(null)} />
                                 )}
                             </div>
 
@@ -373,10 +371,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                         />
                                     </div>
                                     {filterLab !== null && (
-                                        <button onClick={() => setFilterLab(null)}
-                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0 hover:scale-110">
-                                            <X size={9} strokeWidth={3} />
-                                        </button>
+                                        <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={() => setFilterLab(null)} />
                                     )}
                                 </div>
                             </>}
@@ -396,21 +391,14 @@ export default function TabInventario({ searchTerm = '' }) {
                                         />
                                     </div>
                                     {filterCat !== null && (
-                                        <button onClick={() => setFilterCat(null)}
-                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0 hover:scale-110">
-                                            <X size={9} strokeWidth={3} />
-                                        </button>
+                                        <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={() => setFilterCat(null)} />
                                     )}
                                 </div>
                             </>}
 
                             {anyFilter && <>
                                 <div className="h-5 w-px bg-divider shrink-0" />
-                                <button
-                                    onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }}
-                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0">
-                                    <X size={11} strokeWidth={3} />
-                                </button>
+                                <Button variant="destructive" shape="pill" size="xs" icon={X} iconOnly onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }} />
                             </>}
                         </div>
                     );
@@ -423,10 +411,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar inventario</p>
                     <p className="text-label text-danger mb-4">{loadError}</p>
-                    <button onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}
-                        className="px-5 py-2 text-body-sm font-bold text-white bg-danger-solid hover:bg-danger-hover rounded-full transition-colors">
-                        Reintentar
-                    </button>
+                    <Button variant="destructive" shape="pill" onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}>Reintentar</Button>
                 </div>
             ) : (
                 <DataTable

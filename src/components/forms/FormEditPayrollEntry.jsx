@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
+import Button from '../../components/common/Button';
 import { Info, Clock, CreditCard, CalendarOff } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
 import { fetchOvertimeBankRows } from '../../data/payroll';
@@ -174,11 +175,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                         </div>
                     )}
 
-                    <button type="button" onClick={handleApplyOT}
-                        disabled={dError || nError || (dUsed === 0 && nUsed === 0)}
-                        className="w-full py-2 rounded-xl bg-warning-solid text-white text-caption font-black uppercase tracking-widest hover:bg-warning-hover active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                        Aplicar distribución
-                    </button>
+                    <Button tone="warning" disabled={dError || nError || (dUsed === 0 && nUsed === 0)} onClick={handleApplyOT}>Aplicar distribución</Button>
                 </div>
             )}
             {otApplied && (

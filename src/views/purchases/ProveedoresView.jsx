@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { Truck, Tag, Layers, AlertTriangle, X, CheckCircle2, Building2 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -179,10 +180,7 @@ export default function ProveedoresView({ openModal }) {
                                     options={categoriaFilterOptions} placeholder="Categoría" icon={Tag} compact bare />
                             </div>
                             {categoriaId && (
-                                <button onClick={() => setCategoriaId('')} title="Quitar categoría"
-                                    className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
-                                    <X size={9} strokeWidth={3} />
-                                </button>
+                                <Button variant="destructive" shape="pill" icon={X} title="Quitar categoría" iconOnly onClick={() => setCategoriaId('')} />
                             )}
                         </div>
 
@@ -194,10 +192,7 @@ export default function ProveedoresView({ openModal }) {
                                     options={claseOptions} placeholder="Clase" icon={Layers} compact bare />
                             </div>
                             {claseFilter && (
-                                <button onClick={() => setClaseFilter('')} title="Quitar clase"
-                                    className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
-                                    <X size={9} strokeWidth={3} />
-                                </button>
+                                <Button variant="destructive" shape="pill" icon={X} title="Quitar clase" iconOnly onClick={() => setClaseFilter('')} />
                             )}
                         </div>
 

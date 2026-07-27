@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Button from '../../components/common/Button';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -386,13 +387,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     )}
                                     {notifications.length > 0 && !pendingAll && (
                                         confirmClear ? (
-                                            <button
-                                                onClick={handleClearAll}
-                                                className="flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover transition-colors animate-in fade-in zoom-in-95 duration-150"
-                                            >
-                                                <Trash2 size={12} strokeWidth={2.5} />
-                                                ¿Borrar todo?
-                                            </button>
+                                            <Button variant="destructive" icon={Trash2} onClick={handleClearAll}>¿Borrar todo?</Button>
                                         ) : (
                                             <button
                                                 onClick={handleClearAll}

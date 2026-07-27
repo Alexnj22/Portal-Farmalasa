@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Truck, Map, CheckCircle2, ChevronDown, ChevronUp,
@@ -130,13 +131,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
             </div>
           )}
           {/* Botón mapa */}
-          <button
-            onClick={e => { e.stopPropagation(); setMapOpen(true); }}
-            className="p-1.5 rounded-lg hover:bg-chart-3/10 text-content-3 hover:text-chart-3-text transition-colors"
-            title="Ver mapa"
-          >
-            <Map size={14} />
-          </button>
+          <Button tone="chart-3" icon={Map} title="Ver mapa" iconOnly onClick={e => { e.stopPropagation(); setMapOpen(true); }} />
           {expanded ? <ChevronUp size={14} className="text-content-3" /> : <ChevronDown size={14} className="text-content-3" />}
         </div>
       </div>

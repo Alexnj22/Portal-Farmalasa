@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Button from '../components/common/Button';
 import { EmptyState } from '../components/common/StateViews';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
@@ -659,16 +660,10 @@ const VacationPlanView = () => {
                         className="bg-transparent outline-none text-body-xl font-semibold text-content-2 placeholder-content-3 w-full"
                     />
                     {searchTerm && (
-                        <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors">
-                            <X size={13} strokeWidth={2.5} />
-                        </button>
+                        <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchTerm('')} />
                     )}
                 </div>
-                <button
-                    onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-surface-card-hover text-caption font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
-                    Cancelar
-                </button>
+                <Button variant="secondary" shape="pill" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
             </div>
 
             {/* Normal mode */}
@@ -676,13 +671,9 @@ const VacationPlanView = () => {
 
                 {/* Year selector */}
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-2)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
-                        <ChevronLeft size={14} strokeWidth={2.5} />
-                    </button>
+                    <Button variant="secondary" shape="pill" icon={ChevronLeft} iconOnly onClick={() => setYear(y => y - 1)} />
                     <span className="text-body-sm font-black text-content-2 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
-                        <ChevronRight size={14} strokeWidth={2.5} />
-                    </button>
+                    <Button variant="secondary" shape="pill" icon={ChevronRight} disabled={year >= currentYear + 1} iconOnly onClick={() => setYear(y => y + 1)} />
                 </div>
 
                 <div className="w-px h-6 bg-divider mx-1 shrink-0" />
@@ -763,12 +754,7 @@ const VacationPlanView = () => {
                                     </h3>
                                 </div>
                                 {editingPlan && (
-                                    <button
-                                        onClick={handleCancelEdit}
-                                        className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
-                                    >
-                                        <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
-                                    </button>
+                                    <Button variant="destructive" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
                                 )}
                             </div>
 
@@ -841,7 +827,7 @@ const VacationPlanView = () => {
                                     <div className="flex items-center gap-3 px-4 py-3 bg-warning/10 border border-warning/30 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
                                         <AlertCircle size={14} className="text-warning shrink-0" strokeWidth={2.5} />
                                         <span className="text-label font-black text-warning-text flex-1">¿Confirmar cambios?</span>
-                                        <button type="button" onClick={() => setConfirmingEdit(false)} className="text-caption font-black text-content-3 hover:text-content-2 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-surface-card transition-all">No</button>
+                                        <Button variant="secondary" onClick={() => setConfirmingEdit(false)}>No</Button>
                                     </div>
                                 )}
 
@@ -908,12 +894,7 @@ const VacationPlanView = () => {
                                         )}
                                         {/* Pre-approve */}
                                         {activeHeader?.status === 'DRAFT' && vacationPlans.filter(vp => vp.status === 'DRAFT').length > 0 && (
-                                            <button
-                                                onClick={handlePreApprove}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1-solid hover:bg-chart-1/80 text-white text-caption font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-1)] hover:-translate-y-0.5 transition-all"
-                                            >
-                                                <ShieldCheck size={12} strokeWidth={2.5} /> Pre-aprobar plan
-                                            </button>
+                                            <Button tone="chart-1" icon={ShieldCheck} onClick={handlePreApprove}>Pre-aprobar plan</Button>
                                         )}
                                         {activeHeader?.status === 'PRE_APPROVED' && (
                                             <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-chart-1-text text-caption font-black uppercase tracking-widest">
@@ -1049,24 +1030,10 @@ const VacationPlanView = () => {
                                                                         </button>
                                                                     )}
                                                                     {p.status === 'PLANNED' && (
-                                                                        <button
-                                                                            title="Confirmar"
-                                                                            onClick={() => handleConfirmPlan(p.id)}
-                                                                            disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-success/10 border border-success/30 text-success hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                        >
-                                                                            <Check size={11} strokeWidth={3} />
-                                                                        </button>
+                                                                        <Button tone="success" size="xs" icon={Check} disabled={!canEdit} title="Confirmar" iconOnly onClick={() => handleConfirmPlan(p.id)} />
                                                                     )}
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
-                                                                        <button
-                                                                            title="Cancelar"
-                                                                            onClick={() => handleCancelPlan(p.id)}
-                                                                            disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 border border-danger/30 text-danger hover:bg-danger-solid hover:text-white hover:border-danger transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                        >
-                                                                            <Trash2 size={11} strokeWidth={2.5} />
-                                                                        </button>
+                                                                        <Button variant="destructive" size="xs" icon={Trash2} disabled={!canEdit} title="Cancelar" iconOnly onClick={() => handleCancelPlan(p.id)} />
                                                                     )}
                                                                 </div>
                                                             </td>
@@ -1130,13 +1097,7 @@ const VacationPlanView = () => {
                                                                 {isProcessing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
                                                                 Aprobar
                                                             </button>
-                                                            <button
-                                                                onClick={() => handleProcessRequest(req, 'REJECTED')}
-                                                                disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-danger-solid hover:text-white text-caption font-black transition-all disabled:opacity-50"
-                                                            >
-                                                                <X size={11} strokeWidth={3} /> Rechazar
-                                                            </button>
+                                                            <Button variant="destructive" icon={X} disabled={isProcessing} onClick={() => handleProcessRequest(req, 'REJECTED')}>Rechazar</Button>
                                                         </div>
                                                     )}
                                                 </div>

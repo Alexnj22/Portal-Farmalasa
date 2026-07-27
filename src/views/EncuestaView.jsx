@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
@@ -620,12 +621,7 @@ export default function EncuestaView() {
             icon={BarChart2}
             title={
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => navigate('/encuesta-admin')}
-                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 bg-surface-card"
-                        title="Volver a Gestión de Encuesta">
-                        <ArrowLeft size={15} strokeWidth={2.5} className="text-content-3" />
-                    </button>
+                    <Button variant="secondary" shape="pill" size="sm" icon={ArrowLeft} title="Volver a Gestión de Encuesta" iconOnly onClick={() => navigate('/encuesta-admin')} />
                     <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima Organizacional'}</span>
                 </div>
             }
@@ -1407,18 +1403,13 @@ export default function EncuestaView() {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         {summary && !isLoading && (
-                                            <button
-                                                onClick={e => {
+                                            <Button tone="chart-3" icon={RotateCcw} title="Regenerar" iconOnly onClick={e => {
                                                     e.stopPropagation();
                                                     if (!aiAutoGenDone.current[selectedSurveyId]) aiAutoGenDone.current[selectedSurveyId] = new Set();
                                                     aiAutoGenDone.current[selectedSurveyId].delete(seg.key);
                                                     setAiSummaries(p => { const u = { ...p }; delete u[seg.key]; return u; });
                                                     generateAiSummary(seg.comments, seg.key);
-                                                }}
-                                                title="Regenerar"
-                                                className="p-1.5 rounded-lg text-content-3 hover:text-chart-3-text hover:bg-chart-3/10 transition-all">
-                                                <RotateCcw size={11} strokeWidth={2.5} />
-                                            </button>
+                                                }} />
                                         )}
                                         {summary && !isLoading && (
                                             <button

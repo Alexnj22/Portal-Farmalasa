@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -111,19 +112,11 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
 
                 {/* ── Header mes ── */}
                 <div className="flex items-center justify-between mb-3 px-1">
-                    <button type="button"
-                        onClick={() => setViewDate(new Date(year, month - 1, 1))}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-full text-content-3 transition-all active:scale-[0.97]">
-                        <ChevronLeft size={14} strokeWidth={3} />
-                    </button>
+                    <Button variant="secondary" shape="pill" icon={ChevronLeft} iconOnly onClick={() => setViewDate(new Date(year, month - 1, 1))} />
                     <span className="text-body-sm font-black text-content-2 uppercase tracking-widest">
                         {MONTHS_SHORT[month]} {year}
                     </span>
-                    <button type="button"
-                        onClick={() => setViewDate(new Date(year, month + 1, 1))}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-full text-content-3 transition-all active:scale-[0.97]">
-                        <ChevronRight size={14} strokeWidth={3} />
-                    </button>
+                    <Button variant="secondary" shape="pill" icon={ChevronRight} iconOnly onClick={() => setViewDate(new Date(year, month + 1, 1))} />
                 </div>
 
                 {/* ── Cabeceras días ── */}
@@ -184,11 +177,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                 </div>
 
                 {/* ── Botón semana actual ── */}
-                <button type="button"
-                    onClick={() => selectWeek(new Date())}
-                    className="mt-3 w-full text-caption font-black uppercase tracking-widest text-content-2 hover:text-content hover:bg-surface-card-hover py-2 rounded-xl transition-all">
-                    Semana actual
-                </button>
+                <Button variant="secondary" onClick={() => selectWeek(new Date())}>Semana actual</Button>
             </div>
         </div>
     );

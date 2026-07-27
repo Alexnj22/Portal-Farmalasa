@@ -1,5 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { useState } from 'react';
+import Button from '../../../components/common/Button';
 import { Ban, AlertTriangle, Loader2 } from 'lucide-react';
 import PedidoModal from '../PedidoModal';
 
@@ -59,9 +60,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
 
             <PedidoModal.Footer>
                 <div className="flex justify-end gap-2">
-                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body font-medium transition-colors">
-                        Cancelar
-                    </button>
+                    <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
                     <button
                         disabled={!canConfirm || busy}
                         onClick={() => onConfirm(modal?.requiresReason ? motivo.trim() : null)}

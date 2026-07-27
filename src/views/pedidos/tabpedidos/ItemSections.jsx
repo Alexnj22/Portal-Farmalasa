@@ -2,6 +2,7 @@
 // tables inside an expanded pedido card (Enviados/Agotamiento/Sin stock/
 // Revisar regla) plus the inline MIN/MAX editor for "Revisar regla" rows.
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -266,9 +267,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                                 onKeyDown={e => e.key === 'Escape' && closeSearch()}
                                 placeholder="Buscar…"
                             />
-                            <button onClick={closeSearch} className="text-content-3 hover:text-content-2 shrink-0">
-                                <X size={9} />
-                            </button>
+                            <Button variant="ghost" icon={X} iconOnly onClick={closeSearch} />
                         </motion.div>
                     ) : (
                         <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-brand/10 transition-colors shrink-0">
@@ -496,20 +495,8 @@ export default function ItemSections({ allItems, loading }) {
                         />
                         {isSaving && <Loader2 size={10} className="animate-spin text-brand-text shrink-0" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
-                        <button
-                            onClick={() => restoreMinMax(row)} disabled={isSaving}
-                            title="Restaurar MIN/MAX original"
-                            className="ml-auto flex items-center gap-1 text-caption font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-card text-content-3 hover:text-brand-text hover:border-brand/30 hover:bg-brand/10 disabled:opacity-50 transition-colors shrink-0"
-                        >
-                            <RotateCcw size={9} />Restaurar
-                        </button>
-                        <button
-                            onClick={() => resetZero(row)} disabled={isSaving}
-                            title="Dejar en 0/0 — excluye del próximo pedido"
-                            className="flex items-center gap-1 text-caption font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-danger/30 text-danger-text hover:text-danger-text hover:bg-danger/10 disabled:opacity-50 transition-colors shrink-0"
-                        >
-                            <X size={9} />0 / 0
-                        </button>
+                        <Button icon={RotateCcw} disabled={isSaving} title="Restaurar MIN/MAX original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
+                        <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0 — excluye del próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>
                     </div>
                 </td>
             </tr>

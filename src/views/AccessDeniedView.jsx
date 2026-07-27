@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Button from '../components/common/Button';
 import { useNavigate } from 'react-router-dom';
 import { Lock, ArrowLeft, MessageCircle } from 'lucide-react';
 import { fetchRoleName } from '../data/permissions';
@@ -54,13 +55,7 @@ const AccessDeniedView = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '280ms' }}>
-                <button
-                    onClick={() => navigate(-1)}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-surface-card border border-divider text-content-2 text-body font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all"
-                >
-                    <ArrowLeft size={14} strokeWidth={2.5} />
-                    Volver
-                </button>
+                <Button variant="secondary" shape="pill" icon={ArrowLeft} onClick={() => navigate(-1)}>Volver</Button>
 
                 <button
                     onClick={handleWhatsApp}

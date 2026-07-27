@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -197,7 +198,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 {newAlert && (
                     <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-body-sm font-semibold shadow-sm">
                         <Send size={13} />¡Nuevo pedido #{newAlert.numero} en camino a {branchName}!
-                        <button onClick={() => setNewAlert(null)} className="ml-auto text-chart-3-text/60 hover:text-chart-3-text"><X size={13} /></button>
+                        <Button variant="ghost" icon={X} iconOnly onClick={() => setNewAlert(null)} />
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -463,13 +464,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {elapsedTrans && <span className="text-caption text-chart-3-text tabular-nums">{elapsedTrans} en ruta</span>}
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
                                             {canApoyo && !isApoyoBodega && (
-                                                <button
-                                                    onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}
-                                                    disabled={isLCBusy}
-                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
-                                                >
-                                                    <UserPlus size={10} />Apoyo
-                                                </button>
+                                                <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
                                             )}
                                             {canActuar && (
                                                 <button
@@ -495,10 +490,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
-                                                    <button onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}
-                                                        className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all shadow-sm">
-                                                        <CheckCircle2 size={10} />Entregué
-                                                    </button>
+                                                    <Button tone="success" icon={CheckCircle2} onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
                                                 );
                                             })()}
                                             {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-1-solid    text-white hover:bg-chart-1/80    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
@@ -506,14 +498,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-6-solid  text-white hover:bg-chart-6/80  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canAnular && (
-                                                <button
-                                                    onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}
-                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 hover:border-danger active:scale-[0.97] transition-all shadow-sm"
-                                                >
-                                                    <Ban size={10} />Anular
-                                                </button>
+                                                <Button variant="destructive" icon={Ban} onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
                                             )}
-                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
+                                            {canMarcarEnRuta && <Button tone="chart-3" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear Ruta</Button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
@@ -666,42 +653,27 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {/* Acciones */}
                                         <div className="flex items-center gap-1.5 shrink-0">
                                             {isConductorRuta && ruta.status === 'pendiente' && (
-                                                <button
-                                                    onClick={async () => {
+                                                <Button tone="chart-3" icon={Play} onClick={async () => {
                                                         try {
                                                             const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
                                                             loadActiveRutas();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
-                                                    }}
-                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
-                                                >
-                                                    <Play size={9} fill="currentColor" />Iniciar
-                                                </button>
+                                                    }}>Iniciar</Button>
                                             )}
                                             {isConductorRuta && ruta.status === 'en_ruta' && entregadas === total && total > 0 && (
-                                                <button
-                                                    onClick={async () => {
+                                                <Button tone="chart-8" icon={Home} onClick={async () => {
                                                         try {
                                                             const { error } = await updateRutaStatus(ruta.id, { status: 'completada', vuelta_base_at: new Date().toISOString() });
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
                                                             loadActiveRutas(); loadActive();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
-                                                    }}
-                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all shadow-sm"
-                                                >
-                                                    <Home size={9} />Base
-                                                </button>
+                                                    }}>Base</Button>
                                             )}
                                             {!isCompletada && (
-                                                <button
-                                                    onClick={() => setRutaMapOpen(ruta)}
-                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all"
-                                                >
-                                                    <MapIcon size={9} />Mapa
-                                                </button>
+                                                <Button variant="secondary" icon={MapIcon} onClick={() => setRutaMapOpen(ruta)}>Mapa</Button>
                                             )}
                                         </div>
                                         {/* Barra de progreso solo cuando activa */}
@@ -898,9 +870,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                         )}
                     </div>
                     <div className="px-5 pb-5 pt-2 flex gap-2 justify-end border-t border-border-card">
-                        <button onClick={() => setReenviarConfirmModal(null)} className="text-body-sm font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover/80 transition-all">
-                            Cancelar
-                        </button>
+                        <Button variant="secondary" onClick={() => setReenviarConfirmModal(null)}>Cancelar</Button>
                         <button
                             disabled={busyAction === 'reenvio'}
                             onClick={() => {

@@ -1,6 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — differences (dif) resolution
 // section shown inside an expanded pedido card.
 import { useState, useEffect } from 'react';
+import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, UserCircle2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
@@ -194,7 +195,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}
                                                 </button>
-                                                <button onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))} className="text-caption text-content-3 hover:text-content-2 px-1">✕</button>
+                                                <Button variant="ghost" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))}>✕</Button>
                                             </div>
                                         ) : (
                                             <div className="flex gap-2">
@@ -205,12 +206,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}
                                                 </button>
-                                                <button
-                                                    onClick={() => setRejectOpen(p => ({ ...p, [item.id]: true }))}
-                                                    className="text-caption font-semibold px-3 py-1.5 rounded-lg border border-danger/30 text-danger hover:bg-danger/10 active:scale-[0.97] transition-all"
-                                                >
-                                                    Rechazar
-                                                </button>
+                                                <Button variant="destructive" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: true }))}>Rechazar</Button>
                                             </div>
                                         )
                                     )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import Button from '../components/common/Button';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
@@ -1271,7 +1272,7 @@ const DashboardView = ({ openModal }) => {
               {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className={`relative w-7 h-7 rounded-full flex items-center justify-center bg-surface-card-hover text-content-3 hover:bg-brand hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0 ${isMobile ? "before:absolute before:content-[''] before:-inset-1.5" : ''}`}><Maximize2 size={12} strokeWidth={2.5}/></button>}
               {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>}
               <div className="flex items-center bg-surface-card-hover p-0.5 rounded-full h-7">
-                {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-content-3 hover:bg-surface-card flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
+                {typeof salesView==='number'&&<Button variant="secondary" shape="pill" icon={ChevronLeft} onClick={()=>setSalesView('DAYS')}>Días</Button>}
                 <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-surface-tab-active text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Horas</button>
                 <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-surface-tab-active text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Días</button>
               </div>
@@ -2024,9 +2025,7 @@ const DashboardView = ({ openModal }) => {
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
-                <button onClick={resetAll} className="flex items-center gap-1.5 text-label font-bold text-content-3 hover:text-brand-text transition-colors px-2 py-1 rounded-lg hover:bg-surface-card-hover">
-                  <RotateCcw size={11}/> Restablecer todo
-                </button>
+                <Button variant="secondary" icon={RotateCcw} onClick={resetAll}>Restablecer todo</Button>
               </div>
               {/* Tab selector inside panel */}
               <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl p-1">

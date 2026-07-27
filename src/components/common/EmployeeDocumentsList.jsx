@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../common/Badge';
 import { FileText, Receipt, Award, CreditCard, Eye, FolderOpen } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
@@ -37,14 +38,7 @@ const DocumentRow = ({ doc }) => {
                     <span className={`text-micro font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badge.className}`}>{badge.label}</span>
                 )}
                 {hasFile ? (
-                    <button
-                        type="button"
-                        onClick={() => openStoredFile(doc.url)}
-                        className="w-8 h-8 rounded-full bg-brand/10 text-brand-text flex items-center justify-center hover:bg-brand/20 hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] shrink-0"
-                        title="Ver documento"
-                    >
-                        <Eye size={13} strokeWidth={2.2} />
-                    </button>
+                    <Button shape="pill" size="sm" icon={Eye} title="Ver documento" iconOnly onClick={() => openStoredFile(doc.url)} />
                 ) : (
                     <Badge variant="warning" size="sm" className="whitespace-nowrap">Pendiente</Badge>
                 )}

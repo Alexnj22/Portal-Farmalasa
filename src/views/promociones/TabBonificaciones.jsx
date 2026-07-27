@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { Gift, Loader2, DollarSign, Check, User, Wallet } from 'lucide-react';
 import { useAuth }       from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -94,7 +95,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                 </div>
 
                 <div className="flex gap-2 justify-end mt-4">
-                    <button onClick={onClose} className="px-3 py-1.5 text-label text-content-3 hover:text-content-2">Cancelar</button>
+                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                     <button
                         onClick={handlePay}
                         disabled={saving}
@@ -231,12 +232,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                                 {/* accion */}
                                 <DataCell align="center">
                                     {canEdit && pending > 0 && (
-                                        <button
-                                            onClick={() => setPayModal(b)}
-                                            className="flex items-center gap-1 px-2.5 py-1 text-caption font-semibold bg-success-solid text-white rounded-lg hover:bg-success/90 transition-colors"
-                                        >
-                                            <Wallet size={9} /> Pagar
-                                        </button>
+                                        <Button tone="success" icon={Wallet} onClick={() => setPayModal(b)}>Pagar</Button>
                                     )}
                                 </DataCell>
                             </DataRow>

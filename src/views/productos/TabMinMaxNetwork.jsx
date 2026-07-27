@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { supabase } from '../../supabaseClient';
 import { Loader2, Package, X, AlertTriangle, ArrowRight } from 'lucide-react';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -220,10 +221,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                     {isDirty && (
                         <>
                             <div className="h-5 w-px bg-divider shrink-0" />
-                            <button onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }}
-                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
-                                <X size={11} strokeWidth={3} />
-                            </button>
+                            <Button variant="destructive" shape="pill" size="xs" icon={X} iconOnly onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }} />
                         </>
                     )}
                 </div>

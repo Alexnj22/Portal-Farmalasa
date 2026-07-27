@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -97,12 +98,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             </div>
 
             {isPendingReceipt ? (
-                <button
-                    onClick={onUploadReceipt}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6-solid border border-chart-6 text-white font-black text-caption uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-base"
-                >
-                    <UploadCloud size={14} strokeWidth={2.5} /> Subir Comprobante
-                </button>
+                <Button tone="chart-6" icon={UploadCloud} onClick={onUploadReceipt}>Subir Comprobante</Button>
             ) : (
                 <button
                     onClick={onAction}

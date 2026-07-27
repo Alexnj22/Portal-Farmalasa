@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
@@ -517,12 +518,7 @@ const RolesView = ({ openModal }) => {
                                         <span className="font-black uppercase tracking-tight ml-1">{editingRoleId ? 'Editar Cargo' : 'Nuevo Cargo'}</span>
                                     </h3>
                                     {editingRoleId && (
-                                        <button
-                                            onClick={handleCancelEdit}
-                                            className="flex items-center gap-1.5 text-caption md:text-label font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
-                                        >
-                                            <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
-                                        </button>
+                                        <Button variant="destructive" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
                                     )}
                                 </div>
 
@@ -722,14 +718,7 @@ const RolesView = ({ openModal }) => {
                                                     >
                                                         <Edit3 size={14} strokeWidth={2.5} />
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => handleDeleteRoleRequest(e, role)}
-                                                        disabled={!canEdit}
-                                                        className="w-8 h-8 bg-surface-card border border-border-card text-danger rounded-full hover:bg-danger/10 hover:text-danger transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
-                                                        title="Eliminar cargo"
-                                                    >
-                                                        <Trash2 size={14} strokeWidth={2.5} />
-                                                    </button>
+                                                    <Button variant="destructive" shape="pill" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar cargo" iconOnly onClick={(e) => handleDeleteRoleRequest(e, role)} />
                                                 </div>
                                             </div>
 
@@ -800,9 +789,9 @@ const RolesView = ({ openModal }) => {
                                 </button>
 
                                 <div className="ml-auto flex items-center gap-2 bg-surface-card backdrop-blur-sm border border-border-card rounded-xl px-2 py-1 shadow-sm">
-                                    <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="p-1 hover:bg-surface-card-hover rounded text-content-3 transition-colors">-</button>
+                                    <Button variant="secondary" onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}>-</Button>
                                     <span className="text-caption font-bold text-content-2 w-8 text-center">{Math.round(zoom * 100)}%</span>
-                                    <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="p-1 hover:bg-surface-card-hover rounded text-content-3 transition-colors">+</button>
+                                    <Button variant="secondary" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</Button>
                                 </div>
                             </div>
 

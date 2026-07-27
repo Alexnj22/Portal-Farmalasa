@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import Button from '../../components/common/Button';
 import { UploadCloud, Users, ShieldCheck, FileText, AlertCircle } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
@@ -45,13 +46,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                 <p className="text-body-sm font-bold text-warning-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Referente de Farmacovigilancia en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>
-                <button 
-                    type="button" 
-                    onClick={onClose} 
-                    className="px-8 py-3.5 bg-surface-card text-warning font-black text-label uppercase tracking-widest rounded-2xl hover:bg-warning-solid hover:text-white border border-warning/30 hover:border-warning transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 active:scale-[0.97]"
-                >
-                    Entendido, Cerrar
-                </button>
+                <Button tone="warning" onClick={onClose}>Entendido, Cerrar</Button>
             </div>
         );
     }

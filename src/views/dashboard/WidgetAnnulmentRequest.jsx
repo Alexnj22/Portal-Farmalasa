@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -100,10 +101,7 @@ function InvoiceHeader({ inv, onBack, vendor }) {
   return (
     <div className="flex flex-col gap-1 shrink-0 pb-2 border-b border-divider">
       <div className="flex items-center gap-2">
-        <button onClick={onBack}
-          className="w-6 h-6 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
-          <ArrowLeft size={12} strokeWidth={2.5} />
-        </button>
+        <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} />
         <div className="flex-1 min-w-0">
           <p className="text-body-sm font-black text-content truncate leading-tight">{inv.cliente || 'Sin nombre'}</p>
           <p className="text-micro text-content-3 font-mono leading-tight">{inv.correlativo}</p>
@@ -982,11 +980,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => { setFocused(inv); setView('detail'); }}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-brand hover:text-white text-content-3 transition-all"
-                  title="Ver detalle">
-                  <Eye size={12} strokeWidth={2.5} />
-                </button>
+                <Button shape="pill" size="xs" icon={Eye} title="Ver detalle" iconOnly onClick={() => { setFocused(inv); setView('detail'); }} />
                 <button onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
                   className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
                     ok ? 'bg-warning/10 hover:bg-warning-solid hover:text-white text-warning'

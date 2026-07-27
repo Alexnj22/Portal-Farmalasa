@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
+import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
@@ -61,23 +62,11 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
                 <Edit3 size={14} strokeWidth={2.5} />
               </button>
             )}
-            <button
-              onClick={() => onArchive(ann.id)}
-              className="p-2.5 text-content-3 bg-surface-card border border-border-card shadow-sm hover:text-content hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
-              title="Archivar aviso"
-            >
-              <Archive size={14} strokeWidth={2.5} />
-            </button>
+            <Button variant="secondary" shape="pill" icon={Archive} title="Archivar aviso" iconOnly onClick={() => onArchive(ann.id)} />
           </>
         )}
         {canEdit && ann.readIds.length === 0 && (
-          <button
-            onClick={() => onDelete(ann)}
-            className="p-2.5 text-danger bg-surface-card border border-danger/30 shadow-sm hover:text-danger hover:bg-danger/10 hover:border-danger/30 hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
-            title="Eliminar aviso"
-          >
-            <Trash2 size={14} strokeWidth={2.5} />
-          </button>
+          <Button variant="destructive" shape="pill" icon={Trash2} title="Eliminar aviso" iconOnly onClick={() => onDelete(ann)} />
         )}
       </div>
 
@@ -588,7 +577,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <span className="font-black uppercase tracking-tight ml-1">{editingAnnId ? 'Editar Aviso' : 'Nuevo Aviso'}</span>
                 </h3>
                 {editingAnnId && (
-                  <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-caption md:text-label font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"><X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar</button>
+                  <Button variant="destructive" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
                 )}
               </div>
 
@@ -657,7 +646,7 @@ const AnnouncementsView = ({ openModal }) => {
                           {selectedEmployees.map((id) => (
                             <div key={id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1.5 rounded-lg text-label font-bold border border-brand/20 hover:scale-105">
                               <span>{employeesById.get(String(id))?.name || 'Empleado'}</span>
-                              <button type="button" onClick={() => removeEmployee(id)} disabled={isSubmitting} className="hover:text-danger"><X size={12} strokeWidth={2.5} /></button>
+                              <Button variant="ghost" icon={X} disabled={isSubmitting} iconOnly onClick={() => removeEmployee(id)} />
                             </div>
                           ))}
                         </div>
@@ -753,8 +742,8 @@ const AnnouncementsView = ({ openModal }) => {
               <div className="flex items-center justify-between pt-6 mt-2 border-t border-divider shrink-0 px-3 md:px-4">
                 <span className="text-label font-bold text-content-3 uppercase tracking-widest bg-surface-card backdrop-blur-sm shadow-sm px-3 py-1.5 rounded-lg border border-border-card">Pág {currentPage} de {totalPages}</span>
                 <div className="flex gap-2">
-                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-surface-card border border-border-card rounded-xl shadow-sm text-brand-text disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronLeft size={18} strokeWidth={2.5} /></button>
-                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-surface-card border border-border-card rounded-xl shadow-sm text-brand-text disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronRight size={18} strokeWidth={2.5} /></button>
+                  <Button variant="secondary" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                  <Button variant="secondary" icon={ChevronRight} disabled={currentPage === totalPages} iconOnly onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
                 </div>
               </div>
             )}

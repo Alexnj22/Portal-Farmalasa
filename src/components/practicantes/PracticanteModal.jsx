@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../common/Badge';
 import { GraduationCap, X, Check, Loader2, Upload, FileCheck, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
@@ -198,9 +199,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
                     </div>
                 </div>
-                <button type="button" onClick={handleClose} className="w-10 h-10 flex items-center justify-center rounded-btn bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
-                    <X size={18} strokeWidth={2.5} />
-                </button>
+                <Button variant="destructive" icon={X} iconOnly onClick={handleClose} />
             </div>
 
             <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-base w-full">
@@ -325,9 +324,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                     <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => setConvenioFile(e.target.files?.[0] || null)} />
                                 </label>
                                 {practicante?.convenio_url && !convenioFile && (
-                                    <button type="button" onClick={() => openStoredFile(practicante.convenio_url)} className="ml-auto flex items-center gap-1 text-caption font-bold text-success hover:text-success-text shrink-0">
-                                        <FileCheck size={12} /> Ver actual
-                                    </button>
+                                    <Button variant="ghost" icon={FileCheck} onClick={() => openStoredFile(practicante.convenio_url)}>Ver actual</Button>
                                 )}
                             </div>
                             <p className="text-micro text-content-3 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
@@ -348,9 +345,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
             </div>
 
             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
-                <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-btn bg-surface-card border border-border-card text-content-3 font-bold text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
-                    Cancelar
-                </button>
+                <Button variant="secondary" size="lg" disabled={saving} onClick={handleClose}>Cancelar</Button>
                 <button
                     type="button"
                     onClick={handleSave}

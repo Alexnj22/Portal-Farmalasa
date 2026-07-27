@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -128,10 +129,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
   return (
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2 shrink-0">
-        <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
-          <ArrowLeft size={13} strokeWidth={2.5} />
-        </button>
+        <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} />
         <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">
           {product.foto_url
             ? <img src={product.foto_url} alt="" className="w-full h-full object-contain" />

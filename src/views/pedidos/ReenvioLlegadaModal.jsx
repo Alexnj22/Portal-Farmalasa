@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package } from 'lucide-react';
 import PedidoModal from './PedidoModal';
@@ -76,9 +77,7 @@ export default function ReenvioLlegadaModal({
                     </p>
                     <h3 className="text-body-lg font-bold text-content leading-tight">¿Cómo llegó el reenvío?</h3>
                 </div>
-                <button onClick={handleClose} disabled={submitting} className="text-content-3 hover:text-content-2 transition-colors">
-                    <X size={15} />
-                </button>
+                <Button variant="ghost" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>
 
             {/* Body */}
@@ -232,10 +231,7 @@ export default function ReenvioLlegadaModal({
                     </div>
                 )}
                 <div className="flex items-center justify-between gap-2">
-                    <button onClick={handleClose} disabled={submitting}
-                        className="text-label font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover transition-all">
-                        Cancelar
-                    </button>
+                    <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
                     <button onClick={handleConfirm} disabled={submitting || !hasContent || electrolitPending}
                         className="text-label font-bold px-5 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}

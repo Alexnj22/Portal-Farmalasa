@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Button from '../../components/common/Button';
 import { Archive, AlertTriangle, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../data/facturasCompra';
@@ -93,34 +94,11 @@ const PdfZoomViewer = ({ src }) => {
         <div className="flex-1 min-h-0 w-full flex flex-col gap-2">
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-0.5 rounded-2xl bg-surface-card-hover p-1">
-                    <button
-                        type="button"
-                        onClick={zoomOut}
-                        disabled={zoom <= ZOOM_MIN}
-                        title="Alejar"
-                        className="w-7 h-7 flex items-center justify-center rounded-lg text-content-2 hover:bg-surface-card-hover disabled:opacity-40 transition-colors"
-                    >
-                        <ZoomOut size={14} strokeWidth={2} />
-                    </button>
+                    <Button variant="secondary" size="xs" icon={ZoomOut} disabled={zoom <= ZOOM_MIN} title="Alejar" iconOnly onClick={zoomOut} />
                     <span className="w-11 text-center text-caption font-bold text-content-2 tabular-nums">{Math.round(zoom * 100)}%</span>
-                    <button
-                        type="button"
-                        onClick={zoomIn}
-                        disabled={zoom >= ZOOM_MAX}
-                        title="Acercar"
-                        className="w-7 h-7 flex items-center justify-center rounded-lg text-content-2 hover:bg-surface-card-hover disabled:opacity-40 transition-colors"
-                    >
-                        <ZoomIn size={14} strokeWidth={2} />
-                    </button>
+                    <Button variant="secondary" size="xs" icon={ZoomIn} disabled={zoom >= ZOOM_MAX} title="Acercar" iconOnly onClick={zoomIn} />
                     {zoom !== 1 && (
-                        <button
-                            type="button"
-                            onClick={resetZoom}
-                            title="Restablecer zoom"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-content-3 hover:bg-surface-card-hover transition-colors"
-                        >
-                            <RotateCcw size={13} strokeWidth={2} />
-                        </button>
+                        <Button variant="secondary" size="xs" icon={RotateCcw} title="Restablecer zoom" iconOnly onClick={resetZoom} />
                     )}
                 </div>
                 <a
@@ -281,21 +259,9 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             </button>
                         )}
                         {document?.pdf_path && (
-                            <button
-                                type="button"
-                                onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-2xl font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
-                            >
-                                <Download size={14} strokeWidth={2} /> PDF
-                            </button>
+                            <Button variant="secondary" icon={Download} onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}>PDF</Button>
                         )}
-                        <button
-                            type="button"
-                            onClick={() => downloadStoredFile(document?.json_path, `${document?.codigo_generacion}.json`)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
-                        >
-                            <Download size={14} strokeWidth={2} /> JSON
-                        </button>
+                        <Button icon={Download} onClick={() => downloadStoredFile(document?.json_path, `${document?.codigo_generacion}.json`)}>JSON</Button>
                     </div>
                 </div>
                 {downloadAllError && (

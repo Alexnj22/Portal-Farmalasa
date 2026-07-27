@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import Button from '../components/common/Button';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -380,8 +381,8 @@ const filtersContent = (
                         <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
                             <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
                             <div className="flex gap-2">
-                                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand-text disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
-                                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand-text disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
+                                <Button variant="secondary" shape="pill" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                                <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} disabled={currentPage === totalPages || totalPages === 0} iconOnly onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
                             </div>
                         </div>
                     </div>

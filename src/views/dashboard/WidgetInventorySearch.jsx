@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -178,12 +179,7 @@ function Lightbox({ url, onClose }) {
         className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
         style={{ maxWidth: '85vw', maxHeight: '80vh' }}
       />
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 w-8 h-8 rounded-btn bg-surface-card hover:bg-surface-card flex items-center justify-center transition-colors"
-      >
-        <X size={14} className="text-white" strokeWidth={2.5} />
-      </button>
+      <Button variant="secondary" size="sm" icon={X} iconOnly onClick={onClose} />
     </div>,
     document.body
   );
@@ -249,18 +245,10 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>
-            <button onClick={() => setFormOpen(false)} className="text-content-3 hover:text-content-2">
-              <X size={10} strokeWidth={2.5} />
-            </button>
+            <Button variant="ghost" icon={X} iconOnly onClick={() => setFormOpen(false)} />
           </div>
         ) : (
-          <button
-            onClick={() => setFormOpen(true)}
-            className="shrink-0 flex items-center gap-0.5 text-micro font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full transition-colors"
-          >
-            <PackageMinus size={8} strokeWidth={2.5} />
-            Reportar
-          </button>
+          <Button variant="destructive" shape="pill" icon={PackageMinus} onClick={() => setFormOpen(true)}>Reportar</Button>
         )}
       </div>
       {principio && (
@@ -509,12 +497,7 @@ export default function WidgetInventorySearch() {
     return (
       <div className="flex flex-col gap-2.5 h-full">
         <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            onClick={() => setDrillProduct(null)}
-            className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0"
-          >
-            <ArrowLeft size={13} strokeWidth={2.5} />
-          </button>
+          <Button variant="secondary" shape="pill" size="xs" icon={ArrowLeft} iconOnly onClick={() => setDrillProduct(null)} />
 
           {drillProduct.fotoUrl ? (
             <button

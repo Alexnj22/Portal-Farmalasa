@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Button from '../components/common/Button';
 import { SkeletonText, EmptyState} from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
@@ -515,10 +516,7 @@ export default function EncuestaAdminView() {
                                     </span>
                                 </h3>
                                 {editingSurvey && (
-                                    <button onClick={resetSurveyForm}
-                                        className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
-                                        <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
-                                    </button>
+                                    <Button variant="destructive" icon={X} onClick={resetSurveyForm}>Cancelar</Button>
                                 )}
                             </div>
 
@@ -667,9 +665,7 @@ export default function EncuestaAdminView() {
                                                                 <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1 rounded-lg text-label font-bold border border-brand/20">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
                                                                     <span>{fn}</span>
-                                                                    <button type="button" onClick={() => toggleScopeId(e.id)} className="hover:text-danger transition-colors ml-0.5">
-                                                                        <X size={10} strokeWidth={2.5} />
-                                                                    </button>
+                                                                    <Button variant="ghost" icon={X} iconOnly onClick={() => toggleScopeId(e.id)} />
                                                                 </div>
                                                             );
                                                         })}
@@ -680,7 +676,7 @@ export default function EncuestaAdminView() {
                                                     <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
                                                         placeholder="Buscar por nombre…"
                                                         className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
-                                                    {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-3 hover:text-danger transition-colors"><X size={12} strokeWidth={2.5} /></button>}
+                                                    {sfEmpSearch && <Button variant="ghost" icon={X} iconOnly onClick={() => setSfEmpSearch('')} />}
                                                 </div>
                                                 {empResults.length > 0 && (
                                                     <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-elevation-lg)] overflow-hidden">
@@ -744,10 +740,7 @@ export default function EncuestaAdminView() {
                                         {editingResponse ? 'Editar Respuesta' : 'Nueva Respuesta'}
                                     </span>
                                 </h3>
-                                <button onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}
-                                    className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
-                                    <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
-                                </button>
+                                <Button variant="destructive" icon={X} onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}>Cancelar</Button>
                             </div>
 
                             <div className="space-y-5">
@@ -1002,10 +995,7 @@ export default function EncuestaAdminView() {
                                         {/* Action buttons */}
                                         <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
                                             {isExpanded && (
-                                                <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-micro font-black uppercase tracking-widest bg-surface-card border border-border-card text-content-3 hover:bg-surface-card-hover hover:text-content-2 shadow-sm transition-all active:scale-[0.97]">
-                                                    <ChevronUp size={10} strokeWidth={2.5} /> Colapsar
-                                                </button>
+                                                <Button variant="secondary" shape="pill" size="sm" icon={ChevronUp} onClick={e => { e.stopPropagation(); toggleExpand(s); }}>Colapsar</Button>
                                             )}
                                             {canManage && (
                                             <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
@@ -1060,10 +1050,7 @@ export default function EncuestaAdminView() {
                                                     </div>
                                                 )}
                                                 {s.tipo === 'clima' && (
-                                                    <button onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}
-                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-caption font-black uppercase tracking-widest bg-gradient-to-r from-chart-3 to-chart-6 text-white shadow-[var(--shadow-glow-chart-3-md)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-chart-3-md)] transition-all active:scale-[0.97]">
-                                                        <TrendingUp size={10} strokeWidth={2.5} /> Ver análisis
-                                                    </button>
+                                                    <Button tone="chart-3" shape="pill" size="xs" icon={TrendingUp} onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}>Ver análisis</Button>
                                                 )}
                                                 {!isExpanded && (
                                                     <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
@@ -1101,10 +1088,7 @@ export default function EncuestaAdminView() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {canManage && (
-                                                    <button onClick={() => openResponseForm()}
-                                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl text-label font-black uppercase tracking-widest transition-all shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]">
-                                                        <Plus size={14} strokeWidth={2.5} /> Agregar
-                                                    </button>
+                                                    <Button icon={Plus} onClick={() => openResponseForm()}>Agregar</Button>
                                                     )}
                                                 </div>
                                             </div>
@@ -1202,25 +1186,13 @@ export default function EncuestaAdminView() {
                                                                                         <td className="py-2.5 pr-4">
                                                                                             {confirmDelete === row.id ? (
                                                                                                 <div className="flex items-center gap-1 justify-center">
-                                                                                                    <button onClick={() => handleDeleteResponse(row)}
-                                                                                                        className="w-6 h-6 rounded-full bg-danger-solid text-white flex items-center justify-center hover:bg-danger-hover transition-colors">
-                                                                                                        <Check size={10} strokeWidth={3} />
-                                                                                                    </button>
-                                                                                                    <button onClick={() => setConfirmDelete(null)}
-                                                                                                        className="w-6 h-6 rounded-full bg-surface-card text-content-3 flex items-center justify-center hover:bg-surface-card-hover transition-colors border border-border-card">
-                                                                                                        <X size={10} strokeWidth={3} />
-                                                                                                    </button>
+                                                                                                    <Button variant="destructive" shape="pill" size="xs" icon={Check} iconOnly onClick={() => handleDeleteResponse(row)} />
+                                                                                                    <Button variant="secondary" shape="pill" size="xs" icon={X} iconOnly onClick={() => setConfirmDelete(null)} />
                                                                                                 </div>
                                                                                             ) : canManage ? (
                                                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity justify-center">
-                                                                                                    <button onClick={() => openResponseForm(row)}
-                                                                                                        className="p-1.5 rounded-full bg-surface-card text-warning border border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
-                                                                                                        <Edit3 size={11} strokeWidth={2.5} />
-                                                                                                    </button>
-                                                                                                    <button onClick={() => setConfirmDelete(row.id)}
-                                                                                                        className="p-1.5 rounded-full bg-surface-card text-danger border border-danger/30 hover:bg-danger/10 hover:text-danger hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
-                                                                                                        <Trash2 size={11} strokeWidth={2.5} />
-                                                                                                    </button>
+                                                                                                    <Button tone="warning" shape="pill" icon={Edit3} iconOnly onClick={() => openResponseForm(row)} />
+                                                                                                    <Button variant="destructive" shape="pill" icon={Trash2} iconOnly onClick={() => setConfirmDelete(row.id)} />
                                                                                                 </div>
                                                                                             ) : null}
                                                                                         </td>

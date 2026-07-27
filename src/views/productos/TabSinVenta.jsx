@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import { fetchMinMaxIgnored, upsertMinMaxIgnored, deleteMinMaxIgnored } from '../../data/stockParams';
@@ -676,7 +677,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
             {activeError && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger font-semibold">
                     <AlertTriangle size={14} /> {activeError}
-                    <button onClick={() => loadMode(selectedErp, mode)} className="ml-auto text-danger hover:text-danger-text font-bold">Reintentar</button>
+                    <Button variant="ghost" onClick={() => loadMode(selectedErp, mode)}>Reintentar</Button>
                 </div>
             )}
 
@@ -791,15 +792,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell align="center" hideBelow="md">
                                             {isIgnored ? (
-                                                <button onClick={() => handleRestore(row.erp_product_id)} title="Restaurar sugerencia"
-                                                    className="p-1.5 rounded-lg text-content-3 hover:text-success hover:bg-success/10 transition-colors">
-                                                    <Eye size={13} />
-                                                </button>
+                                                <Button tone="success" icon={Eye} title="Restaurar sugerencia" iconOnly onClick={() => handleRestore(row.erp_product_id)} />
                                             ) : (
-                                                <button onClick={() => handleIgnore(row.erp_product_id)} title="No sugerir"
-                                                    className="p-1.5 rounded-lg text-content-3 hover:text-content-3 hover:bg-surface-card-hover transition-colors">
-                                                    <EyeOff size={13} />
-                                                </button>
+                                                <Button variant="secondary" icon={EyeOff} title="No sugerir" iconOnly onClick={() => handleIgnore(row.erp_product_id)} />
                                             )}
                                         </DataCell>
                                     </DataRow>

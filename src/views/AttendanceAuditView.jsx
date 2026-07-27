@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
@@ -542,19 +543,9 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
         {/* Action buttons */}
         {!isOff && !isFuture && (
           <div className="flex flex-col gap-1.5 shrink-0">
-            <button
-              onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand-text hover:border-brand/25 hover:bg-brand/[0.05] rounded-2xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
-            >
-              <Edit3 size={11} strokeWidth={2.5} /> Corregir
-            </button>
+            <Button icon={Edit3} onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}>Corregir</Button>
             {isPendDay && onMarkReviewed && (
-              <button
-                onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning-solid hover:text-white hover:border-warning rounded-2xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94]"
-              >
-                <ShieldCheck size={11} strokeWidth={2.5} /> Revisado
-              </button>
+              <Button tone="warning" icon={ShieldCheck} onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}>Revisado</Button>
             )}
           </div>
         )}
@@ -839,13 +830,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
             </div>
           )}
           {!allApproved && onApproveAll && (
-            <button
-              type="button"
-              onClick={e => { e.stopPropagation(); onApproveAll(); }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
-            >
-              <ShieldCheck size={9} strokeWidth={2.5} /> Aprobar todo
-            </button>
+            <Button tone="success" shape="pill" icon={ShieldCheck} onClick={e => { e.stopPropagation(); onApproveAll(); }}>Aprobar todo</Button>
           )}
           <div className="w-px h-8 bg-divider mx-0.5" />
           {allApproved ? (
@@ -1291,10 +1276,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
             <span className="flex items-center gap-1.5 text-caption font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full">
               <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
             </span>
-            <button type="button" onClick={() => navigate('/payroll')}
-              className="flex items-center gap-1.5 text-caption font-black text-white bg-brand hover:bg-brand-hover px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
-              Ver planilla →
-            </button>
+            <Button shape="pill" onClick={() => navigate('/payroll')}>Ver planilla →</Button>
           </div>
         ) : quincenaTS.length > 0 ? (
           <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}
@@ -1372,10 +1354,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                           className="bg-success-solid hover:bg-success-hover text-white text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
                           {isBusy ? '…' : 'Aplicar'}
                         </button>
-                        <button onClick={() => setEditingExId(null)}
-                          className="text-micro font-bold text-content-3 hover:text-content-2 px-2 py-1.5">
-                          Cancelar
-                        </button>
+                        <Button variant="ghost" onClick={() => setEditingExId(null)}>Cancelar</Button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -1385,10 +1364,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                               className="bg-success/10 hover:bg-success/20 text-success-text text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-success/30 disabled:opacity-50 transition-all">
                               {isBusy ? '…' : 'Confirmar'}
                             </button>
-                            <button disabled={isBusy} onClick={() => { setEditingExId(req.id); setEditStart(meta.declaredStart); setEditEnd(meta.declaredEnd); }}
-                              className="bg-chart-3/10 hover:bg-chart-3/20 text-chart-3-text text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-chart-3/30 disabled:opacity-50 transition-all">
-                              Editar
-                            </button>
+                            <Button tone="chart-3" disabled={isBusy} onClick={() => { setEditingExId(req.id); setEditStart(meta.declaredStart); setEditEnd(meta.declaredEnd); }}>Editar</Button>
                           </>
                         )}
                         <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'REJECT', null, null)}
@@ -1491,10 +1467,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {/* Export CSV */}
               {quincenaSummary.length > 0 && (
                 <div className="flex justify-end pb-2">
-                  <button type="button" onClick={handleExportCSVQuincena}
-                    className="flex items-center gap-2 text-micro font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-surface-card text-content-2 hover:bg-surface-card-hover hover:text-brand-text hover:border-brand/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
-                    <Download size={11} strokeWidth={2.5} /> Exportar CSV
-                  </button>
+                  <Button variant="secondary" icon={Download} onClick={handleExportCSVQuincena}>Exportar CSV</Button>
                 </div>
               )}
 

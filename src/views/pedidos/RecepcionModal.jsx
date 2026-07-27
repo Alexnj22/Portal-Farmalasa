@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -30,9 +31,7 @@ export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
             <span className="text-label font-semibold text-content-2 whitespace-nowrap">{emp.name}</span>
             {sub && <span className="text-micro text-content-3 whitespace-nowrap">{sub}</span>}
             {onRemove && (
-                <button onClick={onRemove} className="text-content-3 hover:text-danger transition-colors">
-                    <X size={11} />
-                </button>
+                <Button variant="ghost" icon={X} iconOnly onClick={onRemove} />
             )}
         </span>
     );
@@ -608,9 +607,7 @@ export default function RecepcionModal({
                             }`}>
                                 {receivedAccessible}/{accessibleBoxNums.length} recibidas
                             </span>
-                            <button onClick={onClose} disabled={saving} className="text-content-3 hover:text-content-2 transition-colors p-1">
-                                <X size={18} />
-                            </button>
+                            <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={onClose} />
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -791,10 +788,7 @@ export default function RecepcionModal({
             <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-2xl" className="max-h-[90vh]">
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                        <button onClick={goBackFromExtras} disabled={saving}
-                            className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
-                            <ChevronLeft size={14} />
-                        </button>
+                        <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={goBackFromExtras} />
                         <div className="flex-1 min-w-0">
                             <h3 className="text-subtitle font-bold text-content leading-snug">Productos extra</h3>
                             <p className="text-label text-content-3 mt-0.5">
@@ -803,10 +797,7 @@ export default function RecepcionModal({
                                     : `${extras.length} producto${extras.length !== 1 ? 's' : ''} agregado${extras.length !== 1 ? 's' : ''}`}
                             </p>
                         </div>
-                        <button onClick={goBackFromExtras} disabled={saving}
-                            className="text-content-3 hover:text-content-2 transition-colors p-1 disabled:opacity-40">
-                            <X size={18} />
-                        </button>
+                        <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={goBackFromExtras} />
                     </div>
                 </PedidoModal.Header>
 
@@ -894,10 +885,7 @@ export default function RecepcionModal({
                                                 className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-chart-3-text focus:border-chart-3'}`}
                                             />
 
-                                            <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
-                                                className="flex justify-center p-1 text-content-3 hover:text-danger transition-colors">
-                                                <Trash2 size={13} />
-                                            </button>
+                                            <Button variant="ghost" icon={Trash2} iconOnly onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))} />
                                         </div>
                                         {(eDiff || e.nota) && (
                                             <div className="px-5 pb-2">
@@ -959,10 +947,7 @@ export default function RecepcionModal({
                         </div>
                     )}
                     <div className="flex items-center justify-between gap-2">
-                        <button onClick={goBackFromExtras} disabled={saving}
-                            className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body transition-colors disabled:opacity-40">
-                            Volver
-                        </button>
+                        <Button variant="secondary" disabled={saving} onClick={goBackFromExtras}>Volver</Button>
                         <button onClick={goBackFromExtras}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-body hover:bg-brand-hover transition-colors shadow-sm">
                             <Check size={14} />
@@ -988,10 +973,7 @@ export default function RecepcionModal({
             <PedidoModal.Header className="px-5 py-4">
                 <div {...prodSearchContainerRef} className="flex items-center gap-2">
                     {hasCajaMap && (
-                        <button onClick={goBack} disabled={saving}
-                            className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
-                            <ChevronLeft size={14} />
-                        </button>
+                        <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={goBack} />
                     )}
                     <AnimatePresence mode="popLayout" initial={false}>
                         {!showSearch ? (
@@ -1061,13 +1043,7 @@ export default function RecepcionModal({
                         >
                             <Search size={15} />
                         </motion.button>
-                        <button
-                            onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hasCajaMap ? goBack : onClose)}
-                            disabled={!showSearch && saving}
-                            className="text-content-3 hover:text-content-2 transition-colors p-1 disabled:opacity-40"
-                        >
-                            <X size={18} />
-                        </button>
+                        <Button variant="ghost" icon={X} disabled={!showSearch && saving} iconOnly onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hasCajaMap ? goBack : onClose)} />
                     </div>
                 </div>
             </PedidoModal.Header>
@@ -1232,10 +1208,7 @@ export default function RecepcionModal({
                                             onKeyDown={e => e.key === 'Enter' && confirmProblema()}
                                             className="flex-1 min-w-0 text-body-xl border border-chart-4/30 rounded-full px-3 py-1 focus:border-chart-4 bg-surface-card placeholder-content-3"
                                         />
-                                        <button onClick={confirmProblema}
-                                            className="shrink-0 flex items-center gap-1 text-caption font-bold px-2.5 py-1 rounded-btn bg-chart-4-solid text-white hover:bg-chart-4/80 transition-colors">
-                                            <Check size={10} /> Listo
-                                        </button>
+                                        <Button tone="chart-4" icon={Check} onClick={confirmProblema}>Listo</Button>
                                     </div>
                                 )}
                             </div>
@@ -1281,12 +1254,7 @@ export default function RecepcionModal({
                         {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
                     <div className="flex items-center gap-2">
-                        <button onClick={handleTodoOk} disabled={saving}
-                            title="Confirma recibido exactamente como se envió, sin revisar línea por línea"
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-success/40 bg-success/10 text-success-text font-semibold hover:bg-success/10 text-body transition-colors disabled:opacity-40 active:scale-[0.97]">
-                            <Check size={14} />
-                            Todo OK
-                        </button>
+                        <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={handleTodoOk}>Todo OK</Button>
                         <button onClick={handleConfirmarCaja} disabled={saving}
                             className="flex items-center gap-2 px-5 py-2 rounded-xl bg-success-solid text-white font-semibold hover:bg-success-hover text-body transition-colors disabled:opacity-50">
                             {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}

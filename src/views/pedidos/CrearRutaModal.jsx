@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
@@ -464,9 +465,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               </h3>
             </div>
           </div>
-          <button onClick={onClose} className="text-content-3 hover:text-content-2 p-1 transition-colors mt-0.5">
-            <X size={16} />
-          </button>
+          <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
         </div>
       </PedidoModal.Header>
 
@@ -629,14 +628,8 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                             {stop.orden}
                           </div>
                           <div className="flex flex-col gap-0.5 mt-0.5">
-                            <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-surface-card border border-divider text-content-3 hover:bg-chart-3-solid hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
-                              <ChevronUp size={13} strokeWidth={2.5} />
-                            </button>
-                            <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-surface-card border border-divider text-content-3 hover:bg-chart-3-solid hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
-                              <ChevronDown size={13} strokeWidth={2.5} />
-                            </button>
+                            <Button tone="chart-3" size="xs" icon={ChevronUp} disabled={idx === 0} iconOnly onClick={() => moveStop(idx, -1)} />
+                            <Button tone="chart-3" size="xs" icon={ChevronDown} disabled={idx === paradas.length - 1} iconOnly onClick={() => moveStop(idx, 1)} />
                           </div>
                         </div>
 
@@ -677,13 +670,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                                 <p className="text-micro text-content-2 uppercase tracking-wider">acumulado</p>
                                 <p className={`text-subtitle font-black ${timeCls} leading-tight`}>{fmtMin(cumul)}</p>
                               </div>
-                              <button
-                                onClick={() => removeStop(stop._uid)}
-                                className="p-1 rounded-lg text-content-3 hover:text-danger-text hover:bg-danger/10 transition-colors mt-0.5"
-                                title="Quitar parada"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                              <Button variant="destructive" icon={Trash2} title="Quitar parada" iconOnly onClick={() => removeStop(stop._uid)} />
                             </div>
                           </div>
                         </div>
@@ -700,9 +687,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="ml-10 p-3 rounded-xl border border-warning/30 bg-warning/10 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-caption font-bold text-warning-text uppercase tracking-wide">¿A qué sucursal?</p>
-                      <button onClick={() => setShowAddVisita(false)} className="text-content-3 hover:text-content-2">
-                        <X size={12} />
-                      </button>
+                      <Button variant="ghost" icon={X} iconOnly onClick={() => setShowAddVisita(false)} />
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
                       {Object.entries(sucNameMap)
@@ -721,12 +706,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   </div>
                 ) : (
                   <div className="ml-10">
-                    <button
-                      onClick={() => setShowAddVisita(true)}
-                      className="flex items-center gap-1.5 text-caption font-semibold px-3 py-1.5 rounded-xl border border-dashed border-border-card text-content-3 hover:border-warning hover:text-warning-text hover:bg-warning/10 transition-all"
-                    >
-                      <Plus size={10} />Agregar visita / encargo extra
-                    </button>
+                    <Button tone="warning" icon={Plus} onClick={() => setShowAddVisita(true)}>Agregar visita / encargo extra</Button>
                   </div>
                 )}
 
@@ -787,10 +767,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       <PedidoModal.Footer className="flex justify-between gap-2">
         {step === 1 ? (
           <>
-            <button onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body transition-colors">
-              Cancelar
-            </button>
+            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
             <button onClick={handleOptimize} disabled={selectedItems.length === 0 || optimizing}
               className="flex items-center gap-2 px-5 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-body hover:bg-chart-3/80 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
               {optimizing
@@ -802,10 +779,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         ) : (
           <>
             <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
-              <button onClick={() => { setStep(1); setReturnLeg(null); setSubmitError(null); }}
-                className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body transition-colors">
-                ← Atrás
-              </button>
+              <Button variant="secondary" onClick={() => { setStep(1); setReturnLeg(null); setSubmitError(null); }}>← Atrás</Button>
               {submitError && (
                 <p className="text-label text-danger-text flex items-center gap-1 pl-1">
                   <AlertTriangle size={11} /> {submitError}

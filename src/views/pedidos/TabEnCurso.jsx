@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -184,14 +185,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                         </span>
                     )}
                 </div>
-                <button
-                    onClick={load}
-                    disabled={refreshing}
-                    className="flex items-center gap-1 text-label text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
-                >
-                    <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-                    Refrescar
-                </button>
+                <Button variant="ghost" icon={RefreshCw} disabled={refreshing} onClick={load}>Refrescar</Button>
             </div>
 
             {/* Leyenda de etapas */}

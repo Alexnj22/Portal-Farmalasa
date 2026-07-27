@@ -1,4 +1,5 @@
 import CanonSwitch from '../common/Switch';
+import Button from '../../components/common/Button';
 import React, { useRef, useState, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, Eye, X } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
@@ -112,12 +113,8 @@ export const FileUploader = ({ label, file, url, onChange }) => {
                 {/* BOTONES DE ACCIÓN (Solo si hay archivo) */}
                 {hasFile && (
                     <div className="flex items-center gap-1.5 pr-1 shrink-0">
-                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-success/30 rounded-lg text-success shadow-sm hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.97] z-content" title="Ver Documento">
-                            <Eye size={16} strokeWidth={2.5} />
-                        </button>
-                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-danger/30 rounded-lg text-danger shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all active:scale-[0.97] z-content" title="Quitar Documento">
-                            <X size={16} strokeWidth={2.5} />
-                        </button>
+                        <Button tone="success" size="sm" icon={Eye} title="Ver Documento" iconOnly onClick={handleView} />
+                        <Button variant="destructive" size="sm" icon={X} title="Quitar Documento" iconOnly onClick={handleClear} />
                     </div>
                 )}
                 

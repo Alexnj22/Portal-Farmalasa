@@ -1,5 +1,6 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState } from 'react';
+import Button from '../../../components/common/Button';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
 import { supabase } from '../../../supabaseClient';
 import { updateStockConfig } from '../../../data/stockParams';
@@ -72,9 +73,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <Settings2 size={14} className="text-brand-text" />
                         <span className="text-body-sm font-black text-content">Configuración Min/Max</span>
                     </div>
-                    <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-btn text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">
-                        <X size={12} />
-                    </button>
+                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
 
                 <div className="px-4 py-3 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
@@ -158,7 +157,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}
                         {saved ? '¡Guardado!' : 'Guardar configuración'}
                     </button>
-                    <button onClick={onClose} className="px-3 py-2 rounded-xl text-body-sm font-bold text-content-3 hover:bg-surface-card-hover transition-colors">Cerrar</button>
+                    <Button variant="secondary" onClick={onClose}>Cerrar</Button>
                 </div>
             </div>
         </div>

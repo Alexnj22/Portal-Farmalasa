@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { PartyPopper, AlertCircle, Info, X, Cake } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
@@ -48,12 +49,7 @@ const LiquidToast = () => {
                 </p>
             </div>
 
-            <button
-                onClick={hideToast}
-                className="absolute top-1/2 -translate-y-1/2 right-3 w-8 h-8 flex items-center justify-center rounded-btn border border-border-card text-content-3 transition-[transform,box-shadow,background-color,border-color,color] duration-300 hover:shadow-sm hover:scale-105 active:scale-[0.97] hover:text-danger hover:bg-danger/10 hover:border-danger/30"
-            >
-                <X size={14} strokeWidth={2.5} />
-            </button>
+            <Button variant="destructive" size="sm" icon={X} iconOnly onClick={hideToast} />
         </div>
     );
 

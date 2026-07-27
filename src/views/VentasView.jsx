@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { useSearchParams } from 'react-router-dom';
@@ -167,10 +168,7 @@ function FilterControls({
                         options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
                 </div>
                 {filterBranch && (
-                    <button onClick={() => setFilterBranch('')} title="Quitar sucursal"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
-                        <X size={9} strokeWidth={3} />
-                    </button>
+                    <Button variant="destructive" shape="pill" icon={X} title="Quitar sucursal" iconOnly onClick={() => setFilterBranch('')} />
                 )}
             </div>}
 
@@ -184,10 +182,7 @@ function FilterControls({
                         options={labOptions} placeholder="Laboratorio" icon={FlaskConical} compact bare />
                 </div>
                 {filterLab && (
-                    <button onClick={() => setFilterLab('')} title="Quitar laboratorio"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
-                        <X size={9} strokeWidth={3} />
-                    </button>
+                    <Button variant="destructive" shape="pill" icon={X} title="Quitar laboratorio" iconOnly onClick={() => setFilterLab('')} />
                 )}
             </div>
             </>}
@@ -200,10 +195,7 @@ function FilterControls({
                     <PeriodPicker value={monthRange} onChange={handlePeriodChange} />
                 </div>
                 {dateDirty && (
-                    <button onClick={() => setMonthRange(defaultRange)} title="Quitar fecha"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
-                        <X size={9} strokeWidth={3} />
-                    </button>
+                    <Button variant="destructive" shape="pill" icon={X} title="Quitar fecha" iconOnly onClick={() => setMonthRange(defaultRange)} />
                 )}
             </div>
 
@@ -238,10 +230,7 @@ function FilterControls({
             {hasActiveFilters && (
                 <>
                     <div className="h-5 w-px bg-divider shrink-0" />
-                    <button onClick={resetAll} title="Limpiar todos los filtros"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-btn bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors duration-200 shrink-0">
-                        <X size={11} strokeWidth={3} />
-                    </button>
+                    <Button variant="destructive" size="xs" icon={X} title="Limpiar todos los filtros" iconOnly onClick={resetAll} />
                 </>
             )}
         </div>
@@ -1823,7 +1812,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 <div className="text-center py-16 text-danger">
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
-                    <button onClick={fetchProductos} className="mt-3 text-label font-bold text-brand-text hover:underline">Reintentar</button>
+                    <Button variant="ghost" onClick={fetchProductos}>Reintentar</Button>
                 </div>
             )}
             {isProdFuzzy && searchTerm && (
@@ -2158,10 +2147,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
-                                                                                    <button onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}
-                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-micro font-black bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 transition-colors">
-                                                                                        ✕ limpiar
-                                                                                    </button>
+                                                                                    <Button variant="destructive" shape="pill" onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}>✕ limpiar</Button>
                                                                                 )}
                                                                             </div>
                                                                         );

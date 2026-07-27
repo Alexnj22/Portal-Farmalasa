@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Checkbox from '../common/Checkbox';
 import {
     Paperclip, GitPullRequest, MapPin, Briefcase,
@@ -404,7 +405,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 {formData?.permissionDates?.map((date, idx) => (
                                     <span key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-chart-1/10 text-chart-1-text border border-chart-1/30 rounded-lg text-label font-black shadow-sm animate-in zoom-in-95">
                                         {date} 
-                                        <button type="button" onClick={() => handleRemovePermissionDate(date)} className="text-chart-1-text hover:text-danger transition-colors"><XCircle size={14} strokeWidth={2.5}/></button>
+                                        <Button variant="ghost" icon={XCircle} iconOnly onClick={() => handleRemovePermissionDate(date)} />
                                     </span>
                                 ))}
                                 {(!formData?.permissionDates || formData?.permissionDates.length === 0) && (

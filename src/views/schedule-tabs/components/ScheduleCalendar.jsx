@@ -1,4 +1,5 @@
 import React, { memo, useMemo, useEffect, useState } from 'react';
+import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon } from 'lucide-react';
 import SearchInput from '../../../components/common/SearchInput';
@@ -528,9 +529,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                             <span className="text-micro font-black uppercase tracking-widest text-chart-3-text">APOYO</span>
                         </div>
                     </div>
-                    <button onClick={onRemove} className="w-7 h-7 rounded-btn bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
-                        <XIcon size={12} strokeWidth={2.5} />
-                    </button>
+                    <Button variant="destructive" size="xs" icon={XIcon} title="Quitar cobertura" iconOnly onClick={onRemove} />
                 </div>
             </td>
 
@@ -844,12 +843,7 @@ const ScheduleCalendar = memo(({
                             {!isReadOnly && (
                                 <tr><td colSpan={calendarDates.length + 1} className="pt-3 pb-6 px-1">
                                     {!showCoverageSearch ? (
-                                        <button
-                                            onClick={() => setShowCoverageSearch(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-divider text-content-2 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10 transition-all duration-200 text-caption font-black uppercase tracking-widest"
-                                        >
-                                            <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
-                                        </button>
+                                        <Button tone="chart-3" icon={Plus} onClick={() => setShowCoverageSearch(true)}>Agregar Personal de Apoyo</Button>
                                     ) : (
                                         <div {...coverageSearchContainerRef} className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
                                             <div className="flex items-center gap-2 mb-2">
@@ -861,10 +855,7 @@ const ScheduleCalendar = memo(({
                                                     placeholder="Buscar empleado de otra sucursal..."
                                                     className="flex-1"
                                                 />
-                                                <button onClick={() => { setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
-                                                    className="w-8 h-8 rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 flex items-center justify-center transition-colors shrink-0">
-                                                    <XIcon size={14} />
-                                                </button>
+                                                <Button variant="secondary" shape="pill" size="sm" icon={XIcon} iconOnly onClick={() => { setShowCoverageSearch(false); setCoverageSearchTerm(''); }} />
                                             </div>
                                             {coverageSearchResults.length > 0 ? (
                                                 <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">

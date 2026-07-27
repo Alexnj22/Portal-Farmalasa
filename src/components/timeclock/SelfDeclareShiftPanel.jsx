@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { Clock, SkipForward, CheckCircle } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
 
@@ -63,13 +64,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                 </form>
 
                 <div className="mt-3">
-                    <button
-                        type="button"
-                        onClick={() => onSubmit(null, null)}
-                        className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-white/40 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]"
-                    >
-                        <SkipForward size={14} /> No sé mi horario — Solo registrar entrada
-                    </button>
+                    <Button variant="secondary" shape="pill" icon={SkipForward} onClick={() => onSubmit(null, null)}>No sé mi horario — Solo registrar entrada</Button>
                 </div>
             </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
 import { normSearch } from '../../utils/searchUtils';
@@ -186,10 +187,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             <AlertTriangle size={10} className="shrink-0" /> {saveError}
                         </span>
                     )}
-                    <button onClick={onCancel}
-                        className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card transition-colors flex-shrink-0">
-                        <X size={14} />
-                    </button>
+                    <Button variant="secondary" icon={X} iconOnly onClick={onCancel} />
                 </div>
             </div>
 
@@ -268,10 +266,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     </button>
                                 ))}
                                 {vals.dispatch_label && (
-                                    <button type="button" onClick={() => selectLabel(vals.dispatch_label)}
-                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-label border border-divider text-content-3 hover:text-danger-text hover:border-danger/30 transition-all bg-surface-card">
-                                        <X size={10} /> quitar
-                                    </button>
+                                    <Button variant="secondary" icon={X} onClick={() => selectLabel(vals.dispatch_label)}>quitar</Button>
                                 )}
                             </div>
                         </div>
@@ -345,10 +340,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Botón quitar regla — rojo por defecto */}
             {vals.dispatch_id_presentacion && (
-                <button onClick={clearRule} disabled={saving}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-danger/10 border-danger/30 text-danger-text hover:border-danger hover:bg-danger/10 hover:text-danger-text transition-all text-body-sm">
-                    <Ban size={13} /> Quitar regla de despacho
-                </button>
+                <Button variant="destructive" icon={Ban} disabled={saving} onClick={clearRule}>Quitar regla de despacho</Button>
             )}
 
             {/* Notas */}
@@ -641,10 +633,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                 {/* Botón limpiar filtro regla */}
                 {filterRule && (
-                    <button onClick={() => setFilterRule('')}
-                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-sm text-label text-content-3 hover:text-danger hover:border-danger/30 transition-colors whitespace-nowrap">
-                        <X size={11} /> Limpiar filtro
-                    </button>
+                    <Button variant="secondary" icon={X} onClick={() => setFilterRule('')}>Limpiar filtro</Button>
                 )}
             </div>
 

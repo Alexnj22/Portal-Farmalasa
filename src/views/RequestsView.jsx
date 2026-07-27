@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
+import Button from '../components/common/Button';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
 import ReactDOM from 'react-dom';
@@ -425,14 +426,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {req.status === 'PENDING' && (
                         <div className="flex items-center gap-2 pt-1">
-                            <button onClick={() => onApprove(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success-solid hover:bg-success-hover text-white text-body-sm font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-success)] disabled:opacity-50 disabled:cursor-not-allowed">
-                                <Check size={13} strokeWidth={2.5} /> Aprobar
-                            </button>
-                            <button onClick={() => onReject(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger-solid hover:bg-danger-hover text-white text-body-sm font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-danger)] disabled:opacity-50 disabled:cursor-not-allowed">
-                                <X size={13} strokeWidth={2.5} /> Rechazar
-                            </button>
+                            <Button tone="success" icon={Check} disabled={!canApprove} onClick={() => onApprove(req)}>Aprobar</Button>
+                            <Button variant="destructive" icon={X} disabled={!canApprove} onClick={() => onReject(req)}>Rechazar</Button>
                         </div>
                     )}
                 </div>
@@ -728,10 +723,7 @@ const RequestsView = () => {
                             disabled={isActioning}
  className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
-                            <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
-                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-body font-medium hover:bg-surface-card transition-all disabled:opacity-50">
-                                Cancelar
-                            </button>
+                            <Button variant="secondary" disabled={isActioning} onClick={() => !isActioning && setActionModal(null)}>Cancelar</Button>
                             <button onClick={handleConfirmAction}
                                 disabled={!canApprove || isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-body font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
@@ -837,10 +829,7 @@ const RequestsView = () => {
                         </div>
 
                         <div className="flex items-center gap-2 pt-1">
-                            <button onClick={() => !isCreatingReq && setCreateModalOpen(false)} disabled={isCreatingReq}
-                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-body font-medium hover:bg-surface-card transition-all disabled:opacity-50">
-                                Cancelar
-                            </button>
+                            <Button variant="secondary" disabled={isCreatingReq} onClick={() => !isCreatingReq && setCreateModalOpen(false)}>Cancelar</Button>
                             <button onClick={handleCreateRequest}
                                 disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
                                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-body font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]">

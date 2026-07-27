@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, memo, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import {
     ClipboardList, Plus, Loader2, X, Palmtree, FileText, RefreshCw,
@@ -164,18 +165,8 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
 
             {/* Full-width action buttons */}
             <div className="grid grid-cols-2 gap-2">
-                <button
-                    onClick={() => onReject(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl border border-danger/30 bg-danger/10 text-danger text-label font-bold uppercase tracking-widest hover:bg-danger/10 transition-all active:scale-[0.97]"
-                >
-                    <X size={12} strokeWidth={2.5} /> Rechazar
-                </button>
-                <button
-                    onClick={() => onAccept(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success-solid text-white text-label font-bold uppercase tracking-widest shadow-[var(--shadow-glow-success)] hover:bg-success-hover transition-all active:scale-[0.97]"
-                >
-                    <Check size={12} strokeWidth={2.5} /> Aceptar
-                </button>
+                <Button variant="destructive" icon={X} onClick={() => onReject(req.id)}>Rechazar</Button>
+                <Button tone="success" icon={Check} onClick={() => onAccept(req.id)}>Aceptar</Button>
             </div>
         </div>
     );
@@ -229,12 +220,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                     </p>
                 </div>
                 {req.status === 'PENDING' && (
-                    <button
-                        onClick={() => onCancel(req.id)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-caption font-bold text-danger hover:text-danger hover:bg-danger/10 rounded-full border border-transparent hover:border-danger/30 transition-all flex-shrink-0"
-                    >
-                        <X size={11} strokeWidth={2.5} /> Cancelar
-                    </button>
+                    <Button variant="destructive" shape="pill" icon={X} onClick={() => onCancel(req.id)}>Cancelar</Button>
                 )}
             </div>
 
@@ -758,10 +744,7 @@ const EmployeeRequestsView = () => {
                                         Período de Vacaciones
                                     </label>
                                     {hasRange && (
-                                        <button type="button" onClick={() => setPayload(prev => ({ ...prev, startDate: '', endDate: '' }))}
-                                            className="flex items-center gap-1 text-micro font-black text-danger hover:text-danger uppercase tracking-widest transition-colors">
-                                            <X size={11} strokeWidth={2.5} /> Limpiar
-                                        </button>
+                                        <Button variant="ghost" icon={X} onClick={() => setPayload(prev => ({ ...prev, startDate: '', endDate: '' }))}>Limpiar</Button>
                                     )}
                                 </div>
                                 <RangeDatePicker
@@ -823,9 +806,7 @@ const EmployeeRequestsView = () => {
                             {permDates.map(d => (
                                 <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-label font-bold">
                                     {new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
-                                    <button type="button" onClick={() => handleRemovePermDate(d)} className="text-chart-3-text hover:text-chart-3-text transition-colors">
-                                        <XCircle size={13} strokeWidth={2} />
-                                    </button>
+                                    <Button variant="ghost" icon={XCircle} iconOnly onClick={() => handleRemovePermDate(d)} />
                                 </span>
                             ))}
                         </div>
@@ -1016,10 +997,7 @@ const EmployeeRequestsView = () => {
                                 }
                             </div>
                             {disabilityFile && (
-                                <button type="button" onClick={e => { e.preventDefault(); setDisabilityFile(null); }}
-                                    className="p-1 rounded-full text-content-3 hover:text-danger hover:bg-danger/10 transition-all">
-                                    <X size={14} strokeWidth={2.5} />
-                                </button>
+                                <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={e => { e.preventDefault(); setDisabilityFile(null); }} />
                             )}
                             <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
                                 onChange={e => setDisabilityFile(e.target.files?.[0] || null)} />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
@@ -1818,19 +1819,13 @@ export default function TabCatalogo({
                         {hasActiveFilters && (
                             <>
                                 <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-                                <button onClick={resetFilters} title="Limpiar todos los filtros"
-                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-btn bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
-                                    <X size={11} strokeWidth={3} />
-                                </button>
+                                <Button variant="destructive" size="xs" icon={X} title="Limpiar todos los filtros" iconOnly onClick={resetFilters} />
                             </>
                         )}
                     </div>
 
                     {/* Enriquecer SRS — below filter pill */}
-                    <button onClick={() => setShowEnriquecer(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-caption font-bold text-chart-3-text border border-chart-3/30 bg-chart-3/10 hover:bg-chart-3/10 transition-all self-end">
-                        <FlaskConical size={11} strokeWidth={2.5} /> Enriquecer SRS
-                    </button>
+                    <Button tone="chart-3" icon={FlaskConical} onClick={() => setShowEnriquecer(true)}>Enriquecer SRS</Button>
                 </div>
             </div>
 
@@ -1840,10 +1835,7 @@ export default function TabCatalogo({
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar productos</p>
                     <p className="text-label text-danger mb-4">{loadError}</p>
-                    <button onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}
-                        className="px-5 py-2 text-body-sm font-bold text-white bg-danger-solid hover:bg-danger-hover rounded-full transition-colors">
-                        Reintentar
-                    </button>
+                    <Button variant="destructive" shape="pill" onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}>Reintentar</Button>
                 </div>
             ) : (
                 <DataTable

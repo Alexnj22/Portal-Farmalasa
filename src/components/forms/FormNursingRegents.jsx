@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { EmptyState } from '../common/StateViews';
 import { Plus, Trash2, UploadCloud, ShieldCheck, Users, Award, Receipt, CheckCircle2 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -111,9 +112,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content flex items-center gap-2">
                         <Users size={16} className="text-brand-text"/> Profesionales Asignados
                     </h4>
-                    <button type="button" onClick={addNurse} className="text-caption font-black bg-surface-card border border-brand/20 text-brand-text hover:bg-brand hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-300 active:scale-[0.97] uppercase tracking-widest shadow-sm hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5">
-                        <Plus size={14} strokeWidth={2.5}/> Añadir Profesional
-                    </button>
+                    <Button icon={Plus} onClick={addNurse}>Añadir Profesional</Button>
                 </div>
                 
                 <div className="space-y-6">
@@ -121,9 +120,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         /* TARJETA PADRE 2 (DINÁMICA) */
                         <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-modal relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
                             
-                            <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-danger/30 text-danger rounded-full shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all duration-300 opacity-0 group-hover:opacity-100 focus-within:opacity-100 z-content active:scale-[0.97] hover:scale-110">
-                                <Trash2 size={14} strokeWidth={2.5}/>
-                            </button>
+                            <Button variant="destructive" shape="pill" size="sm" icon={Trash2} iconOnly onClick={() => removeNurse(index)} />
                             
                             <div className="space-y-5">
                                 {/* SELECT DEL EMPLEADO */}

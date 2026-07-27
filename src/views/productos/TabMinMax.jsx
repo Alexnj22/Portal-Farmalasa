@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
@@ -544,11 +545,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chart-1/10 border border-chart-1/30 text-body-sm text-chart-1-text font-medium">
                     <Settings2 size={13} className="shrink-0 text-chart-1-text" />
                     <span className="flex-1">Configuración actualizada — recalculá para que los nuevos parámetros surtan efecto.</span>
-                    <button onClick={() => setCalcularConfirm({ open: true, mode: 'single' })}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-label font-bold text-white bg-brand hover:bg-brand-hover rounded-lg transition-colors">
-                        <RefreshCw size={10} /> Recalcular ahora
-                    </button>
-                    <button onClick={() => setConfigChanged(false)} className="text-chart-1-text/60 hover:text-chart-1-text"><X size={12} /></button>
+                    <Button icon={RefreshCw} onClick={() => setCalcularConfirm({ open: true, mode: 'single' })}>Recalcular ahora</Button>
+                    <Button variant="ghost" icon={X} iconOnly onClick={() => setConfigChanged(false)} />
                 </div>
             )}
 
@@ -1498,9 +1496,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {toast.action.label}
                         </button>
                     )}
-                    <button onClick={() => setToast(null)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity shrink-0">
-                        <X size={12} />
-                    </button>
+                    <Button variant="ghost" icon={X} iconOnly onClick={() => setToast(null)} />
                 </div>,
                 document.body
             )}
@@ -1527,10 +1523,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <p className="text-body font-black text-content truncate leading-tight">{historyRow.product_name}</p>
                                 <p className="text-caption text-content-3 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
                             </div>
-                            <button onClick={() => setHistoryRow(null)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 hover:text-content-2 transition-colors shrink-0">
-                                <X size={14} />
-                            </button>
+                            <Button variant="secondary" shape="pill" size="sm" icon={X} iconOnly onClick={() => setHistoryRow(null)} />
                         </div>
 
                         {/* List */}

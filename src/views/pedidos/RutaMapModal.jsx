@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import PedidoModal from './PedidoModal';
@@ -501,9 +502,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
                 <RefreshCw size={8} /> {recalcCount} recálculo{recalcCount !== 1 ? 's' : ''}
               </span>
             )}
-            <button onClick={onClose} className="text-content-3 hover:text-content-2 p-1 transition-colors">
-              <X size={16} />
-            </button>
+            <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
           </div>
         </div>
       </PedidoModal.Header>

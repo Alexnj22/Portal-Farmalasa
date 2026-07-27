@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -165,12 +166,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                 <AlertTriangle size={12} className="text-warning shrink-0" title="Sin proveedor emparejado en el maestro" />
                 <span className="text-content-2 text-body-sm">{row.supplier_nombre || row.emisor_nombre || '—'}</span>
                 {canEdit && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
-                        className="text-caption font-bold text-brand-text underline shrink-0"
-                    >
-                        Emparejar
-                    </button>
+                    <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}>Emparejar</Button>
                 )}
                 {error && <span className="text-caption text-danger">{error}</span>}
             </div>
@@ -205,14 +201,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                     clearable={false}
                 />
             </div>
-            <button
-                onClick={() => setEditing(false)}
-                disabled={saving}
-                title="Cancelar"
-                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
-            >
-                <X size={14} />
-            </button>
+            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={() => setEditing(false)} />
         </div>
     );
 }
@@ -280,10 +269,10 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         // chico subrayado, no la caja ícono+subtítulo (esa es para la
         // columna de acciones dedicada de Revisión).
         if (state === 'idle') {
-            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-micro font-black text-content-3 hover:text-brand-text underline whitespace-nowrap">Detectar código</button>;
+            return <Button variant="ghost" onClick={(e) => { e.stopPropagation(); detect(); }}>Detectar código</Button>;
         }
         if (state === 'loading') return <span className="text-micro text-content-3 whitespace-nowrap">Analizando…</span>;
-        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-micro text-content-3 hover:text-brand-text underline whitespace-nowrap">Sin código, reintentar</button>;
+        if (state === 'no_code') return <Button variant="ghost" onClick={(e) => { e.stopPropagation(); detect(); }}>Sin código, reintentar</Button>;
         if (state === 'error') return <span className="text-micro text-danger whitespace-nowrap" title={result.error}>Error al detectar</span>;
         if (state === 'not_found') return <span className="text-micro text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
         return (
@@ -405,14 +394,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                     clearable={false}
                 />
             </div>
-            <button
-                onClick={onClose}
-                disabled={saving}
-                title="Cancelar"
-                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
-            >
-                <X size={14} />
-            </button>
+            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
         </div>
     );
 }
@@ -487,22 +469,8 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                 />
             </div>
             {error && <span className="text-caption text-danger shrink-0">{error}</span>}
-            <button
-                onClick={confirm}
-                disabled={saving || !documentId}
-                title="Confirmar clasificación"
-                className="p-1.5 rounded-lg text-success hover:bg-success/10 transition-colors disabled:opacity-40 shrink-0"
-            >
-                <CheckCircle2 size={16} />
-            </button>
-            <button
-                onClick={onClose}
-                disabled={saving}
-                title="Cancelar"
-                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
-            >
-                <X size={14} />
-            </button>
+            <Button tone="success" icon={CheckCircle2} disabled={saving || !documentId} title="Confirmar clasificación" iconOnly onClick={confirm} />
+            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
         </div>
     );
 }
@@ -538,12 +506,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
     if (!open) {
         return (
             <div className="flex items-center gap-1.5">
-                <button
-                    onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}
-                    className="text-micro font-black text-brand-text hover:text-brand-hover underline whitespace-nowrap"
-                >
-                    Adjuntar JSON
-                </button>
+                <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}>Adjuntar JSON</Button>
                 {error && <span className="text-caption text-danger">{error}</span>}
             </div>
         );
@@ -580,14 +543,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
                     clearable={false}
                 />
             </div>
-            <button
-                onClick={() => setOpen(false)}
-                disabled={saving}
-                title="Cancelar"
-                className="p-1.5 rounded-lg text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors disabled:opacity-40 shrink-0"
-            >
-                <X size={14} />
-            </button>
+            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={() => setOpen(false)} />
         </div>
     );
 }
@@ -829,10 +785,7 @@ function TabDocumentos({
                             <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />
                         </div>
                         {dateDirty && (
-                            <button onClick={() => setDateRange(defaultDateRange())} title="Quitar fecha"
-                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
-                                <X size={9} strokeWidth={3} />
-                            </button>
+                            <Button variant="destructive" shape="pill" icon={X} title="Quitar fecha" iconOnly onClick={() => setDateRange(defaultDateRange())} />
                         )}
                     </div>
 
@@ -914,13 +867,7 @@ function TabDocumentos({
                                     tener que abrir el detalle primero (invalidacion_source viene de
                                     classify_purchase_dte_review vía review_queue.matched_document_id). */}
                                 {row.invalidado && row.invalidacion_source?.file_path && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}
-                                        title="Ver el PDF que justificó la anulación"
-                                        className="flex items-center gap-1 text-micro font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full hover:bg-danger/20 transition-colors whitespace-nowrap"
-                                    >
-                                        <Link2 size={10} /> Ver documento
-                                    </button>
+                                    <Button variant="destructive" shape="pill" icon={Link2} title="Ver el PDF que justificó la anulación" onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}>Ver documento</Button>
                                 )}
                                 {row.notas_credito?.length > 0 && (
                                     <button
@@ -934,13 +881,7 @@ function TabDocumentos({
                                 {/* Inverso del badge NC — desde la NC/ND se puede ver el CCF/Factura
                                     que corrige (a pedido del usuario, misma mecánica que el badge de arriba). */}
                                 {row.documento_relacionado && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}
-                                        title={`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`}
-                                        className="flex items-center gap-1 text-micro font-black text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2 py-0.5 rounded-full hover:bg-chart-1/20 transition-colors whitespace-nowrap"
-                                    >
-                                        <Link2 size={10} /> Ver original
-                                    </button>
+                                    <Button tone="chart-1" shape="pill" icon={Link2} title="`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`" onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}>Ver original</Button>
                                 )}
                                 {/* Confirmado desde Revisión sin que su JSON llegara nunca — ver
                                     TabRevision "Confirmar sin JSON" y resolve_purchase_dte_review. */}
@@ -978,36 +919,10 @@ function TabDocumentos({
                         </DataCell>
                         <DataCell align="center">
                             <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                    onClick={() => viewDetail(row)}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors"
-                                    title="Ver detalle"
-                                >
-                                    <Eye size={14} />
-                                </button>
-                                <button
-                                    onClick={() => download(row.json_path, 'json', row)}
-                                    disabled={!row.json_path}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                                    title={row.json_path ? 'Descargar JSON' : 'Sin JSON'}
-                                >
-                                    <FileJson size={14} />
-                                </button>
-                                <button
-                                    onClick={() => download(row.pdf_path, 'pdf', row)}
-                                    disabled={!row.pdf_path}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                                    title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'}
-                                >
-                                    <Download size={14} />
-                                </button>
-                                <button
-                                    onClick={() => downloadPackage(row)}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors"
-                                    title="Descargar paquete (JSON+PDF)"
-                                >
-                                    <Archive size={14} />
-                                </button>
+                                <Button tone="chart-1" icon={Eye} title="Ver detalle" iconOnly onClick={() => viewDetail(row)} />
+                                <Button tone="chart-1" icon={FileJson} disabled={!row.json_path} title="row.json_path ? 'Descargar JSON' : 'Sin JSON'" iconOnly onClick={() => download(row.json_path, 'json', row)} />
+                                <Button tone="chart-1" icon={Download} disabled={!row.pdf_path} title="row.pdf_path ? 'Descargar PDF' : 'Sin PDF'" iconOnly onClick={() => download(row.pdf_path, 'pdf', row)} />
+                                <Button tone="chart-1" icon={Archive} title="Descargar paquete (JSON+PDF)" iconOnly onClick={() => downloadPackage(row)} />
                             </div>
                         </DataCell>
                     </DataRow>

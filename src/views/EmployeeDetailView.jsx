@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { createPortal } from 'react-dom';
@@ -499,15 +500,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </span>
                                         {canEdit && (
                                             <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-300">
-                                                <button onClick={handleEditProfile}
-                                                    disabled={!canEdit}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-brand text-content-2 hover:text-white rounded-2xl text-caption font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-50 disabled:cursor-not-allowed">
-                                                    <Edit size={12}/> Editar
-                                                </button>
-                                                <button onClick={handleResetPassword}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-warning-solid text-content-2 hover:text-white rounded-2xl text-caption font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[var(--shadow-glow-warning)]">
-                                                    <KeyRound size={12}/> Contraseña
-                                                </button>
+                                                <Button icon={Edit} disabled={!canEdit} onClick={handleEditProfile}>Editar</Button>
+                                                <Button tone="warning" icon={KeyRound} onClick={handleResetPassword}>Contraseña</Button>
                                             </div>
                                         )}
                                     </div>
@@ -686,17 +680,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                             <FileText size={12} strokeWidth={2.5}/> Ver Respaldo Legal
                                                                         </button>
                                                                     ) : (
-                                                                        <button
-                                                                            onClick={() => openModal('uploadDocument', {}, ev.id)}
-                                                                            disabled={!canEdit}
-                                                                            className="flex items-center gap-1.5 text-content-2 hover:text-chart-4-text hover:bg-chart-4/10 px-3 py-1.5 rounded-lg font-black text-micro uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                        >
-                                                                            <Paperclip size={12} strokeWidth={2.5}/> Adjuntar Soporte
-                                                                        </button>
+                                                                        <Button tone="chart-4" icon={Paperclip} disabled={!canEdit} onClick={() => openModal('uploadDocument', {}, ev.id)}>Adjuntar Soporte</Button>
                                                                     )}
                                                                     {canEdit && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
-                                                                        <button
-                                                                            onClick={() => openModal('newEvent', {
+                                                                        <Button tone="chart-1" icon={Edit} disabled={!canEdit} onClick={() => openModal('newEvent', {
                                                                                 type: ev.type,
                                                                                 date: ev.date,
                                                                                 endDate: ev.metadata?.endDate,
@@ -704,19 +691,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                                 ...ev.metadata,
                                                                                 employeeId: emp.id,
                                                                                 _editingEventId: ev.id
-                                                                            })}
-                                                                            disabled={!canEdit}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-chart-1/10 hover:bg-chart-1/10 text-chart-1-text rounded-xl text-micro font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
-                                                                            <Edit size={11} strokeWidth={2.5}/> Editar
-                                                                        </button>
+                                                                            })}>Editar</Button>
                                                                     )}
                                                                     {canEdit && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
-                                                                        <button
-                                                                            onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}
-                                                                            disabled={!canEdit}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-danger/10 hover:bg-danger/10 text-danger rounded-xl text-micro font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
-                                                                            <Ban size={11} strokeWidth={2.5}/> Cancelar
-                                                                        </button>
+                                                                        <Button variant="destructive" icon={Ban} disabled={!canEdit} onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}>Cancelar</Button>
                                                                     )}
                                                                 </div>
                                                             )}
@@ -787,17 +765,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-3xl p-4 shadow-sm overflow-visible">
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
-                                                <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-all active:scale-[0.97]">
-                                                    <ChevronLeft size={14} strokeWidth={2.5}/>
-                                                </button>
+                                                <Button tone="chart-1" shape="pill" size="xs" icon={ChevronLeft} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }} />
                                                 <span className="text-body font-black text-content-2 capitalize">
                                                     {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
                                                 </span>
-                                                <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-all active:scale-[0.97]">
-                                                    <ChevronRight size={14} strokeWidth={2.5}/>
-                                                </button>
+                                                <Button tone="chart-1" shape="pill" size="xs" icon={ChevronRight} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }} />
                                             </div>
                                             {/* Encabezados días */}
                                             <div className="grid grid-cols-7 mb-1">
@@ -1081,12 +1053,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
                                                 <ClipboardList size={18} className="text-brand-text"/> Solicitudes del Empleado
                                             </h3>
-                                            <button
-                                                onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}
-                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-brand to-brand-hover text-white rounded-full font-black text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] transition-all hover:-translate-y-0.5 active:scale-[0.97]"
-                                            >
-                                                <Plus size={13} strokeWidth={3}/> Nueva Solicitud
-                                            </button>
+                                            <Button shape="pill" icon={Plus} onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}>Nueva Solicitud</Button>
                                         </div>
 
                                         {isLoadingEmpReqs ? (
@@ -1185,10 +1152,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 {copiedPwd ? <Check size={18} strokeWidth={2.5} /> : <Copy size={17} strokeWidth={2.2} />}
                             </button>
                         </div>
-                        <button onClick={() => setResetResult(null)}
-                            className="w-full py-2.5 rounded-2xl bg-surface-card-hover text-content-2 text-body font-bold hover:bg-surface-card-hover transition-colors">
-                            Listo
-                        </button>
+                        <Button variant="secondary" onClick={() => setResetResult(null)}>Listo</Button>
                     </div>
                 </div>
             </div>,
@@ -1233,9 +1197,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             className={`py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest border flex-1 transition-all ${isCancelling ? 'hidden' : 'text-content-2 bg-surface-card border-divider hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'}`}>
                             Volver
                         </button>
-                        <button
-                            disabled={!cancelReason.trim() || isCancelling}
-                            onClick={async () => {
+                        <Button variant="destructive" disabled={!cancelReason.trim() || isCancelling} onClick={async () => {
                                 setIsCancelling(true);
                                 const { cancelEmployeeEvent } = useStaffStore.getState();
                                 const ok = await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
@@ -1244,10 +1206,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 setShowCancelModal(false);
                                 setCancelReason('');
                                 setCancelingEventId(null);
-                            }}
-                            className="py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest text-white flex-1 transition-all shadow-sm border-transparent bg-danger-solid hover:bg-danger-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-                            Confirmar Cancelación
-                        </button>
+                            }}>Confirmar Cancelación</Button>
                     </div>
                 </div>
             </div>,

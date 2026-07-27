@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -998,10 +999,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     >
                         <div className="flex items-center justify-between px-4 py-2.5">
                             <div className="flex items-center gap-4">
-                                <button onClick={() => setIsSidebarOpen(true)} type="button" aria-label="Abrir menú"
- className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] hover:text-brand-text">
-                                    <Menu size={22} strokeWidth={2.5} />
-                                </button>
+                                <Button variant="ghost" icon={Menu} iconOnly onClick={() => setIsSidebarOpen(true)} />
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
                                     <h1 className="text-body-lg font-black leading-none tracking-tight">Portal</h1>

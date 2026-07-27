@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
+import Button from '../components/common/Button';
 import LiquidSelect from '../components/common/LiquidSelect';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -278,12 +279,7 @@ const BranchCard = memo(({
                             <p className="text-micro font-bold text-chart-3-text uppercase tracking-widest mt-0.5 opacity-80">{branch.name}</p>
                         </div>
                     </div>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} 
-                        className="w-8 h-8 rounded-full bg-surface-card hover:bg-surface-card-hover text-chart-3-text flex items-center justify-center transition-all shadow-sm hover:shadow-md hover:text-chart-3-text"
-                    >
-                        <X size={14} strokeWidth={3} />
-                    </button>
+                    <Button variant="secondary" shape="pill" size="sm" icon={X} iconOnly onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} />
                 </div>
 
                 {/* Contenido del Overlay */}
@@ -339,11 +335,11 @@ const BranchCard = memo(({
                         <div className="w-px h-4 bg-divider mx-0.5"></div>
                         </>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-content-3 hover:text-brand-text hover:bg-brand/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-content-3 hover:text-chart-3-text hover:bg-chart-3/10 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
+                    <Button shape="pill" size="sm" icon={Eye} title="Ver Perfil" iconOnly onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} />
+                    <Button tone="chart-3" shape="pill" size="sm" icon={Edit3} disabled={!canEdit} title="Ajustes Generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
 
                     {!deleteDisabled && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} disabled={!canEdit} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-content-3 hover:text-danger hover:bg-danger/10 disabled:opacity-30 disabled:cursor-not-allowed" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
+                        <Button variant="destructive" shape="pill" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar Sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} />
                     )}
                 </div>
                 {alertStatus.hasAlerts && (
@@ -411,7 +407,7 @@ const BranchCard = memo(({
                                 <p className="text-body-sm font-semibold text-content-2 leading-snug break-words">{[branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || "No registrada"}</p>
                             </div>
                             <div className="shrink-0 mt-0.5" onClick={e => e.stopPropagation()}>
-                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ')); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); }} className="p-1.5 rounded-md bg-black/[0.03] text-content-3 hover:text-content hover:bg-surface-card-hover hover:border-divider border border-transparent hover:scale-105 hover:shadow-sm transition-all" title="Copiar"><Copy size={12} /></button>
+                                <Button variant="secondary" icon={Copy} title="Copiar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ')); useToastStore.getState().showToast('Copiado', 'Dirección copiada.', 'success'); }} />
                             </div>
                         </div>
                     </a>

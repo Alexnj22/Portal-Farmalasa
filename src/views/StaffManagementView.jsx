@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
+import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import TabBarAction from '../components/common/TabBarAction';
 import Badge from '../components/common/Badge';
@@ -396,29 +397,10 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       <DataCell align="right" className="w-[180px]">
         <div className="flex items-center justify-end gap-1.5">
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
-            <button
-              onClick={() => onRehireEmployee(emp)}
-              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-success/10 text-content-3 hover:text-success border border-border-card hover:border-success/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
-              title="Recontratar"
-            >
-              <RefreshCw size={14} strokeWidth={2.5} />
-            </button>
+            <Button tone="success" shape="pill" size="sm" icon={RefreshCw} title="Recontratar" iconOnly onClick={() => onRehireEmployee(emp)} />
           )}
-          <button
-            onClick={() => onEditEmployee(emp)}
-            disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Edición rápida"
-          >
-            <Edit3 size={14} strokeWidth={2.5} />
-          </button>
-          <button
-            onClick={() => onOpenEmployee(emp)}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand-text transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-glow-brand)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
-            title="Ver perfil completo"
-          >
-            <ChevronRight size={16} strokeWidth={3} />
-          </button>
+          <Button tone="warning" shape="pill" size="sm" icon={Edit3} disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'} title="Edición rápida" iconOnly onClick={() => onEditEmployee(emp)} />
+          <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} title="Ver perfil completo" iconOnly onClick={() => onOpenEmployee(emp)} />
         </div>
       </DataCell>
     </DataRow>
@@ -488,22 +470,8 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 
       <DataCell align="right" className="w-[180px]">
         <div className="flex items-center justify-end gap-1.5">
-          <button
-            onClick={() => onEdit(p)}
-            disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Editar practicante"
-          >
-            <Edit3 size={14} strokeWidth={2.5} />
-          </button>
-          <button
-            onClick={() => onDelete(p)}
-            disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger border border-border-card hover:border-danger/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Eliminar practicante"
-          >
-            <Trash2 size={14} strokeWidth={2.5} />
-          </button>
+          <Button tone="warning" shape="pill" size="sm" icon={Edit3} disabled={!canEdit} title="Editar practicante" iconOnly onClick={() => onEdit(p)} />
+          <Button variant="destructive" shape="pill" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar practicante" iconOnly onClick={() => onDelete(p)} />
         </div>
       </DataCell>
     </DataRow>
@@ -932,26 +900,12 @@ const StaffManagementView = ({
             </div>
 
             <div className="h-5 w-px bg-divider shrink-0" />
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-btn bg-surface-card hover:bg-success/10 text-success border border-divider hover:border-success/30 shrink-0 transition-all hover:-translate-y-0.5"
-              title="Exportar a Excel"
-            >
-              <Download size={13} strokeWidth={2.5} />
-            </button>
+            <Button tone="success" size="sm" icon={Download} title="Exportar a Excel" iconOnly onClick={handleExportCSV} />
 
             {hasActiveFilters && (
               <>
                 <div className="h-5 w-px bg-divider shrink-0" />
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-btn bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0"
-                  title="Limpiar filtros"
-                >
-                  <Trash2 size={11} strokeWidth={3} />
-                </button>
+                <Button variant="destructive" size="xs" icon={Trash2} title="Limpiar filtros" iconOnly onClick={clearFilters} />
               </>
             )}
           </div>

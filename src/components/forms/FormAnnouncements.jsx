@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight, User, ChevronDown } from 'lucide-react';
 
 // 3. Componente de Controles de Paginación (Liquidglass)
@@ -6,27 +7,13 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center gap-4 mt-5 animate-in fade-in duration-300">
-      <button
-        type="button"
-        onClick={() => setPage(p => Math.max(1, p - 1))}
-        disabled={currentPage === 1}
-        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
-      >
-        <ChevronLeft size={16} strokeWidth={2.5} />
-      </button>
+      <Button variant="secondary" shape="pill" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setPage(p => Math.max(1, p - 1))} />
       <div className="px-3 py-1 bg-surface-card border border-border-card rounded-full shadow-[var(--shadow-shine)]">
           <span className="text-caption font-black text-content-3 uppercase tracking-widest">
           Pág {currentPage} de {totalPages}
           </span>
       </div>
-      <button
-        type="button"
-        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-        disabled={currentPage === totalPages}
-        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
-      >
-        <ChevronRight size={16} strokeWidth={2.5} />
-      </button>
+      <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} disabled={currentPage === totalPages} iconOnly onClick={() => setPage(p => Math.min(totalPages, p + 1))} />
     </div>
   );
 };

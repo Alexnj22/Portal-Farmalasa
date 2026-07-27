@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
 import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
@@ -144,9 +145,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     <p className="text-label font-medium text-content-2 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
                     <h3 className="text-body-lg font-bold text-content leading-tight">¿Cómo llegó cada caja?</h3>
                 </div>
-                <button onClick={handleClose} disabled={submitting} className="text-content-3 hover:text-content-2 transition-colors">
-                    <X size={15} />
-                </button>
+                <Button variant="ghost" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>
 
             {/* Draft restore banner */}
@@ -154,12 +153,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-3/10 border border-chart-3/30">
                     <RotateCcw size={12} className="text-chart-3-text shrink-0" />
                     <span className="text-label text-chart-3-text flex-1">Tenés un borrador guardado</span>
-                    <button onClick={handleRestoreDraft} className="text-label font-bold text-chart-3-text hover:text-chart-3-text underline underline-offset-2">
-                        Restaurar
-                    </button>
-                    <button onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} className="text-chart-3-text hover:text-chart-3-text">
-                        <X size={12} />
-                    </button>
+                    <Button variant="ghost" onClick={handleRestoreDraft}>Restaurar</Button>
+                    <Button variant="ghost" icon={X} iconOnly onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} />
                 </div>
             )}
 
@@ -236,24 +231,14 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 ✓ Todas llegaron
                             </button>
                             <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                    onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}
-                                    disabled={(electrolitFaltantes ?? 0) <= 0}
-                                    className="w-7 h-7 rounded-lg bg-surface-card border border-divider text-content-2 font-black text-body-lg flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
-                                    −
-                                </button>
+                                <Button variant="secondary" size="xs" disabled={(electrolitFaltantes ?? 0) <= 0} onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}>−</Button>
                                 <span className={`w-8 text-center text-subtitle font-black tabular-nums ${
                                     electrolitFaltantes === null ? 'text-content-3'
                                     : electrolitFaltantes === 0  ? 'text-success'
                                     :                              'text-danger-text'}`}>
                                     {electrolitFaltantes ?? '—'}
                                 </span>
-                                <button
-                                    onClick={() => setElectrolitFaltantes(f => Math.min(cajasElectrolit, (f ?? 0) + 1))}
-                                    disabled={(electrolitFaltantes ?? 0) >= cajasElectrolit}
-                                    className="w-7 h-7 rounded-lg bg-surface-card border border-divider text-content-2 font-black text-body-lg flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
-                                    +
-                                </button>
+                                <Button variant="secondary" size="xs" disabled={(electrolitFaltantes ?? 0) >= cajasElectrolit} onClick={() => setElectrolitFaltantes(f => Math.min(cajasElectrolit, (f ?? 0) + 1))}>+</Button>
                             </div>
                         </div>
                         {(electrolitFaltantes ?? 0) > 0 && (
@@ -307,11 +292,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <HelpCircle size={13} className="text-warning shrink-0" />
                         <span className="text-label text-content-2 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
                         <div className="flex items-center gap-1.5 shrink-0">
-                            <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
-                                className="w-6 h-6 rounded-lg bg-surface-card border border-warning/30 text-content-2 font-black text-body flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all disabled:opacity-30">−</button>
+                            <Button tone="warning" size="xs" disabled={cajasExtra === 0} onClick={() => setCajasExtra(n => Math.max(0, n - 1))}>−</Button>
                             <span className={`w-6 text-center text-body font-black tabular-nums ${cajasExtra > 0 ? 'text-warning' : 'text-content-3'}`}>{cajasExtra}</span>
-                            <button onClick={() => setCajasExtra(n => n + 1)}
-                                className="w-6 h-6 rounded-lg bg-surface-card border border-warning/30 text-content-2 font-black text-body flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all">+</button>
+                            <Button tone="warning" size="xs" onClick={() => setCajasExtra(n => n + 1)}>+</Button>
                         </div>
                     </div>
                     {cajasExtra > 0 && (
@@ -390,10 +373,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     </p>
                 )}
                 <div className="flex items-center justify-between gap-2">
-                    <button onClick={handleClose} disabled={submitting}
-                        className="text-label font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover transition-all">
-                        Cancelar
-                    </button>
+                    <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
                     <button onClick={handleConfirm} disabled={submitting}
                         className="text-label font-bold px-5 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}

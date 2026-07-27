@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
+import Button from '../../../components/common/Button';
 import Checkbox from '../../../components/common/Checkbox';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -327,7 +328,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             </p>
                         </div>
                     </div>
-                    <button onClick={handleClose} className="w-8 h-8 rounded-btn bg-surface-card hover:bg-danger/10 hover:text-danger text-content-3 flex items-center justify-center transition-colors active:scale-[0.97] shrink-0"><X size={16} strokeWidth={3} /></button>
+                    <Button variant="destructive" size="sm" icon={X} iconOnly onClick={handleClose} />
                 </div>
 
                 {coverageMeta && (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
 import { useSearchParams } from 'react-router-dom';
@@ -118,10 +119,7 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
                             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                             Confirmar
                         </button>
-                        <button onClick={onCancel}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-btn text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-all hover:-translate-y-0.5">
-                            <X size={12} /> Cancelar
-                        </button>
+                        <Button variant="destructive" icon={X} onClick={onCancel}>Cancelar</Button>
                     </div>
                 </div>
             </td>
@@ -172,10 +170,7 @@ function Pagination({ page, total, onChange }) {
     for (let p = start; p <= end; p++) pages.push(p);
     return (
         <div className="flex items-center justify-center gap-1.5 px-5 py-3 border-t border-divider">
-            <button onClick={() => onChange(page - 1)} disabled={page === 1}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-content-3 hover:text-content-2 hover:bg-surface-card-hover disabled:opacity-30 transition-all">
-                <ChevronLeft size={15} />
-            </button>
+            <Button variant="secondary" shape="pill" size="sm" icon={ChevronLeft} disabled={page === 1} iconOnly onClick={() => onChange(page - 1)} />
             {pages.map(p => (
                 <button key={p} onClick={() => onChange(p)}
                     className={`w-8 h-8 rounded-full text-body-sm font-bold transition-all ${
@@ -186,10 +181,7 @@ function Pagination({ page, total, onChange }) {
                     {p}
                 </button>
             ))}
-            <button onClick={() => onChange(page + 1)} disabled={page === total}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-content-3 hover:text-content-2 hover:bg-surface-card-hover disabled:opacity-30 transition-all">
-                <ChevronRight size={15} />
-            </button>
+            <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} disabled={page === total} iconOnly onClick={() => onChange(page + 1)} />
         </div>
     );
 }
@@ -535,10 +527,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
-                                                                    <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
-                                                                        <X size={10} /> Cancelar
-                                                                    </button>
+                                                                    <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1022,10 +1011,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
-                                                                    <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
-                                                                        <X size={10} /> Cancelar
-                                                                    </button>
+                                                                    <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1343,10 +1329,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
-                                                                <button onClick={() => { setSolvingGap(null); setComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
-                                                                    <X size={10} /> Cancelar
-                                                                </button>
+                                                                <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1449,10 +1432,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
-                                                                <button onClick={() => { setSolvingNull(null); setNullComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
-                                                                    <X size={10} /> Cancelar
-                                                                </button>
+                                                                <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1840,10 +1820,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
                                                                         {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                     </button>
-                                                                    <button onClick={() => setConfirmingId(null)}
-                                                                        className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
-                                                                        <X size={12} /> Cancelar
-                                                                    </button>
+                                                                    <Button variant="destructive" shape="pill" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -1945,10 +1922,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                                 className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
                                                                                 {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                             </button>
-                                                                            <button onClick={() => setConfirmingId(null)}
-                                                                                className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
-                                                                                <X size={12} /> Cancelar
-                                                                            </button>
+                                                                            <Button variant="destructive" shape="pill" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                                         </div>
                                                                     </div>
                                                                 </td>
@@ -1985,10 +1959,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                     <LiquidSelect value={filterConfirmedBranch} onChange={setFilterConfirmedBranch} options={branchFilterOpts} placeholder="Sucursal" compact bare />
                                 </div>
                                 {(filterConfirmedTipo || filterConfirmedBranch) && (
-                                    <button onClick={() => { setFilterConfirmedTipo(''); setFilterConfirmedBranch(''); }}
-                                        className="text-caption font-bold text-content-3 hover:text-danger flex items-center gap-1 transition-colors">
-                                        <X size={12} /> Limpiar
-                                    </button>
+                                    <Button variant="ghost" icon={X} onClick={() => { setFilterConfirmedTipo(''); setFilterConfirmedBranch(''); }}>Limpiar</Button>
                                 )}
                                 <span className="ml-auto text-caption text-content-3">{confirmedFiltered.length} resultado{confirmedFiltered.length !== 1 ? 's' : ''}</span>
                             </div>

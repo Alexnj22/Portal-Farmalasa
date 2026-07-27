@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -168,9 +169,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                 <div className="flex items-center gap-1.5">
                     <span className="text-label text-content-2 tabular-nums">{item.lote || '—'}</span>
                     {editable && (
-                        <button onClick={() => onEditLote(item)} disabled={saving} className="text-content-3 hover:text-chart-9-text transition-colors shrink-0" title="Corregir lote/vencimiento">
-                            <Pencil size={10} />
-                        </button>
+                        <Button variant="ghost" icon={Pencil} disabled={saving} title="Corregir lote/vencimiento" iconOnly onClick={() => onEditLote(item)} />
                     )}
                 </div>
             </DataCell>
@@ -283,7 +282,7 @@ function ItemHistoryModal({ item, onClose }) {
                     <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
                 </div>
-                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-btn bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
+                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-base">
                 {history === null ? (
@@ -342,7 +341,7 @@ function EditLoteModal({ item, onClose, onSave }) {
                     <h3 className="font-black text-content text-subtitle">Corregir lote</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
                 </div>
-                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-btn bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
+                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
                 <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
@@ -549,9 +548,7 @@ export default function ConteoDetailView() {
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 lg:p-8 space-y-6">
-                <button onClick={() => navigate('/conteo-inventario')} className="flex items-center gap-1.5 text-label font-bold text-content-3 hover:text-chart-9-text transition-colors">
-                    <ChevronLeft size={14} /> Volver a Conteos
-                </button>
+                <Button variant="ghost" icon={ChevronLeft} onClick={() => navigate('/conteo-inventario')}>Volver a Conteos</Button>
 
                 {conteo && (
                     <div className="bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-sm">
@@ -564,13 +561,9 @@ export default function ConteoDetailView() {
                                 <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <button onClick={() => handlePrint('hoja')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-content-2 bg-surface-card border border-border-card rounded-xl hover:border-chart-9/40 transition-all disabled:opacity-50">
-                                    <Printer size={13} /> Imprimir Hoja
-                                </button>
+                                <Button variant="secondary" icon={Printer} disabled={printing} onClick={() => handlePrint('hoja')}>Imprimir Hoja</Button>
                                 {hasResults && (
-                                    <button onClick={() => handlePrint('resultados')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-content-2 bg-surface-card border border-border-card rounded-xl hover:border-chart-9/40 transition-all disabled:opacity-50">
-                                        <Printer size={13} /> Imprimir Resultados
-                                    </button>
+                                    <Button variant="secondary" icon={Printer} disabled={printing} onClick={() => handlePrint('resultados')}>Imprimir Resultados</Button>
                                 )}
                                 {canFinalize && (
                                     <button onClick={handleFinalizar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-white bg-brand rounded-xl hover:bg-brand-hover transition-all disabled:opacity-50">
@@ -620,9 +613,7 @@ export default function ConteoDetailView() {
                         ))}
                     </div>
                     {editable && canEdit && (
-                        <button onClick={() => setShowAddForm((v) => !v)} className="flex items-center gap-1.5 ml-auto px-3 py-2 text-label font-bold text-chart-9-text bg-chart-9/10 border border-chart-9/30 rounded-xl hover:bg-chart-9/20 transition-all">
-                            <Plus size={13} /> Agregar Producto/Lote
-                        </button>
+                        <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm((v) => !v)}>Agregar Producto/Lote</Button>
                     )}
                 </div>
 
@@ -796,7 +787,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
         <div className="bg-chart-9/10 border border-chart-9/30 rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
                 <p className="text-label font-black uppercase tracking-widest text-chart-9-text flex items-center gap-1.5"><FlaskConical size={12} /> Producto no listado en el snapshot</p>
-                <button onClick={onCancel} className="text-content-3 hover:text-danger"><X size={14} /></button>
+                <Button variant="ghost" icon={X} iconOnly onClick={onCancel} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="md:col-span-3">

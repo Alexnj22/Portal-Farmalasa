@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { ShieldAlert, XCircle, SkipForward } from 'lucide-react';
 
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
@@ -96,14 +97,7 @@ const AuthPromptPanel = ({
             
             {/* Botón Flotante Limpiar */}
             {hasValue && (
-              <button
-                type="button"
-                onClick={clearHandler}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-header p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-[0.97]"
-                title="Limpiar código"
-              >
-                <XCircle size={22} strokeWidth={2} />
-              </button>
+              <Button variant="ghost" icon={XCircle} title="Limpiar código" iconOnly onClick={clearHandler} />
             )}
 
             <div className="absolute inset-0 z-base rounded-3xl opacity-0 transition-opacity duration-500 pointer-events-none shadow-[var(--shadow-glow-chart-4-lg)] group-focus-within/input:opacity-100" />
@@ -112,18 +106,12 @@ const AuthPromptPanel = ({
           <div className="mt-5 sm:mt-6 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center gap-3 [@media(max-height:800px)]:gap-1.5 w-full">
 
             {promptType === 'OUT_LATE' && (
-              <button type="button" onClick={forceNormalOutHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-white/50 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]">
-                No, guardar según horario
-              </button>
+              <Button variant="secondary" onClick={forceNormalOutHandler}>No, guardar según horario</Button>
             )}
             {skipPinHandler && (
-              <button type="button" onClick={skipPinHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-warning flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[var(--shadow-glow-warning-md)] hover:-translate-y-0.5 active:scale-[0.97]">
-                <SkipForward size={14} /> Omitir PIN — Notificar a TH
-              </button>
+              <Button tone="warning" icon={SkipForward} onClick={skipPinHandler}>Omitir PIN — Notificar a TH</Button>
             )}
-            <button type="button" onClick={cancelHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)] hover:-translate-y-0.5 active:scale-[0.97]">
-              <XCircle size={14} /> Cancelar / Atrás
-            </button>
+            <Button variant="destructive" icon={XCircle} onClick={cancelHandler}>Cancelar / Atrás</Button>
           </div>
         </form>
       </div>

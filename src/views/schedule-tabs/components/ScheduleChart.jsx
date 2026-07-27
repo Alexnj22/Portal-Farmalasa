@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import Button from '../../../components/common/Button';
 import { TrendingUp, ChevronLeft, BarChart2, Maximize2 } from 'lucide-react';
 
 const ScheduleChart = ({
@@ -32,10 +33,7 @@ const ScheduleChart = ({
                 <div className="flex items-center gap-1 shrink-0">
                     <div className="flex items-center bg-surface-card p-0.5 rounded-full border border-border-card shadow-[var(--shadow-shine)] h-6">
                         {typeof chartView === 'number' && (
-                            <button onClick={() => setChartView('DAYS')}
-                                className="px-2 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full text-content-3 hover:text-content flex items-center gap-0.5 hover:bg-surface-card active:scale-[0.97] transition-all">
-                                <ChevronLeft size={8} strokeWidth={3} />Días
-                            </button>
+                            <Button variant="secondary" shape="pill" icon={ChevronLeft} onClick={() => setChartView('DAYS')}>Días</Button>
                         )}
                         <button onClick={() => setChartView('HOURS')}
                             className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-surface-tab-active text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
@@ -47,11 +45,7 @@ const ScheduleChart = ({
                         </button>
                     </div>
                     <div className="opacity-0 group-hover/chart:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-                        <button onClick={() => openModal && openModal('viewWfmAnalytics')}
-                            className="w-6 h-6 rounded-full bg-surface-card backdrop-blur-md text-brand-text border border-chart-1/30 shadow-md flex items-center justify-center hover:bg-chart-1/10 hover:scale-105 active:scale-[0.97] transition-all"
-                            title="Expandir Análisis">
-                            <Maximize2 size={10} strokeWidth={2.5} />
-                        </button>
+                        <Button tone="chart-1" shape="pill" size="xs" icon={Maximize2} title="Expandir Análisis" iconOnly onClick={() => openModal && openModal('viewWfmAnalytics')} />
                     </div>
                 </div>
             </div>

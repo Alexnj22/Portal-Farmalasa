@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { AiThinkingState } from '../common/StateViews';
 import { Loader2, Sparkles, AlertTriangle, Save, X, Utensils, Baby, Users } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -207,7 +208,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 <AlertTriangle size={48} className="text-danger mx-auto mb-4" />
                 <h3 className="text-lg font-black text-content mb-2">Error de Generación</h3>
                 <p className="text-sm font-bold text-content-3 mb-6">{error}</p>
-                <button onClick={onClose} className="px-6 py-2 bg-surface-card-hover text-content-2 rounded-btn font-bold text-xs uppercase tracking-widest hover:bg-surface-card-hover transition-colors">Cerrar</button>
+                <Button variant="secondary" onClick={onClose}>Cerrar</Button>
             </div>
         );
     }
@@ -247,9 +248,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <button onClick={onClose} className="px-8 h-12 rounded-btn bg-surface-card-hover text-content-2 font-black text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors shadow-sm active:scale-[0.97]">
-                        Ajustar Recursos y Volver a intentar
-                    </button>
+                    <Button variant="secondary" size="lg" onClick={onClose}>Ajustar Recursos y Volver a intentar</Button>
                 </div>
             </div>
         );
@@ -404,9 +403,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
             {/* BOTONES INFERIORES */}
             <div className="flex items-center justify-end gap-3 pt-2">
-                <button onClick={onClose} disabled={isSaving} className="px-5 h-10 md:h-11 rounded-btn text-caption md:text-label font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover transition-colors flex items-center gap-2">
-                    <X size={14}/> Descartar
-                </button>
+                <Button variant="secondary" icon={X} disabled={isSaving} onClick={onClose}>Descartar</Button>
                 <button onClick={handleSaveDraft} disabled={isSaving} className="px-6 md:px-8 h-10 md:h-11 rounded-btn bg-brand text-white text-caption md:text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center gap-2">
                     {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} strokeWidth={2.5}/>} 
                     {isSaving ? 'Guardando...' : 'Aplicar Horario'}

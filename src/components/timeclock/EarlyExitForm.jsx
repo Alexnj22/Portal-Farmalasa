@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../../components/common/Button';
 import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 
@@ -106,14 +107,7 @@ function EarlyExitForm({
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mt-1 sm:mt-2 shrink-0">
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={isProcessing}
-              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-3 sm:py-3.5 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <XCircle size={14} /> Cancelar
-            </button>
+            <Button variant="destructive" icon={XCircle} disabled={isProcessing} onClick={onCancel}>Cancelar</Button>
 
             <button
               type="submit"

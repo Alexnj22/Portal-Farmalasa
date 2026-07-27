@@ -3,6 +3,7 @@
 // its own Supabase fetches (branch summary, expiring lots, cost/sales
 // history), gated by minmax_ver_costos permission.
 import { useState, useEffect, useMemo } from 'react';
+import Button from '../../../components/common/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Package, Building2, CheckCircle2, TrendingDown } from 'lucide-react';
 import { supabase } from '../../../supabaseClient';
@@ -580,14 +581,8 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 </div>
                             ) : (
                                 <div className="flex flex-wrap gap-2">
-                                    <button onClick={() => logDeadStockAction('transfer')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-label font-semibold text-warning-text bg-warning/10 border border-warning/30 rounded-xl hover:bg-warning/10 transition-colors">
-                                        <Building2 size={11} /> Marcar para traslado
-                                    </button>
-                                    <button onClick={() => logDeadStockAction('liquidate')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-label font-semibold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl hover:bg-chart-1/10 transition-colors">
-                                        <TrendingDown size={11} /> Marcar para liquidación
-                                    </button>
+                                    <Button tone="warning" icon={Building2} onClick={() => logDeadStockAction('transfer')}>Marcar para traslado</Button>
+                                    <Button tone="chart-1" icon={TrendingDown} onClick={() => logDeadStockAction('liquidate')}>Marcar para liquidación</Button>
                                 </div>
                             )}
                         </div>

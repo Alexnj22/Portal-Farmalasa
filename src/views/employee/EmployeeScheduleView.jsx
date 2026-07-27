@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { ChevronLeft, ChevronRight, Coffee, Palmtree, Calendar, ArrowRight, Loader2, MessageSquare, Check, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -223,24 +224,14 @@ const EmployeeScheduleView = () => {
         <div className="px-4 pt-4 pb-6 space-y-4">
             {/* Navegación de semana */}
             <div className="flex items-center justify-between bg-surface-card backdrop-blur-xl border border-border-card rounded-card px-4 py-3 shadow-sm">
-                <button
-                    onClick={() => setWeekOffset(v => v - 1)}
-                    className="p-2 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all active:scale-[0.97]"
-                >
-                    <ChevronLeft size={18} strokeWidth={2.5} />
-                </button>
+                <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={() => setWeekOffset(v => v - 1)} />
                 <div className="text-center">
                     <p className="text-body font-black text-content">{weekLabel}</p>
                     {isCurrentWeek && (
                         <span className="text-micro font-black uppercase tracking-widest text-brand-text">Semana actual</span>
                     )}
                 </div>
-                <button
-                    onClick={() => setWeekOffset(v => v + 1)}
-                    className="p-2 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all active:scale-[0.97]"
-                >
-                    <ChevronRight size={18} strokeWidth={2.5} />
-                </button>
+                <Button variant="secondary" icon={ChevronRight} iconOnly onClick={() => setWeekOffset(v => v + 1)} />
             </div>
 
             {isLoading ? (
@@ -360,12 +351,7 @@ const EmployeeScheduleView = () => {
 
                                     {/* Solicitar cambio button */}
                                     {canRequest && (
-                                        <button
-                                            onClick={() => handleOpenChangeForm(vp)}
-                                            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-brand/20 bg-brand/5 text-brand-text text-caption font-black uppercase tracking-widest hover:bg-brand/10 transition-all"
-                                        >
-                                            <MessageSquare size={11} strokeWidth={2.5} /> Solicitar cambio de fechas
-                                        </button>
+                                        <Button icon={MessageSquare} onClick={() => handleOpenChangeForm(vp)}>Solicitar cambio de fechas</Button>
                                     )}
                                     {pendingRequest && vp.status === 'CHANGE_REQUESTED' && (
                                         <p className="text-caption text-warning font-bold text-center">Solicitud enviada — pendiente de aprobación</p>
@@ -383,9 +369,7 @@ const EmployeeScheduleView = () => {
                     <div className="w-full max-w-md bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center justify-between">
                             <p className="text-body-lg font-black text-content">Solicitar cambio de vacaciones</p>
-                            <button onClick={() => setShowChangeForm(false)} className="p-1.5 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all">
-                                <X size={16} strokeWidth={2.5} />
-                            </button>
+                            <Button variant="secondary" icon={X} iconOnly onClick={() => setShowChangeForm(false)} />
                         </div>
 
                         <div className="bg-surface-card-hover border border-divider rounded-2xl px-4 py-3">
@@ -419,12 +403,7 @@ const EmployeeScheduleView = () => {
                         </div>
 
                         <div className="flex gap-2">
-                            <button
-                                onClick={() => setShowChangeForm(false)}
-                                className="flex-1 py-3 rounded-2xl border border-divider text-content-3 text-label font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all"
-                            >
-                                Cancelar
-                            </button>
+                            <Button variant="secondary" onClick={() => setShowChangeForm(false)}>Cancelar</Button>
                             <button
                                 onClick={handleSubmitChange}
                                 disabled={!reqStart || !reqEnd || submittingReq}

@@ -1,4 +1,5 @@
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
+import Button from '../components/common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
     User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2, Truck
@@ -767,9 +768,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     )}
                                 </div>
                             </div>
-                            <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-btn bg-surface-card-hover border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
-                                <X size={18} strokeWidth={2.5} />
-                            </button>
+                            <Button variant="destructive" icon={X} iconOnly onClick={onClose} />
                         </div>
 
                         {(type === 'newEmployee' || type === 'editEmployee') && (
@@ -892,10 +891,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 ) : <div />}
 
                                 {/* CENTER: Cancelar */}
-                                <button type="button" onClick={onClose} disabled={isSaving}
-                                    className="px-5 h-11 rounded-btn bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all disabled:opacity-50 active:scale-[0.97]">
-                                    Cancelar
-                                </button>
+                                <Button variant="destructive" disabled={isSaving} onClick={onClose}>Cancelar</Button>
 
                                 {/* RIGHT: Siguiente y/o Guardar — en edición, Guardar siempre está
                                     presente (no hace falta llegar a Documentos para guardar) */}
@@ -920,9 +916,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                     return (
                         <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-base shrink-0">
-                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-btn bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-surface-card hover:text-content transition-colors disabled:opacity-50">
-                                Cancelar
-                            </button>
+                            <Button variant="secondary" size="lg" disabled={isSaving} onClick={onClose}>Cancelar</Button>
                             <button
                                 type="submit"
                                 form="unified-modal-form"

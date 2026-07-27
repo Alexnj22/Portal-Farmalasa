@@ -2,6 +2,7 @@
 // Month-level + Day-level range picker with preset shortcuts
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
@@ -89,13 +90,13 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
         <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
                 {onPrev
-                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-btn hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
+                    ? <Button variant="secondary" size="xs" icon={ChevronLeft} iconOnly onClick={onPrev} />
                     : <div className="w-6" />}
                 <p className="text-caption font-black uppercase tracking-widest text-content-2">
                     {MONTHS_SH[month]} {year}
                 </p>
                 {onNext
-                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-btn hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
+                    ? <Button variant="secondary" size="xs" icon={ChevronRight} iconOnly onClick={onNext} />
                     : <div className="w-6" />}
             </div>
 
@@ -325,10 +326,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                 </p>
                             </div>
                         </div>
-                        <button type="button" onClick={close}
-                            className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card text-content-3 hover:text-content-2 transition-all shadow-sm shrink-0">
-                            <X size={12} strokeWidth={2.5} />
-                        </button>
+                        <Button variant="secondary" size="xs" icon={X} iconOnly onClick={close} />
                     </div>
 
                     {/* Presets */}
@@ -376,16 +374,9 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     {selMode === 'month' && (
                         <div className="px-5 pb-5">
                             <div className="flex items-center justify-between mb-3">
-                                <button type="button" onClick={() => setViewYear(y => y - 1)}
-                                    className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand-text transition-all shadow-sm">
-                                    <ChevronLeft size={13} strokeWidth={3} />
-                                </button>
+                                <Button variant="secondary" shape="pill" size="xs" icon={ChevronLeft} iconOnly onClick={() => setViewYear(y => y - 1)} />
                                 <span className="text-body-sm font-black text-content-2 tracking-wide">{viewYear}</span>
-                                <button type="button" onClick={() => setViewYear(y => y + 1)}
-                                    disabled={viewYear >= curY + 1}
-                                    className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand-text transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
-                                    <ChevronRight size={13} strokeWidth={3} />
-                                </button>
+                                <Button variant="secondary" shape="pill" size="xs" icon={ChevronRight} disabled={viewYear >= curY + 1} iconOnly onClick={() => setViewYear(y => y + 1)} />
                             </div>
                             <div className="grid grid-cols-4 gap-1">
                                 {MONTHS_SH.map((label, mi) => {
@@ -454,10 +445,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     <p className="text-caption font-bold text-brand-text animate-pulse">
                                         Selecciona la fecha de fin
                                     </p>
-                                    <button type="button" onClick={() => { setDayPhase('idle'); setDayDraftStart(null); setDayHover(null); }}
-                                        className="text-[9.5px] font-bold text-content-3 hover:text-content-2 transition-colors">
-                                        Cancelar
-                                    </button>
+                                    <Button variant="ghost" onClick={() => { setDayPhase('idle'); setDayDraftStart(null); setDayHover(null); }}>Cancelar</Button>
                                 </div>
                             )}
                         </div>

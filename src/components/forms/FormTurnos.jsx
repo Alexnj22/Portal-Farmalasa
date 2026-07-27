@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../common/StateViews';
 import {
     BookOpen, Building2, Trash2, ListTodo, Plus, Pencil, Check, X,
@@ -201,15 +202,15 @@ const FormTurnos = ({ branches }) => {
                                 <Loader2 size={16} className="animate-spin text-content-3" />
                             ) : isBeingDeleted ? (
                                 <>
-                                    <button onClick={() => setConfirmingArchiveId(null)} className="w-7 h-7 rounded-full flex items-center justify-center bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-colors"><X size={14} strokeWidth={3}/></button>
-                                    <button onClick={() => handleArchiveShift(shift)} className="w-7 h-7 rounded-full flex items-center justify-center bg-danger-solid text-white hover:bg-danger-hover transition-colors shadow-md"><Check size={14} strokeWidth={3}/></button>
+                                    <Button variant="secondary" shape="pill" size="xs" icon={X} iconOnly onClick={() => setConfirmingArchiveId(null)} />
+                                    <Button variant="destructive" shape="pill" size="xs" icon={Check} iconOnly onClick={() => handleArchiveShift(shift)} />
                                 </>
                             ) : isArchived ? (
-                                <button onClick={() => handleRestoreShift(shift)} title="Restaurar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-success/10 text-success hover:bg-success-solid hover:text-white transition-colors"><Plus size={16} strokeWidth={2.5}/></button>
+                                <Button tone="success" shape="pill" size="sm" icon={Plus} title="Restaurar Turno" iconOnly onClick={() => handleRestoreShift(shift)} />
                             ) : (
                                 <>
-                                    <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-card-hover text-content-2 hover:bg-brand hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Pencil size={15} strokeWidth={2.5}/></button>
-                                    <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-danger/10 text-danger hover:bg-danger-solid hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Package size={15} strokeWidth={2.5}/></button>
+                                    <Button shape="pill" size="sm" icon={Pencil} title="Editar Turno" iconOnly onClick={() => startEditing(shift)} />
+                                    <Button variant="destructive" shape="pill" size="sm" icon={Package} title="Archivar Turno" iconOnly onClick={() => setConfirmingArchiveId(shift.id)} />
                                 </>
                             )}
                         </div>
@@ -249,7 +250,7 @@ const FormTurnos = ({ branches }) => {
                         <p className="text-caption md:text-label font-bold text-content-2 uppercase tracking-widest">Configuración del Catálogo</p>
                     </div>
                     {editingShiftId && (
-                        <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-btn bg-surface-card-hover text-content-3 hover:bg-surface-card-hover flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
+                        <Button variant="secondary" size="sm" icon={X} iconOnly onClick={cancelEditing} />
                     )}
                 </div>
 
@@ -293,7 +294,7 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="mt-auto pt-6 border-t border-divider flex justify-end gap-3 shrink-0">
                     {editingShiftId && (
-                         <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-btn text-caption font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover disabled:opacity-50">Cancelar</button>
+                         <Button variant="secondary" disabled={isLoading} onClick={cancelEditing}>Cancelar</Button>
                     )}
                     <button 
                         type="button" 

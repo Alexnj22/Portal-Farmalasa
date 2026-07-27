@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Button from '../../components/common/Button';
 import { Bell, X } from 'lucide-react';
 import { usePushSubscription } from '../../hooks/usePushSubscription';
 
@@ -42,19 +43,8 @@ export default function PushPromptBanner() {
         <p className="text-label text-content-3 leading-tight mt-0.5">Recibe avisos aunque tengas la app cerrada</p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
-        <button
-          onClick={handleActivar}
-          className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover active:scale-[0.97]
-                     text-white text-body-sm font-semibold transition-all"
-        >
-          Activar
-        </button>
-        <button
-          onClick={dismiss}
-          className="p-1.5 rounded-lg hover:bg-surface-card-hover active:scale-[0.97] transition-all"
-        >
-          <X size={14} className="text-content-3" />
-        </button>
+        <Button  onClick={handleActivar}>Activar</Button>
+        <Button variant="secondary" icon={X} iconOnly onClick={dismiss} />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import {
     Tag, Plus, ChevronDown, ChevronUp, Loader2, Package,
@@ -88,49 +89,19 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                     {canEdit && (
                         <div className="flex items-center gap-1 flex-shrink-0">
                             {promo.estado === 'draft' && (
-                                <button
-                                    title="Activar"
-                                    onClick={() => onStateChange(promo, 'active')}
-                                    className="p-2 rounded-xl hover:bg-success/10 text-content-3 hover:text-success transition-colors"
-                                >
-                                    <Play size={14} />
-                                </button>
+                                <Button tone="success" icon={Play} title="Activar" iconOnly onClick={() => onStateChange(promo, 'active')} />
                             )}
                             {promo.estado === 'active' && (
-                                <button
-                                    title="Pausar"
-                                    onClick={() => onStateChange(promo, 'paused')}
-                                    className="p-2 rounded-xl hover:bg-warning/10 text-content-3 hover:text-warning transition-colors"
-                                >
-                                    <Pause size={14} />
-                                </button>
+                                <Button tone="warning" icon={Pause} title="Pausar" iconOnly onClick={() => onStateChange(promo, 'paused')} />
                             )}
                             {promo.estado === 'paused' && (
-                                <button
-                                    title="Reactivar"
-                                    onClick={() => onStateChange(promo, 'active')}
-                                    className="p-2 rounded-xl hover:bg-success/10 text-content-3 hover:text-success transition-colors"
-                                >
-                                    <Play size={14} />
-                                </button>
+                                <Button tone="success" icon={Play} title="Reactivar" iconOnly onClick={() => onStateChange(promo, 'active')} />
                             )}
                             {(promo.estado === 'active' || promo.estado === 'paused') && (
-                                <button
-                                    title="Cerrar promoción"
-                                    onClick={() => onStateChange(promo, 'closed')}
-                                    className="p-2 rounded-xl hover:bg-surface-card-hover text-content-3 hover:text-content-2 transition-colors"
-                                >
-                                    <Lock size={14} />
-                                </button>
+                                <Button variant="secondary" icon={Lock} title="Cerrar promoción" iconOnly onClick={() => onStateChange(promo, 'closed')} />
                             )}
                             {promo.estado === 'draft' && (
-                                <button
-                                    title="Eliminar borrador"
-                                    onClick={() => onDelete(promo)}
-                                    className="p-2 rounded-xl hover:bg-danger/10 text-content-3 hover:text-danger transition-colors"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
+                                <Button variant="destructive" icon={Trash2} title="Eliminar borrador" iconOnly onClick={() => onDelete(promo)} />
                             )}
                         </div>
                     )}
@@ -351,12 +322,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                     {canEdit && (
                         <>
                             <div className="h-5 w-px bg-divider shrink-0" />
-                            <button
-                                onClick={() => setShowModal(true)}
-                                className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-label font-bold text-chart-1-text hover:bg-chart-1/10 transition-all"
-                            >
-                                <Plus size={12} /> Nueva
-                            </button>
+                            <Button tone="chart-1" icon={Plus} onClick={() => setShowModal(true)}>Nueva</Button>
                         </>
                     )}
                 </div>
@@ -375,12 +341,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                         {searchTerm ? 'Sin resultados para esa búsqueda' : 'No hay promociones aquí'}
                     </p>
                     {canEdit && !searchTerm && (
-                        <button
-                            onClick={() => setShowModal(true)}
-                            className="mt-3 flex items-center gap-1.5 px-4 py-2 text-label font-semibold bg-chart-1-solid text-white rounded-xl hover:bg-brand transition-colors mx-auto"
-                        >
-                            <Plus size={12} /> Nueva Promoción
-                        </button>
+                        <Button icon={Plus} onClick={() => setShowModal(true)}>Nueva Promoción</Button>
                     )}
                 </div>
             )}

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import Cropper from 'react-easy-crop';
 import { createPortal } from 'react-dom';
 import {
@@ -450,11 +451,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                         <Paintbrush size={11} strokeWidth={2} /> Restaurar
                                     </button>
                                 </div>
-                                <button
-                                    onClick={exitBrushMode}
-                                    className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-success/10 text-success border border-success/30 text-label font-bold hover:bg-success/20 transition-colors">
-                                    <Check size={11} strokeWidth={2.5} /> Listo
-                                </button>
+                                <Button tone="success" icon={Check} onClick={exitBrushMode}>Listo</Button>
                             </div>
 
                             {/* Row 2: Brush shape + Zoom */}
@@ -504,21 +501,11 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 {/* Zoom */}
                                 <div className="ml-auto flex items-center gap-1">
                                     <span className="text-caption font-bold text-content-3 shrink-0 mr-1">Zoom</span>
-                                    <button
-                                        onClick={handleZoomOut}
-                                        disabled={brushZoom === ZOOM_LEVELS[0]}
-                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-divider text-content-3 hover:bg-surface-card-hover disabled:opacity-30 transition-all">
-                                        <Minus size={10} strokeWidth={2.5} />
-                                    </button>
+                                    <Button variant="secondary" size="xs" icon={Minus} disabled={brushZoom === ZOOM_LEVELS[0]} iconOnly onClick={handleZoomOut} />
                                     <span className="text-label font-black text-content-2 w-8 text-center tabular-nums">
                                         {brushZoom}×
                                     </span>
-                                    <button
-                                        onClick={handleZoomIn}
-                                        disabled={brushZoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
-                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-divider text-content-3 hover:bg-surface-card-hover disabled:opacity-30 transition-all">
-                                        <Plus size={10} strokeWidth={2.5} />
-                                    </button>
+                                    <Button variant="secondary" size="xs" icon={Plus} disabled={brushZoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]} iconOnly onClick={handleZoomIn} />
                                 </div>
                             </div>
 
@@ -554,14 +541,8 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                             {/* Rotation */}
                             <div className="flex items-center gap-2">
                                 <span className="text-caption font-bold text-content-3 shrink-0">Rotar</span>
-                                <button onClick={rotateLeft}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-label font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
-                                    <RotateCcw size={11} strokeWidth={2.5} /> 90° izq
-                                </button>
-                                <button onClick={rotateRight}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-label font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
-                                    <RotateCw size={11} strokeWidth={2.5} /> 90° der
-                                </button>
+                                <Button variant="secondary" icon={RotateCcw} onClick={rotateLeft}>90° izq</Button>
+                                <Button variant="secondary" icon={RotateCw} onClick={rotateRight}>90° der</Button>
                                 {rotation !== 0 && (
                                     <span className="ml-auto text-caption font-bold text-brand-text">{rotation}°</span>
                                 )}
@@ -591,21 +572,11 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 </button>
 
                                 {bgRemoved && (
-                                    <button
-                                        onClick={() => setBrushMode(true)}
-                                        title="Retocar bordes del fondo con pincel"
-                                        className="flex items-center gap-1.5 px-3 rounded-2xl border border-chart-3/30 text-chart-3-text hover:bg-chart-3/10 text-label font-bold transition-all whitespace-nowrap">
-                                        <Paintbrush size={12} /> Retocar
-                                    </button>
+                                    <Button tone="chart-3" icon={Paintbrush} title="Retocar bordes del fondo con pincel" onClick={() => setBrushMode(true)}>Retocar</Button>
                                 )}
 
                                 {bgRemoved && (
-                                    <button
-                                        onClick={handleReset}
-                                        title="Restaurar imagen original"
-                                        className="w-10 flex items-center justify-center rounded-2xl border border-divider text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-all">
-                                        <RotateCcw size={13} strokeWidth={2.5} />
-                                    </button>
+                                    <Button variant="secondary" icon={RotateCcw} title="Restaurar imagen original" iconOnly onClick={handleReset} />
                                 )}
                             </div>
 
@@ -621,10 +592,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                 {/* ── Footer — only in crop mode ── */}
                 {!brushMode && (
                     <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-divider shrink-0">
-                        <button onClick={onCancel}
-                            className="px-4 py-2 rounded-btn text-body-sm font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
-                            Cancelar
-                        </button>
+                        <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
                         <button
                             onClick={handleConfirm}
                             disabled={confirming || !cropPx}

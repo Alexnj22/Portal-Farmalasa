@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../../components/common/Button';
 import { ScanBarcode, ShieldAlert, XCircle, Bell } from 'lucide-react';
 
 // Anillo "esperando escaneo" — reemplaza el <input> que simulaba tecleo
@@ -63,13 +64,9 @@ export default function IdleScanPanel({
 
           <div className="mt-5 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center">
             {specialMode ? (
-              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-danger/30 hover:bg-danger/20 hover:shadow-[var(--shadow-glow-danger-md)] hover:-translate-y-0.5 active:scale-[0.97]">
-                <XCircle size={14} /> Cancelar Permiso
-              </button>
+              <Button variant="destructive" icon={XCircle} onClick={cancelSpecialModeHandler}>Cancelar Permiso</Button>
             ) : (
-              <button type="button" onClick={specialOutHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[var(--shadow-glow-chart-4-md)] hover:-translate-y-0.5 active:scale-[0.97]">
-                <ShieldAlert size={14} /> Autorizar Permiso / Salida
-              </button>
+              <Button tone="chart-4" icon={ShieldAlert} onClick={specialOutHandler}>Autorizar Permiso / Salida</Button>
             )}
           </div>
         </div>

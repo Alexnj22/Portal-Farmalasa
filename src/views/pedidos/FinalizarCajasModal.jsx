@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { getExactPageGroups } from '../../utils/pedidoPrint';
@@ -120,10 +121,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {/* ── Header ─────────────────────────────────── */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-border-card">
                 {screen === 2 && (
-                    <button onClick={() => setScreen(1)} disabled={submitting}
-                        className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover/80 text-content-3 hover:bg-surface-card-hover transition-all shrink-0">
-                        <ChevronLeft size={14} />
-                    </button>
+                    <Button variant="secondary" shape="pill" size="xs" icon={ChevronLeft} disabled={submitting} iconOnly onClick={() => setScreen(1)} />
                 )}
                 <div className="flex-1 min-w-0">
                     <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">Pedido #{pedidoNumero}</p>
@@ -131,10 +129,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                         {screen === 1 ? 'Asignar cajas' : 'Página → Caja'}
                     </h3>
                 </div>
-                <button onClick={handleClose} disabled={submitting}
-                    className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover/80 text-content-3 hover:bg-surface-card-hover transition-all shrink-0">
-                    <X size={13} />
-                </button>
+                <Button variant="secondary" size="xs" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>
 
             {/* Draft restore banner */}
@@ -142,12 +137,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-3/10 border border-chart-3/30">
                     <RotateCcw size={12} className="text-chart-3-text shrink-0" />
                     <span className="text-label text-chart-3-text flex-1">Tenés un borrador guardado</span>
-                    <button onClick={handleRestoreDraft} className="text-label font-bold text-chart-3-text hover:text-chart-3-text underline underline-offset-2">
-                        Restaurar
-                    </button>
-                    <button onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} className="text-chart-3-text hover:text-chart-3-text">
-                        <X size={12} />
-                    </button>
+                    <Button variant="ghost" onClick={handleRestoreDraft}>Restaurar</Button>
+                    <Button variant="ghost" icon={X} iconOnly onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} />
                 </div>
             )}
 
@@ -276,10 +267,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
             {/* ── Footer ─────────────────────────────────── */}
             <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-border-card">
-                <button onClick={handleClose} disabled={submitting}
-                    className="text-body-sm font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover/80 transition-all">
-                    Cancelar
-                </button>
+                <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
                 {screen === 1 ? (
                     <button onClick={handleGoScreen2}
                         disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0}

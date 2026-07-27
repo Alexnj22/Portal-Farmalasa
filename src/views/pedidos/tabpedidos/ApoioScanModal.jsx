@@ -1,6 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — carné scanner modal for
 // registering apoyo (support staff) on a pedido, keydown-based scan capture.
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Button from '../../../components/common/Button';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { motion } from 'framer-motion';
 import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, CheckCheck } from 'lucide-react';
@@ -194,14 +195,9 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
 
                 <PedidoModal.Footer>
                     <div className="flex justify-between gap-2">
-                        <button onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}
-                            className="px-3 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body-sm transition-colors">
-                            Limpiar
-                        </button>
+                        <Button variant="secondary" onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}>Limpiar</Button>
                         <div className="flex gap-2">
-                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body font-medium transition-colors">
-                                Cancelar
-                            </button>
+                            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                             {employee && (
                                 <button onClick={confirmApoyo} disabled={loading}
                                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1-solid text-white font-semibold hover:bg-brand text-body transition-colors disabled:opacity-50 shadow-sm"

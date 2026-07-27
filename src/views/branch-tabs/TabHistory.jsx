@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import RangeDatePicker from '../../components/common/RangeDatePicker';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { AiThinkingState } from '../../components/common/StateViews';
@@ -325,8 +326,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 </button>
                                 <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
                                     <div className="w-[160px] bg-surface-card backdrop-blur-xl border border-border-card shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
-                                        <button onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-caption font-bold text-content-2 hover:bg-brand/10 hover:text-brand-text rounded-xl transition-colors"><Printer size={14} strokeWidth={2.5} /> Reporte PDF</button>
-                                        <button onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-caption font-bold text-content-2 hover:bg-success/10 hover:text-success rounded-xl transition-colors"><FileOutput size={14} strokeWidth={2.5} /> Datos CSV</button>
+                                        <Button icon={Printer} onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }}>Reporte PDF</Button>
+                                        <Button tone="success" icon={FileOutput} onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }}>Datos CSV</Button>
                                     </div>
                                 </div>
                             </div>
@@ -361,9 +362,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             </div>
 
                             {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
-                                <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-danger-solid hover:text-white transition-colors shrink-0 shadow-sm">
-                                    <X size={12} strokeWidth={3} />
-                                </button>
+                                <Button variant="destructive" shape="pill" size="sm" icon={X} iconOnly onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} />
                             )}
                         </>
                     }
@@ -427,12 +426,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 </div>
                             )}
 
-                            <button 
-                                onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}
-                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-chart-3-text font-black text-label uppercase tracking-widest border border-chart-3/30 hover:bg-surface-card-hover hover:text-chart-3-text hover:shadow-[var(--shadow-glow-chart-3)] transition-all active:scale-[0.97] z-base relative"
-                            >
-                                <ArrowLeft size={16} strokeWidth={2.5} /> Regresar a línea de tiempo
-                            </button>
+                            <Button variant="secondary" shape="pill" icon={ArrowLeft} onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}>Regresar a línea de tiempo</Button>
                         </div>
                     </div>
                 </div>
@@ -609,9 +603,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                     </div>
 
                                                                                                     {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand-text bg-surface-card backdrop-blur-md border border-border-card hover:bg-surface-card-hover hover:border-white px-3 py-1.5 rounded-full font-black text-micro uppercase tracking-widest transition-all active:scale-[0.97] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 shrink-0">
-                                                                                                            <Eye size={12} strokeWidth={2.5} /> Ver Doc
-                                                                                                        </button>
+                                                                                                        <Button variant="secondary" shape="pill" icon={Eye} onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)}>Ver Doc</Button>
                                                                                                     ) : null}
                                                                                                 </div>
                                                                                             </div>
@@ -636,9 +628,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                     {!showAllHistory && syntheticHistory.length > filteredHistory.length && !dateFilter.start && !dateFilter.end && searchQuery === '' && typeFilter === 'ALL' && (
                         <div className="pt-8 text-center animate-in fade-in duration-500 relative z-base">
-                            <button onClick={() => setShowAllHistory(true)} className="px-6 h-10 bg-surface-card backdrop-blur-md border border-white hover:border-brand/30 text-content-2 font-black text-caption uppercase tracking-widest hover:text-brand-text hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-1 transition-all rounded-full active:scale-[0.97] shadow-sm inline-flex items-center justify-center gap-2">
-                                Cargar historial completo
-                            </button>
+                            <Button variant="secondary" shape="pill" onClick={() => setShowAllHistory(true)}>Cargar historial completo</Button>
                         </div>
                     )}
                 </div>

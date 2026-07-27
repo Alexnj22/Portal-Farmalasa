@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { supabase } from '../../supabaseClient';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
 
@@ -81,10 +82,7 @@ export default function SrsBuscadorWidget({
                     autoComplete="off"
                 />
                 {query && (
-                    <button onClick={() => { setQuery(''); setResults(null); setTotal(0); }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">
-                        <X size={11} strokeWidth={2.5} />
-                    </button>
+                    <Button variant="secondary" shape="pill" icon={X} iconOnly onClick={() => { setQuery(''); setResults(null); setTotal(0); }} />
                 )}
             </div>
 
@@ -121,13 +119,7 @@ export default function SrsBuscadorWidget({
                             {/* Pagination */}
                             {lastPage > 1 && (
                                 <div className="flex items-center justify-between pt-1">
-                                    <button
-                                        disabled={page <= 1}
-                                        onClick={() => goPage(page - 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                    >
-                                        <ChevronLeft size={11} strokeWidth={2.5} /> Ant.
-                                    </button>
+                                    <Button variant="ghost" shape="pill" icon={ChevronLeft} disabled={page <= 1} onClick={() => goPage(page - 1)}>Ant.</Button>
                                     <span className="text-label text-content-3 font-medium">
                                         Pág. {page} / {lastPage}
                                     </span>

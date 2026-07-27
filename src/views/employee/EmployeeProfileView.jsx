@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
@@ -265,13 +266,7 @@ const EmployeeProfileView = ({ openModal }) => {
                 <span className="hidden sm:inline">Editar</span>
             </button>
             {/* Password button */}
-            <button
-                onClick={() => openModal('changeOwnPassword', {})}
-                className="w-10 h-10 rounded-full bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning flex items-center justify-center hover:bg-warning/10 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shrink-0"
-                title="Cambiar contraseña"
-            >
-                <KeyRound size={15} strokeWidth={2} />
-            </button>
+            <Button tone="warning" shape="pill" icon={KeyRound} title="Cambiar contraseña" iconOnly onClick={() => openModal('changeOwnPassword', {})} />
         </div>
     );
 
@@ -478,13 +473,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                         <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} />
                                     </div>
                                     {(filterFrom || filterTo || filterType) && (
-                                        <button
-                                            onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }}
-                                            className="w-8 h-8 rounded-full bg-surface-card border border-divider text-content-3 hover:text-danger hover:border-danger/30 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
-                                            title="Limpiar filtros"
-                                        >
-                                            <X size={13} strokeWidth={2.5} />
-                                        </button>
+                                        <Button variant="secondary" shape="pill" size="sm" icon={X} title="Limpiar filtros" iconOnly onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }} />
                                     )}
                                 </div>
                                 {/* Type pills */}
@@ -585,12 +574,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     </div>
                                 ) : timelineLimit === null ? (
                                     <div className="mt-3 pt-3 border-t border-divider">
-                                        <button
-                                            onClick={() => { setTimelineLimit(8); setShowTimelineFilter(false); }}
-                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-caption font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
-                                        >
-                                            Mostrar menos
-                                        </button>
+                                        <Button variant="secondary" onClick={() => { setTimelineLimit(8); setShowTimelineFilter(false); }}>Mostrar menos</Button>
                                     </div>
                                 ) : null
                             )}

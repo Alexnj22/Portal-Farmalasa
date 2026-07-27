@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { Search, CornerDownLeft, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { smartFilter } from '../../utils/searchUtils';
@@ -87,12 +88,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                         placeholder="Buscar en el portal… (ej. venta de productos, fichas de empleados)"
                         className="flex-1 bg-transparent outline-none text-body-lg font-semibold text-content placeholder:text-content-3 placeholder:font-medium"
                     />
-                    <button
-                        onClick={onClose}
-                        className="shrink-0 p-1 rounded-lg text-content-3 hover:text-content hover:bg-surface-card-hover transition-colors"
-                    >
-                        <X size={16} strokeWidth={2.5} />
-                    </button>
+                    <Button variant="secondary" icon={X} iconOnly onClick={onClose} />
                 </div>
 
                 {/* Results */}

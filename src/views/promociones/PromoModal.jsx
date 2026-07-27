@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import LiquidModal from '../../components/common/LiquidModal';
 import {
@@ -162,13 +163,7 @@ function ProductRow({ pp, onRemove }) {
                     )}
                 </div>
             </div>
-            <button
-                type="button"
-                onClick={onRemove}
-                className="p-1.5 rounded-lg hover:bg-danger/10 text-content-3 hover:text-danger transition-colors flex-shrink-0"
-            >
-                <Trash2 size={13} />
-            </button>
+            <Button variant="destructive" icon={Trash2} iconOnly onClick={onRemove} />
         </div>
     );
 }
@@ -233,13 +228,7 @@ function AddProductInline({ onAdd }) {
 
     if (!show) {
         return (
-            <button
-                type="button"
-                onClick={() => setShow(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-chart-1/30 rounded-2xl text-label font-semibold text-chart-1-text hover:border-chart-1 hover:text-chart-1-text hover:bg-chart-1/10 transition-all"
-            >
-                <Plus size={12} /> Agregar producto a la promoción
-            </button>
+            <Button tone="chart-1" icon={Plus} onClick={() => setShow(true)}>Agregar producto a la promoción</Button>
         );
     }
 
@@ -364,15 +353,8 @@ function AddProductInline({ onAdd }) {
             )}
 
             <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShow(false)} className="px-3 py-1.5 text-label text-content-3 hover:text-content-2">Cancelar</button>
-                <button
-                    type="button"
-                    onClick={handleAdd}
-                    disabled={!pid}
-                    className="px-4 py-1.5 text-label font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand disabled:opacity-40 transition-all shadow-sm shadow-brand/20 flex items-center gap-1.5"
-                >
-                    <Plus size={10} /> Agregar
-                </button>
+                <Button variant="ghost" onClick={() => setShow(false)}>Cancelar</Button>
+                <Button icon={Plus} disabled={!pid} onClick={handleAdd}>Agregar</Button>
             </div>
         </div>
     );
@@ -514,13 +496,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                 </p>
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={handleClose}
-                            className="w-9 h-9 flex items-center justify-center rounded-btn bg-surface-card hover:bg-surface-card border border-border-card text-white/70 hover:text-white transition-all"
-                        >
-                            <X size={16} strokeWidth={2.5} />
-                        </button>
+                        <Button variant="secondary" size="sm" icon={X} iconOnly onClick={handleClose} />
                     </div>
 
                     {/* Step indicator — white on gradient */}

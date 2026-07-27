@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { Loader2, Check, X, Clock, Package, ArrowRight, Inbox, CheckCheck, TrendingUp, Building2 } from 'lucide-react';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
@@ -106,10 +107,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
             className="flex-1 h-9 rounded-xl text-body-sm font-bold text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar
           </button>
-          <button onClick={() => setRejecting(true)} disabled={busy}
-            className="h-9 px-3 rounded-xl text-body-sm font-bold text-danger bg-danger/10 hover:bg-danger-solid hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
-            <X size={14} /> Rechazar
-          </button>
+          <Button variant="destructive" size="sm" icon={X} disabled={busy} onClick={() => setRejecting(true)}>Rechazar</Button>
         </div>
       )}
 
@@ -124,10 +122,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
               className="flex-1 h-8 rounded-xl text-label font-bold text-white bg-danger-solid hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
               {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo
             </button>
-            <button onClick={() => { setRejecting(false); setNote(''); }} disabled={busy}
-              className="h-8 px-3 rounded-xl text-label font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
-              Cancelar
-            </button>
+            <Button variant="secondary" size="sm" disabled={busy} onClick={() => { setRejecting(false); setNote(''); }}>Cancelar</Button>
           </div>
         </div>
       )}
@@ -344,10 +339,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
               options={sucOptions} placeholder="Todas las sucursales" icon={Building2} compact bare />
           </div>
           {sucFilter !== 'all' && (
-            <button onClick={() => setSucFilter('all')} title="Quitar sucursal"
-              className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
-              <X size={9} strokeWidth={3} />
-            </button>
+            <Button variant="destructive" shape="pill" icon={X} title="Quitar sucursal" iconOnly onClick={() => setSucFilter('all')} />
           )}
           {tab === 'pending' && pendingInView > 0 && (
             <>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
@@ -144,14 +145,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                     <BarChart2 size={14} className="text-chart-1-text" />
                     <span className="text-body-sm font-semibold text-content-2">Métricas de eficiencia</span>
                 </div>
-                <button
-                    onClick={() => load(RANGES.find(r => r.key === range)?.days ?? 30)}
-                    disabled={refreshing}
-                    className="flex items-center gap-1 text-label text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
-                >
-                    <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-                    Refrescar
-                </button>
+                <Button variant="ghost" icon={RefreshCw} disabled={refreshing} onClick={() => load(RANGES.find(r => r.key === range)?.days ?? 30)}>Refrescar</Button>
             </div>
 
             {/* Selector de rango */}

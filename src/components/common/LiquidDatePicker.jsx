@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
@@ -346,7 +347,7 @@ const LiquidDatePicker = ({
                 )}
 
                 <div className="flex justify-between items-center mb-5 px-1">
-                    <button type="button" onClick={handlePrev} className="p-2 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>
+                    <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={handlePrev} />
                     {/* D3.11: el salto a mes/año YA existía —el título ciclaba
                         days→months→years al hacer clic— pero se veía como texto
                         plano, así que nadie lo encontraba: para una fecha de
@@ -377,7 +378,7 @@ const LiquidDatePicker = ({
                             </span>
                         )}
                     </div>
-                    <button type="button" onClick={handleNext} className="p-2 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronRight size={16} strokeWidth={3} /></button>
+                    <Button variant="secondary" icon={ChevronRight} iconOnly onClick={handleNext} />
                 </div>
 
                 {currentMode === 'days' && (

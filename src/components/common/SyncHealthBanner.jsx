@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import Button from '../../components/common/Button';
 import { AlertTriangle, Bell, CheckCircle2 } from 'lucide-react';
 import { fetchInventorySyncLogRecent } from '../../data/inventory';
 import { useNowTick } from '../../hooks/useNowTick';
@@ -119,13 +120,7 @@ export default function SyncHealthBanner() {
 
       {/* Footer: notification permission */}
       {notifPerm !== 'granted' && notifPerm !== 'denied' && notifPerm !== 'unsupported' && (
-        <button
-          onClick={requestNotif}
-          className="flex items-center justify-center gap-1.5 py-2 border-t border-divider text-caption font-bold text-content-3 hover:text-brand-text transition-colors shrink-0"
-        >
-          <Bell size={11} />
-          Activar alertas de escritorio
-        </button>
+        <Button variant="ghost" icon={Bell} onClick={requestNotif}>Activar alertas de escritorio</Button>
       )}
       {notifPerm === 'granted' && (
         <div className="flex items-center justify-center gap-1.5 py-1.5 border-t border-divider shrink-0">

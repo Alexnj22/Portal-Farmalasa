@@ -1,6 +1,7 @@
 // src/components/common/RangeDatePicker.jsx
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
@@ -44,19 +45,13 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
         <div className="flex-1 min-w-[240px]">
             <div className="flex items-center justify-between mb-4">
                 {onPrev ? (
-                    <button type="button" onClick={onPrev}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text">
-                        <ChevronLeft size={14} strokeWidth={3} />
-                    </button>
+                    <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={onPrev} />
                 ) : <div className="w-7" />}
                 <p className="text-body-sm font-black uppercase tracking-widest text-content-2">
                     {MONTHS[month]} {year}
                 </p>
                 {onNext ? (
-                    <button type="button" onClick={onNext}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text">
-                        <ChevronRight size={14} strokeWidth={3} />
-                    </button>
+                    <Button variant="secondary" icon={ChevronRight} iconOnly onClick={onNext} />
                 ) : <div className="w-7" />}
             </div>
             <div className="grid grid-cols-7 mb-2">
@@ -490,10 +485,7 @@ const RangeDatePicker = ({
                             )}
                         </div>
                     </div>
-                    <button type="button" onClick={handleClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card text-content-3 transition-colors">
-                        <X size={14} strokeWidth={2.5} />
-                    </button>
+                    <Button variant="secondary" size="sm" icon={X} iconOnly onClick={handleClose} />
                 </div>
 
                 {atajos && (
@@ -616,15 +608,12 @@ const RangeDatePicker = ({
                     {selectedRanges.map((range, i) => (
                         <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-success/10 text-success border border-success/30 rounded-full text-caption font-bold">
                             {range.start === range.end ? formatDisplay(range.start) : `${formatDisplay(range.start)} → ${formatDisplay(range.end)}`}
-                            <button
-                                type="button"
-                                onClick={(e) => {
+                            <Button variant="ghost" onClick={(e) => {
                                     e.stopPropagation();
                                     const next = selectedRanges.filter((_, idx) => idx !== i);
                                     setSelectedRanges(next);
                                     onMultiChange && onMultiChange(next);
-                                }}
-                                className="ml-0.5 text-success/70 hover:text-danger transition-colors font-black leading-none">×</button>
+                                }}>×</Button>
                         </span>
                     ))}
                 </div>

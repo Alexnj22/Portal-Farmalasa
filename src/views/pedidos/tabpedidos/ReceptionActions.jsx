@@ -1,5 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { UserCircle2, PackageCheck, AlertTriangle, PackageX, Truck, Database, UserPlus, Loader2 } from 'lucide-react';
+import Button from '../../../components/common/Button';
 
 // Mismas etiquetas que LLEGADA_TIPO_INFO en PostCompletionSection.jsx (solo
 // el texto — el estilo de esta tarjeta sigue el patrón "completado" propio
@@ -32,9 +33,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
     ) : null;
 
     const apoyoBtn = (
-        <button onClick={onApoyo} className="flex items-center gap-0.5 text-caption font-semibold px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all shrink-0">
-            <UserPlus size={10} />Apoyo
-        </button>
+        <Button variant="secondary" icon={UserPlus} onClick={onApoyo}>Apoyo</Button>
     );
 
     // Estado de reenvíos — ciclo pendiente de llegada
@@ -118,10 +117,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-label">
                     <Database size={13} className="text-chart-3-text" />
                     <span className="text-chart-3-text">Revisar caja del reenvío en Sistema de Ventas</span>
-                    <button onClick={onOpenReenvioModal} disabled={!!busy}
-                        className="ml-auto text-caption font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
-                        Revisar
-                    </button>
+                    <Button tone="chart-3" disabled={!!busy} onClick={onOpenReenvioModal}>Revisar</Button>
                 </div>
             )}
 
@@ -135,10 +131,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     <div className="ml-auto flex items-center gap-1.5">
                         {apoyoChips}
                         {apoyoBtn}
-                        <button onClick={onOpenRecibir} disabled={!!busy}
-                            className="text-caption font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
-                            Confirmar
-                        </button>
+                        <Button tone="chart-3" disabled={!!busy} onClick={onOpenRecibir}>Confirmar</Button>
                     </div>
                 </div>
             )}

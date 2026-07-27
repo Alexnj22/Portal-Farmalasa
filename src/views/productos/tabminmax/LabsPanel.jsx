@@ -1,5 +1,6 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState, useEffect, useRef } from 'react';
+import Button from '../../../components/common/Button';
 import Switch from '../../../components/common/Switch';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { motion } from 'framer-motion';
@@ -103,11 +104,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                             </span>
                         )}
                     </div>
-                    <button onClick={onClose}
-                        className="w-6 h-6 flex items-center justify-center rounded-btn text-content-3 hover:text-content-2 transition-colors"
-                        style={{ background: 'rgba(255,255,255,0.6)' }}>
-                        <X size={11} />
-                    </button>
+                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
 
                 {/* Search */}
@@ -122,9 +119,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                             className="flex-1 text-body-xl text-content-2 placeholder-content-3 bg-transparent outline-none"
                         />
                         {search && (
-                            <button onClick={() => setSearch('')} className="text-content-3 hover:text-content-3 transition-colors shrink-0">
-                                <X size={10} />
-                            </button>
+                            <Button variant="ghost" icon={X} iconOnly onClick={() => setSearch('')} />
                         )}
                     </div>
                 </div>
@@ -184,13 +179,7 @@ export default function LabsPanel({ onClose, onChanged }) {
 
                 {/* Footer */}
                 <div className="px-3 pb-3 pt-1 border-t mt-auto" style={glass.divider}>
-                    <button onClick={onClose}
-                        className="w-full py-2 rounded-xl text-label font-bold text-content-3 hover:text-content-2 transition-colors duration-150"
-                        style={glass.footer}
-                        onMouseOver={e => Object.assign(e.currentTarget.style, { background: 'var(--border-card)' })}
-                        onMouseOut={e => Object.assign(e.currentTarget.style, glass.footer)}>
-                        Cerrar
-                    </button>
+                    <Button variant="ghost" onClick={onClose}>Cerrar</Button>
                 </div>
             </motion.div>
         </div>

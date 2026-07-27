@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Button from '../components/common/Button';
 import { SkeletonText } from '../components/common/StateViews';
 import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart, Download } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -119,13 +120,7 @@ export default function VentasPperdidasView() {
                     <ShoppingCart size={13} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2} />
                     <p className="text-label text-content-2 font-medium leading-snug flex-1">{TAB_HELP[activeTab]}</p>
                     {rows.length > 0 && (
-                        <button
-                            onClick={handleExportCsv}
-                            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-card-hover border border-divider text-content-2 text-caption font-black transition-colors"
-                        >
-                            <Download size={11} strokeWidth={2.5} />
-                            CSV
-                        </button>
+                        <Button variant="secondary" icon={Download} onClick={handleExportCsv}>CSV</Button>
                     )}
                 </div>
 

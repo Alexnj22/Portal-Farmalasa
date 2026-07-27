@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { AiThinkingState } from '../../components/common/StateViews';
 import {
@@ -132,7 +133,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     </div>
                     {employee.phone && (
                         <div className="flex items-center gap-1 shrink-0">
-                            <button onClick={(e) => handleAction(e, 'wa', employee.phone)} className="p-1.5 text-content-3 hover:text-success bg-surface-card hover:bg-surface-card-hover shadow-sm rounded-md border border-white transition-all" title="WhatsApp"><MessageCircle size={12} strokeWidth={2.5} /></button>
+                            <Button variant="secondary" icon={MessageCircle} title="WhatsApp" iconOnly onClick={(e) => handleAction(e, 'wa', employee.phone)} />
                             <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-content-3 hover:text-brand-text bg-surface-card hover:bg-surface-card-hover shadow-sm rounded-md border border-white transition-all" title="Copiar">
                                 {copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-success" /> : <Copy size={12} strokeWidth={2} />}
                             </button>

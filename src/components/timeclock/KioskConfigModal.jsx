@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../../components/common/Button';
 import {
   MonitorCheck,
   Settings,
@@ -74,14 +75,7 @@ const KioskConfigModal = ({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={onRevoke}
-              disabled={isProcessing}
-              className="relative z-content w-full text-caption sm:text-label uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <XCircle size={16} /> Revocar Permisos Locales
-            </button>
+            <Button variant="destructive" icon={XCircle} disabled={isProcessing} onClick={onRevoke}>Revocar Permisos Locales</Button>
           </div>
         ) : (
           /* =========================================
@@ -159,14 +153,7 @@ const KioskConfigModal = ({
         )}
 
         {/* Botón Cerrar Global */}
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isProcessing}
-          className="relative z-base w-full mt-6 py-2 text-white/40 hover:text-white disabled:opacity-50 font-bold uppercase tracking-widest text-micro sm:text-caption transition-colors"
-        >
-          Cerrar Configuración
-        </button>
+        <Button variant="ghost" disabled={isProcessing} onClick={onClose}>Cerrar Configuración</Button>
       </div>
     </div>
   );

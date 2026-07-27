@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Button from '../components/common/Button';
 import { EmptyState } from '../components/common/StateViews';
 import Badge from '../components/common/Badge';
 import {
@@ -297,19 +298,9 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
 
                             <div className="flex items-center gap-2 ml-auto">
                                 {/* Print all boletas for this branch */}
-                                <button
-                                    onClick={() => printBoletasBatch(grp, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
-                                    title="Imprimir todas las boletas de esta sucursal">
-                                    <Printer size={11} strokeWidth={2.5} /> Boletas
-                                </button>
+                                <Button variant="secondary" icon={Printer} title="Imprimir todas las boletas de esta sucursal" onClick={() => printBoletasBatch(grp, period, branches)}>Boletas</Button>
                                 {/* Print branch planilla */}
-                                <button
-                                    onClick={() => printBranchPlanilla(grp, branch, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
-                                    title="Imprimir planilla de esta sucursal">
-                                    <Printer size={11} strokeWidth={2.5} /> Planilla
-                                </button>
+                                <Button variant="secondary" icon={Printer} title="Imprimir planilla de esta sucursal" onClick={() => printBranchPlanilla(grp, branch, period, branches)}>Planilla</Button>
 
                                 <div className="w-px h-5 bg-divider mx-1" />
 
@@ -347,15 +338,9 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                         <DataCell align="right" className="font-black text-success-text whitespace-nowrap">{fmt(e.net_pay)}</DataCell>
                                         <DataCell>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                                                <button onClick={() => onPrint(e)} title="Imprimir boleta individual"
-                                                    className="p-1.5 rounded-lg hover:bg-surface-card text-content-3 hover:text-content-2 transition-colors">
-                                                    <Printer size={12} strokeWidth={2.5} />
-                                                </button>
+                                                <Button variant="secondary" icon={Printer} title="Imprimir boleta individual" iconOnly onClick={() => onPrint(e)} />
                                                 {!isPaid && (
-                                                    <button onClick={() => onEdit(e)} title="Editar"
-                                                        className="p-1.5 rounded-lg hover:bg-warning/10 text-content-3 hover:text-warning transition-colors">
-                                                        <Edit2 size={12} strokeWidth={2.5} />
-                                                    </button>
+                                                    <Button tone="warning" icon={Edit2} title="Editar" iconOnly onClick={() => onEdit(e)} />
                                                 )}
                                             </div>
                                         </DataCell>
@@ -504,12 +489,9 @@ const PayrollView = ({ openModal }) => {
                     <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="bg-transparent outline-none text-body-xl font-semibold text-content-2 placeholder-content-3 w-full" />
-                    {searchTerm && <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
+                    {searchTerm && <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchTerm('')} />}
                 </div>
-                <button onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-surface-card-hover text-caption font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
-                    Cancelar
-                </button>
+                <Button variant="secondary" shape="pill" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
             </div>
             {/* Normal mode */}
             <div inert={isSearchMode ? true : undefined} className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
@@ -550,10 +532,7 @@ const PayrollView = ({ openModal }) => {
                         <div className="backdrop-blur-[30px] rounded-header p-5 bg-surface-card border border-border-card shadow-[var(--shadow-glass-3)]">
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
-                                <button onClick={() => openModal?.('newPayrollPeriod')}
-                                    className="w-8 h-8 bg-brand text-white rounded-xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
-                                    <Plus size={14} strokeWidth={2.5} />
-                                </button>
+                                <Button size="sm" icon={Plus} iconOnly onClick={() => openModal?.('newPayrollPeriod')} />
                             </div>
                             {filteredPeriods.length === 0 ? (
                                 <EmptyState compact icon={CalendarDays} title="Sin períodos aún"
@@ -613,32 +592,17 @@ const PayrollView = ({ openModal }) => {
                                             {payrollEntries.length > 0 && (
                                                 <>
                                                     {/* Print ALL boletas in batch */}
-                                                    <button onClick={() => printBoletasBatch(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
-                                                        <Printer size={12} strokeWidth={2.5} /> Todas las Boletas
-                                                    </button>
+                                                    <Button variant="secondary" icon={Printer} onClick={() => printBoletasBatch(filteredEntries, activePeriod, branches)}>Todas las Boletas</Button>
                                                     {/* Global planilla */}
-                                                    <button onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
-                                                        <Printer size={12} strokeWidth={2.5} /> Planilla Global
-                                                    </button>
-                                                    <button onClick={downloadCSV}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
-                                                        <Download size={12} strokeWidth={2.5} /> CSV Banco
-                                                    </button>
+                                                    <Button variant="secondary" icon={Printer} onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}>Planilla Global</Button>
+                                                    <Button variant="secondary" icon={Download} onClick={downloadCSV}>CSV Banco</Button>
                                                 </>
                                             )}
                                             {isDraft && payrollEntries.length > 0 && (
-                                                <button onClick={() => setConfirming({ action:'APPROVED', label:'aprobar' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-caption font-black transition-all shadow-[var(--shadow-glow-success-md)]">
-                                                    <CheckCircle2 size={12} strokeWidth={2.5} /> Aprobar
-                                                </button>
+                                                <Button tone="success" icon={CheckCircle2} onClick={() => setConfirming({ action:'APPROVED', label:'aprobar' })}>Aprobar</Button>
                                             )}
                                             {isApproved && (
-                                                <button onClick={() => setConfirming({ action:'PAID', label:'marcar como pagada' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-caption font-black transition-all shadow-[var(--shadow-glow-brand)]">
-                                                    <Banknote size={12} strokeWidth={2.5} /> Marcar Pagada
-                                                </button>
+                                                <Button icon={Banknote} onClick={() => setConfirming({ action:'PAID', label:'marcar como pagada' })}>Marcar Pagada</Button>
                                             )}
                                         </div>
                                     </div>

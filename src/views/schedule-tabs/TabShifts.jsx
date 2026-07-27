@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
+import Button from '../../components/common/Button';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
     X, Loader2, Archive, Target, Edit3, Copy,
@@ -50,9 +51,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
                     : <Sparkles size={16} className="text-chart-5 animate-pulse" />}
             </div>
 
-            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-btn text-content-3 hover:text-white hover:bg-surface-card transition-all active:scale-[0.97] z-content" title="Ignorar aviso">
-                <X size={14} strokeWidth={2.5} />
-            </button>
+            <Button variant="secondary" icon={X} title="Ignorar aviso" iconOnly onClick={onDismiss} />
 
             <div className="relative z-base flex-1">
                 <h4 className="font-black text-white text-body-xl leading-tight tracking-tight mb-2">{insight.branch}</h4>
@@ -61,9 +60,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
 
             {insight.action && (
                 <div className="mt-auto pt-4 relative z-base">
-                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-chart-5 hover:bg-chart-5 text-content rounded-xl text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-5-md)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
-                        <Zap size={14} strokeWidth={2.5} /> Crear este turno
-                    </button>
+                    <Button tone="chart-5" icon={Zap} onClick={() => onApply(insight.action)}>Crear este turno</Button>
                 </div>
             )}
         </div>
@@ -118,9 +115,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         </p>
                     </div>
                     <div className="flex items-center gap-2 mt-2 w-full">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-surface-card shadow-sm border border-divider text-content-2 text-caption font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
-                            Cancelar
-                        </button>
+                        <Button variant="secondary" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }}>Cancelar</Button>
                         <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-caption font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-danger hover:bg-danger-hover' : 'bg-success hover:bg-success-hover'}`}>
                             {confirmAction === 'archive' ? 'Archivar' : 'Reactivar'}
                         </button>
@@ -131,21 +126,15 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100 focus-within:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-brand-text/60 hover:bg-surface-card-hover hover:text-brand-text transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
-                            <Copy size={12} strokeWidth={2.5} />
-                        </button>
+                        <Button variant="secondary" shape="pill" icon={Copy} title="Duplicar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} />
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[var(--shadow-elevation-sm)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40' : 'bg-surface-card text-warning border-white hover:bg-surface-card-hover hover:text-warning'}`} title="Editar">
                             <Edit3 size={12} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-content-3 hover:bg-surface-card-hover hover:text-danger transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Archivar">
-                            <Archive size={12} strokeWidth={2.5} />
-                        </button>
+                        <Button variant="secondary" shape="pill" icon={Archive} title="Archivar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} />
                     </>
                 )}
                 {isArchived && !confirmAction && (
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-success hover:bg-surface-card-hover hover:text-success transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Reactivar">
-                        <RotateCcw size={12} strokeWidth={2.5} />
-                    </button>
+                    <Button variant="secondary" shape="pill" icon={RotateCcw} title="Reactivar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} />
                 )}
             </div>
 
@@ -428,9 +417,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
                         </h3>
                         {editingGroup && (
-                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-caption md:text-label font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
-                                <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
-                            </button>
+                            <Button variant="destructive" icon={X} onClick={cancelEditing}>Cancelar</Button>
                         )}
                     </div>
 

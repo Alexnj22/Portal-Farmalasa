@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { EmptyState } from '../components/common/StateViews';
 import {
     ShieldCheck, Plus, Trash2, Award, Users,
     CornerDownRight, Network, Target,
@@ -826,10 +827,9 @@ const RolesView = ({ openModal }) => {
                                     );
                                 })}
                                 {filteredAndSortedRoles.length === 0 && (
-                                    <div className="col-span-full py-16 flex flex-col items-center justify-center text-content-3 opacity-60">
-                                        <Search size={48} className="mb-4 text-content-3" strokeWidth={1.5} />
-                                        <p className="text-body-xl font-bold text-content-2">No se encontraron cargos</p>
-                                        <p className="text-body-lg mt-1 font-medium">No hay coincidencias para "{searchQuery}".</p>
+                                    <div className="col-span-full">
+                                        <EmptyState compact icon={Search} title="No se encontraron cargos"
+                                            subtitle={`No hay coincidencias para "${searchQuery}".`} />
                                     </div>
                                 )}
                             </div>

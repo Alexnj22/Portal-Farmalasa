@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
@@ -210,10 +210,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
 
             {/* Empty state */}
             {filtered.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 gap-2 text-content-3">
-                    <CheckCircle2 size={32} className="opacity-50" />
-                    <p className="text-body text-content-3">No hay pedidos activos en este momento.</p>
-                </div>
+                <EmptyState compact icon={CheckCircle2} title="Sin pedidos activos" subtitle="No hay pedidos en curso en este momento." />
             )}
 
             {/* Pedido cards */}

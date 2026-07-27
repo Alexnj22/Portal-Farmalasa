@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ChevronLeft, ChevronRight, ChevronDown,
@@ -1483,12 +1484,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
               {/* Empty state */}
               {employeesByBranch.size === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 gap-4">
-                  <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal shadow-sm">
-                    <CalendarRange size={32} className="text-content-3" strokeWidth={1.5} />
-                  </div>
-                  <p className="text-body-lg font-bold text-content-3">Sin empleados para mostrar</p>
-                </div>
+                <EmptyState compact icon={CalendarRange} title="Sin empleados para mostrar" />
               )}
 
               {/* Export CSV */}

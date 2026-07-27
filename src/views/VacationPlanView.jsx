@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { EmptyState } from '../components/common/StateViews';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
     ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2, Edit3,
@@ -180,10 +181,7 @@ const GanttChart = ({ plans, year }) => {
     }, [plans]);
 
     if (rows.length === 0) return (
-        <div className="flex flex-col items-center py-10 gap-3 text-content-3">
-            <Palmtree size={36} strokeWidth={1} />
-            <p className="text-body font-bold text-content-3">Sin planes para este año</p>
-        </div>
+        <EmptyState compact icon={Palmtree} title="Sin planes para este año" />
     );
 
     return (

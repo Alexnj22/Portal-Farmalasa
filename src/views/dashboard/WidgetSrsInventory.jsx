@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { EmptyState } from '../../components/common/StateViews';
 import { Loader2, FlaskConical, Building2, Pill, CheckCircle2, Package } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchInventoryStockFlags } from '../../data/inventory';
@@ -81,10 +82,7 @@ export default function WidgetSrsInventory() {
       {/* Results */}
       <div className="flex-1 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {results === null && !loading && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
-            <FlaskConical size={32} strokeWidth={1.5} />
-            <p className="text-body-sm font-semibold text-content-3">Busca un medicamento en el registro SRS</p>
-          </div>
+          <EmptyState compact icon={FlaskConical} title="Buscá un medicamento" subtitle="en el registro SRS" />
         )}
 
         {results !== null && results.length === 0 && (

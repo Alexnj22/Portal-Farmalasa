@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { SkeletonText } from '../components/common/StateViews';
+import { SkeletonText, EmptyState} from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
 import {
@@ -1134,11 +1134,7 @@ export default function EncuestaAdminView() {
                                             {loadingDetail ? (
                                                 <div className="h-32 py-3"><SkeletonText lines={4} /></div>
                                             ) : respuestas.length === 0 ? (
-                                                <div className="flex flex-col items-center justify-center min-h-[180px] text-center">
-                                                    <ClipboardList size={32} strokeWidth={1.5} className="text-content-3 mb-3" />
-                                                    <p className="text-body font-bold text-content-3">Sin respuestas registradas</p>
-                                                    <p className="text-label text-content-3 mt-1">Usa el botón "Agregar" para comenzar.</p>
-                                                </div>
+                                                <EmptyState compact icon={ClipboardList} title="Sin respuestas registradas" subtitle="Usá el botón Agregar para comenzar." />
                                             ) : (
                                                 responsesByBranch.map(([branchName, group]) => {
                                                     const allRows = [...group.jefes, ...group.colabs];

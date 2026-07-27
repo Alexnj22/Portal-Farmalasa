@@ -109,10 +109,27 @@ colgado. Adoptado en `FormAiSchedulerPreview`, `BranchesView`, `TabStaff` y
 **No se tocaron** los anillos decorativos (ícono de cabecera, efecto hover):
 no son estados de espera.
 
-### D3.2 — `EmptyState` en las 32 vistas que lo copian
+### D3.2 — `EmptyState` en las vistas que lo copian
 
 **Cierre:** 0 implementaciones locales del patrón; `DESIGN.md` §18 deja de ser
 una receta para copiar y pasa a ser un componente.
+
+#### En curso (2026-07-27) — 10 migrados
+
+`RolesView` · `TabEnCurso` · `AttendanceAuditView` · `PermissionsView` ·
+`EmployeeDetailView` · `VacationPlanView` · `EncuestaAdminView` ·
+`WidgetInventorySearch` · `WidgetSrsInventory` · (más `FacturacionView`, ya
+en D2.5).
+
+Al buscarlos aparecieron **49 bloques con forma "ícono + texto"**, pero no
+todos son estados vacíos: varios son cabeceras decorativas (*"Accesos
+rápidos"*), sugerencias (*"Plaza Sugerida"*) o estados de carga. El filtro
+correcto no es la forma sino la **semántica del texto** — "Sin…", "No hay…",
+"No se encontraron…".
+
+`EmptyState` ganó uso real de su variante `compact` (min-h 200px en vez de
+400px), que es la que sirve dentro de paneles y widgets: la versión completa
+solo funciona cuando el vacío ocupa la vista entera.
 
 ### D3.3 — `<button>` → `Button` (639 en 102 archivos)
 

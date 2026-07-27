@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { EmptyState } from '../components/common/StateViews';
 import {
     ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
@@ -886,13 +887,8 @@ const PermissionsView = () => {
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] xl:pt-[200px] [&::-webkit-scrollbar]:hidden">
                         {!selectedRoleId ? (
                             /* Empty state */
-                            <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 animate-in fade-in duration-500">
-                                <div className="w-16 h-16 rounded-3xl bg-surface-card border border-border-card shadow-sm flex items-center justify-center mb-4">
-                                    <MousePointerClick size={28} className="text-content-3" strokeWidth={1.5} />
-                                </div>
-                                <p className="text-subtitle font-black text-content-3">Selecciona un cargo</p>
-                                <p className="text-body-sm text-content-3 font-medium mt-1">para modificar sus permisos de acceso</p>
-                            </div>
+                            <EmptyState icon={MousePointerClick} title="Selecciona un cargo"
+                                subtitle="para modificar sus permisos de acceso" />
                         ) : (
                         /* Grid de módulos */
                         <div className="space-y-6 pb-10">

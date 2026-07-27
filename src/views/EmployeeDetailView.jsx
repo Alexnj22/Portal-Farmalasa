@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { EmptyState } from '../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
@@ -732,12 +733,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     </div>
                                                 );
                                             }) : (
-                                                <div className="flex flex-col items-center justify-center py-20 opacity-50 px-4">
-                                                    <div className="w-16 h-16 bg-surface-card-hover rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-divider">
-                                                        <Clock size={28} className="text-content-3" strokeWidth={2}/>
-                                                    </div>
-                                                    <p className="font-black uppercase tracking-widest text-label text-content-2">Historial en Blanco</p>
-                                                </div>
+                                                <EmptyState compact icon={Clock} title="Historial en blanco" />
                                             )}
                                         </div>
                                     </div>

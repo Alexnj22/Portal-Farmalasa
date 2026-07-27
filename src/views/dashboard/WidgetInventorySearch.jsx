@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { EmptyState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -545,10 +546,7 @@ export default function WidgetInventorySearch() {
 
         <div className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {drillBranches.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-2">
-              <Package size={24} strokeWidth={1.5} className="text-content-3" />
-              <p className="text-label text-content-3 font-semibold">Sin stock en ninguna sucursal</p>
-            </div>
+            <EmptyState compact icon={Package} title="Sin stock en ninguna sucursal" />
           ) : (
             drillBranches.map((branch, bi) => {
               const theme = branch.isVencidos ? VENCIDOS_THEME : NEUTRAL_THEME;

@@ -1514,7 +1514,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {/* Header */}
                         <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                             {/* Product photo */}
-                            <div className="w-12 h-12 rounded-2xl bg-white border border-divider shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-2xl bg-surface-card border border-divider shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
                                 {historyRow.foto_url
                                     ? <img src={historyRow.foto_url} alt="" className="w-full h-full object-contain" />
                                     : <Package size={22} className="text-content-3" />}

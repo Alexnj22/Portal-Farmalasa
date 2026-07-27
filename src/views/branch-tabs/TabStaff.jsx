@@ -130,8 +130,8 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     </div>
                     {employee.phone && (
                         <div className="flex items-center gap-1 shrink-0">
-                            <button onClick={(e) => handleAction(e, 'wa', employee.phone)} className="p-1.5 text-content-3 hover:text-success bg-surface-card hover:bg-white shadow-sm rounded-md border border-white transition-all" title="WhatsApp"><MessageCircle size={12} strokeWidth={2.5} /></button>
-                            <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-content-3 hover:text-brand-text bg-surface-card hover:bg-white shadow-sm rounded-md border border-white transition-all" title="Copiar">
+                            <button onClick={(e) => handleAction(e, 'wa', employee.phone)} className="p-1.5 text-content-3 hover:text-success bg-surface-card hover:bg-surface-card-hover shadow-sm rounded-md border border-white transition-all" title="WhatsApp"><MessageCircle size={12} strokeWidth={2.5} /></button>
+                            <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-content-3 hover:text-brand-text bg-surface-card hover:bg-surface-card-hover shadow-sm rounded-md border border-white transition-all" title="Copiar">
                                 {copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-success" /> : <Copy size={12} strokeWidth={2} />}
                             </button>
                         </div>
@@ -154,7 +154,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="absolute bottom-3 right-3 z-20">
                 <button
                     onClick={(e) => { e.stopPropagation(); onClick(employee); }}
-                    className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-brand hover:border-brand hover:shadow-[var(--shadow-glow-brand)] text-content-3 hover:text-white group/btn"
+                    className="h-9 w-9 rounded-full flex items-center justify-center bg-surface-card shadow-sm border border-white transition-all hover:bg-brand hover:border-brand hover:shadow-[var(--shadow-glow-brand)] text-content-3 hover:text-white group/btn"
                     title="Ver Expediente de Personal"
                 >
                     <CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" />
@@ -453,7 +453,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                     {/* 🚨 PÍLDORA WFM / DÉFICIT — solo farmacias */}
                     {isFarmacia && isStaffDeficit && (
-                        <div className="relative group/wfm flex items-center gap-2.5 bg-warning/10 backdrop-blur-md border border-warning/30 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
+                        <div className="relative group/wfm flex items-center gap-2.5 bg-warning/10 backdrop-blur-md border border-warning/30 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
                             <Calculator size={14} className="text-warning shrink-0" />
                             <div className="flex flex-col gap-1 w-28">
                                 <div className="flex justify-between items-center w-full">
@@ -505,7 +505,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     )}
 
                     {/* 🚨 PÍLDORA DE SALUD LEGAL — solo farmacias */}
-                    {isFarmacia && <div className="relative group/health flex items-center gap-2.5 bg-surface-card backdrop-blur-md border border-border-card px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
+                    {isFarmacia && <div className="relative group/health flex items-center gap-2.5 bg-surface-card backdrop-blur-md border border-border-card px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
                         <ShieldAlert size={14} className={complianceScore === 100 ? 'text-success' : 'text-content-3'} />
                         <div className="flex flex-col gap-1 w-24">
                             <div className="flex justify-between items-center w-full">
@@ -755,7 +755,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                     {(wfmApplied || isNewBranch || isStaffDeficit) && Array.from({ length: minStaff > coverageStaffCount ? minStaff - coverageStaffCount : 0 }).map((_, i) => (
                                         <div key={`deficit-${i}`} onClick={handleEditHROperative} className="group flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
-                                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
+                                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-tab-active border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>
                                             <p className="text-[12px] font-black text-warning-text">Plaza Sugerida</p>

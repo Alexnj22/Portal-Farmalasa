@@ -275,7 +275,7 @@ const FormWfmAnalytics = ({ branches }) => {
                 <div className="w-full sm:w-auto flex items-center gap-3">
                      <div className="relative group/saly w-11 h-11 flex items-center justify-center rounded-full shrink-0 border-0 shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.6)] transition-shadow duration-500">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-30 group-hover/saly:opacity-100 transition-opacity duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
-                        <div className="absolute inset-[1px] bg-white rounded-full border border-border-card"></div>
+                        <div className="absolute inset-[1px] bg-surface-card rounded-full border border-border-card"></div>
                         <TrendingUp size={20} strokeWidth={2.5} className="text-chart-5-text group-hover/saly:text-chart-3-text relative z-10 transition-colors duration-300" />
                     </div>
                     
@@ -297,7 +297,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             key={opt.value}
                             type="button"
                             onClick={(e) => { e.preventDefault(); setTimeRange(opt.value); }}
-                            className={`flex-1 sm:flex-initial h-full px-4 md:px-5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 transform-gpu ${timeRange === opt.value ? 'bg-white text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}
+                            className={`flex-1 sm:flex-initial h-full px-4 md:px-5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 transform-gpu ${timeRange === opt.value ? 'bg-surface-tab-active text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}
                         >
                             {opt.label}
                         </button>
@@ -329,7 +329,7 @@ const FormWfmAnalytics = ({ branches }) => {
                                 <button
                                     type="button"
                                     onClick={(e) => { e.preventDefault(); setActiveView('DAYS'); }}
-                                    className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'DAYS' ? 'bg-white text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
+                                    className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'DAYS' ? 'bg-surface-tab-active text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
                                 >
                                     Semana
                                 </button>
@@ -337,7 +337,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); setActiveView('GENERAL_HOURS'); }}
-                                className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'GENERAL_HOURS' ? 'bg-white text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
+                                className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'GENERAL_HOURS' ? 'bg-surface-tab-active text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
                             >
                                 {timeRange === '0' ? 'Horas de Hoy' : 'General (Hr)'}
                             </button>

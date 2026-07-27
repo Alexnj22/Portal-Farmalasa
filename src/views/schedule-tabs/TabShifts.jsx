@@ -106,7 +106,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
 
             {confirmAction && (
                 <div className="absolute inset-0 z-[60] bg-surface-card backdrop-blur-xl flex flex-col items-center justify-center gap-3 animate-in zoom-in-95 duration-300 p-5 rounded-[2.5rem]">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-white border ${confirmAction === 'archive' ? 'text-danger border-danger/30' : 'text-success border-success/30'}`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-tab-active border ${confirmAction === 'archive' ? 'text-danger border-danger/30' : 'text-success border-success/30'}`}>
                         {confirmAction === 'archive' ? <AlertTriangle size={20} strokeWidth={2.5} /> : <RotateCcw size={20} strokeWidth={2.5} />}
                     </div>
                     <div className="text-center px-4">
@@ -118,7 +118,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         </p>
                     </div>
                     <div className="flex items-center gap-2 mt-2 w-full">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-white shadow-sm border border-divider text-content-2 text-[10px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-surface-card shadow-sm border border-divider text-content-2 text-[10px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
                             Cancelar
                         </button>
                         <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-danger hover:bg-danger-hover' : 'bg-success hover:bg-success-hover'}`}>
@@ -131,19 +131,19 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-50 ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-brand-text/60 hover:bg-white hover:text-brand-text transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-brand-text/60 hover:bg-surface-card-hover hover:text-brand-text transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
                             <Copy size={12} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[var(--shadow-elevation-sm)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40' : 'bg-surface-card text-warning border-white hover:bg-white hover:text-warning'}`} title="Editar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[var(--shadow-elevation-sm)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40' : 'bg-surface-card text-warning border-white hover:bg-surface-card-hover hover:text-warning'}`} title="Editar">
                             <Edit3 size={12} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-content-3 hover:bg-white hover:text-danger transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Archivar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-content-3 hover:bg-surface-card-hover hover:text-danger transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Archivar">
                             <Archive size={12} strokeWidth={2.5} />
                         </button>
                     </>
                 )}
                 {isArchived && !confirmAction && (
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-success hover:bg-white hover:text-success transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Reactivar">
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-success hover:bg-surface-card-hover hover:text-success transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Reactivar">
                         <RotateCcw size={12} strokeWidth={2.5} />
                     </button>
                 )}
@@ -534,11 +534,11 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                 <div className="flex items-center px-3 md:px-4 pt-4 pb-2">
                     <div className="flex items-center bg-surface-card rounded-full p-0.5 border border-border-card shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)]">
                         <button onClick={() => setShiftTab('ACTIVE')}
-                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ACTIVE' ? 'bg-white text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
+                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ACTIVE' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
                             Activos
                         </button>
                         <button onClick={() => setShiftTab('ARCHIVED')}
-                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ARCHIVED' ? 'bg-white text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
+                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ARCHIVED' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
                             Archivo
                         </button>
                     </div>

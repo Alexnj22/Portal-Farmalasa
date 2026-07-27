@@ -177,7 +177,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Info 2 columnas compacta */}
-        <div className="rounded-2xl border border-divider bg-white overflow-hidden shrink-0">
+        <div className="rounded-2xl border border-divider bg-surface-card overflow-hidden shrink-0">
           <div className="grid grid-cols-2 divide-x divide-divider">
             <div>
               {[
@@ -223,7 +223,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
           ) : items.length === 0 ? (
             <p className="text-[11px] text-content-3 text-center py-2">Sin detalle</p>
           ) : (
-            <div className="rounded-2xl border border-divider bg-white overflow-hidden">
+            <div className="rounded-2xl border border-divider bg-surface-card overflow-hidden">
               {items.map((it, i) => (
                 <div key={i} className={`flex items-start gap-2 px-3 py-1.5 ${i > 0 ? 'border-t border-divider' : ''}`}>
                   <div className="flex-1 min-w-0">
@@ -415,7 +415,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             {REASONS.map(r => (
               <button key={r} onClick={() => setReason(r)}
                 className={`text-left px-3 py-2 rounded-2xl border text-[11px] font-bold transition-all ${
-                  reason === r ? 'bg-brand text-white border-brand' : 'bg-white text-content-2 border-divider hover:border-brand/40'
+                  reason === r ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-2 border-divider hover:border-brand/40'
                 }`}>{r}</button>
             ))}
           </div>
@@ -427,7 +427,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
-            className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:ring-2 transition-all resize-none ${
+            className={`w-full px-3.5 py-2 rounded-2xl border bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:ring-2 transition-all resize-none ${
               commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger focus:ring-danger/20' : 'border-divider focus:border-brand focus:ring-brand/10'
             }`}
           />
@@ -506,7 +506,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
             {available.map(m => (
               <button key={m} onClick={() => setNewPayment(m)}
                 className={`text-left px-3 py-2 rounded-2xl border text-[11px] font-bold transition-all ${
-                  newPayment === m ? 'bg-brand text-white border-brand' : 'bg-white text-content-2 border-divider hover:border-brand/40'
+                  newPayment === m ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-2 border-divider hover:border-brand/40'
                 }`}>{PAYMENT_LABELS[m] || m}</button>
             ))}
           </div>
@@ -516,7 +516,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica el motivo del cambio..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
@@ -612,7 +612,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                 return (
                   <button key={emp.id} onClick={() => setNewVendorId(String(emp.id))}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all ${
-                      isSelected ? 'bg-brand/5 border-brand/40' : 'bg-white border-divider hover:border-divider'
+                      isSelected ? 'bg-brand/5 border-brand/40' : 'bg-surface-card border-divider hover:border-divider'
                     }`}>
                     <VendorAvatar employee={emp} size={8} />
                     <p className={`text-[12px] font-black flex-1 truncate ${isSelected ? 'text-brand-text' : 'text-content-2'}`}>{emp.name}</p>
@@ -632,7 +632,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe reasignar esta venta..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
@@ -770,7 +770,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
             <div className="space-y-1 max-h-[180px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {results.map(c => (
                 <button key={c.id} onClick={() => setNewClient(c)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all bg-white border-divider hover:border-brand/40">
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all bg-surface-card border-divider hover:border-brand/40">
                   <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
                     <span className="text-content-3 font-black text-[10px] leading-none">{c.name?.charAt(0)}</span>
                   </div>
@@ -790,7 +790,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe cambiar el cliente..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
@@ -927,7 +927,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         <SearchInput expandable accentColor="#12B76A" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
 
         {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
-        <div className="h-8 shrink-0 rounded-[0.65rem] border border-divider bg-white flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
+        <div className="h-8 shrink-0 rounded-[0.65rem] border border-divider bg-surface-card flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
           <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
         </div>
       </div>
@@ -954,7 +954,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
           const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
           return (
             <div key={inv.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-divider bg-white hover:border-divider transition-all">
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-divider bg-surface-card hover:border-divider transition-all">
               <div className="flex-1 min-w-0">
                 <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-content' : 'text-content-3'}`}>
                   {inv.cliente || 'Sin nombre'}

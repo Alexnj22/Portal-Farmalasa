@@ -10,7 +10,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.max(1, p - 1))}
         disabled={currentPage === 1}
-        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronLeft size={16} strokeWidth={2.5} />
       </button>
@@ -23,7 +23,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
         disabled={currentPage === totalPages}
-        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+        className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronRight size={16} strokeWidth={2.5} />
       </button>

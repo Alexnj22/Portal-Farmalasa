@@ -38,11 +38,11 @@ const ScheduleChart = ({
                             </button>
                         )}
                         <button onClick={() => setChartView('HOURS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-surface-tab-active text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
                             Horas
                         </button>
                         <button onClick={() => setChartView('DAYS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-surface-tab-active text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
                             Días
                         </button>
                     </div>

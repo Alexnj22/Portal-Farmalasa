@@ -196,7 +196,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                             : null;
                         return (
                             <div key={pp.id} className="flex gap-2.5 items-start">
-                                <div className="w-7 h-7 rounded-lg bg-white border border-divider flex items-center justify-center flex-shrink-0 overflow-hidden mt-0.5">
+                                <div className="w-7 h-7 rounded-lg bg-surface-card border border-divider flex items-center justify-center flex-shrink-0 overflow-hidden mt-0.5">
                                     {pp.products?.foto_url
                                         ? <img src={pp.products.foto_url} className="w-full h-full object-cover" alt="" />
                                         : <Package size={11} className="text-content-3" />}

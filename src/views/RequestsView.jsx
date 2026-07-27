@@ -639,7 +639,7 @@ const RequestsView = () => {
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
-                    className="w-11 h-11 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
+                    className="w-11 h-11 rounded-full hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -651,8 +651,8 @@ const RequestsView = () => {
                     <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                             statusFilter === tab.key
-                                ? 'bg-white text-content border-white shadow-md scale-[1.02]'
-                                : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
+                                ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
+                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                         }`}>
                         {tab.label}
                         {tab.key === 'PENDING' && pendingCount > 0 && (
@@ -843,7 +843,7 @@ const RequestsView = () => {
                                             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
                                                 createType === key
                                                     ? `${conf.color} ${conf.border} shadow-sm`
-                                                    : 'border-divider text-content-3 hover:border-divider bg-white'
+                                                    : 'border-divider text-content-3 hover:border-divider bg-surface-card'
                                             }`}
                                         >
                                             <Icon size={13} strokeWidth={2} />

@@ -235,7 +235,7 @@ export default function TabInventario({ searchTerm = '' }) {
             <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex items-center gap-3 flex-wrap">
 
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-white min-w-[130px]">
+                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-surface-card min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
                             <Package size={15} className="text-brand-text" />
                         </div>
@@ -255,9 +255,9 @@ export default function TabInventario({ searchTerm = '' }) {
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterVencidos
                                 ? 'bg-danger/10 border-danger/40 shadow-md shadow-red-100/80 -translate-y-px'
-                                : 'bg-white border-divider hover:border-danger/30 hover:bg-danger/10'
+                                : 'bg-surface-card border-divider hover:border-danger/30 hover:bg-danger/10'
                         }`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-white' : 'bg-danger/10'}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-surface-card' : 'bg-danger/10'}`}>
                             <AlertTriangle size={15} className="text-danger" />
                         </div>
                         <div className="text-left">
@@ -275,9 +275,9 @@ export default function TabInventario({ searchTerm = '' }) {
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterSixMonths
                                 ? 'bg-chart-4/10 border-chart-4/40 shadow-md shadow-orange-100/80 -translate-y-px'
-                                : 'bg-white border-divider hover:border-chart-4/30 hover:bg-chart-4/10'
+                                : 'bg-surface-card border-divider hover:border-chart-4/30 hover:bg-chart-4/10'
                         }`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-white' : 'bg-chart-4/10'}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-surface-card' : 'bg-chart-4/10'}`}>
                             <CalendarClock size={15} className="text-chart-4-text" />
                         </div>
                         <div className="text-left">
@@ -296,9 +296,9 @@ export default function TabInventario({ searchTerm = '' }) {
                             className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                                 filterAreaVenc
                                     ? 'bg-danger/10 border-danger/50 shadow-md shadow-danger/20 -translate-y-px'
-                                    : 'bg-white border-border-card hover:border-danger/30 hover:bg-danger/10'
+                                    : 'bg-surface-card border-border-card hover:border-danger/30 hover:bg-danger/10'
                             }`}>
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-white' : 'bg-danger/10'}`}>
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-surface-card' : 'bg-danger/10'}`}>
                                 <PackageX size={15} className="text-danger-text" />
                             </div>
                             <div className="text-left">
@@ -312,7 +312,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         </button>
                     )}
 
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-white min-w-[130px]">
+                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-surface-card min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-success/10">
                             <DollarSign size={15} className="text-success" />
                         </div>

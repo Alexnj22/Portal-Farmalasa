@@ -48,7 +48,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                                 placeholder={srv.placeholder} 
                                 value={services[srv.id]?.provider || ""} 
                                 onChange={(val) => updateServiceField(srv.id, 'provider', val)} 
-                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`} 
+                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`} 
                             />
                         </div>
                         <div>
@@ -56,7 +56,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                             <LazyInput 
                                 value={services[srv.id]?.account || ""} 
                                 onChange={(val) => updateServiceField(srv.id, 'account', val)} 
-                                className={`!bg-white shadow-sm h-[42px] text-[13px] font-mono border-divider ${inputHoverClass}`} 
+                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] font-mono border-divider ${inputHoverClass}`} 
                             />
                         </div>
                         <div>
@@ -66,7 +66,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                                 placeholder="Ej: 15" 
                                 value={services[srv.id]?.dueDay || ""} 
                                 onChange={(val) => updateServiceField(srv.id, 'dueDay', clampInt(val, 1, 31))} 
-                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`} 
+                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`} 
                             />
                         </div>
                         

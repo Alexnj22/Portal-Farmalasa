@@ -46,7 +46,7 @@ const NoAccessView = () => {
                 <div className="relative mb-10">
                     <span className="absolute inset-0 m-auto w-28 h-28 rounded-full bg-danger/15 animate-ping" style={{ animationDuration: '2.5s' }} />
                     <span className="absolute -inset-6 rounded-full bg-danger/10 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.6s' }} />
-                    <div className="relative w-28 h-28 rounded-[2.5rem] bg-white border border-danger/30 shadow-[var(--shadow-glow-danger)] flex items-center justify-center">
+                    <div className="relative w-28 h-28 rounded-[2.5rem] bg-surface-card border border-danger/30 shadow-[var(--shadow-glow-danger)] flex items-center justify-center">
                         <ShieldOff size={48} className="text-danger" strokeWidth={1.2} />
                     </div>
                 </div>
@@ -76,7 +76,7 @@ const NoAccessView = () => {
                     <button
                         onClick={handleLogout}
                         disabled={loggingOut}
-                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-white border border-divider text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
+                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-surface-card border border-divider text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
                     >
                         {loggingOut
                             ? <Loader2 size={14} className="animate-spin" />

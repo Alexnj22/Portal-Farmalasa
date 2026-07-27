@@ -429,10 +429,10 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div
                         className={`rounded-[2.5rem] border flex flex-col transition-all duration-500 group/card hover:-translate-y-1.5 ${
                             phase === 'check'
-                                ? 'border-success/50 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-white'
+                                ? 'border-success/50 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-surface-card'
                                 : isUrgent
-                                ? 'border-danger/30   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-white'
-                                : 'border-divider shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-white'
+                                ? 'border-danger/30   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-surface-card'
+                                : 'border-divider shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-surface-card'
                         }`}
                     >
                         <div className="p-7 flex flex-col gap-5">
@@ -713,7 +713,7 @@ const EmployeeAnnouncementsView = () => {
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text ml-1">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text ml-1">
                     <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
             </div>
@@ -724,7 +724,7 @@ const EmployeeAnnouncementsView = () => {
                     return (
                         <button key={t.key} onClick={() => { setTab(t.key); setTypeFilter('ALL'); }}
                             className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border shrink-0 ${
-                                isActive ? 'bg-white text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
+                                isActive ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                             }`}
                         >
                             {t.label}
@@ -751,7 +751,7 @@ const EmployeeAnnouncementsView = () => {
                                             ? 'bg-danger text-white border-danger shadow-[var(--shadow-glow-danger)] scale-[1.02]'
                                             : 'bg-transparent text-danger border-danger/30 hover:bg-danger/10 hover:-translate-y-0.5'
                                         : isActive
-                                        ? 'bg-white text-content border-white shadow-md scale-[1.02]'
+                                        ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
                                         : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5'
                                 }`}
                             >
@@ -829,7 +829,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex justify-end mb-4">
                             <button
                                 onClick={() => setShowOldRead(v => !v)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-card backdrop-blur-sm border border-border-card text-content-3 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-card backdrop-blur-sm border border-border-card text-content-3 text-[10px] font-black uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shadow-sm"
                             >
                                 <Clock size={12} strokeWidth={2.5} />
                                 {showOldRead ? 'Solo este mes' : 'Ver anteriores'}

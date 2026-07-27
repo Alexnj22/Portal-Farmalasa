@@ -482,7 +482,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               "h-11 w-11 rounded-xl border-2 overflow-hidden flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-105",
               isLate && status !== "FINISHED"
                 ? "border-danger/30 bg-danger/10 text-danger"
-                : "border-white bg-white text-content-3",
+                : "border-white bg-surface-card text-content-3",
             ].join(" ")}
           >
             {emp.photo ? (
@@ -617,7 +617,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         <button
           type="button"
           onClick={() => setSearchOpen(false)}
-          className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"
+          className="w-11 h-11 rounded-full bg-surface-card hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"
         >
           <ChevronRight size={18} strokeWidth={2.5} />
         </button>

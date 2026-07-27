@@ -28,7 +28,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
         <div className="group/pb relative">
             <motion.span
                 className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
-                    isActive ? 'bg-warning text-white' : 'bg-white text-warning border border-warning/40'
+                    isActive ? 'bg-warning text-white' : 'bg-surface-card text-warning border border-warning/40'
                 }`}
                 animate={isActive ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
                 transition={isActive ? { duration: 1.2, repeat: Infinity } : undefined}
@@ -153,7 +153,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     className={`w-4 h-4 rounded-full flex items-center justify-center z-10 ${
                                         isDone      ? `${tlDot(idx)} shadow-sm` :
                                         isPausedDot ? 'bg-warning shadow-md' :
-                                        isActive    ? `bg-white border-2 ${tlBorder(idx)}` :
+                                        isActive    ? `bg-surface-card border-2 ${tlBorder(idx)}` :
                                                       'bg-surface-card-hover border border-divider'
                                     }`}
                                     initial={{ scale: 0.5, opacity: 0 }}

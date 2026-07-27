@@ -337,7 +337,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
                             globalMode
                                 ? 'bg-chart-3 border-chart-3 text-white shadow-sm'
-                                // `bg-white` opaco + text-content-3: en dark quedaba una pastilla
+                                // `bg-surface-card` opaco + text-content-3: en dark quedaba una pastilla
                                 // blanca con el texto casi invisible encima (visto en la captura de
                                 // verificación de v2.62.4). No es del patrón sheen, pero es el mismo
                                 // bug y estaba en este archivo.

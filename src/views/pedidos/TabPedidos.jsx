@@ -236,7 +236,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     {isBranch && sucursalCounts.length > 0 && (() => {
                         const own = sucursalCounts[0];
                         return (
-                            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-white min-w-[130px]">
+                            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-surface-card min-w-[130px]">
                                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-3/10">
                                     <Building2 size={15} className="text-chart-3-text" />
                                 </div>
@@ -391,7 +391,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
                                             <span className="text-[10px] font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
                                             {prepApoyo.map(a => (
-                                                <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-white border border-divider shadow-sm">
+                                                <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-surface-card border border-divider shadow-sm">
                                                     {a.photo_url
                                                         ? <img src={a.photo_url} alt={a.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
                                                         : <span className="w-5 h-5 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={10} className="text-content-3" /></span>

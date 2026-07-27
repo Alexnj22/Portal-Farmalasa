@@ -206,7 +206,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
             placeholder="¿Por qué este ajuste? (opcional)"
-            className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
+            className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
         </div>
 
         {err && <p className="text-[11px] text-danger-text font-semibold px-1">{err}</p>}
@@ -314,7 +314,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
 
         {!loading && results.map(p => (
           <button key={p.id} onClick={() => { setPicked(p); setView('form'); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-divider bg-white hover:border-brand/40 transition-colors text-left">
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-divider bg-surface-card hover:border-brand/40 transition-colors text-left">
             <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">
               {p.foto_url
                 ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />

@@ -469,17 +469,17 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="mb-4 p-3 bg-surface-card-hover/80 rounded-2xl border border-divider space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {/* Date range */}
                                 <div className="flex items-center gap-2">
-                                    <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
+                                    <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                     </div>
                                     <span className="text-content-3 text-[12px] font-bold shrink-0">→</span>
-                                    <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
+                                    <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                     </div>
                                     {(filterFrom || filterTo || filterType) && (
                                         <button
                                             onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }}
-                                            className="w-8 h-8 rounded-full bg-white border border-divider text-content-3 hover:text-danger hover:border-danger/30 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
+                                            className="w-8 h-8 rounded-full bg-surface-card border border-divider text-content-3 hover:text-danger hover:border-danger/30 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
                                             title="Limpiar filtros"
                                         >
                                             <X size={13} strokeWidth={2.5} />
@@ -491,7 +491,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex flex-wrap gap-1.5">
                                         <button
                                             onClick={() => setFilterType('')}
-                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8 text-white border-chart-8' : 'bg-white text-content-3 border-divider hover:border-divider'}`}
+                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                         >
                                             Todos
                                         </button>
@@ -502,7 +502,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 <button
                                                     key={type}
                                                     onClick={() => setFilterType(filterType === type ? '' : type)}
-                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-surface-card-hover'} ${theme?.text || 'text-content-2'} ${theme?.border || 'border-divider'}` : 'bg-white text-content-3 border-divider hover:border-divider'}`}
+                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-surface-card-hover'} ${theme?.text || 'text-content-2'} ${theme?.border || 'border-divider'}` : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                                 >
                                                     {label}
                                                 </button>

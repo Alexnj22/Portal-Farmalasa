@@ -98,7 +98,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             <DataCell align="right">
                 <button
                     onClick={() => openModal('viewAuditDetail', log)}
-                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-white text-content-2 hover:text-brand-text rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand-text rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
                     title="Ver Detalles"
                 >
                     <Database size={14} className="md:w-3 md:h-3" /> <span className="hidden md:inline">Detalles</span>
@@ -313,7 +313,7 @@ const filtersContent = (
                 )}
                 <button
                     onClick={() => { setIsSearchMode(false); setRawSearchTerm(""); }}
-                    className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
+                    className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
                     title="Cerrar Búsqueda"
                 >
                     <ChevronRight size={18} strokeWidth={2.5} />
@@ -336,8 +336,8 @@ const filtersContent = (
                             type="button"
                             onClick={() => setIsActionPickerOpen(true)}
                             className={`px-3 md:px-5 h-9 rounded-full flex items-center gap-2 md:gap-3 transition-all duration-300 group whitespace-nowrap border shrink-0 ${actionFilter !== "ALL"
-                                ? "bg-white text-content border-white shadow-md"
-                                : "bg-transparent text-content-2 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
+                                ? "bg-surface-card text-content border-white shadow-md"
+                                : "bg-transparent text-content-2 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                 }`}
                             title="Cambiar tipo de acción"
                         >
@@ -364,8 +364,8 @@ const filtersContent = (
                                         setIsActionPickerOpen(false);
                                     }}
                                     className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive
-                                        ? "bg-white text-content border-white shadow-md scale-[1.02]"
-                                        : "bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
+                                        ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
+                                        : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                         }`}
                                 >
                                     {opt.label}
@@ -394,8 +394,8 @@ const filtersContent = (
                         }`}
                 >
                     <div className={`flex items-center gap-1 shrink-0 px-2 py-1 rounded-2xl transition-all duration-300 group relative z-10 border w-auto ${startDate || endDate || isDatePickerOpen
-                        ? 'bg-white border-white shadow-md'
-                        : 'bg-transparent border-transparent hover:shadow-md hover:bg-white hover:border-border-card hover:-translate-y-0.5'
+                        ? 'bg-surface-card border-white shadow-md'
+                        : 'bg-transparent border-transparent hover:shadow-md hover:bg-surface-card-hover hover:border-border-card hover:-translate-y-0.5'
                         }`}>
                         
                         {/* 🚨 Aquí cambiamos a "Inicio" */}
@@ -462,7 +462,7 @@ const filtersContent = (
                 <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-white hover:text-brand-text'}`}
+                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-surface-card-hover hover:text-brand-text'}`}
                     >
                         {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
                         <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>
@@ -471,7 +471,7 @@ const filtersContent = (
                     <button
                         onClick={exportToCSV}
                         disabled={processedLogs.length === 0 || isExporting}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card hover:bg-white text-content-2 border-divider hover:text-brand-text'}`}
+                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card hover:bg-surface-card-hover text-content-2 border-divider hover:text-brand-text'}`}
                     >
                         {isExporting ? <Check size={12} className="text-success" /> : <Download size={12} className="group-hover:-translate-y-0.5 transition-transform" />}
                         <span>{isExporting ? 'Ok' : 'Exportar'}</span>

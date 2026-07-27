@@ -75,7 +75,7 @@ export default function SrsBuscadorWidget({
                     value={query}
                     onChange={e => handleInput(e.target.value)}
                     placeholder="Buscar en Registro SRS..."
-                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-white text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
+                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
                     autoFocus
                     spellCheck={false}
                     autoComplete="off"
@@ -187,7 +187,7 @@ function SrsResultCard({ product: p, onSelect }) {
 
     return (
         <div
-            className={`rounded-2xl border bg-white p-3.5 flex flex-col gap-2 transition-all ${
+            className={`rounded-2xl border bg-surface-card p-3.5 flex flex-col gap-2 transition-all ${
                 onSelect ? 'cursor-pointer hover:border-brand/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-divider'
             }`}
             onClick={onSelect || undefined}

@@ -49,7 +49,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-danger' : 'text-content-3'}`}>
                             Apertura
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-white">
+                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
                             <TimePicker12
                                 value={d.start || ""}
                                 defaultMeridiem="AM"
@@ -62,7 +62,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-danger' : 'text-content-3'}`}>
                             Cierre
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-white">
+                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
                             <TimePicker12
                                 value={d.end || ""}
                                 defaultMeridiem="PM"

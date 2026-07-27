@@ -64,7 +64,7 @@ const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
             className={`w-4 h-4 rounded-[4px] flex items-center justify-center transition-all duration-200 border cursor-pointer outline-none ${
                 checked 
                 ? `${activeBg} border-transparent shadow-sm scale-110` 
-                : `bg-surface-card border-divider ${shadowHover} hover:bg-white`
+                : `bg-surface-card border-divider ${shadowHover} hover:bg-surface-card-hover`
             }`}
         >
             {checked && <Check size={11} strokeWidth={4} className="text-white" />}

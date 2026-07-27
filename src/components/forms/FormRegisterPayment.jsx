@@ -155,7 +155,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 type="number"
                                 min="0.01"
                                 step="0.01"
-                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-white font-black text-content text-lg shadow-sm transition-all group-hover:border-brand/50 placeholder:text-content-3"
+                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-black text-content text-lg shadow-sm transition-all group-hover:border-brand/50 placeholder:text-content-3"
                                 placeholder="0.00"
                                 value={paymentData.amount}
                                 onChange={(e) => handleUpdate('amount', e.target.value)}
@@ -197,7 +197,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     </label>
                     <input
                         type="text"
-                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-white font-bold text-content-2 text-[16px] shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
+                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-bold text-content-2 text-[16px] shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
                         placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
                         value={paymentData.notes}
                         onChange={(e) => handleUpdate('notes', e.target.value)}
@@ -223,7 +223,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                         {paymentData.receiptFile ? (
                             <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-300">
-                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-success mb-1 border border-success/30">
+                                <div className="w-12 h-12 bg-surface-card rounded-2xl flex items-center justify-center shadow-sm text-success mb-1 border border-success/30">
                                     <CheckCircle size={24} strokeWidth={2} />
                                 </div>
                                 <p className="text-[13px] font-black text-success-text tracking-tight max-w-[200px] truncate">
@@ -235,7 +235,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-2 transition-transform duration-300 group-hover:-translate-y-1">
-                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-brand-text mb-1 group-hover:shadow-md transition-all">
+                                <div className="w-12 h-12 bg-surface-card rounded-2xl flex items-center justify-center shadow-sm text-brand-text mb-1 group-hover:shadow-md transition-all">
                                     <UploadCloud size={24} strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[13px] font-black text-content-2 tracking-tight">

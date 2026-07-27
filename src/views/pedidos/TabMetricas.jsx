@@ -165,7 +165,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                         className={`text-[11px] px-3 py-1.5 rounded-full border font-medium transition-colors ${
                             range === r.key
                                 ? 'bg-chart-1 text-white border-chart-1'
-                                : 'bg-white text-content-3 border-divider hover:border-divider hover:text-content-2'
+                                : 'bg-surface-card text-content-3 border-divider hover:border-divider hover:text-content-2'
                         }`}
                     >
                         {r.label}

@@ -298,14 +298,14 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 {/* Print all boletas for this branch */}
                                 <button
                                     onClick={() => printBoletasBatch(grp, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
                                     title="Imprimir todas las boletas de esta sucursal">
                                     <Printer size={11} strokeWidth={2.5} /> Boletas
                                 </button>
                                 {/* Print branch planilla */}
                                 <button
                                     onClick={() => printBranchPlanilla(grp, branch, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
                                     title="Imprimir planilla de esta sucursal">
                                     <Printer size={11} strokeWidth={2.5} /> Planilla
                                 </button>
@@ -506,7 +506,7 @@ const PayrollView = ({ openModal }) => {
                     {searchTerm && <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
                 </div>
                 <button onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
+                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-surface-card-hover text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
                     Cancelar
                 </button>
             </div>
@@ -603,7 +603,7 @@ const PayrollView = ({ openModal }) => {
                                             </span>
                                             {(isDraft||isApproved) && (
                                                 <button onClick={handleGenerate} disabled={generating}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all disabled:opacity-50 shadow-sm">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all disabled:opacity-50 shadow-sm">
                                                     <RotateCcw size={12} strokeWidth={2.5} className={generating?'animate-spin':''} />
                                                     {generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}
                                                 </button>
@@ -612,16 +612,16 @@ const PayrollView = ({ openModal }) => {
                                                 <>
                                                     {/* Print ALL boletas in batch */}
                                                     <button onClick={() => printBoletasBatch(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
                                                         <Printer size={12} strokeWidth={2.5} /> Todas las Boletas
                                                     </button>
                                                     {/* Global planilla */}
                                                     <button onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
                                                         <Printer size={12} strokeWidth={2.5} /> Planilla Global
                                                     </button>
                                                     <button onClick={downloadCSV}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-white transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
                                                         <Download size={12} strokeWidth={2.5} /> CSV Banco
                                                     </button>
                                                 </>

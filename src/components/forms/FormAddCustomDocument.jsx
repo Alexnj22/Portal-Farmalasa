@@ -91,7 +91,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         value={data.title}
                         onChange={(e) => updateField('title', e.target.value)}
                         placeholder="Ej. Permiso de Rótulos Luminosos"
-                        className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl px-4 py-3.5 text-[16px] font-bold text-content-2 focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white outline-none transition-all shadow-sm placeholder:text-content-3/70"
+                        className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl px-4 py-3.5 text-[16px] font-bold text-content-2 focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-surface-card outline-none transition-all shadow-sm placeholder:text-content-3/70"
                     />
                 </div>
             </div>
@@ -129,7 +129,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             ? 'border-success bg-success/10 hover:bg-success/10' 
                             : isEditing && !data.url
                                 ? 'border-danger/40 bg-danger/10 hover:bg-danger/10 hover:border-danger' // Alerta roja si falta subir en edición
-                                : 'border-divider bg-surface-card backdrop-blur-md hover:bg-white hover:border-brand/50'
+                                : 'border-divider bg-surface-card backdrop-blur-md hover:bg-surface-card-hover hover:border-brand/50'
                         }`}
                     >
                         {data.file ? (

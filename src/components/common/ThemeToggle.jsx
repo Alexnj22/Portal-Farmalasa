@@ -26,7 +26,7 @@ const inactiveTabCls = 'bg-transparent text-content-3 hover:bg-surface-tab-activ
 // oscuro (SidebarSettingsMenu) en vez de un data-surface="dropdown"
 // reactivo al tema — mismas clases bespoke bg-white/N que el resto del
 // sidebar, no tokens (que resolverían claros y quedarían ilegibles).
-const activeTabClsDark = 'bg-white text-slate-900 shadow-md scale-[1.02]';
+const activeTabClsDark = 'bg-surface-card text-slate-900 shadow-md scale-[1.02]';
 const inactiveTabClsDark = 'bg-transparent text-white/50 hover:bg-white/[0.08] hover:text-white/85';
 
 function SegmentedRow({ label, options, activeKey, onPick, dark }) {

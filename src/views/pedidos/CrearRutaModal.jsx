@@ -511,7 +511,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     return (
                       <button key={item.key} onClick={() => toggleItem(item.key)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-white border-divider hover:border-chart-3/30 hover:bg-chart-3/10'
+                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-surface-card border-divider hover:border-chart-3/30 hover:bg-chart-3/10'
                         }`}>
                         <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors ${
                           isSel ? 'bg-chart-3 border-chart-3' : 'border-divider'
@@ -572,7 +572,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             </div>
 
             {/* ── Conductor ─────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-divider">
+            <div className="flex items-center gap-2 px-3 py-2 bg-surface-card rounded-xl border border-divider">
               {conductorPhoto
                 ? <img src={conductorPhoto} className="w-6 h-6 rounded-full object-cover border border-divider shrink-0" />
                 : <div className="w-6 h-6 rounded-full bg-chart-3 flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
@@ -630,11 +630,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           </div>
                           <div className="flex flex-col gap-0.5 mt-0.5">
                             <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-divider text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-surface-card border border-divider text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronUp size={13} strokeWidth={2.5} />
                             </button>
                             <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-divider text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-surface-card border border-divider text-content-3 hover:bg-chart-3 hover:text-white hover:border-chart-3 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronDown size={13} strokeWidth={2.5} />
                             </button>
                           </div>
@@ -717,7 +717,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           <button
                             key={id}
                             onClick={() => addEncargo(Number(id))}
-                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-warning/30 bg-white hover:bg-warning/10 hover:border-warning text-left transition-all active:scale-[0.97]"
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-warning/30 bg-surface-card hover:bg-warning/10 hover:border-warning text-left transition-all active:scale-[0.97]"
                           >
                             <Building2 size={11} className="text-warning shrink-0" />
                             <span className="text-[11px] font-semibold text-content-2">{name}</span>

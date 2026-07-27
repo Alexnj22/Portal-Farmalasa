@@ -76,7 +76,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
         <div className="space-y-6">
             <div className={`p-6 rounded-[2rem] border flex items-center justify-between shadow-sm ${config.color}`}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-surface-card flex items-center justify-center shadow-sm">
                         <Icon size={24} />
                     </div>
                     <div>
@@ -96,7 +96,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                     <input 
                         required
                         type="text" 
-                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+                        className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-surface-card border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                         placeholder={`Ej: Proveedor de ${config.title}`}
                         value={providerValue || ""} 
                         onChange={(e) => handleChange('provider', e.target.value)} 
@@ -109,7 +109,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <input 
                             required
                             type="number" min="0" step="0.01" 
-                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-surface-card border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                             placeholder="0.00"
                             value={currentData.amount || ""} 
                             onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))} 
@@ -120,7 +120,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <input 
                             required
                             type="number" min="1" max="31" 
-                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-white border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+                            className={`w-full px-4 py-3.5 rounded-[1.25rem] bg-surface-card border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
                             placeholder="Ej: 15"
                             value={currentData.dueDay || ""} 
                             onChange={(e) => handleChange('dueDay', parseInt(e.target.value, 10))} 

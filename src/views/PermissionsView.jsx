@@ -734,7 +734,7 @@ const PermissionsView = () => {
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>

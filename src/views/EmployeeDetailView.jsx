@@ -405,7 +405,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 if (typeof setView === 'function') setView('dashboard');
                                 else navigate('/dashboard');
                             }} 
-                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-surface-card"
                             title="Volver a Personal"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
@@ -431,28 +431,28 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                     {/* --- MINI-DASHBOARD (SIGNOS VITALES) --- */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 mb-4 md:mb-5">
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-success/10 text-success rounded-xl shadow-sm border border-success/30"><CheckCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Estado</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-content">{emp.effectiveStatus || emp.status || 'Activo'}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-chart-1/10 text-brand-text rounded-xl shadow-sm border border-chart-1/30"><Briefcase size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Antigüedad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-content truncate">{tenure}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-chart-6/10 text-chart-6 rounded-xl shadow-sm border border-chart-6/30"><Cake size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Edad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-content">{age ? `${age} Años` : 'N/D'}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-surface-card-hover text-content-3 border-divider'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Tardanzas (Mes)</p>
@@ -513,16 +513,16 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     </div>
                                     
                                     <div className="w-full space-y-3">
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
+                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Correo</p>
                                                 <p className="text-[12px] font-bold text-content-2 truncate">{emp.email || emp.username || 'No registrado'}</p>
                                             </div>
                                         </div>
 
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)] relative">
-                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
+                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)] relative">
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Celular</p>
                                                 <p className="text-[12px] font-bold text-content-2">{emp.phone || 'No registrado'}</p>
@@ -534,16 +534,16 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             )}
                                         </div>
 
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
+                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
                                                 <p className="text-[12px] font-bold text-content-2">{emp.dui || 'No registrado'}</p>
                                             </div>
                                         </div>
 
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
+                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
                                                 <p className="text-[12px] font-bold text-content-2 truncate">{branch ? branch.name : 'Sin Asignar'}</p>
@@ -774,7 +774,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <X size={10} strokeWidth={3}/> {ausenciasSelectedDay}
                                                     </button>
                                                 )}
-                                                <div {...ausenciasSearchContainerRef} className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-white border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
+                                                <div {...ausenciasSearchContainerRef} className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-surface-card border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
                                                     <button type="button"
                                                         onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}
                                                         className="flex-shrink-0 text-content-3 hover:text-content-2 transition-colors">
@@ -1054,11 +1054,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 w-full">
                                                                         <div>
                                                                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Entrada</p>
-                                                                            <p className="text-[13px] font-bold text-content bg-white px-3 py-1.5 rounded-xl shadow-sm border border-divider w-max">{dia.start}</p>
+                                                                            <p className="text-[13px] font-bold text-content bg-surface-card px-3 py-1.5 rounded-xl shadow-sm border border-divider w-max">{dia.start}</p>
                                                                         </div>
                                                                         <div>
                                                                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Salida</p>
-                                                                            <p className="text-[13px] font-bold text-content bg-white px-3 py-1.5 rounded-xl shadow-sm border border-divider w-max">{dia.end}</p>
+                                                                            <p className="text-[13px] font-bold text-content bg-surface-card px-3 py-1.5 rounded-xl shadow-sm border border-divider w-max">{dia.end}</p>
                                                                         </div>
                                                                         <div className="col-span-2 md:col-span-1">
                                                                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Almuerzo / Receso</p>
@@ -1242,7 +1242,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         <button
                             onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
                             disabled={isCancelling}
-                            className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border flex-1 transition-all ${isCancelling ? 'hidden' : 'text-content-2 bg-white border-divider hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'}`}>
+                            className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border flex-1 transition-all ${isCancelling ? 'hidden' : 'text-content-2 bg-surface-card border-divider hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'}`}>
                             Volver
                         </button>
                         <button

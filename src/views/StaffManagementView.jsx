@@ -292,7 +292,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       <DataCell className="w-[360px]">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
-            <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-border-card flex items-center justify-center text-content-3 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
+            <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-surface-card border border-border-card flex items-center justify-center text-content-3 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
             {birthdayInfo?.isToday && (
@@ -524,7 +524,7 @@ function StaffStatCard({ icon: Icon, label, value, active, onClick, color, loadi
       disabled={loading}
       className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}
     >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : c.iconBg}`}>
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-surface-card' : c.iconBg}`}>
         <Icon size={15} strokeWidth={1.5} className={c.iconColor} />
       </div>
       <div className="text-left">
@@ -882,7 +882,7 @@ const StaffManagementView = ({
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
+        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
@@ -977,7 +977,7 @@ const StaffManagementView = ({
             <button
               type="button"
               onClick={handleExportCSV}
-              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-success/10 text-success border border-divider hover:border-success/30 shrink-0 transition-all hover:-translate-y-0.5"
+              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-surface-card hover:bg-success/10 text-success border border-divider hover:border-success/30 shrink-0 transition-all hover:-translate-y-0.5"
               title="Exportar a Excel"
             >
               <Download size={13} strokeWidth={2.5} />

@@ -373,14 +373,14 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               <LiquidSelect value={newType} onChange={setNewType} options={availablePunchTypes} placeholder="Tipo" compact clearable={false} />
               <TimePicker12
                 value={newTime} onChange={setNewTime}
-                className="bg-white border border-black/[0.09] rounded-2xl"
+                className="bg-surface-card border border-black/[0.09] rounded-2xl"
               />
             </div>
             <textarea
               value={reason} onChange={e => setReason(e.target.value)}
               placeholder="Razón de la corrección (opcional)"
               rows={2}
-              className="w-full bg-white border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[16px] font-bold text-content placeholder:text-content-3 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all resize-none"
+              className="w-full bg-surface-card border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[16px] font-bold text-content placeholder:text-content-3 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all resize-none"
             />
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] font-bold text-content-3">
@@ -749,7 +749,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
       >
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">
-          <div className="w-11 h-11 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-[14px] overflow-hidden">
+          <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-[14px] overflow-hidden">
             {emp.photo
               ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
               : <span className="text-[16px]">{emp.name?.charAt(0) || '?'}</span>}
@@ -1226,7 +1226,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
   const pillWrap    = 'flex items-center border border-border-card bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[var(--shadow-glass-sm)] hover:-translate-y-[2px] transition-all duration-300';
   const pillDivider = 'h-5 w-px bg-divider mx-1';
-  const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-content-3 hover:bg-white hover:text-content hover:shadow-sm transition-all duration-300 shrink-0';
+  const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm transition-all duration-300 shrink-0';
   const pillLabelText = 'text-content';
   const pillSubText   = (ok) => ok ? 'text-success' : 'text-brand-text';
 
@@ -1495,7 +1495,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {quincenaSummary.length > 0 && (
                 <div className="flex justify-end pb-2">
                   <button type="button" onClick={handleExportCSVQuincena}
-                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-surface-card text-content-2 hover:bg-white hover:text-brand-text hover:border-brand/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-surface-card text-content-2 hover:bg-surface-card-hover hover:text-brand-text hover:border-brand/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                     <Download size={11} strokeWidth={2.5} /> Exportar CSV
                   </button>
                 </div>

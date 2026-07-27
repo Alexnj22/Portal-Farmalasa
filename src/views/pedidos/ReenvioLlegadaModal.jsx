@@ -147,14 +147,14 @@ export default function ReenvioLlegadaModal({
                                 onClick={() => setElectrolitOk(true)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === true
                                     ? 'bg-success text-white border-success shadow-sm'
-                                    : 'bg-white text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
+                                    : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                 ✓ Sí llegaron
                             </button>
                             <button
                                 onClick={() => setElectrolitOk(false)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === false
                                     ? 'bg-danger text-white border-danger shadow-sm'
-                                    : 'bg-white text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
+                                    : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                 ✗ Aún faltan
                             </button>
                         </div>
@@ -179,11 +179,11 @@ export default function ReenvioLlegadaModal({
                                         <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{label}</span>
                                         <div className="flex items-center gap-1 ml-auto shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success text-white border-success' : 'bg-white text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger text-white border-danger' : 'bg-white text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>

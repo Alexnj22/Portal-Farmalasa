@@ -904,7 +904,7 @@ export default function CotizacionesView() {
                     )}
 
                     {/* Items */}
-                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-surface-card shadow-sm">
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead>

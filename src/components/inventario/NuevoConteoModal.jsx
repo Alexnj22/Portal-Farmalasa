@@ -135,7 +135,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                         key={opt.value}
                                         type="button"
                                         onClick={() => setScopeType(opt.value)}
-                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all ${active ? 'bg-chart-9 border-chart-9 text-white shadow-sm' : 'bg-white border-divider text-content-2 hover:border-chart-9/50'}`}
+                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all ${active ? 'bg-chart-9 border-chart-9 text-white shadow-sm' : 'bg-surface-card border-divider text-content-2 hover:border-chart-9/50'}`}
                                     >
                                         <Icon size={14} className="shrink-0" /> {opt.label}
                                     </button>
@@ -176,7 +176,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
             </div>
 
             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-10 shrink-0">
-                <button type="button" onClick={onClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-content transition-colors disabled:opacity-50">
+                <button type="button" onClick={onClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-[11px] uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
                     Cancelar
                 </button>
                 <button

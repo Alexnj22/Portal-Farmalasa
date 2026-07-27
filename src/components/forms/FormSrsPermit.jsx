@@ -23,7 +23,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 <input 
                     type="text" 
                     placeholder="Ej: F025-2024"
-                    className="w-full px-4 py-3.5 rounded-[1rem] bg-white border border-divider outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all font-mono text-[16px] text-content font-semibold placeholder:text-content-3" 
+                    className="w-full px-4 py-3.5 rounded-[1rem] bg-surface-card border border-divider outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all font-mono text-[16px] text-content font-semibold placeholder:text-content-3" 
                     value={legalData.srsPermit || ""} 
                     onChange={(e) => updateLegalField('srsPermit', e.target.value)} 
                 />
@@ -33,7 +33,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">
                     Documento de Permiso Escaneado (PDF/IMG)
                 </label>
-                <div className="flex items-center gap-3 cursor-pointer relative rounded-[1rem] border border-divider bg-white px-4 py-3.5 hover:bg-surface-card-hover hover:border-brand/30 transition-colors group">
+                <div className="flex items-center gap-3 cursor-pointer relative rounded-[1rem] border border-divider bg-surface-card px-4 py-3.5 hover:bg-surface-card-hover hover:border-brand/30 transition-colors group">
                     <div className="p-2 bg-success/10 rounded-lg group-hover:bg-success/10 transition-colors text-success">
                         <UploadCloud size={18} strokeWidth={2} />
                     </div>

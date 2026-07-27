@@ -51,7 +51,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand-text hover:bg-white transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-all active:scale-[0.97]"
                         title="Ver PDF"
                     >
                         <Eye size={14} strokeWidth={2.5} />
@@ -60,7 +60,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                 <button
                     onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand-text hover:bg-white transition-all active:scale-[0.97]"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-all active:scale-[0.97]"
                     title="Editar/Actualizar Datos"
                 >
                     <Edit3 size={14} strokeWidth={2.5} />
@@ -113,13 +113,13 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                     </div>
 
                                     {/* Flechita decorativa del tooltip */}
-                                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-white border-l border-t border-chart-3/30 transform rotate-45 shadow-[-2px_-2px_4px_rgba(0,0,0,0.02)]"></div>
+                                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-surface-card border-l border-t border-chart-3/30 transform rotate-45 shadow-[-2px_-2px_4px_rgba(0,0,0,0.02)]"></div>
 
                                     {/* Header del Tooltip */}
                                     <div className="flex items-center gap-2 mb-3 relative z-10 border-b border-chart-3/30 pb-2.5">
                                         <div className="relative w-5 h-5 flex items-center justify-center">
                                             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:3s] blur-[2px] opacity-60"></div>
-                                            <div className="relative w-full h-full bg-white rounded-full flex items-center justify-center border border-chart-3/30">
+                                            <div className="relative w-full h-full bg-surface-card rounded-full flex items-center justify-center border border-chart-3/30">
                                                 <Sparkles size={10} strokeWidth={2.5} className="text-chart-3-text" />
                                             </div>
                                         </div>
@@ -456,7 +456,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <CheckCircle2 size={40} className="text-success mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-success">Expediente impecable</p>
                             <p className="text-[11px] font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand-text bg-white border border-brand/20 shadow-[var(--shadow-glow-brand)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
+                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand-text bg-surface-card border border-brand/20 shadow-[var(--shadow-glow-brand)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
                                 Ver Documentos Al Día
                             </button>
                         </>

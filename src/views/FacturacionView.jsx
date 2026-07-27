@@ -120,7 +120,7 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
             <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
                 <div className="flex items-start gap-3 max-w-2xl">
                     <textarea
-                        className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                        className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                         rows={2} autoFocus
                         placeholder={placeholder || 'Comentario (opcional)'}
                         value={comment} onChange={e => setComment(e.target.value)}
@@ -132,7 +132,7 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
                             Confirmar
                         </button>
                         <button onClick={onCancel}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-all hover:-translate-y-0.5">
+                            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-all hover:-translate-y-0.5">
                             <X size={12} /> Cancelar
                         </button>
                     </div>
@@ -419,7 +419,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             {loading ? (
                 <div className="space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm overflow-hidden">
+                        <div key={i} className="rounded-2xl border border-black/[0.07] bg-surface-card shadow-sm overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
                                 <div className="h-3 w-28 skeleton rounded-full" />
                                 <div className="h-3 w-12 skeleton rounded-full" />
@@ -452,7 +452,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
                         const isCollapsed = !!collapsedBranches[branchId];
                         return (
-                            <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
+                            <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-surface-card shadow-sm">
                                 <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                     className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                     <div className="flex items-center gap-2">
@@ -500,7 +500,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isVisited ? 'bg-warning/10' : isCCF ? 'bg-danger/10' : 'bg-white'}`}>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isVisited ? 'bg-warning/10' : isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
                                                                         <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
@@ -523,7 +523,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                             <p className={`text-[13px] font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
                                                                 </div>
                                                             </div>
                                                         );
@@ -540,7 +540,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <span className="ml-auto text-[12px] font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
-                                                                <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                                <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)} />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
@@ -549,7 +549,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                         <X size={10} /> Cancelar
                                                                     </button>
                                                                 </div>
@@ -569,7 +569,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
             {/* Historial */}
             {!loading && resolved.length > 0 && (
-                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
+                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-surface-card shadow-sm">
                     <button onClick={() => setShowHistorial(v => !v)}
                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
                         <div className="flex items-center gap-3">
@@ -875,7 +875,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             {loading ? (
                 <div className="space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm overflow-hidden">
+                        <div key={i} className="rounded-2xl border border-black/[0.07] bg-surface-card shadow-sm overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
                                 <div className="h-3 w-28 skeleton rounded-full" />
                                 <div className="h-3 w-12 skeleton rounded-full" />
@@ -908,7 +908,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                         const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
                         const isCollapsed = !!collapsedBranches[branchId];
                         return (
-                            <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
+                            <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-surface-card shadow-sm">
                                 {/* Branch header — collapsible */}
                                 <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                     className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
@@ -1006,7 +1006,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         </div>
                                                                     </div>
                                                                     {/* Arrow */}
-                                                                    <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
                                                                 </div>
                                                             </div>
                                                         );
@@ -1026,7 +1026,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                             </div>
                                                             <div className="flex items-start gap-3">
                                                                 <textarea
-                                                                    className="flex-1 bg-white border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                                    className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)}
                                                                 />
@@ -1036,7 +1036,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                         <X size={10} /> Cancelar
                                                                     </button>
                                                                 </div>
@@ -1056,7 +1056,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
 
             {/* Historial solventados */}
             {!loading && resolved.length > 0 && (
-                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
+                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-surface-card shadow-sm">
                     <button onClick={() => setShowResolved(v => !v)}
                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
                         <div className="flex items-center gap-3">
@@ -1287,7 +1287,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                             const isCollapsed = !!collapsedGapBranches[branchId];
                             const hasCCF = branchGaps.some(g => g.tipo_documento === 'CCF');
                             return (
-                                <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
+                                <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-surface-card shadow-sm">
                                     <button onClick={() => setCollapsedGapBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                         className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${hasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                         <div className="flex items-center gap-2">
@@ -1313,7 +1313,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 <div className={`flex items-center px-2 py-1.5 border-r font-mono text-[10px] font-black ${isCCF ? 'bg-danger/10 text-danger-text border-danger/30' : 'bg-chart-4/10 text-chart-4-text border-chart-4/30'}`}>
                                                                     {pad7(g.gap_from)}–{pad7(g.gap_to)}
                                                                 </div>
-                                                                <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isCCF ? 'bg-danger/10' : 'bg-white'}`}>
+                                                                <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
                                                                     <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-danger' : 'text-content-3'}`}>{g.tipo_documento}</span>
                                                                 </div>
                                                                 <button onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
@@ -1336,7 +1336,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                         <p className="font-mono text-[11px] font-semibold text-content-2">{g.siguiente_correlativo}</p>
                                                                     </div>}
                                                                 </div>
-                                                                <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
                                                             </div>
                                                         </div>
                                                     );
@@ -1348,7 +1348,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-chart-4-text">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={comment} onChange={e => setComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
@@ -1357,7 +1357,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
                                                                 <button onClick={() => { setSolvingGap(null); setComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                     <X size={10} /> Cancelar
                                                                 </button>
                                                             </div>
@@ -1385,7 +1385,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                         {Object.entries(nullsByBranch).map(([branchId, branchNulls]) => {
                             const isCollapsed = !!collapsedNullBranches[branchId];
                             return (
-                                <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
+                                <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-surface-card shadow-sm">
                                     <button onClick={() => setCollapsedNullBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                         className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors bg-surface-card-hover/60 hover:bg-surface-card-hover/60 ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'}`}>
                                         <div className="flex items-center gap-2">
@@ -1442,7 +1442,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
                                                             </div>
                                                         </div>
                                                     );
@@ -1454,7 +1454,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-white border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={nullComment} onChange={e => setNullComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
@@ -1463,7 +1463,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     {nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
                                                                 <button onClick={() => { setSolvingNull(null); setNullComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                     <X size={10} /> Cancelar
                                                                 </button>
                                                             </div>
@@ -1482,7 +1482,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
             {/* ── Historial solventados ── */}
             {resolvedGaps.length > 0 && (
-                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
+                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-surface-card shadow-sm">
                     <button onClick={() => setShowHistorial(v => !v)}
                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
                         <div className="flex items-center gap-3">
@@ -1832,7 +1832,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <div className="flex items-start gap-3 max-w-3xl">
                                                                 <div className="flex-1 space-y-2">
                                                                     <textarea
-                                                                        className={`w-full bg-white border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                        className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                         rows={2} autoFocus
                                                                         placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
                                                                         value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
@@ -1854,7 +1854,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => setConfirmingId(null)}
-                                                                        className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
+                                                                        className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
                                                                         <X size={12} /> Cancelar
                                                                     </button>
                                                                 </div>
@@ -1941,7 +1941,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className="flex items-start gap-3 max-w-3xl">
                                                                         <div className="flex-1 space-y-2">
                                                                             <textarea
-                                                                                className={`w-full bg-white border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                                className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                                 rows={2} autoFocus
                                                                                 placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
                                                                                 value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
@@ -1959,7 +1959,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                                 {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                             </button>
                                                                             <button onClick={() => setConfirmingId(null)}
-                                                                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
+                                                                                className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
                                                                                 <X size={12} /> Cancelar
                                                                             </button>
                                                                         </div>
@@ -2148,7 +2148,7 @@ export default function FacturacionView() {
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>
                 )}
-                <button onClick={closeSearch} className="w-11 h-11 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
+                <button onClick={closeSearch} className="w-11 h-11 rounded-full hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -2160,8 +2160,8 @@ export default function FacturacionView() {
                     <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                             activeTab === tab.key
-                                ? 'bg-white text-content border-white shadow-md scale-[1.02]'
-                                : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
+                                ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
+                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                         }`}>
                         {tab.label}
                     </button>

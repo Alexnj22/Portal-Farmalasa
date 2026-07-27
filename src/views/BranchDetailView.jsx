@@ -307,7 +307,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                             onClick={() => setActiveTab(tab.id)}
                                             className={`relative flex items-center justify-center gap-2 py-2.5 px-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 z-10 rounded-full shrink-0 border border-transparent ${isActive
                                                     ? 'text-brand-text'
-                                                    : 'text-content-3 hover:bg-white hover:text-content hover:shadow-sm hover:-translate-y-0.5 hover:border-border-card'
+                                                    : 'text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm hover:-translate-y-0.5 hover:border-border-card'
                                                 }`}
                                         >
                                             <Icon size={14} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-brand-text' : ''} />
@@ -324,12 +324,12 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {canEdit && (
                         <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
-                                <button onClick={() => openModal && openModal('editBranch', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-content hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Edit3 size={13} /> General</button>
-                                <button onClick={() => openModal && openModal('editBranchHorarios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-warning hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><CalendarClock size={13} /> Horarios</button>
-                                <button onClick={() => openModal && openModal('editBranchInmueble', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-chart-4-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Building2 size={13} /> Local</button>
-                                {hasServices && <button onClick={() => openModal && openModal('editBranchServicios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-success hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Zap size={13} /> Serv.</button>}
-                                {hasLegal && <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-chart-3-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>}
-                                {hasKiosk && <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-white hover:text-brand-hover hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>}
+                                <button onClick={() => openModal && openModal('editBranch', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Edit3 size={13} /> General</button>
+                                <button onClick={() => openModal && openModal('editBranchHorarios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-warning hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><CalendarClock size={13} /> Horarios</button>
+                                <button onClick={() => openModal && openModal('editBranchInmueble', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-chart-4-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Building2 size={13} /> Local</button>
+                                {hasServices && <button onClick={() => openModal && openModal('editBranchServicios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-success hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Zap size={13} /> Serv.</button>}
+                                {hasLegal && <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-chart-3-text hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>}
+                                {hasKiosk && <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-content-3 hover:bg-surface-card-hover hover:text-brand-hover hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>}
                             </div>
                         </div>
                         )}
@@ -340,7 +340,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             onClick={() => setIsEditMode(!isEditMode)}
                             className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-full transition-all duration-300 transform-gpu active:scale-[0.97] shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
                                     ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger hover:text-white'
-                                    : 'bg-white text-brand-text border border-white hover:border-brand/30'
+                                    : 'bg-surface-card text-brand-text border border-white hover:border-brand/30'
                                 }`}
                             title={isEditMode ? "Cerrar edición" : "Configurar sucursal"}
                         >
@@ -361,7 +361,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {/* 🚨 4. EL BOTÓN "VOLVER" AHORA USA EL ROUTER DIRECTO */}
                         <button 
                             onClick={() => navigate('/branches')} 
-                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-surface-card"
                             title="Volver a Sucursales"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>

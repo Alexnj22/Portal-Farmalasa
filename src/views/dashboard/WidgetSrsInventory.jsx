@@ -104,7 +104,7 @@ export default function WidgetSrsInventory() {
 
           return (
             <div key={p.id ?? noregistro}
-              className={`rounded-2xl border bg-white p-3.5 flex flex-col gap-2 transition-all ${
+              className={`rounded-2xl border bg-surface-card p-3.5 flex flex-col gap-2 transition-all ${
                 hasStock ? 'border-success/50 shadow-sm shadow-success/10' : 'border-divider'
               }`}
             >

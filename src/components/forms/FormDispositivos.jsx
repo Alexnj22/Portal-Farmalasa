@@ -142,7 +142,7 @@ const FormDispositivos = ({ formData }) => {
                                 );
                             })
                         ) : (
-                            <div className="text-center py-10 rounded-[1.5rem] bg-white border border-divider shadow-sm">
+                            <div className="text-center py-10 rounded-[1.5rem] bg-surface-card border border-divider shadow-sm">
                                 <div className="w-12 h-12 bg-surface-card-hover border border-divider rounded-xl flex items-center justify-center mx-auto mb-3 text-content-3">
                                     <Laptop size={20} strokeWidth={2} />
                                 </div>

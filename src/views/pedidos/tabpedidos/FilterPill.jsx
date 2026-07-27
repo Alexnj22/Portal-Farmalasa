@@ -16,7 +16,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
             className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
                 filterStatus === key
                     ? activeClass
-                    : 'bg-white text-content-3 border-divider hover:border-divider hover:text-content-2'
+                    : 'bg-surface-card text-content-3 border-divider hover:border-divider hover:text-content-2'
             }`}
         >
             {label}{filterStatus === key && <X size={9} strokeWidth={3} className="ml-0.5" />}

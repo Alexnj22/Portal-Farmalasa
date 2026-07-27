@@ -200,7 +200,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 <div className="relative w-24 h-24 flex items-center justify-center mb-8">
                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 rounded-full animate-spin [animation-duration:3s] blur-xl opacity-30"></div>
                     <div className="absolute inset-2 bg-gradient-to-bl from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:1.5s] blur-md opacity-50"></div>
-                    <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center border border-chart-3/30 shadow-inner z-10">
+                    <div className="relative w-16 h-16 bg-surface-card rounded-full flex items-center justify-center border border-chart-3/30 shadow-inner z-10">
                         <Sparkles size={28} strokeWidth={2.5} className="text-chart-3-text animate-pulse scale-110" />
                     </div>
                 </div>
@@ -238,7 +238,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                         Es matemáticamente imposible cubrir la apertura y cierre de la sucursal respetando las 44 horas semanales con el catálogo y personal actual.
                     </p>
                    
-                    <div className="w-full bg-white rounded-xl p-5 text-left border border-danger/30 mb-4 shadow-sm">
+                    <div className="w-full bg-surface-card rounded-xl p-5 text-left border border-danger/30 mb-4 shadow-sm">
                         <h4 className="text-[11px] font-black text-danger-text uppercase tracking-widest mb-3">Problemas Detectados por Gemini:</h4>
                         <ul className="list-disc pl-5 text-[13px] font-bold text-content-2 space-y-1.5 leading-relaxed">
                             {aiResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
@@ -281,16 +281,16 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             {/* TABLA DETALLADA */}
             <div className="border border-divider rounded-xl overflow-auto shadow-sm">
                 <table className="w-full text-left border-collapse bg-surface-card-hover/50 min-w-[1000px]">
-                    <thead className="sticky top-0 bg-white shadow-[var(--shadow-elevation-sm)] z-20">
+                    <thead className="sticky top-0 bg-surface-card shadow-[var(--shadow-elevation-sm)] z-20">
                         <tr>
-                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest w-[180px] bg-white">Empleado</th>
-                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center border-r border-divider bg-white w-[60px]">Hrs</th>
+                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest w-[180px] bg-surface-card">Empleado</th>
+                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center border-r border-divider bg-surface-card w-[60px]">Hrs</th>
                             {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, i) => (
-                                <th key={i} className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center min-w-[120px] bg-white">{day}</th>
+                                <th key={i} className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center min-w-[120px] bg-surface-card">{day}</th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-divider bg-white">
+                    <tbody className="divide-y divide-divider bg-surface-card">
                         {branchEmployees.map(emp => {
                             const empSch = editableSchedule[emp.id] || {};
                             const weeklyHrs = calculateWeeklyHours(empSch);
@@ -299,7 +299,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
                             return (
                                 <tr key={emp.id} className="hover:bg-surface-card-hover transition-colors group/row">
-                                    <td className="p-3 border-r border-divider bg-white sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                                    <td className="p-3 border-r border-divider bg-surface-card sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                                         <p className="text-[12px] font-black text-content truncate">{emp.name}</p>
                                         <p className="text-[9px] font-bold text-content-3 uppercase truncate">{emp.role}</p>
                                     </td>
@@ -327,7 +327,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                         return (
                                             <td key={dayId} className="p-2 align-top border-l border-divider">
                                                 {shift ? (
-                                                    <div className="flex flex-col h-full bg-white border border-chart-3/30 rounded-lg shadow-sm overflow-hidden hover:border-chart-3/50 transition-colors group/cell">
+                                                    <div className="flex flex-col h-full bg-surface-card border border-chart-3/30 rounded-lg shadow-sm overflow-hidden hover:border-chart-3/50 transition-colors group/cell">
                                                         
                                                         {/* Header de la celda (Selector) */}
                                                         <div className="w-full bg-chart-3/10 hover:bg-chart-3/10 text-chart-3-text border-b border-chart-3/20 transition-colors">

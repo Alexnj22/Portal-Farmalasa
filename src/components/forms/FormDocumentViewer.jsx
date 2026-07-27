@@ -22,7 +22,7 @@ const FormDocumentViewer = ({ formData }) => {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-surface-card-hover/50">
-            <div className="flex items-center justify-between p-6 border-b border-divider bg-white shrink-0 shadow-sm z-10">
+            <div className="flex items-center justify-between p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-10">
                 <div className="flex items-center gap-4 min-w-0">
                     <div className="w-12 h-12 rounded-[1.25rem] bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
                         <FileText size={24} strokeWidth={1.5} />
@@ -44,12 +44,12 @@ const FormDocumentViewer = ({ formData }) => {
             </div>
             <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden min-h-0">
                 {resolving ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-white rounded-[1.5rem] border border-divider shadow-sm">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-brand-text" />
                         <p className="font-bold text-[11px] uppercase tracking-widest">Generando acceso seguro...</p>
                     </div>
                 ) : url ? (
-                    <div className="flex-1 min-h-0 w-full rounded-[1.5rem] border border-divider bg-white shadow-sm overflow-hidden flex flex-col">
+                    <div className="flex-1 min-h-0 w-full rounded-[1.5rem] border border-divider bg-surface-card shadow-sm overflow-hidden flex flex-col">
                         {/* Usamos object/embed para mejor compatibilidad con PDFs en navegadores.
                             Fallback a iframe si falla.
                         */}
@@ -63,7 +63,7 @@ const FormDocumentViewer = ({ formData }) => {
                         </object>
                     </div>
                 ) : (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-white rounded-[1.5rem] border border-divider shadow-sm border-dashed">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5}/>
                         <p className="font-bold text-sm">URL no disponible o archivo corrupto.</p>
                     </div>

@@ -145,7 +145,7 @@ function SegmentControl({ options, value, onChange, compact = false }) {
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
                     className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-[9px]' : 'h-8 text-[9px] md:text-[10px]'} ${
                         value === opt.id
-                            ? 'bg-white text-brand-text border-white shadow-sm scale-[1.02]'
+                            ? 'bg-surface-card text-brand-text border-white shadow-sm scale-[1.02]'
                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5 hover:shadow-sm'
                     }`}>
                     {opt.label}
@@ -475,7 +475,7 @@ export default function EncuestaAdminView() {
     const filtersContent = (
         <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
-                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-white text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
+                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-surface-card text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
                     <ClipboardList size={12} strokeWidth={2.5} />
                     <span className="hidden sm:inline">Encuestas</span>
                 </button>
@@ -534,7 +534,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
                                     <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
                                         placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
+                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
                                 </div>
 
                                 {/* Año + Estado */}
@@ -542,7 +542,7 @@ export default function EncuestaAdminView() {
                                     <div>
                                         <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
                                         <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
-                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300" />
+                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300" />
                                     </div>
                                     <div>
                                         <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
@@ -562,7 +562,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
                                     <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
                                         rows={2} placeholder="Objetivo específico de esta encuesta…"
-                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal leading-relaxed" />
+                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal leading-relaxed" />
                                 </div>
 
                                 {/* Fechas */}
@@ -573,13 +573,13 @@ export default function EncuestaAdminView() {
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-white focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
@@ -639,7 +639,7 @@ export default function EncuestaAdminView() {
                                                     className={`flex items-center gap-1.5 px-3 h-7 rounded-xl border text-[11px] font-black transition-all ${
                                                         sfScopeIds.includes(b.id)
                                                             ? 'bg-brand border-brand text-white shadow-sm'
-                                                            : 'bg-surface-card border-border-card text-content-3 hover:bg-white hover:border-brand/30'
+                                                            : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card-hover hover:border-brand/30'
                                                     }`}>
                                                     <Building2 size={9} strokeWidth={2.5} /> {b.name}
                                                 </button>
@@ -678,7 +678,7 @@ export default function EncuestaAdminView() {
                                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-3" size={13} strokeWidth={2.5} />
                                                     <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
                                                         placeholder="Buscar por nombre…"
-                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
                                                     {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-3 hover:text-danger transition-colors"><X size={12} strokeWidth={2.5} /></button>}
                                                 </div>
                                                 {empResults.length > 0 && (
@@ -940,7 +940,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
                                     <textarea value={rfComentario} onChange={e => setRfComentario(e.target.value)} rows={3}
                                         placeholder="¿Qué mejorarías del ambiente de trabajo?"
-                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
+                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
                                 </div>
 
                                 {/* Submit */}
@@ -1005,7 +1005,7 @@ export default function EncuestaAdminView() {
                                         <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                             {isExpanded && (
                                                 <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-surface-card border border-border-card text-content-3 hover:bg-white hover:text-content-2 shadow-sm transition-all active:scale-[0.97]">
+                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-surface-card border border-border-card text-content-3 hover:bg-surface-card-hover hover:text-content-2 shadow-sm transition-all active:scale-[0.97]">
                                                     <ChevronUp size={10} strokeWidth={2.5} /> Colapsar
                                                 </button>
                                             )}
@@ -1216,7 +1216,7 @@ export default function EncuestaAdminView() {
                                                                                                         <Check size={10} strokeWidth={3} />
                                                                                                     </button>
                                                                                                     <button onClick={() => setConfirmDelete(null)}
-                                                                                                        className="w-6 h-6 rounded-full bg-surface-card text-content-3 flex items-center justify-center hover:bg-white transition-colors border border-border-card">
+                                                                                                        className="w-6 h-6 rounded-full bg-surface-card text-content-3 flex items-center justify-center hover:bg-surface-card-hover transition-colors border border-border-card">
                                                                                                         <X size={10} strokeWidth={3} />
                                                                                                     </button>
                                                                                                 </div>

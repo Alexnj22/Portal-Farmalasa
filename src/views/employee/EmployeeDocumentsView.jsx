@@ -263,7 +263,7 @@ const EmployeeDocumentsView = () => {
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setSearchOpen(false); setSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2" title="Cerrar">
+                <button onClick={() => { setSearchOpen(false); setSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2" title="Cerrar">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -273,14 +273,14 @@ const EmployeeDocumentsView = () => {
                     const isActive = tab === t.key;
                     return (
                         <button key={t.key} onClick={() => setTab(t.key)}
-                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-white text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
                             {t.label}{counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}
                         </button>
                     );
                 })}
                 <div className="w-px h-5 bg-divider mx-1 shrink-0" />
                 <button onClick={() => setFilterOpen(v => !v)}
-                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-white text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
                     <Filter size={10} strokeWidth={2.5} />
                     Filtrar
                     {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}
@@ -324,11 +324,11 @@ const EmployeeDocumentsView = () => {
                         <div>
                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-2">Período de solicitud</p>
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
+                                <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                 </div>
                                 <span className="text-content-3 text-[12px] font-bold shrink-0">→</span>
-                                <div className="flex-1 bg-white border border-divider rounded-xl h-10 overflow-hidden">
+                                <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                 </div>
                             </div>
@@ -342,7 +342,7 @@ const EmployeeDocumentsView = () => {
                                     <button
                                         key={s.key}
                                         onClick={() => setFilterStatus(s.key)}
-                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-chart-8 text-white border-chart-8' : 'bg-white text-content-3 border-divider hover:border-divider'}`}
+                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                     >
                                         {s.label}
                                     </button>
@@ -394,7 +394,7 @@ const EmployeeDocumentsView = () => {
                         {(search || hasFilters) && (
                             <button
                                 onClick={() => { setSearch(''); clearFilters(); setTab('ALL'); }}
-                                className="mt-4 px-4 py-2 rounded-2xl bg-surface-card border border-border-card text-[11px] font-black text-content-2 hover:bg-white transition-all hover:-translate-y-0.5 active:scale-[0.97]"
+                                className="mt-4 px-4 py-2 rounded-2xl bg-surface-card border border-border-card text-[11px] font-black text-content-2 hover:bg-surface-card-hover transition-all hover:-translate-y-0.5 active:scale-[0.97]"
                             >
                                 Limpiar filtros
                             </button>

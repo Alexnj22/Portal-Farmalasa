@@ -23,7 +23,7 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const inp = 'w-full text-[12px] bg-white border border-border-card rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-chart-1/20 transition-all placeholder:text-content-3 text-content-2';
+const inp = 'w-full text-[12px] bg-surface-card border border-border-card rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-chart-1/20 transition-all placeholder:text-content-3 text-content-2';
 const lbl = 'text-[10px] font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
@@ -79,7 +79,7 @@ function StepInfo({ form, set, branches }) {
                         className={`px-3 py-1.5 text-[11px] font-bold rounded-full border transition-all ${
                             form.branch_ids.length === branches.length
                                 ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white shadow-sm shadow-brand/20'
-                                : 'bg-white border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
+                                : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                         }`}
                     >
                         Todas
@@ -96,7 +96,7 @@ function StepInfo({ form, set, branches }) {
                                 className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                     active
                                         ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
-                                        : 'bg-white border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
+                                        : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                 }`}
                             >
                                 {b.name}
@@ -123,7 +123,7 @@ function StepInfo({ form, set, branches }) {
 
 function ProductRow({ pp, onRemove }) {
     return (
-        <div className="bg-white border border-divider rounded-xl p-3 flex gap-3 items-start shadow-sm">
+        <div className="bg-surface-card border border-divider rounded-xl p-3 flex gap-3 items-start shadow-sm">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-surface-card-hover to-surface-card border border-divider flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {pp.foto_url
                     ? <img src={pp.foto_url} className="w-full h-full object-cover" alt="" />
@@ -307,7 +307,7 @@ function AddProductInline({ onAdd }) {
                                     className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                         presentacionId === opt.value
                                             ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
-                                            : 'bg-white border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
+                                            : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                     }`}
                                 >
                                     {opt.label}
@@ -541,7 +541,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                         className="flex items-center gap-2 shrink-0"
                                     >
                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                                            isActive ? 'bg-white border-white text-chart-1-text scale-110 shadow-lg shadow-brand/30'
+                                            isActive ? 'bg-surface-card border-white text-chart-1-text scale-110 shadow-lg shadow-brand/30'
                                             : isDone  ? 'bg-success border-success/50 text-white'
                                             : 'bg-surface-card border-border-card text-white/50'
                                         }`}>
@@ -558,7 +558,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                 </div>
 
                 {/* Body — solid white. Both steps stay mounted to preserve date picker + in-progress form state */}
-                <div className="flex-1 overflow-y-auto overscroll-contain px-7 py-6 scrollbar-hide bg-white">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-7 py-6 scrollbar-hide bg-surface-card">
                     <div className={step !== 0 ? 'hidden' : ''}>
                         <StepInfo form={form} set={set} branches={branches} />
                     </div>

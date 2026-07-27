@@ -254,12 +254,12 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
         <div
             onClick={onClick}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
-                ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-white' : 'cursor-default bg-white'}
+                ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-surface-card' : 'cursor-default bg-surface-card'}
                 ${active
                     ? 'border-warning ring-2 ring-warning/30 shadow-md bg-warning/10'
                     : isFilter
                         ? 'border-warning/30 bg-warning/10 hover:bg-warning/10'
-                        : 'border-divider bg-white'
+                        : 'border-divider bg-surface-card'
                 }`}
         >
             <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
@@ -621,7 +621,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 <div className="flex items-center gap-2 flex-wrap">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
-                        <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-white">
+                        <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-surface-card">
                             <div className="w-6 h-6 rounded-lg skeleton shrink-0" />
                             <div className="h-3 skeleton" style={{ width: w * 0.45 }} />
                             <div className="h-4 skeleton" style={{ width: w * 0.55 }} />
@@ -2004,7 +2004,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {r.presentaciones.map(p => (
-                                                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-divider shadow-sm">
+                                                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-card border border-divider shadow-sm">
                                                                             <span className="text-[11px] font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
                                                                             <span className="text-[11px] font-black text-content">{fmtQty(p.cantidad)} u</span>
                                                                             {p.factor > 1 && (
@@ -2181,7 +2181,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     </div>
 
                                                                     {/* Table */}
-                                                                    <div className="rounded-xl border border-divider overflow-hidden bg-white shadow-sm overflow-x-auto">
+                                                                    <div className="rounded-xl border border-divider overflow-hidden bg-surface-card shadow-sm overflow-x-auto">
                                                                         <table className="min-w-full text-[11px]">
                                                                             <thead className="bg-surface-card-hover border-b border-divider">
                                                                                 <tr>
@@ -2399,7 +2399,7 @@ export default function VentasView() {
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode
                             ? 'bg-chart-8 text-white border-chart-8 shadow-[var(--shadow-elevation-xl)]'
-                            : 'bg-surface-card text-content-3 border-border-card hover:bg-white hover:shadow-md hover:text-content-2'
+                            : 'bg-surface-card text-content-3 border-border-card hover:bg-surface-card-hover hover:shadow-md hover:text-content-2'
                     }`}>
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}
                 </button>

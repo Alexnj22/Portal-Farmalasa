@@ -531,7 +531,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="h-[40px] mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>
-                        <label className="flex items-center gap-2 cursor-pointer mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-white">
+                        <label className="flex items-center gap-2 cursor-pointer mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-surface-card-hover">
                             <input type="checkbox" className="accent-danger w-4 h-4 cursor-pointer" checked={formData?.hasFiniquito || false} onChange={(e) => setFormData(prev => ({...prev, hasFiniquito: e.target.checked}))} />
                             <span className="text-[10px] font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>
                         </label>
@@ -658,7 +658,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <div className="flex items-center gap-3">
                                     <div className="relative flex-1 max-w-xs">
                                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-success" size={16} strokeWidth={3}/>
-                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-white border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
                                     </div>
                                     {diff !== null && !isNaN(diff) && (
                                         <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>

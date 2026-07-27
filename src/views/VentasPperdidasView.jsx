@@ -120,7 +120,7 @@ export default function VentasPperdidasView() {
                     {rows.length > 0 && (
                         <button
                             onClick={handleExportCsv}
-                            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-surface-card-hover border border-divider text-content-2 text-[10px] font-black transition-colors"
+                            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-card-hover border border-divider text-content-2 text-[10px] font-black transition-colors"
                         >
                             <Download size={11} strokeWidth={2.5} />
                             CSV
@@ -183,7 +183,7 @@ export default function VentasPperdidasView() {
                             return (
                                 <div
                                     key={r.id}
-                                    className="rounded-2xl bg-white border border-divider shadow-sm overflow-hidden"
+                                    className="rounded-2xl bg-surface-card border border-divider shadow-sm overflow-hidden"
                                 >
                                     {/* Colored top stripe */}
                                     <div className={`h-1 w-full ${activeTab === 'pendiente' ? 'bg-danger' : 'bg-success'}`} />

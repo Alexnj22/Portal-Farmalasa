@@ -219,7 +219,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-150 select-none text-left ${
                                         isActive
                                             ? `${style.bg} border-transparent ${style.text} shadow-lg`
-                                            : 'bg-surface-card border-divider text-content-2 hover:border-divider hover:bg-white'
+                                            : 'bg-surface-card border-divider text-content-2 hover:border-divider hover:bg-surface-card-hover'
                                     }`}
                                 >
                                     <Icon size={15} className={isActive ? 'text-white' : style.iconInactive} />
@@ -261,7 +261,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             vals.dispatch_label === label
                                                 ? 'bg-chart-8 border-chart-8 text-white shadow-md'
-                                                : 'bg-white border-divider text-content-3 hover:border-chart-8/50 hover:text-content-2'
+                                                : 'bg-surface-card border-divider text-content-3 hover:border-chart-8/50 hover:text-content-2'
                                         }`}
                                     >
                                         <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-content-3'} />
@@ -610,31 +610,31 @@ export default function TabReglas({ searchTerm = '' }) {
                     </div>
 
                     <StatCard label="Con regla" value={rulesCount}
-                        Icon={Check} iconBg={filterRule === 'con' ? 'bg-white' : 'bg-success/10'} iconCls="text-success"
+                        Icon={Check} iconBg={filterRule === 'con' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
                         countCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'con'}
                         activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
-                        inactiveBg="bg-white border-divider hover:border-success/30 hover:bg-success/10"
+                        inactiveBg="bg-surface-card border-divider hover:border-success/30 hover:bg-success/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'con' ? '' : 'con')}
                     />
 
                     <StatCard label="Sin regla" value={sinRegla}
-                        Icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-white' : 'bg-danger/10'} iconCls="text-danger"
+                        Icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger"
                         countCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
                         active={filterRule === 'sin'}
                         activeBg="bg-danger/10 border-danger/40 shadow-md shadow-danger/20 -translate-y-px"
-                        inactiveBg="bg-white border-divider hover:border-danger/30 hover:bg-danger/10"
+                        inactiveBg="bg-surface-card border-divider hover:border-danger/30 hover:bg-danger/10"
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
                     />
 
                     <StatCard label="Nuevos este mes" sub={`agregados en ${mesActual}`} value={thisMonthCount}
-                        Icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-white' : 'bg-success/10'} iconCls="text-success"
+                        Icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
                         countCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'nuevo'}
                         activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
-                        inactiveBg="bg-white border-divider hover:border-success/30 hover:bg-success/10"
+                        inactiveBg="bg-surface-card border-divider hover:border-success/30 hover:bg-success/10"
                         loading={statsLoading}
                         onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
                     />

@@ -809,7 +809,7 @@ const EmployeeRequestsView = () => {
                             <CalendarDays size={11} strokeWidth={2.5} className="text-chart-3-text" />
                             Días de Permiso
                         </label>
-                        <div className="bg-white border border-divider rounded-xl h-10 overflow-hidden">
+                        <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                             <LiquidDatePicker
                                 key={permPickerKey}
                                 value=""
@@ -855,7 +855,7 @@ const EmployeeRequestsView = () => {
                             <CalendarDays size={11} strokeWidth={2.5} className="text-chart-5" />
                             Fecha del cambio
                         </label>
-                        <div className="bg-white border border-divider rounded-xl h-10 overflow-hidden">
+                        <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                             <LiquidDatePicker
                                 value={payload.date || ''}
                                 onChange={v => setPayload(prev => ({ ...prev, date: v }))}
@@ -920,7 +920,7 @@ const EmployeeRequestsView = () => {
                             value={payload.amount || ''}
                             onChange={e => setPayload(prev => ({ ...prev, amount: e.target.value }))}
                             placeholder="0.00"
-                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 transition-all duration-300 placeholder-content-3"
+                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 transition-all duration-300 placeholder-content-3"
                         />
                     </div>
                 </div>
@@ -964,7 +964,7 @@ const EmployeeRequestsView = () => {
                             <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                 Primer día
                             </label>
-                            <div className="bg-white border border-divider rounded-xl h-10 overflow-hidden">
+                            <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                 <LiquidDatePicker
                                     value={payload.startDate || ''}
                                     onChange={v => setPayload(prev => ({ ...prev, startDate: v }))}
@@ -983,7 +983,7 @@ const EmployeeRequestsView = () => {
                                 value={payload.days || ''}
                                 onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
                                 placeholder="Ej. 3"
-                                className="w-full py-2.5 px-4 bg-white border border-divider focus:bg-white focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
+                                className="w-full py-2.5 px-4 bg-surface-card border border-divider focus:bg-surface-card focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
                             />
                         </div>
                     </div>
@@ -1052,8 +1052,8 @@ const EmployeeRequestsView = () => {
                             onClick={() => setStatusFilter(tab.key)}
                             className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                                 isActive
-                                    ? 'bg-white text-content border-white shadow-md scale-[1.02]'
-                                    : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
+                                    ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
+                                    : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                             }`}
                         >
                             {tab.label}
@@ -1134,7 +1134,7 @@ const EmployeeRequestsView = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setTypePickerOpen(true)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${conf?.color} ${conf?.border} bg-white`}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${conf?.color} ${conf?.border} bg-surface-card`}
                                             >
                                                 <Icon size={16} strokeWidth={2} />
                                                 <span className="flex-1 text-left text-[11px] font-black uppercase tracking-widest">{sel?.label}</span>
@@ -1155,8 +1155,8 @@ const EmployeeRequestsView = () => {
                                                     onClick={() => { setFormType(key); setPayload({}); setError(''); setPermPickerKey(0); setDisabilityFile(null); setTypePickerOpen(false); }}
                                                     className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                                                         isActive
-                                                            ? `bg-white ${conf.color} ${conf.border} shadow-sm scale-[1.02]`
-                                                            : 'bg-surface-card border-border-card text-content-3 hover:bg-white hover:-translate-y-0.5 hover:shadow-sm'
+                                                            ? `bg-surface-card ${conf.color} ${conf.border} shadow-sm scale-[1.02]`
+                                                            : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-sm'
                                                     }`}
                                                 >
                                                     <Icon size={18} strokeWidth={1.8} />
@@ -1181,7 +1181,7 @@ const EmployeeRequestsView = () => {
                                     onChange={e => { setFormNote(e.target.value); if (error) setError(''); }}
                                     rows={4}
                                     placeholder="Describe tu solicitud..."
-                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
+                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
                                     disabled={isSubmitting}
                                 />
                             </div>

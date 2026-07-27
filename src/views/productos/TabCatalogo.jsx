@@ -124,9 +124,9 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             sub: 'precio < costo',
             count: perdidaCount,
             activeBg: 'bg-danger/10 border-danger/40 shadow-red-100/80',
-            inactiveBg: 'bg-white border-divider hover:border-danger/30 hover:bg-danger/10',
+            inactiveBg: 'bg-surface-card border-divider hover:border-danger/30 hover:bg-danger/10',
             iconBg: filterMargin === 'perdida'
-                ? 'bg-white'
+                ? 'bg-surface-card'
                 : 'bg-danger/10',
             iconColor: 'text-danger',
             countColor: perdidaCount > 0
@@ -140,9 +140,9 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             sub: '< 15% en algún precio',
             count: bajoCount,
             activeBg: 'bg-warning/10 border-warning/40 shadow-amber-100/80',
-            inactiveBg: 'bg-white border-divider hover:border-warning/30 hover:bg-warning/10',
+            inactiveBg: 'bg-surface-card border-divider hover:border-warning/30 hover:bg-warning/10',
             iconBg: filterMargin === 'bajo'
-                ? 'bg-white'
+                ? 'bg-surface-card'
                 : 'bg-warning/10',
             iconColor: 'text-warning',
             countColor: bajoCount > 0
@@ -154,10 +154,10 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
     // Nuevos card
     const nuevosBg = filterNuevos
         ? 'bg-success/10 border-success/50 shadow-md shadow-success/20 -translate-y-px'
-        : 'bg-white border-border-card hover:border-success/30 hover:bg-success/10';
+        : 'bg-surface-card border-border-card hover:border-success/30 hover:bg-success/10';
 
     const nuevosIconBg = filterNuevos
-        ? 'bg-white'
+        ? 'bg-surface-card'
         : 'bg-success/10';
 
     return (
@@ -205,11 +205,11 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
                     filterModificados
                         ? 'bg-warning/10 border-warning/40 shadow-md shadow-amber-100/80 -translate-y-px'
-                        : 'bg-white border-divider hover:border-warning/30 hover:bg-warning/10'
+                        : 'bg-surface-card border-divider hover:border-warning/30 hover:bg-warning/10'
                 }`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     filterModificados
-                        ? 'bg-white'
+                        ? 'bg-surface-card'
                         : 'bg-warning/10'
                 }`}>
                     <History size={15} className={'text-warning'} />
@@ -359,7 +359,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
     const presetChipOn  = 'bg-warning/10 text-warning border-warning/40';
-    const presetChipOff = 'bg-white text-content-3 border-divider hover:border-chart-8/50 hover:text-content-2';
+    const presetChipOff = 'bg-surface-card text-content-3 border-divider hover:border-chart-8/50 hover:text-content-2';
 
     return (
         <div className="space-y-2">
@@ -545,9 +545,9 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
     const labelCls = 'text-content-3';
 
-    const salaActiveBtn  = 'bg-white text-brand-text shadow-sm';
+    const salaActiveBtn  = 'bg-surface-card text-brand-text shadow-sm';
     const inactivBtn     = 'text-content-3 hover:text-content-2';
-    const bodegaActiveBtn = 'bg-white text-warning shadow-sm';
+    const bodegaActiveBtn = 'bg-surface-card text-warning shadow-sm';
 
     const inp = (sala) =>
         `bg-surface-card-hover text-content-2 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-divider focus:ring-brand/30' : 'border-warning/30 focus:ring-warning/30'}`;
@@ -649,7 +649,7 @@ function PhotoContextMenu({ pos, onPaste, onClose }) {
 
     return createPortal(
         <div
-            className="fixed z-[99999] bg-white rounded-xl shadow-xl border border-divider py-1 min-w-[170px] overflow-hidden"
+            className="fixed z-[99999] bg-surface-card rounded-xl shadow-xl border border-divider py-1 min-w-[170px] overflow-hidden"
             style={{ top: pos.y, left: pos.x }}
             onMouseDown={e => e.stopPropagation()}>
             <button
@@ -948,13 +948,13 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         photoUploadLabel: 'text-content-3 group-hover:text-brand-text',
         changesBadge: 'bg-warning/10 text-warning-text border-warning/30',
         emptyPresentaciones: 'bg-surface-card-hover border-divider text-content-3',
-        pricingWrapper: 'bg-white border-divider shadow-sm',
+        pricingWrapper: 'bg-surface-card border-divider shadow-sm',
         pricingThead: 'bg-brand/[0.05] border-b border-brand/[0.08]',
         pricingThText: 'text-content-3',
         pricingDivide: 'divide-y divide-divider',
         pricingRowChanged: 'bg-warning/10',
         pricingRowLoss: 'bg-danger/10',
-        pricingRowNormal: 'bg-white',
+        pricingRowNormal: 'bg-surface-card',
         pricingCellChanged: 'bg-warning/10',
         pricingValueChanged: 'text-warning-text',
         pricingValueNormal: 'text-content-2',
@@ -964,7 +964,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         statusActive: 'bg-success/10 text-success border border-success/30',
         statusInactive: 'bg-surface-card-hover text-content-3',
         changelog: 'bg-warning/10 border border-warning/30',
-        changelogDate: 'bg-white border-divider text-content-3',
+        changelogDate: 'bg-surface-card border-divider text-content-3',
         changelogField: 'text-content-2',
         changelogOld: 'text-content-3',
         changelogArrow: 'text-content-3',
@@ -972,7 +972,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         sinCambios: 'text-content-3 italic',
         divider: 'border-divider',
         vertDivider: 'bg-surface-card-hover',
-        btnCancel: 'bg-white border-divider text-content-3 hover:border-divider hover:text-content-2',
+        btnCancel: 'bg-surface-card border-divider text-content-3 hover:border-divider hover:text-content-2',
         srsBtnInactive: 'bg-surface-card-hover text-content-3 border-divider hover:bg-chart-3/10 hover:text-chart-3-text hover:border-chart-3/30',
         srsBtnActive: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
         srsDivider: 'border-divider',
@@ -1171,7 +1171,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 className={`relative w-full h-[200px] max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group ${xk.photoBtn}`}>
                                 {localFoto ? (
                                     <>
-                                        <img src={localFoto} alt="" className="w-full h-full object-contain bg-white p-2" />
+                                        <img src={localFoto} alt="" className="w-full h-full object-contain bg-surface-card p-2" />
                                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 group-hover:bg-black/45 transition-all">
                                             {photoLoading
                                                 ? <Loader2 size={22} className="text-white animate-spin" />

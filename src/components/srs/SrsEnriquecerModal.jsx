@@ -494,7 +494,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                             Aplicar {autoQueue.length - autoRejected.size}
                                         </button>
                                     </div>
-                                    <div className="max-h-52 overflow-y-auto divide-y divide-divider bg-white">
+                                    <div className="max-h-52 overflow-y-auto divide-y divide-divider bg-surface-card">
                                         {autoQueue.map(entry => {
                                             const rejected = autoRejected.has(entry.product.id);
                                             return (
@@ -556,7 +556,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             className={`w-full text-left rounded-xl border p-3 transition-all ${
                                                                 isSelected
                                                                     ? 'border-chart-3/50 bg-chart-3/10'
-                                                                    : 'border-divider bg-white hover:border-chart-3/30 hover:bg-chart-3/10'
+                                                                    : 'border-divider bg-surface-card hover:border-chart-3/30 hover:bg-chart-3/10'
                                                             }`}>
                                                             <div className="flex items-start justify-between gap-2">
                                                                 <p className="text-[11px] font-bold text-content-2 leading-snug flex-1">
@@ -646,14 +646,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
                                                                 placeholder="Nombre del principio"
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-divider rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3"
+                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-divider rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-surface-card placeholder:text-content-3"
                                                             />
                                                             <input
                                                                 value={item.concentracion}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
                                                                 placeholder="Cant."
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-divider rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-white placeholder:text-content-3 text-center"
+                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-divider rounded-lg text-[16px] text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-surface-card placeholder:text-content-3 text-center"
                                                             />
                                                             <button onClick={() => setManualItems(prev =>
                                                                 prev.length > 1

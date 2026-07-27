@@ -1113,7 +1113,7 @@ const DashboardView = ({ openModal }) => {
           onPointerDown={e => startDrag(e, id)}
           className={`absolute -top-4 left-1/2 -translate-x-1/2 z-30 scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
         >
-          <div className="bg-white border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
+          <div className="bg-surface-card border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
             <span className="text-[9px] font-black text-content-2 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
           </div>
@@ -1129,7 +1129,7 @@ const DashboardView = ({ openModal }) => {
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
-              className={`relative w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-brand border-brand text-white' : 'bg-white border-divider text-content-3 hover:text-brand-text hover:border-brand/50'} ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}
+              className={`relative w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-brand border-brand text-white' : 'bg-surface-card border-divider text-content-3 hover:text-brand-text hover:border-brand/50'} ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}
               title="Cambiar tamaño"
             >
               <Maximize2 size={11} strokeWidth={2.5} />
@@ -1179,9 +1179,9 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
           action={
             <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl px-1 py-0.5">
-              <button onClick={() => setTrendOffset(o=>o-1)} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>o-1)} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={13} strokeWidth={2.5} /></button>
               <span className="text-[11px] font-bold text-content-2 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
-              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={13} strokeWidth={2.5} /></button>
             </div>
           }>
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
@@ -1269,8 +1269,8 @@ const DashboardView = ({ openModal }) => {
               {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>}
               <div className="flex items-center bg-surface-card-hover p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-content-3 hover:bg-surface-card flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
-                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Horas</button>
-                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-white text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Días</button>
+                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-surface-tab-active text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Horas</button>
+                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-surface-tab-active text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Días</button>
               </div>
             </div>
           }>
@@ -2000,7 +2000,7 @@ const DashboardView = ({ openModal }) => {
       <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 ${isMobile ? 'py-3' : 'py-2'} rounded-full text-[12px] font-bold transition-all duration-150 active:scale-[0.97] shadow-sm border ${
         showConfig
           ? 'bg-brand text-white border-brand'
-          : 'bg-surface-card text-content-2 border-border-card hover:bg-white backdrop-blur-sm'
+          : 'bg-surface-card text-content-2 border-border-card hover:bg-surface-card-hover backdrop-blur-sm'
       }`}>
         <Settings2 size={14} className={`transition-[transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${showConfig ? 'rotate-[60deg]' : 'rotate-0'}`}/> Personalizar
       </button>
@@ -2017,7 +2017,7 @@ const DashboardView = ({ openModal }) => {
           const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
           return (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-white rounded-[1.5rem] border border-divider shadow-sm p-4 space-y-3">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
@@ -2032,7 +2032,7 @@ const DashboardView = ({ openModal }) => {
                   return (
                     <button key={tab.id} onClick={() => setConfigTab(tab.id)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-[11px] font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
-                        configTab === tab.id ? 'bg-white text-brand-text shadow-sm' : 'text-content-3 hover:text-content-2'
+                        configTab === tab.id ? 'bg-surface-card text-brand-text shadow-sm' : 'text-content-3 hover:text-content-2'
                       }`}>
                       <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
                     </button>
@@ -2047,7 +2047,7 @@ const DashboardView = ({ openModal }) => {
                   const WIcon = w.icon;
                   return (
                     <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
-                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-white border-divider hover:bg-surface-card-hover'}`}>
+                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
                       <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
                       <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-brand' : 'bg-surface-card-hover'}`}>

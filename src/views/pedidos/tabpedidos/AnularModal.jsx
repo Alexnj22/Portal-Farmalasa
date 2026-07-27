@@ -39,7 +39,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                                 onChange={e => setMotivo(e.target.value)}
                                 placeholder="Describe el motivo de la anulación…"
                                 rows={3}
-                                className="w-full text-[16px] border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-danger bg-white resize-none transition-colors text-content-2"
+                                className="w-full text-[16px] border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-danger bg-surface-card resize-none transition-colors text-content-2"
                             />
                             {motivo.trim().length > 0 && motivo.trim().length < 5 && (
                                 <p className="text-[10px] text-danger mt-1">Mínimo 5 caracteres.</p>

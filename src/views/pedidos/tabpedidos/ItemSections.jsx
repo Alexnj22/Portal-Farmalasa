@@ -460,7 +460,7 @@ export default function ItemSections({ allItems, loading }) {
         const err      = errorMap[row.id] ?? null;
         const v6m      = psp?.units_sold_6m ?? null;
         const inputCls = (hasErr) =>
-            `w-14 text-[11px] font-bold border rounded-lg px-2 py-1 focus:outline-none bg-white text-content-2 text-center disabled:opacity-40 transition-colors ${
+            `w-14 text-[11px] font-bold border rounded-lg px-2 py-1 focus:outline-none bg-surface-card text-content-2 text-center disabled:opacity-40 transition-colors ${
                 hasErr ? 'border-danger/40 focus:border-danger bg-danger/10' : 'border-border-card focus:border-brand'
             }`;
         return (

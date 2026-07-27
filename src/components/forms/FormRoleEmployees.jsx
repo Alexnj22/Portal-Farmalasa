@@ -37,7 +37,7 @@ const FormRoleEmployees = ({ formData }) => {
                     employeesInRole.map(emp => (
                         <div 
                             key={emp.id} 
-                            className="flex items-center justify-between p-4 bg-white rounded-[1.5rem] border border-divider shadow-sm group hover:border-brand/30 hover:shadow-md transition-all"
+                            className="flex items-center justify-between p-4 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm group hover:border-brand/30 hover:shadow-md transition-all"
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-[1rem] bg-surface-card-hover border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-content-3">

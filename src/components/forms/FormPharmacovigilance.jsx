@@ -37,7 +37,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     if (possibleReferents.length === 0) {
         return (
             <div className="bg-warning/10 backdrop-blur-xl border border-warning/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[var(--shadow-glow-warning)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
-                <div className="w-16 h-16 bg-white rounded-[1.5rem] shadow-sm border border-warning/30 flex items-center justify-center text-warning mb-5 relative overflow-hidden">
+                <div className="w-16 h-16 bg-surface-card rounded-[1.5rem] shadow-sm border border-warning/30 flex items-center justify-center text-warning mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
                 </div>
@@ -48,7 +48,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="px-8 py-3.5 bg-white text-warning font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-warning hover:text-white border border-warning/30 hover:border-warning transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="px-8 py-3.5 bg-surface-card text-warning font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-warning hover:text-white border border-warning/30 hover:border-warning transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 active:scale-[0.97]"
                 >
                     Entendido, Cerrar
                 </button>
@@ -125,7 +125,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                             }}
                         />
                         
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-white text-chart-3-text border border-chart-3/30' : 'bg-white text-content-3 border border-divider group-hover:text-chart-3-text group-hover:border-chart-3/30'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-surface-card text-chart-3-text border border-chart-3/30' : 'bg-surface-card text-content-3 border border-divider group-hover:text-chart-3-text group-hover:border-chart-3/30'}`}>
                              {legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
                         </div>
                         

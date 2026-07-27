@@ -68,7 +68,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 group-hover:scale-110 ${isPendingReceipt ? 'text-chart-6 bg-white border-chart-6/30' : colorMap[colorTheme]}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 group-hover:scale-110 ${isPendingReceipt ? 'text-chart-6 bg-surface-card border-chart-6/30' : colorMap[colorTheme]}`}>
                         {isPendingReceipt ? <AlertCircle size={20} strokeWidth={2}/> : <Icon size={20} strokeWidth={2} />}
                     </div>
                     <div className="min-w-0 pr-2">
@@ -76,7 +76,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         <p className="text-[9px] font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6 text-white border-chart-6' : 'bg-white border-border-card group-hover:bg-surface-card-hover'}`}>
+                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6 text-white border-chart-6' : 'bg-surface-card border-border-card group-hover:bg-surface-card-hover'}`}>
                     {statusObj.label}
                 </div>
             </div>
@@ -106,7 +106,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-surface-card-hover transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>

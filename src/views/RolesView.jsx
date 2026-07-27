@@ -365,7 +365,7 @@ const RolesView = ({ openModal }) => {
                     </div>
                 )}
 
-                <div className={`icon-container w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-border-card ${!role.parent_role_id ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isExternal ? 'bg-surface-card-hover/50 text-content-3' : 'bg-white text-brand-text group-hover:bg-brand group-hover:text-white transition-colors'}`}>
+                <div className={`icon-container w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-border-card ${!role.parent_role_id ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isExternal ? 'bg-surface-card-hover/50 text-content-3' : 'bg-surface-card text-brand-text group-hover:bg-brand group-hover:text-white transition-colors'}`}>
                     <Award size={18} strokeWidth={2} />
                 </div>
 
@@ -461,7 +461,7 @@ const RolesView = ({ openModal }) => {
                     )}
                     <button
                         onClick={() => { setIsSearchExpanded(false); setSearchQuery(''); }}
-                        className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
+                        className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
                         title="Cerrar Búsqueda"
                     >
                         <ChevronRight size={18} strokeWidth={2.5} />
@@ -474,8 +474,8 @@ const RolesView = ({ openModal }) => {
                             <button
                                 onClick={() => setActiveTab('list')}
                                 className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'list'
-                                        ? "bg-white text-content border-white shadow-md scale-[1.02]"
-                                        : "bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
+                                        ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
+                                        : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
                             >
                                 <ShieldCheck size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'list' ? 'text-brand-text' : 'text-content-3'}`} />
@@ -484,8 +484,8 @@ const RolesView = ({ openModal }) => {
                             <button
                                 onClick={() => { setActiveTab('chart'); resetZoomAndPan(); }}
                                 className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'chart'
-                                        ? "bg-white text-content border-white shadow-md scale-[1.02]"
-                                        : "bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
+                                        ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
+                                        : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
                             >
                                 <LayoutTemplate size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'chart' ? 'text-brand-text' : 'text-content-3'}`} />
@@ -608,7 +608,7 @@ const RolesView = ({ openModal }) => {
                                             <input
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
-                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
+                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
                                             />
@@ -644,7 +644,7 @@ const RolesView = ({ openModal }) => {
                                                     type="number"
                                                     min="1"
                                                     max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
                                                 />
@@ -734,7 +734,7 @@ const RolesView = ({ openModal }) => {
 
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex gap-3.5 items-start min-w-0 w-full pr-2 relative">
-                                                    <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-white text-brand-text border-white group-hover:bg-brand/10'}`}>
+                                                    <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-surface-card text-brand-text border-white group-hover:bg-brand/10'}`}>
                                                         <Award size={18} strokeWidth={isRoot ? 2.5 : 2} />
                                                     </div>
 
@@ -781,7 +781,7 @@ const RolesView = ({ openModal }) => {
                                                         disabled={!canEdit}
                                                         className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed ${isEditingThis
                                                             ? 'bg-warning/10 text-warning border border-warning/40 hover:bg-warning hover:text-white'
-                                                            : 'bg-white border border-border-card text-warning hover:bg-warning/10 hover:text-warning'
+                                                            : 'bg-surface-card border border-border-card text-warning hover:bg-warning/10 hover:text-warning'
                                                             }`}
                                                         title={isEditingThis ? "Cancelar edición" : "Editar cargo"}
                                                     >
@@ -790,7 +790,7 @@ const RolesView = ({ openModal }) => {
                                                     <button
                                                         onClick={(e) => handleDeleteRoleRequest(e, role)}
                                                         disabled={!canEdit}
-                                                        className="w-8 h-8 bg-white border border-border-card text-danger rounded-full hover:bg-danger/10 hover:text-danger transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        className="w-8 h-8 bg-surface-card border border-border-card text-danger rounded-full hover:bg-danger/10 hover:text-danger transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
                                                         title="Eliminar cargo"
                                                     >
                                                         <Trash2 size={14} strokeWidth={2.5} />
@@ -813,7 +813,7 @@ const RolesView = ({ openModal }) => {
 
                                                 <button
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
-                                                    className={`w-9 h-9 rounded-xl bg-white border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
+                                                    className={`w-9 h-9 rounded-xl bg-surface-card border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
                                                         ? 'border-warning/30 text-warning hover:bg-warning hover:text-white'
                                                         : 'border-divider text-content-3 hover:bg-brand hover:text-white hover:border-brand'
                                                         }`}
@@ -852,7 +852,7 @@ const RolesView = ({ openModal }) => {
                                 <button
                                     onClick={downloadOrgChart}
                                     disabled={isExporting}
-                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-white text-content-2 cursor-not-allowed' : 'bg-white border-border-card text-content-2 hover:text-brand-text hover:border-white'}`}
+                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-white text-content-2 cursor-not-allowed' : 'bg-surface-card border-border-card text-content-2 hover:text-brand-text hover:border-white'}`}
                                 >
                                     {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
                                 </button>

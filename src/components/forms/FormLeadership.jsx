@@ -277,7 +277,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-content-2 ml-1">Configuración del Cargo</h3>
                                     
                                     <div className="flex p-1.5 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-white text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
+                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-surface-card text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <ShieldCheck size={14}/> Permanente
                                         </button>
                                         <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning text-white shadow-[var(--shadow-glow-warning)]' : 'text-content-3 hover:bg-surface-card'}`}>

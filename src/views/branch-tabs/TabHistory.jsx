@@ -243,7 +243,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
     const renderPrintPortal = () => {
         return createPortal(
-            <div id="print-report-container" className="hidden print:block w-full bg-white text-content font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
+            <div id="print-report-container" className="hidden print:block w-full bg-surface-card text-content font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
                 <div className="border-b-[3px] border-slate-900 pb-3 mb-4 flex justify-between items-end">
                     <div><h1 className="text-2xl font-black uppercase tracking-tighter text-content leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-content-2 uppercase tracking-widest leading-none">Sucursal: <span className="text-brand-text">{liveBranch?.name || 'No especificada'}</span></h2></div>
                     <div className="text-right"><p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-content leading-none">{new Date().toLocaleDateString('es-ES')}</p></div>
@@ -303,7 +303,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                             <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 min-w-[200px] xl:w-[600px] placeholder:text-content-3 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
-                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
+                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
                                 <ChevronRight size={18} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -335,7 +335,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
 
                                 <div className="relative z-[9999]" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                                    <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-white hover:text-brand-text rounded-full transition-all font-black text-[10px] uppercase tracking-widest shrink-0">
+                                    <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-surface-card-hover hover:text-brand-text rounded-full transition-all font-black text-[10px] uppercase tracking-widest shrink-0">
                                         <Download size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Exportar</span>
                                     </button>
                                     <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
@@ -444,7 +444,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                             <button 
                                 onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}
-                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-chart-3-text font-black text-[11px] uppercase tracking-widest border border-chart-3/30 hover:bg-white hover:text-chart-3-text hover:shadow-[var(--shadow-glow-chart-3)] transition-all active:scale-[0.97] z-10 relative"
+                                className="mt-10 flex items-center gap-2 px-6 py-3 rounded-full bg-surface-card text-chart-3-text font-black text-[11px] uppercase tracking-widest border border-chart-3/30 hover:bg-surface-card-hover hover:text-chart-3-text hover:shadow-[var(--shadow-glow-chart-3)] transition-all active:scale-[0.97] z-10 relative"
                             >
                                 <ArrowLeft size={16} strokeWidth={2.5} /> Regresar a línea de tiempo
                             </button>
@@ -513,7 +513,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                         <div key={monthGroup.id} className="w-full mt-2 mb-2">
 
                                                             <div className="relative flex justify-center items-center w-full mb-4 group">
-                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-white text-brand-text border-white shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card backdrop-blur-md text-content-3 border-border-card hover:text-content-2 shadow-sm'}`}>
+                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-surface-card text-brand-text border-white shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card backdrop-blur-md text-content-3 border-border-card hover:text-content-2 shadow-sm'}`}>
                                                                     {monthGroup.name}
                                                                     <ChevronRight size={12} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isMonthOpen ? 'rotate-90 text-brand-text' : 'text-content-3'}`} />
                                                                 </button>
@@ -585,7 +585,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     </div>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-20 ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
-                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-[1.5rem] p-5 transition-all duration-500 hover:bg-white hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,1)] shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.7)] text-left`}>
+                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-[1.5rem] p-5 transition-all duration-500 hover:bg-surface-card-hover hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,1)] shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.7)] text-left`}>
 
                                                                                             <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
 
@@ -624,7 +624,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                     </div>
 
                                                                                                     {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand-text bg-surface-card backdrop-blur-md border border-border-card hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 shrink-0">
+                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand-text bg-surface-card backdrop-blur-md border border-border-card hover:bg-surface-card-hover hover:border-white px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 shrink-0">
                                                                                                             <Eye size={12} strokeWidth={2.5} /> Ver Doc
                                                                                                         </button>
                                                                                                     ) : null}

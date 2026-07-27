@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import ListRow from '../../components/common/ListRow';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -325,28 +326,21 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                     : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
             }`}
         >
-            <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-3.5 text-left group">
-                <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                    isOpen ? 'bg-chart-9 shadow-md shadow-chart-9/30' : 'bg-surface-card-hover group-hover:bg-chart-9/10'
-                }`}>
-                    <FlaskConical className={`w-4 h-4 transition-colors ${isOpen ? 'text-white' : 'text-content-3 group-hover:text-chart-9-text'}`} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-content truncate">{lab.nombre}</p>
-                    <p className="text-xs text-content-3 mt-0.5">
-                        {proveedores.length === 0
-                            ? 'Sin proveedores registrados'
-                            : `${proveedores.length} proveedor${proveedores.length === 1 ? '' : 'es'}${devolutivoCount ? ` · ${devolutivoCount} devolutivo${devolutivoCount === 1 ? '' : 's'}` : ''}`}
-                    </p>
-                </div>
-
-                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                    isOpen ? 'bg-chart-9/10 rotate-180' : 'bg-surface-card-hover group-hover:bg-surface-card-hover'
-                }`}>
-                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-chart-9-text' : 'text-content-3'}`} />
-                </div>
-            </button>
+            <ListRow
+                density="lg"
+                onClick={onToggle}
+                icon={FlaskConical}
+                iconBoxClass={isOpen ? 'bg-chart-9 border-transparent' : 'bg-surface-card-hover border-border-card'}
+                iconClass={isOpen ? 'text-white' : 'text-content-3'}
+                title={lab.nombre}
+                subtitle={proveedores.length === 0
+                    ? 'Sin proveedores registrados'
+                    : `${proveedores.length} proveedor${proveedores.length === 1 ? '' : 'es'}${devolutivoCount ? ` · ${devolutivoCount} devolutivo${devolutivoCount === 1 ? '' : 's'}` : ''}`}
+                trailing={
+                    <ChevronDown size={16} strokeWidth={2.5}
+                        className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-chart-9-text' : 'text-content-3'}`} />
+                }
+            />
 
             <AnimatePresence initial={false}>
                 {isOpen && (

@@ -5,7 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.82.0';
+export const APP_VERSION = '2.83.0';
+
+// v2.83.0 — ListRow adoptado en 5 lugares.
+//
+// ThemeToggle y SidebarSettingsMenu (que tenian la cadena de clases IDENTICA),
+// CrearRutaModal, TabLaboratorios y TabPoliticaVencimiento — estos dos ultimos tambien
+// compartian la misma cadena entre si.
+//
+// CrearRutaModal queda componiendo ListRow + Checkbox en modo indicador: la fila entera
+// ya responde al click, asi que la casilla no debe ser una segunda parada de tabulacion
+// hacia la misma accion.
+//
+// Verificado en el navegador ANTES de comitear, que es la leccion de las 4 vistas rotas
+// de hoy. De paso el bug que casi se me escapa: al extraer el subtitulo de
+// TabPoliticaVencimiento con un regex, el template se corto a la mitad y `devolutivoCount`
+// quedo huerfano — lo atrapo eslint, no el build.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTA DE PROCESO (2026-07-27). Las entradas v2.70.1 → v2.82.0 se escriben acá

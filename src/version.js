@@ -5,7 +5,14 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.86.0';
+export const APP_VERSION = '2.87.0';
+
+// v2.87.0 — ListRow en el widget de MinMax: la ranura `leading` con una IMAGEN.
+//
+// La fila de producto lleva la foto del producto en la caja izquierda, con un icono de
+// respaldo cuando no hay foto. Es el tercer tipo de contenido que pasa por esa ranura
+// —icono, letra, imagen— y los tres comparten caja, tamano y alineacion. Haber cerrado
+// la ranura a "solo iconos" habria dejado fuera dos de los tres.
 
 // v2.86.0 — Los 7 campos numericos de nomina al canonico.
 //

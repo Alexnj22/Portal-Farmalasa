@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
@@ -309,20 +310,20 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
         )}
 
         {!loading && results.map(p => (
-          <button key={p.id} onClick={() => { setPicked(p); setView('form'); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-divider bg-surface-card hover:border-brand/40 transition-colors text-left">
-            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">
-              {p.foto_url
-                ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
-                : <Package size={14} className="text-content-3" strokeWidth={2} />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-body-sm font-bold text-content truncate leading-tight">{p.nombre}</p>
-              {p.principio_activo && <p className="text-micro text-success-text font-semibold truncate">{p.principio_activo}</p>}
-              {p.laboratorio_nombre && <p className="text-micro text-content-3 truncate">{p.laboratorio_nombre}</p>}
-            </div>
-            <Building2 size={12} className="text-content-3 shrink-0" />
-          </button>
+          <ListRow
+            key={p.id}
+            onClick={() => { setPicked(p); setView('form'); }}
+            leading={p.foto_url
+              ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
+              : <Package size={14} className="text-content-3" strokeWidth={2} />}
+            iconBoxClass="bg-surface-card-hover border-border-card overflow-hidden"
+            className="border-divider bg-surface-card hover:border-brand/40"
+            title={p.nombre}
+            trailing={<Building2 size={12} className="text-content-3" />}
+          >
+            {p.principio_activo && <span className="block text-micro text-success-text font-semibold truncate">{p.principio_activo}</span>}
+            {p.laboratorio_nombre && <span className="block text-micro text-content-3 truncate">{p.laboratorio_nombre}</span>}
+          </ListRow>
         ))}
       </div>
     </div>

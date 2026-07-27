@@ -794,6 +794,28 @@ más usados.
 
 ### D2.5 — Inventario visual y canónico por familia · **en curso**
 
+#### Cobertura real de los estados (medida, no supuesta)
+
+Preguntado directamente: *¿el skeleton está en todo el proyecto, unificado,
+reutilizable, estándar y aplicado en todas las vistas?*
+
+| Pregunta | Respuesta |
+|---|---|
+| ¿Unificado? | **Sí.** Un solo mecanismo (`.skeleton`), con shimmer real, cubierto por los dos gates de movimiento. |
+| ¿Reutilizable? | **Sí, desde ahora.** `<Skeleton>` / `<SkeletonText>` en `StateViews.jsx`. Antes era una clase CSS que cada quien dimensionaba a mano. |
+| ¿Estándar? | **Como mecanismo sí; como práctica no.** 21 vistas siguen resolviendo la carga con un spinner. |
+| ¿En todas las vistas? | **No.** 36 de 59 vistas con carga muestran skeleton. |
+
+De las 108 vistas, 59 tienen estado de carga. 36 muestran skeleton (24 lo
+heredan gratis de `DataTable`), 21 muestran solo un spinner, y 2 usan texto
+("Buscando GPS…"). Registrado como **A11**.
+
+Aclaración: **no todas deberían tener skeleton.** Un modal que carga en 200ms
+está mejor con un spinner; un skeleton ahí solo produce un parpadeo. Donde sí
+corresponde es en tablas y listados, porque el skeleton mantiene la forma de
+la página y evita el salto al llegar los datos. Es criterio por caso, no un
+reemplazo mecánico — por eso va a D3 y no a un barrido.
+
 #### La matriz de movimiento, verificada en vivo
 
 D2.4 estableció dos ejes independientes; medidos sobre `overview` contando
@@ -885,6 +907,7 @@ cambia nada (`--btn-radius` sigue siendo `9999px`).
 | **A7** | `ctx.fillStyle` de canvas no resuelve `var()`. Único caso técnico real del barrido de color. | `TabCatalogo.jsx` | aceptado |
 | **A9** | `animate-pulse` quedó fuera de **los dos** gates de movimiento: ni `prefers-reduced-motion` ni el eje de tema de D2.4. 88 latidos de énfasis seguían animando en Solid y con la preferencia puesta. **RESUELTO en ambos.** | `index.css` | ✓ |
 | **A10** | `Skeleton`/`SkeletonText` quedaron creados con **0 adopciones**. Los 129 `.skeleton` existentes ya usan el mecanismo correcto (la clase CSS que el componente envuelve), así que no son deuda — pero envolverlos en el componente es lo que evita que `Skeleton` termine como `Button` con 1 import. | 129 usos | D3 |
+| **A11** | **El skeleton NO está aplicado en todas las vistas.** De 108 vistas, 59 tienen estado de carga: **36 muestran skeleton** (24 lo heredan gratis de `DataTable`) y **21 muestran solo un spinner**. El mecanismo está unificado y es reutilizable; la *práctica* no es uniforme. No todas necesitan skeleton — un modal que carga en 200ms está bien con spinner — pero una tabla o un listado sí. Requiere criterio por caso, no un reemplazo mecánico. | 21 vistas | D3 |
 | **A8** | 417 sombras literales y 118 colores literales en `style` inline siguen en el baseline. | 100+ archivos | D3 |
 
 #### Trampas de verificación encontradas (para no repetirlas)

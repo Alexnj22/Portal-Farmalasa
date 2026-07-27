@@ -5,8 +5,33 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.63.0';
+export const APP_VERSION = '2.64.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.64.0 — D2 completa + N3: Solid Modern por fin tiene su propia GEOMETRÍA.
+//
+// D2.2 z-index 552→20 · D2.3 densidad conectada con piso táctil de 44px ·
+// D2.4 motion como eje del tema y S1.6 cerrado con <MotionProvider
+// reducedMotion="user"> · D2.5/N1 25 de 32 hex a tokens.
+//
+// N3 (lo visible): los tokens de radio SIEMPRE fueron theme-aware
+// (--card-radius 28px en Liquid contra 12px en Solid) pero no llegaban a la
+// pantalla. Medido en vivo: los dos temas pintaban casi el mismo histograma de
+// border-radius — la diferencia eran los ~4 elementos con data-surface, los
+// únicos que consultaban el token. Los otros ~160 llevaban el radio
+// hardcodeado. El tema cambiaba color, superficie, sombra y backdrop pero NO
+// la forma, que era justamente lo que separaba a los dos estilos en T2.
+//
+// Se arregló sin tocar una sola vista: las utilidades nombradas de Tailwind se
+// compilan como `border-radius: var(--radius-xl)`, así que redefinir esa rampa
+// bajo [data-theme=solid] volvió theme-aware de golpe ~2,800 usos ya escritos.
+// Los ~400 arbitrarios se mapearon al TOKEN del rol que cumplen (1.75rem era
+// la card, 2rem el modal, 2.5rem el header), no a números sueltos.
+//
+// Resultado medido: Solid pasa de 16px×102 / 12px×28 a 10px×105 / 8px×30 /
+// 14px×7. Liquid y Dark quedan idénticos al píxel (mismo histograma que antes).
+// Mostrado en mockup antes de aplicar, como pide la regla del proyecto.
+
 
 // v2.63.0 — AUDITORÍA DE DISEÑO: fases D0, D0-bis, D1 y D2.1 ejecutadas.
 // Documento y plan completos en AUDITORIA-DISENO-2026-07-26.md.

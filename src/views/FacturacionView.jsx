@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -13,7 +14,6 @@ import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
@@ -2085,14 +2085,12 @@ export default function FacturacionView() {
     const [filterBranch, setFilterBranch] = useState(
         getScope('facturacion') === 'BRANCH' ? String(currentUser?.branchId || '') : ''
     );
-    const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
         return () => clearTimeout(t);
     }, [rawSearch]);
-    const searchInputRef = useRef(null);
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]
@@ -2103,17 +2101,9 @@ export default function FacturacionView() {
         [salesBranches]
     );
 
-    const openSearch = () => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); };
-    const closeSearch = () => { setIsSearchMode(false); setRawSearch(''); };
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchMode,
-        value: rawSearch,
-        onClear: () => setRawSearch(''),
-        onClose: () => setIsSearchMode(false),
-    });
 
     const hasSearch = activeTab !== 'saltos';
 
@@ -2123,61 +2113,43 @@ export default function FacturacionView() {
         no_efectivo:  'Buscar correlativo, cliente o método...',
     }[activeTab] || 'Buscar...';
 
+    // D3.9 (2026-07-27): barra reescrita a mano → canónico. Los tabs pasan por la
+    // prop `tabs` (y de paso ganan el dropdown de móvil, que esta vista no tenía:
+    // con 4 tabs de label largo la fila competía por ancho). El filtro de sucursal
+    // y el enlace a Admin Facturas van en `trailingActions`.
     const filtersContent = (
-        <div {...searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
-
-            {/* Search mode */}
-            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                <input ref={searchInputRef} type="text" placeholder={searchPlaceholder}
- className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3"
-                    value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
-                {rawSearch && (
-                    <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>
-                )}
-                <button onClick={closeSearch} className="w-11 h-11 rounded-btn hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
-                    <ChevronRight size={18} strokeWidth={2.5} />
-                </button>
-            </div>
-
-            {/* Normal mode */}
-            <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
-
-                {allowedTabs.map(tab => (
-                    <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}
-                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
-                            activeTab === tab.key
-                                ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
-                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
-                        }`}>
-                        {tab.label}
-                    </button>
-                ))}
-
-                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-
-                {getScope('facturacion') !== 'BRANCH' && <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
-                    <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
-                </div>}
-
-                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-                <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-micro md:text-caption font-black uppercase tracking-widest bg-chart-8-solid hover:opacity-90 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
-                    <ExternalLink size={12} /> Admin Facturas
-                </a>
-
-                {hasSearch && (
-                    <>
-                        <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-                        <button onClick={openSearch}
-                            className="w-11 h-11 bg-brand text-white rounded-btn flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
-                            <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                            {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
+        <ViewTabBar
+            tabs={allowedTabs.map(t => ({ key: t.key, label: t.label }))}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            showSearch={hasSearch}
+            searchValue={rawSearch}
+            onSearchChange={setRawSearch}
+            placeholder={searchPlaceholder}
+            trailingActions={
+                <>
+                    {getScope('facturacion') !== 'BRANCH' && (
+                        <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
+                            <LiquidSelect value={filterBranch} onChange={setFilterBranch}
+                                options={branchOptions} placeholder="Todas" icon={Building2}
+                                compact bare clearable={false} />
+                        </div>
+                    )}
+                    <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php"
+                        target="_blank" rel="noopener noreferrer"
+                        className="h-11 px-4 md:px-[18px] rounded-full shrink-0 whitespace-nowrap
+                            inline-flex items-center justify-center gap-2 border
+                            text-micro md:text-caption font-black uppercase tracking-widest
+                            bg-[var(--tabaction-bg)] border-[var(--tabaction-border)] text-content-2
+                            hover:bg-[var(--tabaction-hover)] hover:text-content
+                            transition-[background-color,border-color,color,transform] duration-200
+                            hover:-translate-y-px">
+                        <ExternalLink size={14} className="text-brand-text" />
+                        <span className="hidden sm:inline">Admin Facturas</span>
+                    </a>
+                </>
+            }
+        />
     );
 
     return (

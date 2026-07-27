@@ -151,7 +151,12 @@ const EXCEPTIONS = {
   //   chart-8 colapsaría dos categorías en un color. Es una rampa
   //   secuencial y el sistema solo tiene paletas categóricas — decidirlo es
   //   trabajo de D2.5, no de un reemplazo mecánico.
-  'src/components/common/Button.jsx': ['hex'],
+  'src/components/common/Button.jsx': ['hex', 'white'],
+  // Badge.jsx ES la implementación canónica del patrón sólido que definió N2
+  // (bg-X-solid + text-white). Su `text-white` no es deuda: es el contrato.
+  // Mismo criterio que la excepción 'native' de LiquidSelect por ser el
+  // canónico del <select>.
+  'src/components/common/Badge.jsx': ['white'],
   'src/views/productos/TabCatalogo.jsx': ['hex'],
   'src/views/productos/tabminmax/constants.js': ['hex'],
 };

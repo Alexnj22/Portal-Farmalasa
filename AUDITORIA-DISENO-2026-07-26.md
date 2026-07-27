@@ -418,6 +418,32 @@ escala que define D2, creando dos fuentes de verdad para el tamaño de texto.
 **Queda explícito:** la densidad es responsiva, no una preferencia del usuario. Si en
 algún momento se quiere un selector cómoda/compacta/ultra en Ajustes, es trabajo aparte.
 
+#### Conflicto encontrado al extenderla a móvil — hay que corregir los disparos
+
+Los tokens tal como están **romperían el táctil**. `Ultra` dispara con
+`(max-width: 1151.98px)`, así que un teléfono de 390px cae en ultra y recibe
+`--control-h: 32px` / `--row-h: 32px`. El mínimo táctil del proyecto es **44px**
+(WCAG 2.5.8 AA, documentado en §25 del propio `DESIGN.md`). Conectarlos sin tocar los
+disparos haría exactamente lo contrario de lo que se busca.
+
+La causa es que hoy un solo disparo mezcla dos problemas distintos. La densidad por
+viewport responde a *cuánto entra en una pantalla que se opera con mouse*; en táctil la
+restricción no son los píxeles disponibles sino el tamaño del dedo. Corrección:
+
+```css
+/* Los disparos por ancho/alto se acotan a punteros de precisión */
+@media (max-width: 1439.98px) and (pointer: fine),
+       (max-height:  819.98px) and (pointer: fine) { … }
+
+/* Y el táctil recibe un piso, independiente del ancho */
+@media (pointer: coarse) {
+  :root { --control-h: 44px; --row-h: 44px; }
+}
+```
+
+No es "sin densidad en móvil": el **padding sí compacta** (12–16px). Lo que tiene piso
+es la altura de control y de fila, que es lo que se toca con el dedo.
+
 ### 4.2 · `UnifiedModal` — **se migra sobre `ModalShell`**
 
 Nada queda a mano y nada queda duplicado. Los 944 líneas pasan a construirse sobre el
@@ -467,6 +493,35 @@ movimiento.
 Es severidad S1: el doc afirma que la preferencia de accesibilidad está respetada y solo
 lo está en uno de los dos sistemas de animación. **`useReducedMotion` pasa a ser
 obligatorio en todo archivo que use framer-motion**, y entra en el gate de D0.
+
+### 4.6 · Motion como eje del tema — **Liquid expresivo, Solid eficiente**
+
+Decisión del usuario: la animación rica vive en Liquid Glass; Solid Modern es el tema
+rápido. Es coherente con lo que Solid **ya es** (`--backdrop-*: none`, `--*-sheen:
+transparent`) y con el precedente que ya existe en `index.css:596` — los blobs
+ambientales ya están apagados en `solid`/`solid-dark`. Esto lo formaliza en vez de
+dejarlo como excepción suelta.
+
+**Con una condición: el corte es decorativo contra funcional, no "motion sí / motion no".**
+
+| | Liquid / Liquid Dark | Solid / Solid Dark |
+|---|---|---|
+| **Decorativo** — orbes ambientales, barridos de shimmer, sheen, lifts de hover, entradas escalonadas, springs, glows pulsantes | Completo, es la identidad del tema | **Apagado** |
+| **Funcional** — spinners, skeletons, entrada/salida de toast y modal, dirección del cambio de tab, feedback de escaneo del kiosco | Con spring y duración plena | **Se queda**, pero corto y lineal (~120–150ms, sin spring) |
+
+Si Solid apagara también lo funcional se pierde la señal de que algo pasó: un modal que
+aparece de golpe y un toast sin entrada no se leen como "rápido", se leen como roto. La
+animación funcional comunica causa y presencia; ésa no es decoración.
+
+**Implementación — un solo lugar, y de paso cierra S1.6.** El lado CSS es directo
+(`[data-theme="solid"]`, ya hay precedente). framer-motion es JS y no lee CSS, así que
+necesita un hook `useMotionConfig()` que derive los presets de transición de
+`useTheme()` + `useReducedMotion()`. Ese hook responde las dos preguntas en el mismo
+sitio — *¿es el tema eficiente?* y *¿el usuario pidió menos movimiento?* — con una regla
+de precedencia clara: **la accesibilidad siempre gana sobre la estética**. Un usuario con
+`prefers-reduced-motion` obtiene el mínimo en los cuatro temas.
+
+Entra en D2 (definir el hook y el corte) y se aplica en D3 (adopción por componente).
 
 ### 4.5 · Orden — **D1 se adelanta**
 

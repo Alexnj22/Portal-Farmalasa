@@ -742,7 +742,32 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                 <div className="w-full flex-1 pb-12">
                     {isLoadingKiosks ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max pt-4 px-2">
-                            {[1, 2, 3].map(i => <BranchCardSkeleton key={i} />)}
+                            {/* BUG REAL (2026-07-27): acá se llamaba a
+                                `BranchCardSkeleton`, un componente que NO EXISTE en
+                                ningún lado del proyecto — ni definido ni importado.
+                                La vista reventaba con ReferenceError cada vez que
+                                `isLoadingKiosks` quedaba en true el tiempo suficiente
+                                para pintar, y el ErrorBoundary mostraba "Algo salió
+                                mal". Explica el crash de /branches que quedó anotado
+                                como observación sin reproducir: no era la red, era
+                                que la red lenta mantenía viva la rama de carga.
+                                Ahora usa el `Skeleton` canónico (D3.1). */}
+                            {[1, 2, 3].map(i => (
+                                <div key={i} data-surface="card" className="p-5 flex flex-col gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <Skeleton w={48} h={48} rounded="1rem" />
+                                        <div className="flex-1 flex flex-col gap-2">
+                                            <Skeleton w="60%" h={14} />
+                                            <Skeleton w="40%" h={10} />
+                                        </div>
+                                    </div>
+                                    <SkeletonText lines={2} />
+                                    <div className="flex gap-2">
+                                        <Skeleton w={70} h={24} rounded="999px" />
+                                        <Skeleton w={70} h={24} rounded="999px" />
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : filteredBranches.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">

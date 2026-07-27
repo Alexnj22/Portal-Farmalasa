@@ -399,7 +399,7 @@ const filtersContent = (
                         }`}>
                         
                         {/* 🚨 Aquí cambiamos a "Inicio" */}
-                        <LiquidDatePicker
+                        <LiquidDatePicker compact shortcuts
                             value={startDate}
                             onChange={setStartDate}
                             placeholder="Inicio"
@@ -409,7 +409,7 @@ const filtersContent = (
                         <span className="text-content-3 font-bold group-hover:text-content-3 transition-colors mx-1">-</span>
 
                         {/* 🚨 Aquí cambiamos a "Fin" */}
-                        <LiquidDatePicker
+                        <LiquidDatePicker compact shortcuts
                             value={endDate}
                             onChange={setEndDate}
                             placeholder="Fin"

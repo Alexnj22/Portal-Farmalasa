@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import RangeDatePicker from '../../components/common/RangeDatePicker';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { AiThinkingState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
@@ -338,9 +339,26 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                             <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
 
-                            <div className="w-[168px] shrink-0"><LiquidDatePicker value={dateFilter.start} onChange={(v) => setDateFilter({ ...dateFilter, start: v })} placeholder="Desde" compact /></div>
-                            <span className="text-content-3 font-black shrink-0">-</span>
-                            <div className="w-[168px] shrink-0"><LiquidDatePicker value={dateFilter.end} onChange={(v) => setDateFilter({ ...dateFilter, end: v })} placeholder="Hasta" compact /></div>
+                            {/* D3.11 (2026-07-27): esto eran DOS LiquidDatePicker
+                                coordinados a mano —"Desde" y "Hasta"— que es
+                                exactamente el trabajo de RangeDatePicker. Uno de los
+                                10 rangos escritos así en el proyecto. Un control en
+                                vez de dos: se arrastra en vez de abrir dos
+                                calendarios y acordarse del primero, y libera ~140px
+                                de barra. `months={1}` porque el panel de dos meses
+                                (596px) es de pedir vacaciones, no de filtrar. */}
+                            <div className="w-[200px] shrink-0">
+                                <RangeDatePicker
+                                    startDate={dateFilter.start}
+                                    endDate={dateFilter.end}
+                                    onRangeChange={(start, end) => setDateFilter({ start, end })}
+                                    months={1}
+                                    compact
+                                    shortcuts
+                                    placeholder="Cualquier fecha"
+                                    label="historial"
+                                />
+                            </div>
 
                             {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
                                 <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-danger-solid hover:text-white transition-colors shrink-0 shadow-sm">

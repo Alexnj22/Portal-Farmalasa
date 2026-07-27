@@ -193,12 +193,12 @@ function TabFacturas({
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex items-center justify-end gap-3 rounded-2xl bg-surface-card border border-divider px-4 py-2 flex-wrap">
                 {/* Date start */}
-                <LiquidDatePicker value={dateStart} onChange={setDateStart} />
+                <LiquidDatePicker compact shortcuts value={dateStart} onChange={setDateStart} />
 
                 <div className="h-5 w-px bg-divider" />
 
                 {/* Date end */}
-                <LiquidDatePicker value={dateEnd} onChange={setDateEnd} />
+                <LiquidDatePicker compact shortcuts value={dateEnd} onChange={setDateEnd} />
 
                 <div className="h-5 w-px bg-divider" />
 

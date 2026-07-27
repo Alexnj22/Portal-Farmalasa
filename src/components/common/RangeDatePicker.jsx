@@ -165,6 +165,15 @@ const RangeDatePicker = ({
     multiRange = false,
     onMultiChange,
     initialRanges = [],
+    // ── D3.11 (2026-07-27) ─────────────────────────────────────────────
+    // `months`: el panel de dos meses (596px) es correcto para pedir vacaciones
+    // pero pesado para un filtro de toolbar. Con `months={1}` queda en ~320px.
+    months = 2,
+    // `compact`: el disparador cerrado, para barras de vista.
+    compact = false,
+    // `shortcuts`: los rangos que de verdad se piden en un filtro. Sin esto hay
+    // que navegar el calendario hasta para "los últimos 7 días".
+    shortcuts = null,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selecting, setSelecting] = useState('start');
@@ -335,14 +344,64 @@ const RangeDatePicker = ({
         ? Math.round((new Date(draftEnd + 'T12:00:00') - new Date(draftStart + 'T12:00:00')) / 86400000) + 1
         : 0;
 
+    // D3.11: RangeDatePicker no tenía entrada por teclado — un rango NO se podía
+    // completar sin mouse, que es una barrera de accesibilidad real (WCAG 2.1.1).
+    // LiquidDatePicker sí la tenía; acá se replica para los dos extremos.
+    const TeclaFecha = ({ valor, onSet, etiqueta }) => {
+        const [txt, setTxt] = useState(valor ? valor.split('-').reverse().join('/') : '');
+        useEffect(() => { setTxt(valor ? valor.split('-').reverse().join('/') : ''); }, [valor]);
+        const commit = (raw) => {
+            const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (!m) return;
+            const [, d, mo, y] = m;
+            const dd = String(d).padStart(2, '0'), mm = String(mo).padStart(2, '0');
+            if (+mm < 1 || +mm > 12 || +dd < 1 || +dd > 31) return;
+            onSet(`${y}-${mm}-${dd}`);
+        };
+        return (
+            <input
+                type="text" inputMode="numeric" aria-label={etiqueta} placeholder="DD/MM/AAAA"
+                value={txt}
+                onChange={(e) => { const v = e.target.value.replace(/[^\d/]/g, ''); setTxt(v); commit(v); }}
+                onBlur={(e) => commit(e.target.value)}
+                className="w-[104px] bg-surface-card-hover border border-border-card rounded-lg px-2 py-1
+                    text-body-sm font-bold text-content text-center placeholder:text-content-3
+                    tabular-nums outline-none focus:border-brand transition-colors"
+            />
+        );
+    };
+
+    const SHORTCUTS_DEFAULT = [
+        { label: 'Últimos 7 días', dias: 7 },
+        { label: 'Últimos 30 días', dias: 30 },
+        { label: 'Este mes', esteMes: true },
+        { label: 'Mes pasado', mesPasado: true },
+        { label: 'Este año', esteAnio: true },
+    ];
+    const atajos = shortcuts === true ? SHORTCUTS_DEFAULT : (Array.isArray(shortcuts) ? shortcuts : null);
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const aplicarAtajo = (a) => {
+        const hoy = new Date();
+        let ini, fin;
+        if (a.esteMes)        { ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1); fin = hoy; }
+        else if (a.mesPasado) { ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+                                fin = new Date(hoy.getFullYear(), hoy.getMonth(), 0); }
+        else if (a.esteAnio)  { ini = new Date(hoy.getFullYear(), 0, 1); fin = hoy; }
+        else                  { ini = new Date(); ini.setDate(ini.getDate() - (a.dias - 1)); fin = hoy; }
+        setDraftStart(iso(ini)); setDraftEnd(iso(fin));
+        onRangeChange?.(iso(ini), iso(fin));
+        setIsOpen(false);
+    };
+
     const popup = isOpen && createPortal(
         <>
             <div className="fixed inset-0 z-tooltip bg-scrim backdrop-blur-[2px]" onClick={handleClose} />
             <div
                 ref={popupRef}
                 data-surface="dropdown"
-                className="fixed z-toast p-6 w-[580px] max-w-[calc(100vw-32px)]"
-                style={{ ...popupStyle, width: '596px', maxWidth: 'calc(100vw - 32px)' }}
+                className="fixed z-toast p-6 max-w-[calc(100vw-32px)]"
+                style={{ ...popupStyle, width: months === 1 ? '332px' : '596px', maxWidth: 'calc(100vw - 32px)' }}
                 onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >
                 {/* Header */}
@@ -355,11 +414,24 @@ const RangeDatePicker = ({
                             <p className="text-body-sm font-black uppercase tracking-widest text-content-2">
                                 {multiRange ? 'Selecciona períodos de apoyo' : (selecting === 'start' ? 'Selecciona el primer día' : 'Ajusta la fecha de fin')}
                             </p>
-                            <p className="text-caption text-content-3 font-bold">
-                                {multiRange
-                                    ? (selectedRanges.length > 0 ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}` : 'Arrastra para seleccionar períodos')
-                                    : (draftStart && draftEnd ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)}` : 'Haz click en el calendario')}
-                            </p>
+                            {multiRange ? (
+                                <p className="text-caption text-content-3 font-bold">
+                                    {selectedRanges.length > 0
+                                        ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}`
+                                        : 'Arrastra para seleccionar períodos'}
+                                </p>
+                            ) : (
+                                /* D3.11: los dos extremos, escribibles. Antes el rango
+                                   NO se podía completar sin mouse (WCAG 2.1.1) — había
+                                   que navegar el calendario sí o sí. */
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <TeclaFecha valor={draftStart} etiqueta="Fecha de inicio"
+                                        onSet={(v) => { setDraftStart(v); setSelecting('end'); }} />
+                                    <span className="text-content-3 font-black">→</span>
+                                    <TeclaFecha valor={draftEnd} etiqueta="Fecha de fin"
+                                        onSet={(v) => setDraftEnd(v)} />
+                                </div>
+                            )}
                         </div>
                     </div>
                     <button type="button" onClick={handleClose}
@@ -367,6 +439,20 @@ const RangeDatePicker = ({
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 </div>
+
+                {atajos && (
+                    <div className="flex flex-wrap gap-1.5 mb-5 pb-5 border-b border-divider">
+                        {atajos.map(a => (
+                            <button key={a.label} type="button" onClick={() => aplicarAtajo(a)}
+                                className="px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-wider
+                                    border border-border-card text-content-2 bg-surface-card-hover
+                                    hover:bg-brand hover:text-white hover:border-brand
+                                    transition-colors active:scale-[0.97]">
+                                {a.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {/* Calendars */}
                 <div className="flex gap-4">
@@ -378,10 +464,11 @@ const RangeDatePicker = ({
                         onDayHover={handleDayHover}
                         holidays={holidays}
                         onPrev={handlePrev}
+                        onNext={months === 1 ? handleNext : undefined}
                         selectedRanges={selectedRanges}
                     />
-                    <div className="w-px bg-divider self-stretch shrink-0" />
-                    <MonthGrid
+                    {months !== 1 && <div className="w-px bg-divider self-stretch shrink-0" />}
+                    {months !== 1 && <MonthGrid
                         year={secondYear} month={secondMonth}
                         startDate={draftStart} endDate={draftEnd}
                         onDayMouseDown={handleDayMouseDown}
@@ -390,7 +477,7 @@ const RangeDatePicker = ({
                         holidays={holidays}
                         onNext={handleNext}
                         selectedRanges={selectedRanges}
-                    />
+                    />}
                 </div>
 
                 {/* Footer */}
@@ -441,7 +528,7 @@ const RangeDatePicker = ({
         <>
             <div ref={triggerRef} onClick={handleOpen} className="cursor-pointer">
                 {multiRange ? (
-                    <div data-surface="input" className={`flex items-center gap-2 h-[40px] px-3 transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
+                    <div data-surface="input" className={`flex items-center gap-2 ${compact ? 'h-11 px-2.5 rounded-full' : 'h-[40px] px-3'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-success' : 'text-content-3'} strokeWidth={2.5} />
                         <p className={`text-body-sm font-bold ${selectedRanges.length > 0 ? 'text-content-2' : 'text-content-3'}`}>
                             {selectedRanges.length > 0
@@ -450,7 +537,7 @@ const RangeDatePicker = ({
                         </p>
                     </div>
                 ) : (
-                    <div data-surface="input" className={`flex items-center gap-3 h-[48px] px-4 transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
+                    <div data-surface="input" className={`flex items-center ${compact ? 'gap-2 h-11 px-3 rounded-full' : 'gap-3 h-[48px] px-4'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={startDate ? 'text-brand-text' : 'text-content-3'} strokeWidth={2.5} />
                         <span className={`flex-1 text-body font-bold truncate ${startDate && endDate ? 'text-content-2' : 'text-content-3'}`}>
                             {startDate && endDate

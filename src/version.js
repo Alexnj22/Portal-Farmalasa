@@ -5,7 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.68.0';
+export const APP_VERSION = '2.69.0';
+
+// v2.69.0 — feat(fechas): los dos selectores mejorados + BUG REAL de produccion.
+//
+// BUG. BranchesView llamaba a `BranchCardSkeleton`, un componente que NO EXISTE en
+// ningun lado del proyecto: ni definido ni importado. La vista reventaba con
+// ReferenceError cada vez que `isLoadingKiosks` quedaba en true el tiempo suficiente
+// para pintar, y el ErrorBoundary mostraba "Algo salio mal". Esto explica el crash de
+// /branches que habia quedado anotado como observacion sin reproducir: no era la red,
+// era que la red lenta mantenia viva la rama de carga. Ahora usa el Skeleton canonico.
+//
+// AUDITORIA DE CONTEXTO (pedida por el usuario): ningun RangeDatePicker esta usado
+// donde corresponde una sola fecha. El error va en UNA sola direccion: hay 10 rangos
+// escritos con DOS LiquidDatePicker coordinados a mano.
+//
+// LiquidDatePicker (31 usos) gana:
+//   · atajos — Hoy / Ayer / Hace 7 / Hace 30 / Inicio de mes. Lo que mas se hace con un
+//     filtro de fecha no es elegir un dia suelto; sin esto eran entre 4 y 12 clics.
+//   · salto de mes y ano — la logica YA existia (el titulo ciclaba days→months→years al
+//     hacer clic) pero se veia como texto plano y nadie la encontraba: para una fecha de
+//     nacimiento la gente apretaba `‹` unas 300 veces. Ahora son dos botones con chevron.
+//   · `compact` — el campo cerrado usaba 16px en negrita al lado de tabs de 10px. Esa
+//     era la causa del solape de fechas en Historia de Sucursal; los 168px que se le
+//     habian puesto eran el parche, no el arreglo.
+//
+// RangeDatePicker (5 usos) gana:
+//   · `months={1}` — el panel de dos meses (596px) es de pedir vacaciones, no de
+//     filtrar. En un mes queda en 332px y entra en una toolbar.
+//   · atajos de rango — ultimos 7/30 dias, este mes, mes pasado, este ano.
+//   · ENTRADA POR TECLADO en los dos extremos. No la tenia: un rango no se podia
+//     completar sin mouse, que es una barrera de accesibilidad real (WCAG 2.1.1).
+//   · `compact` para el disparador.
+//
+// TabHistory pasa a un solo RangeDatePicker en vez de dos pickers coordinados a mano:
+// la barra baja de 807 a 651px y el usuario arrastra en vez de abrir dos calendarios y
+// acordarse del primero.
 
 // v2.68.0 — feat(design): ViewTabBar canonico en 4 vistas + TabBarAction nuevo.
 //

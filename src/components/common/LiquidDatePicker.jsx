@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -18,7 +18,19 @@ const LiquidDatePicker = ({
     highlightRangeEnd = null,
     highlightRangeStart = null,
     holidays = [],
-    selectedDates = []
+    selectedDates = [],
+    // ── D3.11 (2026-07-27) ─────────────────────────────────────────────
+    // `compact`: el campo cerrado usaba texto de 16px en negrita, al lado de
+    // tabs de 10px. Por eso "DD/MM/AAAA" se salía de su caja en la barra de
+    // Historia de Sucursal y hubo que darle 168px. En compacto baja a 12px y
+    // el control entra en ~118px. Va por prop, apagado por defecto, para no
+    // encoger los usos de formulario sin querer.
+    compact = false,
+    // `shortcuts`: lo que más se hace con un filtro de fecha no es elegir un
+    // día suelto, es "hoy" o "hace 30 días". Sin esto son entre 4 y 12 clics.
+    // Se pasa una lista; `true` usa el juego por defecto. En un campo de
+    // nacimiento o de vencimiento no tiene sentido, por eso no es automático.
+    shortcuts = null,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMode, setCurrentMode] = useState(mode === 'full' ? 'days' : mode === 'month' ? 'months' : 'years');
@@ -261,6 +273,29 @@ const LiquidDatePicker = ({
         });
     };
 
+    // Juego por defecto para filtros. `dias: 0` es hoy; negativos van al pasado.
+    const SHORTCUTS_DEFAULT = [
+        { label: 'Hoy', dias: 0 },
+        { label: 'Ayer', dias: -1 },
+        { label: 'Hace 7 días', dias: -7 },
+        { label: 'Hace 30 días', dias: -30 },
+        { label: 'Inicio de mes', inicioMes: true },
+    ];
+    const atajos = shortcuts === true ? SHORTCUTS_DEFAULT : (Array.isArray(shortcuts) ? shortcuts : null);
+
+    const aplicarAtajo = (a) => {
+        const d = new Date();
+        if (a.inicioMes) d.setDate(1);
+        else d.setDate(d.getDate() + (a.dias || 0));
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        onChange(iso);
+        setDVal(String(d.getDate()).padStart(2, '0'));
+        setMVal(String(d.getMonth() + 1).padStart(2, '0'));
+        setYVal(String(d.getFullYear()));
+        setViewDate(d);
+        setIsOpen(false);
+    };
+
     const popoverContent = isOpen && (
         <div
             ref={popoverRef}
@@ -269,13 +304,52 @@ const LiquidDatePicker = ({
         >
             <div data-surface="dropdown" className="p-4 md:p-5 w-[280px] font-sans">
 
+                {atajos && (
+                    <div className="flex flex-wrap gap-1.5 mb-4 pb-4 border-b border-divider">
+                        {atajos.map(a => (
+                            <button key={a.label} type="button" onClick={() => aplicarAtajo(a)}
+                                className="px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-wider
+                                    border border-border-card text-content-2 bg-surface-card-hover
+                                    hover:bg-brand hover:text-white hover:border-brand
+                                    transition-colors active:scale-[0.97]">
+                                {a.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex justify-between items-center mb-5 px-1">
                     <button type="button" onClick={handlePrev} className="p-2 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>
-                    <button type="button" onClick={() => { if (currentMode === 'days') setCurrentMode('months'); else if (currentMode === 'months') setCurrentMode('years'); }} className="text-body-sm md:text-body font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-3 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97] disabled:opacity-50" disabled={currentMode === 'years'}>
-                        {currentMode === 'days' && `${MONTHS_SHORT[currentMonth]} ${currentYear}`}
-                        {currentMode === 'months' && `${currentYear}`}
-                        {currentMode === 'years' && `${startYear} - ${startYear + 9}`}
-                    </button>
+                    {/* D3.11: el salto a mes/año YA existía —el título ciclaba
+                        days→months→years al hacer clic— pero se veía como texto
+                        plano, así que nadie lo encontraba: para una fecha de
+                        nacimiento la gente apretaba `‹` unas 300 veces. Ahora son
+                        dos botones con chevron, cada uno directo a su modo. */}
+                    <div className="flex items-center gap-1">
+                        {currentMode === 'days' && (
+                            <>
+                                <button type="button" onClick={() => setCurrentMode('months')}
+                                    className="flex items-center gap-1 text-body-sm font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-2.5 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97]">
+                                    {MONTHS_SHORT[currentMonth]} <ChevronDown size={12} strokeWidth={3} className="opacity-60" />
+                                </button>
+                                <button type="button" onClick={() => setCurrentMode('years')}
+                                    className="flex items-center gap-1 text-body-sm font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-2.5 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97]">
+                                    {currentYear} <ChevronDown size={12} strokeWidth={3} className="opacity-60" />
+                                </button>
+                            </>
+                        )}
+                        {currentMode === 'months' && (
+                            <button type="button" onClick={() => setCurrentMode('years')}
+                                className="flex items-center gap-1 text-body-sm font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-3 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97]">
+                                {currentYear} <ChevronDown size={12} strokeWidth={3} className="opacity-60" />
+                            </button>
+                        )}
+                        {currentMode === 'years' && (
+                            <span className="text-body-sm font-black text-content-2 uppercase tracking-widest px-3 py-1.5">
+                                {startYear} - {startYear + 9}
+                            </span>
+                        )}
+                    </div>
                     <button type="button" onClick={handleNext} className="p-2 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronRight size={16} strokeWidth={3} /></button>
                 </div>
 
@@ -387,14 +461,14 @@ const LiquidDatePicker = ({
 
     return (
         <>
-            <div ref={containerRef} className="w-full h-full flex items-center gap-1 px-3 md:px-4 rounded-xl transition-all hover:bg-surface-card-hover group/picker min-w-[140px] cursor-text focus-within:bg-surface-card-hover" onClick={() => { if(!isOpen) openPicker(); if (!dVal) dRef.current?.focus(); else if (!mVal) mRef.current?.focus(); else if (!yVal) yRef.current?.focus(); }}>
+            <div ref={containerRef} className={`w-full h-full flex items-center gap-1 rounded-xl transition-all hover:bg-surface-card-hover group/picker cursor-text focus-within:bg-surface-card-hover ${compact ? "px-2.5 min-w-[112px]" : "px-3 md:px-4 min-w-[140px]"}`} onClick={() => { if(!isOpen) openPicker(); if (!dVal) dRef.current?.focus(); else if (!mVal) mRef.current?.focus(); else if (!yVal) yRef.current?.focus(); }}>
                 <IconToRender size={14} className={hasValue ? "text-brand-text" : "text-content-3 group-hover/picker:text-brand-text transition-colors shrink-0 mr-1.5"} strokeWidth={2.5} />
                 <div className="flex items-center flex-1">
-                    <input ref={dRef} type="text" inputMode="numeric" placeholder="DD" maxLength={2} value={dVal} onChange={handleD} onKeyDown={(e) => handleKeyDown(e, dVal, null, mRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('days'); }} className={`w-[26px] bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-center placeholder:text-content-3 ${dVal ? 'text-content' : ''}`} />
+                    <input ref={dRef} type="text" inputMode="numeric" placeholder="DD" maxLength={2} value={dVal} onChange={handleD} onKeyDown={(e) => handleKeyDown(e, dVal, null, mRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('days'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[20px] text-body-sm" : "w-[26px] text-body-xl"} ${dVal ? 'text-content' : ''}`} />
                     <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
-                    <input ref={mRef} type="text" inputMode="numeric" placeholder="MM" maxLength={2} value={mVal} onChange={handleM} onKeyDown={(e) => handleKeyDown(e, mVal, dRef, yRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('months'); }} className={`w-[28px] bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-center placeholder:text-content-3 ${mVal ? 'text-content' : ''}`} />
+                    <input ref={mRef} type="text" inputMode="numeric" placeholder="MM" maxLength={2} value={mVal} onChange={handleM} onKeyDown={(e) => handleKeyDown(e, mVal, dRef, yRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('months'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[22px] text-body-sm" : "w-[28px] text-body-xl"} ${mVal ? 'text-content' : ''}`} />
                     <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
-                    <input ref={yRef} type="text" inputMode="numeric" placeholder="AAAA" maxLength={4} value={yVal} onChange={handleY} onKeyDown={(e) => handleKeyDown(e, yVal, mRef, null)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('years'); }} className={`w-[44px] bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-center placeholder:text-content-3 ${yVal ? 'text-content' : ''}`} />
+                    <input ref={yRef} type="text" inputMode="numeric" placeholder="AAAA" maxLength={4} value={yVal} onChange={handleY} onKeyDown={(e) => handleKeyDown(e, yVal, mRef, null)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('years'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[35px] text-body-sm" : "w-[44px] text-body-xl"} ${yVal ? 'text-content' : ''}`} />
                 </div>
                 {hasValue && (
                     <div role="button" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-danger/10 text-content-3 hover:text-danger transition-all shrink-0 cursor-pointer" title="Borrar fecha">

@@ -1,5 +1,6 @@
 // src/views/AttendanceMonitorView.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { EmptyState } from '../components/common/StateViews';
 import ViewTabBar from '../components/common/ViewTabBar';
 import {
   Clock,
@@ -648,19 +649,11 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
       {/* TABLERO POR ESTADO */}
       {employeeDataList.length === 0 ? (
-        <div className="rounded-modal p-20 text-center border border-border-card bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] flex flex-col items-center gap-4 mt-8">
-          <div className="w-20 h-20 bg-surface-card-hover rounded-full flex items-center justify-center animate-pulse">
-            <Users size={32} className="text-content-3" />
-          </div>
-          <div>
-            <p className="text-body-lg font-black uppercase tracking-widest text-content-2">
-              No hay empleados en esta categoría
-            </p>
-            <p className="text-body-sm text-content-3 mt-1 font-medium">
-              Intenta cambiar el filtro o seleccionar otra tarjeta.
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No hay empleados en esta categoría"
+          subtitle="Intenta cambiar el filtro o seleccionar otra tarjeta."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
           {KANBAN_COLUMNS.map((col) => {

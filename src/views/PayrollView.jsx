@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { EmptyState } from '../components/common/StateViews';
 import Badge from '../components/common/Badge';
 import {
     DollarSign, Plus, Printer, CheckCircle2, Banknote,
     Building2, Search, Edit2, RotateCcw, Download, X, ListFilter,
-    AlertTriangle, LockKeyhole, ExternalLink,
-} from 'lucide-react';
+    AlertTriangle, LockKeyhole, ExternalLink, CalendarDays } from 'lucide-react';
 import { fetchUnapprovedTimesheetsCount } from '../data/payroll';
 import { useStaffStore } from '../store/staffStore';
 import { smartFilter } from '../utils/searchUtils';
@@ -556,7 +556,8 @@ const PayrollView = ({ openModal }) => {
                                 </button>
                             </div>
                             {filteredPeriods.length === 0 ? (
-                                <p className="text-center py-10 text-content-3 text-label font-medium">Sin períodos aún</p>
+                                <EmptyState compact icon={CalendarDays} title="Sin períodos aún"
+                                    subtitle="Creá el primero con el botón de arriba." />
                             ) : (
                                 <div className="space-y-2">
                                     {filteredPeriods.map((p, i) => {

@@ -253,15 +253,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                 </div>
 
                 {filteredRows.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[260px] animate-in fade-in zoom-in-95 duration-700">
-                        <div className="relative flex flex-col items-center text-center">
-                            <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-20 bg-chart-1" />
-                            <div className="relative z-base w-20 h-20 rounded-3xl flex items-center justify-center mb-4 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-chart-1-text">
-                                <Inbox size={34} strokeWidth={1.5} />
-                            </div>
-                            <h3 className="font-bold text-title-sm text-content-2 tracking-tight">Sin pedidos activos</h3>
-                        </div>
-                    </div>
+                    <EmptyState
+                        compact
+                        icon={Inbox}
+                        iconClass="text-chart-1-text"
+                        glowClass="bg-chart-1/30"
+                        title="Sin pedidos activos"
+                    />
                 ) : (
                     <div className="space-y-3">
                     {renderGroups.map((group) => {

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { EmptyState } from '../../components/common/StateViews';
+import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import TabBarAction from '../../components/common/TabBarAction';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -344,27 +346,19 @@ const EmployeeDocumentsView = () => {
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
-                        <div className="w-20 h-20 rounded-modal bg-surface-card border border-border-card flex items-center justify-center mb-4 shadow-sm">
-                            <FolderOpen size={32} className="text-content-3" strokeWidth={1.5} />
-                        </div>
-                        <p className="text-subtitle font-black text-content-3 mb-1">
-                            {search || hasFilters ? 'Sin resultados' : 'Sin documentos aún'}
-                        </p>
-                        <p className="text-label text-content-3 font-medium text-center max-w-xs">
-                            {search || hasFilters
-                                ? 'Intenta con otros filtros o términos de búsqueda.'
-                                : 'Aquí aparecerán tus constancias, boletas de incapacidad y otros documentos adjuntos a tus solicitudes.'}
-                        </p>
-                        {(search || hasFilters) && (
-                            <button
-                                onClick={() => { setSearch(''); clearFilters(); setTab('ALL'); }}
-                                className="mt-4 px-4 py-2 rounded-2xl bg-surface-card border border-border-card text-label font-black text-content-2 hover:bg-surface-card-hover transition-all hover:-translate-y-0.5 active:scale-[0.97]"
-                            >
+                    <EmptyState
+                        icon={FolderOpen}
+                        title={search || hasFilters ? 'Sin resultados' : 'Sin documentos aún'}
+                        subtitle={search || hasFilters
+                            ? 'Intenta con otros filtros o términos de búsqueda.'
+                            : 'Aquí aparecerán tus constancias, boletas de incapacidad y otros documentos adjuntos a tus solicitudes.'}
+                        action={(search || hasFilters) && (
+                            <Button variant="secondary" icon={X}
+                                onClick={() => { setSearch(''); clearFilters(); setTab('ALL'); }}>
                                 Limpiar filtros
-                            </button>
+                            </Button>
                         )}
-                    </div>
+                    />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
                         {filtered.map((doc, i) => (

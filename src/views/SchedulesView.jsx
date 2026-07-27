@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
+import { EmptyState } from '../components/common/StateViews';
+import Button from '../components/common/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { tokenMatch, normSearch } from '../utils/searchUtils';
 import {
@@ -135,14 +137,16 @@ const HolidaysPanel = ({
 
             {/* Holiday list */}
             {byMonth.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-4">
-                    <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal shadow-sm">
-                        <Star size={32} className="text-warning/40" strokeWidth={1.5} />
-                    </div>
-                    <p className="text-body font-bold text-content-3">
-                        {searchTerm ? `Sin resultados para "${searchTerm}"` : `No hay feriados registrados para ${holidayYear}`}
-                    </p>
-                </div>
+                <EmptyState
+                    compact
+                    icon={Star}
+                    iconClass="text-warning"
+                    glowClass="bg-warning/30"
+                    title={searchTerm ? 'Sin resultados' : 'Sin feriados'}
+                    subtitle={searchTerm
+                        ? `No encontramos feriados que coincidan con "${searchTerm}".`
+                        : `Todavía no hay feriados registrados para ${holidayYear}.`}
+                />
             ) : (
                 <div className="space-y-8">
                     {byMonth.map(({ month, items }) => (
@@ -866,19 +870,16 @@ const SchedulesView = ({ openModal, setView }) => {
                     </div>
 
                     {employeesInView.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5">
-                            <div className="p-6 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal shadow-sm">
-                                <CalendarDays size={36} className="text-brand-text/30" strokeWidth={1.5} />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-body-xl font-black text-content-2 mb-1">Sin empleados</p>
-                                <p className="text-body font-medium text-content-3">No hay empleados activos en esta sucursal.</p>
-                            </div>
-                            <button onClick={goToPersonal}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-btn text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
-                                Ir al módulo de Personal <ArrowRight size={14} />
-                            </button>
-                        </div>
+                        <EmptyState
+                            icon={CalendarDays}
+                            title="Sin empleados"
+                            subtitle="No hay empleados activos en esta sucursal."
+                            action={
+                                <Button icon={ArrowRight} onClick={goToPersonal}>
+                                    Ir al módulo de Personal
+                                </Button>
+                            }
+                        />
                     ) : (
                         <div className="flex flex-col pb-10 flex-1 min-h-0 overflow-y-auto hide-scrollbar relative">
                             <ScheduleCalendar

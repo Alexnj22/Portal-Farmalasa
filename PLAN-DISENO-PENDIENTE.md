@@ -131,7 +131,37 @@ correcto no es la forma sino la **semántica del texto** — "Sin…", "No hay�
 400px), que es la que sirve dentro de paneles y widgets: la versión completa
 solo funciona cuando el vacío ocupa la vista entera.
 
-### D3.3 — `<button>` → `Button` (639 en 102 archivos)
+### D3.3 — `<button>` → `Button`
+
+**El conteo real es 939 en 140 archivos**, no 639/102. Y antes de migrar se
+midió qué formas existen — el canónico **no las cubría**:
+
+| eje | lo que hay |
+|---|---|
+| forma | `rounded-xl` 186 · `rounded-full` 109 · `rounded-2xl` 82 · `rounded-btn` 50 · sin radio 48 · `rounded-lg` 32 · `rounded-3xl` 6 |
+| relleno | secundario 188 · **otro color 115** · brand 95 · danger 64 · fantasma 55 |
+| alto | 8 valores, pero solo ~85 de 517 declaran alguno |
+
+Migrar a ciegas habría **cambiado el radio de 437 botones y borrado el color de
+115**. Por eso primero se agregaron los dos ejes que faltaban (v2.72.0):
+`shape` (box · pill — los seis radios distintos son ruido, no intención) y
+`tone` para los coloreados, que expresan *categoría* (éxito, aviso, un color de
+gráfico) y no jerarquía.
+
+Reparto por tipo, para migrar por lotes:
+
+| tipo | cuántos |
+|---|---|
+| botón con texto | 359 |
+| otro (tarjetas/ítems que son `<button>`) | 278 |
+| píldora con texto | 109 |
+| ícono redondo | 97 |
+| ícono cuadrado | 92 |
+
+Los 278 "otro" son tarjetas y elementos de lista que usan `<button>` por
+semántica de click, no controles con forma de botón: **no van al canónico**.
+
+#### Original (subestimado)
 
 Ya hay objetivo: 4 tamaños canónicos derivados de `--control-h` con piso
 táctil. Arrastra `white`, `shadow-literal` y `inline-color` de esas líneas.

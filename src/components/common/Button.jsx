@@ -18,6 +18,36 @@ import { Loader2 } from 'lucide-react';
 // en el tema sólido (que ya desactiva el movimiento decorativo).
 const HAS_SWEEP = new Set(['primary', 'destructive']);
 
+// ── D3.3 (2026-07-27): los dos ejes que faltaban ─────────────────────────
+// Antes de migrar los 939 botones escritos a mano se midió qué formas existen
+// de verdad, y el canónico NO las cubría:
+//
+//   FORMA   rounded-xl 186 · rounded-full 109 · rounded-2xl 82 · rounded-btn 50
+//           · sin radio 48 · rounded-lg 32 · rounded-3xl 6
+//   RELLENO secundario 188 · OTRO COLOR 115 · brand 95 · danger 64 · fantasma 55
+//
+// Migrar a ciegas habría cambiado el radio de 437 botones y borrado el color de
+// 115. Dos ejes nuevos, y solo dos: `shape` (el radio real se reparte entre
+// "caja" y "píldora"; los seis valores distintos son ruido, no intención) y
+// `tone` para los coloreados, que son categorías —éxito, aviso, un color de
+// gráfico— y no jerarquía.
+const SHAPE_CLASSES = {
+    box:  'rounded-btn',
+    pill: 'rounded-full',
+};
+
+// Literales, NO plantilla: Tailwind escanea texto (ver la nota de Badge/Switch).
+const TONE_CLASSES = {
+    success: 'text-white bg-success-solid hover:brightness-110',
+    warning: 'text-white bg-warning-solid hover:brightness-110',
+    'chart-1': 'text-white bg-chart-1 hover:brightness-110',
+    'chart-3': 'text-white bg-chart-3 hover:brightness-110',
+    'chart-4': 'text-white bg-chart-4 hover:brightness-110',
+    'chart-6': 'text-white bg-chart-6 hover:brightness-110',
+    'chart-8': 'text-white bg-chart-8 hover:brightness-110',
+    'chart-9': 'text-white bg-chart-9 hover:brightness-110',
+};
+
 const VARIANT_CLASSES = {
     primary: `text-white bg-gradient-to-b from-brand-hover to-brand
         shadow-[var(--shadow-glass-1)]
@@ -68,6 +98,8 @@ const ICON_PX = { xs: 12, sm: 14, md: 15, lg: 17 };
 
 const Button = memo(({
     variant = 'primary',
+    shape = 'box',
+    tone = null,
     size = 'md',
     icon: Icon,
     iconOnly = false,
@@ -83,15 +115,17 @@ const Button = memo(({
         <button
             type={type}
             disabled={isDisabled}
-            className={`group relative overflow-hidden inline-flex items-center justify-center rounded-btn font-bold tracking-[-0.005em]
+            className={`group relative overflow-hidden inline-flex items-center justify-center font-bold tracking-[-0.005em]
                 transition-[transform,box-shadow,background-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap
                 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
-                ${VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary}
+                ${SHAPE_CLASSES[shape] || SHAPE_CLASSES.box}
+                ${tone ? (TONE_CLASSES[tone] || VARIANT_CLASSES.primary)
+                       : (VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary)}
                 ${iconOnly ? (ICON_ONLY_SIZE[size] || ICON_ONLY_SIZE.md) : (SIZE_CLASSES[size] || SIZE_CLASSES.md)}
                 ${className}`}
             {...rest}
         >
-            {HAS_SWEEP.has(variant) && !isDisabled && <span className="sweep" aria-hidden="true" />}
+            {(tone || HAS_SWEEP.has(variant)) && !isDisabled && <span className="sweep" aria-hidden="true" />}
             {loading ? (
                 <Loader2 size={ICON_PX[size] ?? 15} className="relative animate-spin" />
             ) : (

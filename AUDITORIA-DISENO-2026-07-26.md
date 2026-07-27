@@ -531,6 +531,82 @@ pero el objetivo de la primera semana es que el modo oscuro deje de verse roto.
 
 ---
 
+## 5. Registro de ejecución
+
+### D0 — Tapar el hueco del gate · **CERRADA** (2026-07-26)
+
+`scripts/design-gate.mjs` pasa de 6 a 11 categorías. Baseline real medido:
+
+| Categoría | Hallazgos | Estado |
+|---|---|---|
+| `typography` | 4,490 | nueva (D0.2) — incluye 270 bajo el piso de 9px, con etiqueta propia |
+| `white` | 1,094 | nueva (D0.1) — `bg/text/border-white` y `-black`, con y sin alpha |
+| `z-index` | 552 | nueva (D0.3) — `z-[N]`, `z-N` y `zIndex:` inline |
+| `hex` | 32 | ampliada (D0.4) — sale de `color` a categoría propia |
+| `motion` | 30 | nueva (D0.5) — 5 decorativos + 25 sin `useReducedMotion` |
+| `native`, `color`, `search-toggle`, `small-input`, `scale-tap`, `left-border` | 0 | siguen bloqueantes |
+
+**Total: 6,198 hallazgos en 190 archivos** que el gate no veía ayer.
+
+#### El gate funciona por ratchet, no por cero absoluto
+
+Decisión tomada dentro de D0. Si las cinco categorías nuevas fallaran de una,
+`npm run gate:design` quedaría rojo hasta terminar D3 — y un gate permanentemente rojo
+no lo mira nadie, que es exactamente cómo se acumuló esta deuda. En su lugar:
+
+- Baseline por categoría versionado en `scripts/design-gate-baseline.json`.
+- **El gate falla si una categoría sube.** La deuda existente no bloquea; la deuda nueva sí.
+- Al bajar deuda: `npm run gate:design -- --update-baseline` y se commitea el JSON.
+  Nunca para tapar un hallazgo nuevo.
+- Cuando una categoría llega a 0, queda bloqueante para siempre.
+
+Verificado inyectando una violación temporal: el gate falló con
+`typography SUBIÓ +1` / `z-index SUBIÓ +1`, y volvió a verde al revertirla. El detalle
+se acota a los archivos modificados respecto a `HEAD` — sin ese filtro, un solo
+`bg-white` nuevo imprimía los 1,094 hallazgos conocidos de la categoría.
+
+`CLAUDE.md` actualizado: la regla decía "debe dar 0 hallazgos", que con el ratchet ya
+no describe el contrato.
+
+#### Excepciones agregadas (calibración, no deuda)
+
+Al corregir `HEX_RE` aparecieron 93 hex que el regex viejo no podía ver por no tener
+`className=` en la misma línea. Son hex por naturaleza de la tecnología, la misma
+categoría "Mapas/canvas/PDF" que ya existía:
+
+- `utils/pedidoPrint.js` (51) y `utils/conteoInventarioPrint.js` (38) — `docDefinition`
+  de pdfmake, no CSS.
+- `context/ThemeContext.jsx` (4) — `<meta name="theme-color">` necesita un color sólido
+  y `--bg-page` es un gradiente, así que no se puede derivar del token.
+
+#### Hallazgo nuevo encontrado durante D0 — **pendiente de decisión**
+
+**N1 · Objetos de configuración migrados a medias.** En `tabminmax/constants.js` los
+config de ABC/XYZ tienen el campo `cls` correctamente tokenizado por T7.1
+(`bg-surface-card-hover`, `text-warning-text`, `text-danger-text`…) pero el campo
+`color:` **del mismo objeto** quedó en hex crudo:
+
+```js
+C: { bg: 'bg-warning/10 text-warning-text border-warning/30', …, color: '#f59e0b' },
+Z: { …, cls: 'text-danger-text bg-danger/10 border-danger/30', color: '#e11d48' },
+```
+
+T7.1 migró las clases Tailwind y no tocó los valores que se pasan a SVG/charts, así que
+media configuración quedó tokenizada y media no. Es el mismo patrón que el semáforo
+`--txvol-*` que se corrigió en v2.58.1 ("seguía duplicado a mano como hex crudo en 4
+archivos productores + 1 consumidor").
+
+Alcance: los 32 hex que quedan en el baseline, concentrados en
+`tabminmax/constants.js` (10), `TabExpenses.jsx` (6), `EncuestaView.jsx` (4),
+`CoverageBar.jsx` (4), `WidgetInventorySearch.jsx` (3) y 5 archivos con 1 cada uno.
+Varios son duplicados exactos de tokens que ya existen — `#F79009` es `--warning`,
+`#12B76A` es `--success`, `#0052CC` es `--brand`, `#64748b` es `--chart-8`.
+
+Queda registrado en el baseline y **sin tocar**, a la espera de decidir si entra ahora,
+si se agenda para D2 (donde ya se tocan los tokens) o si se descarta.
+
+---
+
 ## Anexo — Evidencia
 
 - `docs/audits/diseno-2026-07-26/scan-dark.json` — resultado crudo del escáner (29 rutas).

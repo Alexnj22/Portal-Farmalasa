@@ -184,8 +184,24 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
 - Bumpar `APP_VERSION` en `src/version.js` en cada commit
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
-  Debe dar 0 hallazgos — las excepciones legítimas viven en
+  Debe pasar en verde — las excepciones legítimas viven en
   `scripts/design-gate.mjs` (const `EXCEPTIONS`) y en `DESIGN.md` §6/§14. Este
   gate reemplaza los regex ad-hoc de sesiones anteriores que se perdían y
   dejaban huecos reales sin detectar (ver `AUDITORIA-TEMA-2026-07.md` y
   memoria `project_theme_audit_2026_07_22`).
+
+  **Desde D0 de la auditoría de diseño (2026-07-26) el gate funciona por
+  ratchet, no por cero absoluto** (`AUDITORIA-DISENO-2026-07-26.md`). Seis
+  categorías siguen siendo de cero absoluto: `native`, `color`,
+  `search-toggle`, `small-input`, `scale-tap`, `left-border`. Las cinco
+  agregadas en D0 arrancan con la deuda existente registrada en
+  `scripts/design-gate-baseline.json` (`white` 1094, `typography` 4490,
+  `z-index` 552, `hex` 32, `motion` 30): **el gate falla si una categoría
+  SUBE**, no por tenerlas en rojo. Un gate permanentemente rojo no lo mira
+  nadie — que es exactamente cómo se acumuló esta deuda.
+
+  Al BAJAR deuda (cada fase del plan baja la suya), regenerar con
+  `npm run gate:design -- --update-baseline` y commitear el JSON. **Nunca
+  regenerarlo para tapar un hallazgo nuevo**: si una categoría subió, es
+  código nuevo que hay que arreglar. Cuando una categoría llega a 0 queda
+  bloqueante para siempre.

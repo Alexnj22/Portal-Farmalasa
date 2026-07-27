@@ -40,7 +40,7 @@
 // AUDITORIA-TEMA-2026-07.md. Si un archivo nuevo necesita una excepción,
 // agregarla aquí Y documentar el motivo en DESIGN.md — nunca solo aquí.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 const ROOTS = ['src'];
@@ -124,6 +124,15 @@ const EXCEPTIONS = {
   'src/components/common/PeriodPicker.jsx': ['native'], // fn local `confirm(s,e)`, no window.confirm
   // Preview/storybook, no visible a usuarios reales
   'src/views/_StatCardPreview.jsx': ['color', 'native'],
+  // ── Agregadas en D0 (2026-07-26) al corregir HEX_RE ────────────────────
+  // El regex viejo no podía ver estos hex (no hay `className=` en la línea),
+  // por eso nunca aparecieron. Son hex por naturaleza de la tecnología,
+  // exactamente la categoría "Mapas/canvas/PDF" que ya existe arriba.
+  'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
+  'src/utils/conteoInventarioPrint.js': ['hex'],  // pdfmake: docDefinition, no CSS
+  // <meta name="theme-color"> necesita un color SÓLIDO; --bg-page es un
+  // gradiente, así que no se puede derivar del token con getComputedStyle.
+  'src/context/ThemeContext.jsx': ['hex'],
 };
 
 const hasException = (file, category) => (EXCEPTIONS[file] || []).includes(category);
@@ -176,8 +185,65 @@ const GRAY_RE = new RegExp(
   `\\b(${COLOR_PREFIXES.join('|')})-(${GRAY_PALETTES.join('|')})-\\d{2,3}\\b`,
   'g'
 );
-// Hex crudo dentro de className/style (evita falsos positivos de hashes/ids sueltos)
-const HEX_RE = /(?:className|style)=[^>]*?#[0-9a-fA-F]{3,8}\b/g;
+
+// ── Categoría 2b: blanco/negro crudo (D0.1, 2026-07-26) ─────────────────
+// GRAY_RE exige un shade numérico (`-\d{2,3}`), así que `bg-white`,
+// `text-white` y `border-white` NUNCA se detectaron — 1,639 usos invisibles
+// al gate desde que se escribió. Es la tercera repetición del mismo hueco
+// (ring-*/via-* en T7, border-slate-* en v2.55.0): el regex solo cubre lo
+// que enumera. Categoría propia y no dentro de 'color' para que 'color'
+// conserve su significado (paletas Tailwind con shade) y siga en 0.
+// Cubre con y sin alpha: bg-white, bg-white/80, bg-white/[0.06], text-black.
+const WHITE_RE = new RegExp(
+  `\\b(${COLOR_PREFIXES.join('|')})-(white|black)(?![\\w-])(\\/(\\[[^\\]]+\\]|[\\d.]+))?`,
+  'g'
+);
+
+// ── Categoría 2c: hex crudo (D0.4, 2026-07-26) ──────────────────────────
+// El regex viejo era `(?:className|style)=[^>]*?#hex`: exigía que el
+// `className=`/`style=` estuviera en la MISMA línea y antes del hex, así que
+// un hex dentro de una `const` de JS (`const EXPAND_BG = '…#EEF4FF…'`) era
+// invisible — así sobrevivió meses en TabCatalogo.jsx hasta v2.62.4.
+// Ahora: cualquier hex de 3/6/8 dígitos dentro de un string literal. El
+// requisito de comilla en la línea evita los falsos positivos de fragmentos
+// de URL y de ids sueltos. Sale de 'color' a categoría propia para no
+// volver rojo un contador que hoy está limpio.
+const HEX_RE = /#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g;
+const QUOTE_RE = /['"`]/;
+
+// ── Categoría 7: tipografía a mano (D0.2, 2026-07-26) ───────────────────
+// No existe escala tipográfica en @theme: 4,491 `text-[Npx]` literales en
+// 181 archivos, con 25 valores distintos. D2 define la escala y los migra;
+// D0 solo los hace visibles. Dos etiquetas distintas dentro de la misma
+// categoría porque no son lo mismo: estar sin tokenizar es deuda, estar
+// bajo 9px es ilegible hoy (§7 fija ahí el piso — 270 usos por debajo).
+const TYPE_PX_RE = /\btext-\[(\d+)px\]/g;
+const TYPE_FLOOR_PX = 9;
+
+// ── Categoría 8: z-index fuera de la escala canónica (D0.3, 2026-07-26) ──
+// T1 declaró 16 clases `@utility` (z-modal, z-toast, …) que generan CSS
+// real y que NADIE consume: 0 usos contra 553 a mano. DESIGN.md §9 lo
+// admite y difiere la migración a "T3/T4" — un plan cerrado el 2026-07-24.
+// Se marcan las tres formas, con etiquetas distintas por gravedad.
+const Z_ARBITRARY_RE = /\bz-\[(\d+)\]/g;
+const Z_NUMERIC_RE = /\bz-(\d+)\b/g;
+const Z_INLINE_RE = /\bzIndex\s*:/g;
+
+// ── Categoría 9: motion (D0.5, 2026-07-26) ──────────────────────────────
+// La regla vieja ("no new framer-motion usage") baneaba la librería entera
+// sin distinguir para qué se usa, y por eso se incumplía: 20 de los 25
+// archivos la usan para lo que CSS NO puede hacer — AnimatePresence anima
+// el DESMONTAJE (cuando React quita el nodo no queda nada que animar) y
+// layout/layoutId hace transiciones FLIP entre posiciones. La regla nueva
+// permite esas capacidades y prohíbe solo `motion.*` decorativo
+// (fade/slide de entrada, hover, tap), que sí es @keyframes + Tailwind.
+const MOTION_IMPORT_RE = /from\s+['"]framer-motion['"]/;
+const MOTION_ALLOWED_RE = /AnimatePresence|layoutId|LayoutGroup|\blayout\b|\bdrag\b/;
+// S1.6: prefers-reduced-motion está resuelto para las 18 clases CSS que
+// enumera DESIGN.md §25, pero la media query de CSS no detiene animación
+// manejada por JS. useReducedMotion tiene 0 usos: los 25 archivos con
+// framer-motion ignoran la preferencia de accesibilidad.
+const REDUCED_MOTION_RE = /useReducedMotion/;
 
 // ── Categoría 3: buscador toggleable sin useSearchToggle ────────────────
 // Heurística de nombre: un `useState(false)` cuya variable termina en
@@ -275,11 +341,77 @@ function scanFile(path) {
       while ((m = GRAY_RE.exec(line))) {
         findings.push({ line: i + 1, label: `color crudo: ${m[0]}`, category: 'color', text: line.trim().slice(0, 120) });
       }
-      HEX_RE.lastIndex = 0;
-      if (HEX_RE.test(line)) {
-        findings.push({ line: i + 1, label: 'hex crudo', category: 'color', text: line.trim().slice(0, 120) });
+    });
+  }
+
+  // 'white' y 'hex' heredan la excepción de 'color': los archivos ya
+  // excepcionados lo están por ser superficies bespoke de color fijo
+  // (sidebar siempre-oscuro, kiosco, splash, canvas/PDF, marca de terceros)
+  // — exactamente el mismo motivo por el que su blanco y su hex son
+  // legítimos. Duplicar las ~25 entradas no agregaría información.
+  if (!hasException(path, 'color') && !hasException(path, 'white')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      WHITE_RE.lastIndex = 0;
+      let m;
+      while ((m = WHITE_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `blanco/negro crudo: ${m[0]}`, category: 'white', text: line.trim().slice(0, 120) });
       }
     });
+  }
+
+  if (!hasException(path, 'color') && !hasException(path, 'hex')) {
+    lines.forEach((line, i) => {
+      if (isComment[i] || !QUOTE_RE.test(line)) return;
+      HEX_RE.lastIndex = 0;
+      let m;
+      while ((m = HEX_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `hex crudo: ${m[0]}`, category: 'hex', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'typography')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      TYPE_PX_RE.lastIndex = 0;
+      let m;
+      while ((m = TYPE_PX_RE.exec(line))) {
+        const px = Number(m[1]);
+        const label = px < TYPE_FLOOR_PX
+          ? `tipografía bajo el piso legible de ${TYPE_FLOOR_PX}px: ${m[0]}`
+          : `tamaño a mano, sin token: ${m[0]}`;
+        findings.push({ line: i + 1, label, category: 'typography', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'z-index')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      let m;
+      Z_ARBITRARY_RE.lastIndex = 0;
+      while ((m = Z_ARBITRARY_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `z-index arbitrario: ${m[0]}`, category: 'z-index', text: line.trim().slice(0, 120) });
+      }
+      Z_NUMERIC_RE.lastIndex = 0;
+      while ((m = Z_NUMERIC_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `z-index sin nombrar: ${m[0]}`, category: 'z-index', text: line.trim().slice(0, 120) });
+      }
+      Z_INLINE_RE.lastIndex = 0;
+      if (Z_INLINE_RE.test(line)) {
+        findings.push({ line: i + 1, label: 'zIndex inline', category: 'z-index', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'motion') && MOTION_IMPORT_RE.test(text)) {
+    if (!MOTION_ALLOWED_RE.test(text)) {
+      findings.push({ line: 1, label: 'framer-motion decorativo (sin AnimatePresence/layout/drag) — usar @keyframes + Tailwind', category: 'motion', text: path });
+    }
+    if (!REDUCED_MOTION_RE.test(text)) {
+      findings.push({ line: 1, label: 'framer-motion sin useReducedMotion — ignora prefers-reduced-motion (S1.6)', category: 'motion', text: path });
+    }
   }
 
   if (!hasException(path, 'search-toggle') && !text.includes('useSearchToggle')) {
@@ -334,10 +466,36 @@ function scanFile(path) {
   return findings;
 }
 
+// ── Ratchet de baseline (D0.6, 2026-07-26) ──────────────────────────────
+// Las categorías nuevas de D0 suman ~2,000 hallazgos reales. Si fallaran de
+// una, el gate quedaría rojo hasta que termine D3 — y un gate permanentemente
+// rojo no lo mira nadie, que es exactamente cómo se acumuló esta deuda.
+//
+// En vez de eso: baseline por categoría, versionado en git. El gate falla si
+// el conteo de una categoría SUBE. Así la deuda existente no bloquea, pero
+// deuda NUEVA sí — que es el objetivo real de D0 ("evitar que vuelva a
+// driftar"). Cada fase baja el baseline de su categoría; cuando llega a 0,
+// esa categoría queda bloqueante para siempre.
+//
+// Las categorías que hoy están en 0 (native, color, search-toggle,
+// small-input, scale-tap, left-border) siguen siendo bloqueantes: su
+// baseline es 0, así que cualquier hallazgo las hace fallar.
+//
+// `npm run gate:design -- --update-baseline` reescribe el archivo. Se usa
+// deliberadamente al BAJAR deuda, nunca para tapar un hallazgo nuevo.
+const BASELINE_PATH = 'scripts/design-gate-baseline.json';
+
+function loadBaseline() {
+  if (!existsSync(BASELINE_PATH)) return {};
+  try { return JSON.parse(readFileSync(BASELINE_PATH, 'utf8')).categories || {}; }
+  catch { return {}; }
+}
+
 function main() {
   const files = listFiles();
-  let total = 0;
   const byFile = {};
+  const byCategory = {};
+  let total = 0;
 
   for (const file of files) {
     if (EXCLUDE_FILES.has(file)) continue;
@@ -345,23 +503,87 @@ function main() {
     if (findings.length) {
       byFile[file] = findings;
       total += findings.length;
+      for (const f of findings) byCategory[f.category] = (byCategory[f.category] || 0) + 1;
     }
   }
 
-  const jsonMode = process.argv.includes('--json');
-  if (jsonMode) {
-    console.log(JSON.stringify(byFile, null, 2));
-  } else {
-    for (const [file, findings] of Object.entries(byFile)) {
-      console.log(`\n${file} (${findings.length})`);
-      for (const f of findings) {
+  if (process.argv.includes('--json')) {
+    console.log(JSON.stringify({ byFile, byCategory }, null, 2));
+    process.exit(0);
+  }
+
+  if (process.argv.includes('--update-baseline')) {
+    writeFileSync(BASELINE_PATH, JSON.stringify({
+      _comment: 'Ratchet del gate de diseño. El gate falla si una categoría SUBE respecto a estos números. Cada fase del plan (AUDITORIA-DISENO-2026-07-26.md) baja los suyos; al llegar a 0 la categoría queda bloqueante. Regenerar solo al BAJAR deuda: npm run gate:design -- --update-baseline',
+      updated: new Date().toISOString().slice(0, 10),
+      categories: byCategory,
+    }, null, 2) + '\n');
+    console.log(`✓ Baseline actualizado en ${BASELINE_PATH}`);
+    for (const [c, n] of Object.entries(byCategory).sort((a, b) => b[1] - a[1])) {
+      console.log(`  ${c.padEnd(14)} ${n}`);
+    }
+    process.exit(0);
+  }
+
+  const baseline = loadBaseline();
+  const categories = [...new Set([...Object.keys(byCategory), ...Object.keys(baseline)])].sort();
+  const regressions = [];
+
+  for (const c of categories) {
+    const now = byCategory[c] || 0;
+    const max = baseline[c] ?? 0;
+    if (now > max) regressions.push({ c, now, max });
+  }
+
+  // Detalle solo de lo que regresó, y acotado a los archivos que el autor
+  // acaba de tocar. Sin este filtro, agregar un solo `bg-white` imprimía los
+  // 1,094 hallazgos de deuda conocida de esa categoría — output que nadie
+  // lee, que es justamente cómo se acumuló todo esto. La regresión casi
+  // siempre está en lo que se modificó; `--json` sigue dando el volcado
+  // completo para análisis.
+  if (regressions.length) {
+    const bad = new Set(regressions.map(r => r.c));
+    let touched = null;
+    try {
+      const out = execSync('git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null')
+        .toString().trim();
+      const set = new Set(out ? out.split('\n').filter(Boolean) : []);
+      if (set.size) touched = set;
+    } catch { /* sin git, o repo recién creado: se cae al modo capado */ }
+
+    const scope = Object.entries(byFile).filter(([f]) => !touched || touched.has(f));
+    const shown = scope.length ? scope : Object.entries(byFile);
+    if (touched && scope.length) {
+      console.log('\n(solo archivos modificados respecto a HEAD — usá --json para el volcado completo)');
+    }
+    let printed = 0;
+    for (const [file, findings] of shown) {
+      const rel = findings.filter(f => bad.has(f.category));
+      if (!rel.length) continue;
+      console.log(`\n${file} (${rel.length})`);
+      for (const f of rel) {
+        if (printed++ >= 40) { console.log('  … (truncado, usá --json)'); break; }
         console.log(`  L${f.line} [${f.category}] ${f.label} — ${f.text}`);
       }
+      if (printed >= 40) break;
     }
-    console.log(`\n${total ? '✗' : '✓'} ${total} hallazgo(s) en ${Object.keys(byFile).length} archivo(s) sin excepción documentada.`);
   }
 
-  process.exit(total ? 1 : 0);
+  console.log('\n── Estado por categoría ' + '─'.repeat(34));
+  for (const c of categories) {
+    const now = byCategory[c] || 0;
+    const max = baseline[c] ?? 0;
+    const mark = now > max ? '✗' : now < max ? '↓' : now === 0 ? '✓' : '·';
+    const note = now > max ? `SUBIÓ +${now - max}` : now < max ? `bajó -${max - now} (correr --update-baseline)` : '';
+    console.log(`  ${mark} ${c.padEnd(14)} ${String(now).padStart(5)} / ${String(max).padEnd(5)} ${note}`);
+  }
+
+  if (regressions.length) {
+    console.log(`\n✗ ${regressions.length} categoría(s) con deuda nueva: ${regressions.map(r => r.c).join(', ')}`);
+    process.exit(1);
+  }
+  console.log(`\n✓ Sin deuda nueva. Total bajo baseline: ${total} hallazgo(s) en ${Object.keys(byFile).length} archivo(s).`);
+  process.exit(0);
 }
 
 main();

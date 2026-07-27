@@ -32,6 +32,7 @@ window.addEventListener('vite:preloadError', (event) => {
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import MotionProvider from "./components/MotionProvider";
 
 // Register service worker for Web Push
 if ('serviceWorker' in navigator) {
@@ -45,9 +46,11 @@ if ('serviceWorker' in navigator) {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ThemeProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <MotionProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </MotionProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

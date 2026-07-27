@@ -5,8 +5,8 @@
     "white": 694,
     "shadow-literal": 417,
     "inline-color": 118,
-    "motion": 30,
     "z-index": 20,
+    "motion": 7,
     "hex": 32
   }
 }

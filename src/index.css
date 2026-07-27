@@ -711,11 +711,64 @@
    Liquid/dark los conservan sin cambios.
    ═══════════════════════════════════════════════════════════════ */
 
+/* ═══ MOTION COMO EJE DEL TEMA (D2.4, 2026-07-26) ══════════════════════════
+   Liquid Glass es el tema EXPRESIVO; Solid Modern es el RÁPIDO. Ya lo era en
+   superficie (--backdrop-*: none, sheens en transparent) y desde acá también
+   en movimiento. Esto formaliza lo que ya existía como excepción suelta: los
+   orbes ambientales estaban apagados en solid desde antes.
+
+   EL CORTE ES DECORATIVO CONTRA FUNCIONAL, no "motion sí / motion no". La
+   animación funcional comunica causa y presencia: un modal que aparece de
+   golpe y un toast sin entrada no se leen como rápido, se leen como roto.
+   Por eso en Solid lo funcional se queda — solo que corto y lineal.
+
+   Lo que se APAGA en solid/solid-dark (decorativo):
+     orbes ambientales · barridos de shimmer · glows pulsantes · wiggle ·
+     entradas escalonadas · settle de widgets
+   Lo que se QUEDA (funcional, comunica estado):
+     skeleton · spinners · entrada de vista/ruta/tab · reveal de input
+
+   El lado JS lo resuelve src/hooks/useMotionConfig.js — framer-motion no lee
+   estas reglas. Ese hook además cierra S1.6: prefers-reduced-motion estaba
+   resuelto para las clases CSS de aquí abajo pero los 25 archivos con
+   framer-motion lo ignoraban por completo.
+   ═════════════════════════════════════════════════════════════════════════ */
 [data-theme="solid"] .animate-ambient-drift,
 [data-theme="solid"] .animate-ambient-drift-reverse,
 [data-theme="solid-dark"] .animate-ambient-drift,
 [data-theme="solid-dark"] .animate-ambient-drift-reverse {
   display: none;
+}
+[data-theme="solid"] .animate-shimmer,
+[data-theme="solid"] .animate-wiggle,
+[data-theme="solid"] .animate-stagger-child,
+[data-theme="solid"] .animate-widget-settle,
+[data-theme="solid"] .glow-danger,
+[data-theme="solid"] .glow-warning,
+[data-theme="solid"] .badge-pulse,
+[data-theme="solid-dark"] .animate-shimmer,
+[data-theme="solid-dark"] .animate-wiggle,
+[data-theme="solid-dark"] .animate-stagger-child,
+[data-theme="solid-dark"] .animate-widget-settle,
+[data-theme="solid-dark"] .glow-danger,
+[data-theme="solid-dark"] .glow-warning,
+[data-theme="solid-dark"] .badge-pulse {
+  animation: none !important;
+  will-change: auto;
+}
+/* Lo funcional sigue vivo en solid, pero corto y lineal en vez de spring. */
+[data-theme="solid"] .animate-view-enter,
+[data-theme="solid"] .animate-route-enter,
+[data-theme="solid"] .animate-kpi-enter,
+[data-theme="solid"] .animate-widget-enter,
+[data-theme="solid"] .animate-table-row-enter,
+[data-theme="solid-dark"] .animate-view-enter,
+[data-theme="solid-dark"] .animate-route-enter,
+[data-theme="solid-dark"] .animate-kpi-enter,
+[data-theme="solid-dark"] .animate-widget-enter,
+[data-theme="solid-dark"] .animate-table-row-enter {
+  animation-duration: 130ms;
+  animation-timing-function: ease-out;
 }
 
 /* Fase T5: en liquid/dark los blobs quedan vivos en móvil (arriba solo se

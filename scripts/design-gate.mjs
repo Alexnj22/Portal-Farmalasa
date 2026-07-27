@@ -270,7 +270,11 @@ const SHADOW_LITERAL_RE = /shadow-\[(?!var\(--)[^\]]+\]/g;
 // layout/layoutId hace transiciones FLIP entre posiciones. La regla nueva
 // permite esas capacidades y prohíbe solo `motion.*` decorativo
 // (fade/slide de entrada, hover, tap), que sí es @keyframes + Tailwind.
-const MOTION_IMPORT_RE = /from\s+['"]framer-motion['"]/;
+// Solo cuenta el uso DECORATIVO de componentes motion (`motion.div`,
+// `<motion.button>`), no cualquier import de la librería: MotionProvider.jsx
+// y useMotionConfig.js importan MotionConfig/useReducedMotion para IMPLEMENTAR
+// la política de movimiento — marcarlos sería castigar la solución.
+const MOTION_IMPORT_RE = /\bmotion\.[a-z]/;
 const MOTION_ALLOWED_RE = /AnimatePresence|layoutId|LayoutGroup|\blayout\b|\bdrag\b/;
 // S1.6: prefers-reduced-motion está resuelto para las 18 clases CSS que
 // enumera DESIGN.md §25, pero la media query de CSS no detiene animación
@@ -469,9 +473,11 @@ function scanFile(path) {
     if (!MOTION_ALLOWED_RE.test(text)) {
       findings.push({ line: 1, label: 'framer-motion decorativo (sin AnimatePresence/layout/drag) — usar @keyframes + Tailwind', category: 'motion', text: path });
     }
-    if (!REDUCED_MOTION_RE.test(text)) {
-      findings.push({ line: 1, label: 'framer-motion sin useReducedMotion — ignora prefers-reduced-motion (S1.6)', category: 'motion', text: path });
-    }
+    // El chequeo por archivo de `useReducedMotion` se retiró en D2.4: ahora
+    // <MotionProvider reducedMotion="user"> lo resuelve para TODO el árbol
+    // (src/components/MotionProvider.jsx, montado en main.jsx). Exigirlo
+    // archivo por archivo sería cargo-cult — la preferencia ya se respeta,
+    // y cualquier motion.* nuevo queda cubierto sin que su autor haga nada.
   }
 
   if (!hasException(path, 'search-toggle') && !text.includes('useSearchToggle')) {

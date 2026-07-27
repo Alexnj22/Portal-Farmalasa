@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import ViewTabBar from '../../components/common/ViewTabBar';
 import { tokenMatch } from '../../utils/searchUtils';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
 import {
     FolderOpen, Search, X, ExternalLink, FileCheck, Stethoscope,
     FileText, Palmtree, RefreshCw, Filter, Calendar, ChevronDown, ChevronRight,
@@ -186,21 +186,11 @@ const EmployeeDocumentsView = () => {
     const [loading, setLoading]       = useState(true);
     const [tab, setTab]               = useState('ALL');
     const [search, setSearch]         = useState('');
-    const [searchOpen, setSearchOpen] = useState(false);
-    const searchInputRef              = useRef(null);
     const [filterOpen, setFilterOpen] = useState(false);
     const [filterFrom, setFilterFrom] = useState('');
     const [filterTo, setFilterTo]     = useState('');
     const [filterStatus, setFilterStatus] = useState('');
 
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: searchOpen,
-        value: search,
-        onClear: () => setSearch(''),
-        onClose: () => setSearchOpen(false),
-    });
 
     useEffect(() => {
         if (!user?.id) return;
@@ -245,55 +235,35 @@ const EmployeeDocumentsView = () => {
     }, []);
 
     // ── Filter bar ────────────────────────────────────────────────────────
+    // D3.9 (2026-07-27): esta barra estaba reescrita a mano, como en otras 12
+    // vistas. Cada copia traía sus propios aros de foco, su colapso sin `inert`
+    // y su reveal sin foco — las tres cosas que costaron A16, A17 y A18. Ahora
+    // sale del canónico: el estado del toggle, el contrato de Escape/click
+    // afuera y la accesibilidad viven en un solo lugar.
     const renderFilters = () => (
-        <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
-            {/* MODO BÚSQUEDA */}
-            <div inert={!(searchOpen) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${searchOpen ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                <input
-                    ref={(input) => { searchInputRef.current = input; if (input && searchOpen) setTimeout(() => input.focus(), 100); }}
-                    type="text"
-                    placeholder="Buscar documento..."
- className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[350px] md:w-[500px] placeholder:text-content-3"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
-                {search && (
-                    <button onClick={() => setSearch('')} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
-                        <X size={16} strokeWidth={2.5} />
-                    </button>
-                )}
-                <button onClick={() => { setSearchOpen(false); setSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2" title="Cerrar">
-                    <ChevronRight size={18} strokeWidth={2.5} />
-                </button>
-            </div>
-            {/* MODO NORMAL */}
-            <div inert={searchOpen ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${searchOpen ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>
-                {TABS.filter(t => counts[t.key] > 0 || t.key === 'ALL').map(t => {
-                    const isActive = tab === t.key;
-                    return (
-                        <button key={t.key} onClick={() => setTab(t.key)}
-                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
-                            {t.label}{counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}
-                        </button>
-                    );
-                })}
-                <div className="w-px h-5 bg-divider mx-1 shrink-0" />
+        <ViewTabBar
+            tabs={TABS.filter(t => counts[t.key] > 0 || t.key === 'ALL').map(t => ({
+                key: t.key,
+                label: `${t.label}${counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}`,
+            }))}
+            activeTab={tab}
+            onTabChange={setTab}
+            searchValue={search}
+            onSearchChange={setSearch}
+            placeholder="Buscar documento..."
+            trailingActions={
                 <button onClick={() => setFilterOpen(v => !v)}
-                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+                    className={`px-3 md:px-4 h-11 rounded-full text-micro md:text-caption font-black uppercase tracking-widest
+                        transition-all duration-300 flex items-center gap-1.5 shrink-0 border
+                        ${hasFilters
+                            ? 'bg-surface-tab-active text-brand-text border-surface-tab-active shadow-md'
+                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content'}`}>
                     <Filter size={10} strokeWidth={2.5} />
                     Filtrar
                     {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}
                 </button>
-                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-                <button onClick={() => setSearchOpen(true)}
-                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-                    title="Buscar documentos">
-                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
-                </button>
-            </div>
-        </div>
+            }
+        />
     );
 
     return (

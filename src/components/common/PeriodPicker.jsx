@@ -89,13 +89,13 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
         <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
                 {onPrev
-                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-btn hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
                 <p className="text-caption font-black uppercase tracking-widest text-content-2">
                     {MONTHS_SH[month]} {year}
                 </p>
                 {onNext
-                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-full hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-btn hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
             </div>
 
@@ -326,7 +326,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                             </div>
                         </div>
                         <button type="button" onClick={close}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card text-content-3 hover:text-content-2 transition-all shadow-sm shrink-0">
+                            className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card text-content-3 hover:text-content-2 transition-all shadow-sm shrink-0">
                             <X size={12} strokeWidth={2.5} />
                         </button>
                     </div>

@@ -248,7 +248,7 @@ const FormTurnos = ({ branches }) => {
                         <p className="text-caption md:text-label font-bold text-content-2 uppercase tracking-widest">Configuración del Catálogo</p>
                     </div>
                     {editingShiftId && (
-                        <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
+                        <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-btn bg-surface-card-hover text-content-3 hover:bg-surface-card-hover flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
                     )}
                 </div>
 
@@ -292,13 +292,13 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="mt-auto pt-6 border-t border-divider flex justify-end gap-3 shrink-0">
                     {editingShiftId && (
-                         <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-full text-caption font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover disabled:opacity-50">Cancelar</button>
+                         <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-btn text-caption font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover disabled:opacity-50">Cancelar</button>
                     )}
                     <button 
                         type="button" 
                         onClick={handleSaveShift} 
                         disabled={isLoading}
-                        className={`h-10 px-6 rounded-full font-black text-caption uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-warning-solid text-white border-warning hover:bg-warning-hover hover:shadow-lg' : 'bg-brand text-white border-brand-hover hover:bg-brand-hover hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`h-10 px-6 rounded-btn font-black text-caption uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-warning-solid text-white border-warning hover:bg-warning-hover hover:shadow-lg' : 'bg-brand text-white border-brand-hover hover:bg-brand-hover hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         {isLoading ? (
                             <><Loader2 size={14} className="animate-spin"/> Guardando</>

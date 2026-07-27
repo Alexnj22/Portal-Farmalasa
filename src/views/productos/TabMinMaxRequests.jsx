@@ -353,7 +353,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
             <>
               <div className="h-5 w-px bg-divider shrink-0" />
               <button onClick={approveAll} disabled={bulkBusy}
-                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-label font-black text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
+                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-btn text-label font-black text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
                 {bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
                 Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})
               </button>

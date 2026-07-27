@@ -1296,7 +1296,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
           </div>
         ) : quincenaTS.length > 0 ? (
           <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}
-            className="flex items-center gap-1.5 text-caption font-black text-white bg-brand hover:bg-brand-hover disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+            className="flex items-center gap-1.5 text-caption font-black text-white bg-brand hover:bg-brand-hover disabled:opacity-60 px-3 py-1.5 rounded-btn shrink-0 shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
             {isClosingQuincena
               ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
               : <LockKeyhole size={11} strokeWidth={2.5} />}

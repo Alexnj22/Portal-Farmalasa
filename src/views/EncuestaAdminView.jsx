@@ -475,7 +475,7 @@ export default function EncuestaAdminView() {
     const filtersContent = (
         <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
-                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest bg-surface-card text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
+                <button className="px-3 md:px-5 h-9 md:h-10 rounded-btn text-micro md:text-caption font-black uppercase tracking-widest bg-surface-card text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
                     <ClipboardList size={12} strokeWidth={2.5} />
                     <span className="hidden sm:inline">Encuestas</span>
                 </button>

@@ -518,7 +518,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card border border-border-card text-white/70 hover:text-white transition-all"
+                            className="w-9 h-9 flex items-center justify-center rounded-btn bg-surface-card hover:bg-surface-card border border-border-card text-white/70 hover:text-white transition-all"
                         >
                             <X size={16} strokeWidth={2.5} />
                         </button>

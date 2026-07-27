@@ -843,7 +843,7 @@ function TabDocumentos({
                                 <button onClick={downloadBulk}
                                     disabled={bulkDownloading}
                                     title="Descargar todos los filtrados en un ZIP"
-                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-divider hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
+                                    className="flex items-center gap-1.5 px-3 h-8 rounded-btn text-caption font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-divider hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
                                     <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
                                     {bulkProgress?.total > 0
                                         ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
@@ -859,7 +859,7 @@ function TabDocumentos({
                             <div className="h-5 w-px bg-divider shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={runSyncNow} disabled={syncing}
-                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
+                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-btn text-caption font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                                         syncing
                                             ? 'bg-chart-1/10 border-chart-1/30 text-chart-1-text'
                                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'

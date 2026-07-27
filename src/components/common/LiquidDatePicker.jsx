@@ -270,13 +270,13 @@ const LiquidDatePicker = ({
             <div data-surface="dropdown" className="p-4 md:p-5 w-[280px] font-sans">
 
                 <div className="flex justify-between items-center mb-5 px-1">
-                    <button type="button" onClick={handlePrev} className="p-2 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>
+                    <button type="button" onClick={handlePrev} className="p-2 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>
                     <button type="button" onClick={() => { if (currentMode === 'days') setCurrentMode('months'); else if (currentMode === 'months') setCurrentMode('years'); }} className="text-body-sm md:text-body font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-3 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97] disabled:opacity-50" disabled={currentMode === 'years'}>
                         {currentMode === 'days' && `${MONTHS_SHORT[currentMonth]} ${currentYear}`}
                         {currentMode === 'months' && `${currentYear}`}
                         {currentMode === 'years' && `${startYear} - ${startYear + 9}`}
                     </button>
-                    <button type="button" onClick={handleNext} className="p-2 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronRight size={16} strokeWidth={3} /></button>
+                    <button type="button" onClick={handleNext} className="p-2 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text active:scale-[0.97]"><ChevronRight size={16} strokeWidth={3} /></button>
                 </div>
 
                 {currentMode === 'days' && (

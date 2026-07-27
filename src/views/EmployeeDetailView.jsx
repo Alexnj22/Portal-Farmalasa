@@ -381,12 +381,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
             {canEdit && getEffectiveStatus(emp) === 'En Vacaciones' && (
                 <button onClick={handleVacationRecall} disabled={!canEdit}
-                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-warning to-chart-4 text-white rounded-full font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-warning)] hover:shadow-[var(--shadow-glow-warning)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
+                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-warning to-chart-4 text-white rounded-btn font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-warning)] hover:shadow-[var(--shadow-glow-warning)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                     <Palmtree size={14} strokeWidth={3}/> <span className="hidden sm:inline">Ingreso en Vacaciones</span>
                 </button>
             )}
             {canEdit && (
-                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-brand to-brand-hover text-white rounded-full font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-brand to-brand-hover text-white rounded-btn font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
                 </button>
             )}

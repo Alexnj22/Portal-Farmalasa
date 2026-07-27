@@ -197,7 +197,7 @@ const TimeClockView = ({ setView }) => {
           text-white/40 hover:text-white/90
           bg-white/[0.06] hover:bg-white/[0.12]
           border border-white/[0.10] hover:border-white/[0.22]
-          rounded-full backdrop-blur-xl
+          rounded-btn backdrop-blur-xl
           shadow-[0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)]
           hover:shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.10)]
           transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]

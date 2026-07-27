@@ -576,7 +576,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                 <div className="mt-5 flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <button
                         onClick={handleBack}
-                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-warning/30 bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning)] hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
+                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-btn overflow-hidden border border-warning/30 bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning)] hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
                     >
                         {/* barra de countdown que se encoge en 5s */}
                         <div

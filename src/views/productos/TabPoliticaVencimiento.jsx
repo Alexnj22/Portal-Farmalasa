@@ -365,7 +365,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                                         onClick={onMarkND}
                                         disabled={markingND}
                                         title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-divider bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-micro font-bold disabled:opacity-50 shrink-0"
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-btn border border-divider bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-micro font-bold disabled:opacity-50 shrink-0"
                                     >
                                         {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
                                         Marcar todo como ND

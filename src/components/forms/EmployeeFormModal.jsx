@@ -1032,8 +1032,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <span className="text-label font-bold">Tienes un borrador sin guardar.</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-card text-content-3 hover:text-danger transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
-                        <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-brand text-white rounded-full text-caption font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
+                        <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-btn flex items-center justify-center bg-surface-card text-content-3 hover:text-danger transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
+                        <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-brand text-white rounded-btn text-caption font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
                     </div>
                 </div>
             )}

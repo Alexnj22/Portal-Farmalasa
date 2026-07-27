@@ -92,7 +92,7 @@ export default function ViewTabBar({
           </button>
         )}
         <button onClick={closeSearch}
-          className={`w-11 h-11 rounded-full flex items-center justify-center
+          className={`w-11 h-11 rounded-btn flex items-center justify-center
             shrink-0 transition-all hover:shadow-md hover:-translate-y-0.5 ml-2 ${closeBtnCls}`}>
           <ChevronRight size={18} strokeWidth={2.5} />
         </button>
@@ -148,7 +148,7 @@ export default function ViewTabBar({
 
         {showSearch && (
           <button onClick={openSearch}
-            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
+            className="w-11 h-11 rounded-btn flex items-center justify-center shrink-0
               transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative
               bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

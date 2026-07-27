@@ -110,7 +110,7 @@ function EarlyExitForm({
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-3 sm:py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-3 sm:py-3.5 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={14} /> Cancelar
             </button>
@@ -118,7 +118,7 @@ function EarlyExitForm({
             <button
               type="submit"
               disabled={isProcessing}
-              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-4/15 py-3 sm:py-3.5 rounded-full border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-4/15 py-3 sm:py-3.5 rounded-btn border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               {isProcessing ? (
                 <span className="w-3.5 h-3.5 border-2 border-chart-4/30 border-t-chart-4 rounded-full animate-spin" />

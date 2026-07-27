@@ -72,7 +72,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <Settings2 size={14} className="text-brand-text" />
                         <span className="text-body-sm font-black text-content">Configuración Min/Max</span>
                     </div>
-                    <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">
+                    <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-btn text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">
                         <X size={12} />
                     </button>
                 </div>

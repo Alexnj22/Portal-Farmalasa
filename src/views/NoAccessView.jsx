@@ -66,7 +66,7 @@ const NoAccessView = () => {
                     {/* WhatsApp support */}
                     <button
                         onClick={handleWhatsApp}
-                        className="w-full inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#25D366] text-white text-body font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[0_8px_24px_rgba(37,211,102,0.3)] hover:shadow-[0_12px_32px_rgba(37,211,102,0.4)]"
+                        className="w-full inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-btn bg-[#25D366] text-white text-body font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[0_8px_24px_rgba(37,211,102,0.3)] hover:shadow-[0_12px_32px_rgba(37,211,102,0.4)]"
                     >
                         <MessageCircle size={15} strokeWidth={2.5} />
                         Contacta con soporte
@@ -76,7 +76,7 @@ const NoAccessView = () => {
                     <button
                         onClick={handleLogout}
                         disabled={loggingOut}
-                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-surface-card border border-divider text-content-2 text-body font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
+                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-btn bg-surface-card border border-divider text-content-2 text-body font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
                     >
                         {loggingOut
                             ? <Loader2 size={14} className="animate-spin" />

@@ -43,7 +43,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
         type="button"
         disabled={disabled}
         onClick={onToggle}
-        className={`relative inline-flex items-center flex-shrink-0 w-10 h-5 md:w-11 md:h-6 rounded-full border-2 transition-all duration-300 ease-in-out cursor-pointer ${
+        className={`relative inline-flex items-center flex-shrink-0 w-10 h-5 md:w-11 md:h-6 rounded-btn border-2 transition-all duration-300 ease-in-out cursor-pointer ${
             disabled ? "opacity-50 cursor-not-allowed bg-surface-card border-border-card" 
             : on ? "bg-brand border-brand shadow-[var(--shadow-glow-brand)]" : "bg-surface-card-hover border-divider hover:bg-content-3 hover:border-divider"
         }`}

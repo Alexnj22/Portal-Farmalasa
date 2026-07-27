@@ -132,7 +132,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     </h3>
                 </div>
                 <button onClick={handleClose} disabled={submitting}
-                    className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover/80 text-content-3 hover:bg-surface-card-hover transition-all shrink-0">
+                    className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover/80 text-content-3 hover:bg-surface-card-hover transition-all shrink-0">
                     <X size={13} />
                 </button>
             </div>

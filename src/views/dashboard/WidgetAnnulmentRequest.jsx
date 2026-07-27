@@ -100,7 +100,7 @@ function InvoiceHeader({ inv, onBack, vendor }) {
     <div className="flex flex-col gap-1 shrink-0 pb-2 border-b border-divider">
       <div className="flex items-center gap-2">
         <button onClick={onBack}
-          className="w-6 h-6 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
+          className="w-6 h-6 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
           <ArrowLeft size={12} strokeWidth={2.5} />
         </button>
         <div className="flex-1 min-w-0">

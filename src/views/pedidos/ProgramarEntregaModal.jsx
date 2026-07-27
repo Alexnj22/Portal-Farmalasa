@@ -56,7 +56,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                             <p className="text-label text-content-3">Pedido #{numero}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-surface-card-hover text-content-3">
+                    <button onClick={onClose} className="w-7 h-7 rounded-btn flex items-center justify-center hover:bg-surface-card-hover text-content-3">
                         <X size={14} />
                     </button>
                 </div>

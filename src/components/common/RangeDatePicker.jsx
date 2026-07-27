@@ -44,7 +44,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
             <div className="flex items-center justify-between mb-4">
                 {onPrev ? (
                     <button type="button" onClick={onPrev}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand-text">
+                        className="p-1.5 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text">
                         <ChevronLeft size={14} strokeWidth={3} />
                     </button>
                 ) : <div className="w-7" />}
@@ -53,7 +53,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                 </p>
                 {onNext ? (
                     <button type="button" onClick={onNext}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand-text">
+                        className="p-1.5 hover:bg-surface-card-hover rounded-btn transition-colors text-content-3 hover:text-brand-text">
                         <ChevronRight size={14} strokeWidth={3} />
                     </button>
                 ) : <div className="w-7" />}
@@ -363,7 +363,7 @@ const RangeDatePicker = ({
                         </div>
                     </div>
                     <button type="button" onClick={handleClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card text-content-3 transition-colors">
+                        className="w-8 h-8 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card text-content-3 transition-colors">
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 </div>

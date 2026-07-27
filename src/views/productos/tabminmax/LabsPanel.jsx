@@ -102,7 +102,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                         )}
                     </div>
                     <button onClick={onClose}
-                        className="w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 transition-colors"
+                        className="w-6 h-6 flex items-center justify-center rounded-btn text-content-3 hover:text-content-2 transition-colors"
                         style={{ background: 'rgba(255,255,255,0.6)' }}>
                         <X size={11} />
                     </button>

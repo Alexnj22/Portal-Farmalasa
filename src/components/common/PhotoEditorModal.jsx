@@ -353,7 +353,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                     </div>
                     <button
                         onClick={brushMode ? exitBrushMode : onCancel}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-card-hover text-content-3 hover:text-content transition-colors">
+                        className="w-8 h-8 flex items-center justify-center rounded-btn hover:bg-surface-card-hover text-content-3 hover:text-content transition-colors">
                         {brushMode ? <ChevronLeft size={16} strokeWidth={2.5} /> : <X size={16} strokeWidth={2.5} />}
                     </button>
                 </div>
@@ -622,13 +622,13 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                 {!brushMode && (
                     <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-divider shrink-0">
                         <button onClick={onCancel}
-                            className="px-4 py-2 rounded-full text-body-sm font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
+                            className="px-4 py-2 rounded-btn text-body-sm font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
                             Cancelar
                         </button>
                         <button
                             onClick={handleConfirm}
                             disabled={confirming || !cropPx}
-                            className="px-5 py-2 rounded-full text-body-sm font-bold text-white bg-brand hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-2">
+                            className="px-5 py-2 rounded-btn text-body-sm font-bold text-white bg-brand hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-2">
                             {confirming
                                 ? <><Loader2 size={12} className="animate-spin" /> Guardando…</>
                                 : 'Guardar foto'}

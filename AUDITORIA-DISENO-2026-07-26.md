@@ -792,6 +792,70 @@ solo bajo `[data-theme="solid"]`/`[data-theme="solid-dark"]`, de modo que los
 tocar un solo archivo de vista**, más un puñado de reglas para los arbitrarios
 más usados.
 
+### D2.5 — Inventario visual y canónico por familia · **en curso**
+
+Botones y badges cerrados; el resto de las 18 familias pendiente.
+
+**Botones** — 291 con `className`: 12 radios, 9 alturas, 26 paddings. El dato
+que cambió el enfoque: **208 de los 291 no declaran altura**, se dimensionan
+por padding. De los 83 que sí, salieron 4 clusters con razón de ser propia y
+`Button` pasó de 2 tamaños a esos 4 (`xs` inline · `sm` toolbar · `md`
+principal · `lg` hero/full-width), todos derivados de `--control-h` con
+`max()` contra su propio piso táctil.
+
+**Badges** — 1,258 elementos: 11 radios, 9 tamaños de texto, 5 pesos, 20
+paddings. El canónico ya estaba en los datos: **85% del texto en dos tamaños**
+(9 y 10px) y **79% del peso en `font-black`**. `Badge` queda con 2 tamaños, 14
+variantes (5 semánticas + 9 categóricas) y **2 tonos** — `soft` (`bg-X/10` +
+`text-X-text`) y `solid` (`bg-X-solid` + `text-white`, los tokens de N2).
+Mezclarlos era el bug que N2 corrigió en 268 usos; ahora el componente lo hace
+imposible.
+
+#### N4 · `rounded-full` no sigue `--btn-radius` — **RESUELTO**
+
+`rounded-full` se compila a un literal (`3.4e38px`), no a `var(--btn-radius)`.
+Por eso N3 arregló tarjetas, modales y headers pero **no llegó a la familia de
+botones**: en Solid el canónico daba 8px y los **102 botones** escritos a mano
+seguían perfectamente redondos.
+
+Al revisarlo apareció que la spec del tema también estaba incompleta:
+**`--badge-radius` no estaba definido en `solid` ni en `solid-dark`**, así que
+heredaba los `9999px` de `:root` y los badges seguían redondos ahí.
+
+Resuelto: `--badge-radius: 0.375rem` (6px) en los dos temas Solid, y los 102
+`rounded-full` de `<button>` migrados a `rounded-btn`. **Solo dentro de la
+etiqueta `<button>`** — avatares, puntos de estado y chips redondos no se
+tocan: un círculo decorativo es un círculo en los cuatro temas. En Liquid no
+cambia nada (`--btn-radius` sigue siendo `9999px`).
+
+#### Hallazgos abiertos, sin resolver
+
+| # | Hallazgo | Alcance | Dónde entra |
+|---|---|---|---|
+| **A1** | La densidad no comprime filas en escritorio: `h-[var(--row-h)]` en un `<td>` es mínimo, no máximo, y el contenido (avatar 36px + dos líneas) lo excede. La celda se queda en 45px aunque `--row-h` baje a 32. | `DataTable` + cada vista que le pasa contenido | D3 — al migrar vistas |
+| **A2** | El título de vista se trunca a *"Gestión de …"* en móvil: el header mete 3 botones al lado y no hay prioridad declarada. | anatomía del header de vista | D2.5 (familia header) |
+| **A3** | 88 elementos a 9px en una pantalla de teléfono. El móvil tira a pequeño, no a grande. La densidad táctil resolvió las alturas, no la tipografía. | escala tipográfica en `(pointer: coarse)` | D2.5 / decisión |
+| **A4** | 20 `zIndex:` inline sobreviven: tooltips portaleados que ya necesitan `style` para su `top`/`left` computado. | 12 archivos | aceptado, o D3 |
+| **A5** | `#94a3b8` es el escalón medio de la rampa ABC/XYZ. No hay token: el sistema tiene paletas *categóricas*, no rampas *secuenciales*. | `tabminmax/constants.js` | D2.5 — decidir si se crea la rampa |
+| **A6** | El degradado `destructive` de `Button` tiene dos paradas y solo una es token (`#f65a4d` → `--danger`). | `Button.jsx` | D2.5 — `--danger-gradient` |
+| **A7** | `ctx.fillStyle` de canvas no resuelve `var()`. Único caso técnico real del barrido de color. | `TabCatalogo.jsx` | aceptado |
+| **A8** | 417 sombras literales y 118 colores literales en `style` inline siguen en el baseline. | 100+ archivos | D3 |
+
+#### Trampas de verificación encontradas (para no repetirlas)
+
+- **Tailwind escanea strings LITERALES.** Generar clases con
+  `` `bg-chart-${i}-solid` `` no emite CSS: se detectó que `chart-2/5/7` no
+  existían en el bundle y esas variantes habrían salido sin fondo, en
+  silencio. Las tablas de variantes se escriben literales.
+- **Lightning CSS quita las comillas del atributo.** Grepear
+  `[data-theme="solid"]` en el CSS compilado da 0 aunque la regla esté; hay
+  que buscar `[data-theme=solid]`.
+- **`backgroundImage` rompe el cálculo de contraste.** Un `repeating-linear-gradient`
+  sin `backgroundColor` hace que el walk de ancestros lo atraviese y mida
+  contra el fondo equivocado — dio un falso 1.1:1 sobre algo que mide 8.28:1.
+- **`rounded-full` es un literal, no un token.** Cualquier familia que lo use
+  queda fuera del sistema de geometría por tema.
+
 ---
 
 ## Anexo — Evidencia

@@ -387,7 +387,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <p className="text-label text-content-3">Busca y aplica principios activos del Registro Sanitario</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-card text-content-3 transition-colors">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-btn hover:bg-surface-card text-content-3 transition-colors">
                             <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>
@@ -414,7 +414,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <span className="flex items-center gap-1.5 text-content-3"><span className="w-2.5 h-2.5 rounded-full bg-content-3 inline-block"/> Sin resultados SRS — descarta</span>
                             </div>
                             <button onClick={handleStart}
-                                className="mt-2 px-8 py-3 rounded-full text-body font-black text-white bg-chart-3-solid hover:bg-chart-6-solid transition-colors shadow-lg shadow-chart-3/20">
+                                className="mt-2 px-8 py-3 rounded-btn text-body font-black text-white bg-chart-3-solid hover:bg-chart-6-solid transition-colors shadow-lg shadow-chart-3/20">
                                 Iniciar escaneo
                             </button>
                         </div>
@@ -489,7 +489,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         </div>
                                         <button onClick={handleApplyAuto}
                                             disabled={applying || autoQueue.length === autoRejected.size}
-                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-label font-black text-white bg-success-solid hover:bg-success-hover transition-colors disabled:opacity-50">
+                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-btn text-label font-black text-white bg-success-solid hover:bg-success-hover transition-colors disabled:opacity-50">
                                             {applying ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                                             Aplicar {autoQueue.length - autoRejected.size}
                                         </button>
@@ -597,7 +597,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 <Package size={12} /> Insumo/Equipo
                                             </button>
                                             <button onClick={handleReviewSkip} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-body-sm font-bold text-content-3 border border-divider hover:bg-surface-card-hover transition-colors">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-btn text-body-sm font-bold text-content-3 border border-divider hover:bg-surface-card-hover transition-colors">
                                                 <SkipForward size={12} /> Saltar
                                             </button>
                                         </div>
@@ -733,7 +733,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     )}
 
                                     <button onClick={onClose}
-                                        className="self-center px-6 py-2.5 rounded-full text-body-sm font-black text-white bg-brand hover:bg-brand-hover transition-colors">
+                                        className="self-center px-6 py-2.5 rounded-btn text-body-sm font-black text-white bg-brand hover:bg-brand-hover transition-colors">
                                         Cerrar
                                     </button>
                                 </div>

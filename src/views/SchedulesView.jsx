@@ -758,7 +758,7 @@ const SchedulesView = ({ openModal, setView }) => {
                 <>
                     <div className="h-5 w-px bg-divider shrink-0" />
                     <button onClick={handleResetFilters} title="Volver a semana actual"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-base">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-btn bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-base">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -771,7 +771,7 @@ const SchedulesView = ({ openModal, setView }) => {
                     <button
                         onClick={weekIsPublished ? undefined : triggerPublishAudit}
                         disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-base border
+                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-caption font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-base border
                             ${weekIsPublished
                                 ? 'bg-success/20 border-success/50 text-success-text cursor-default'
                                 : 'bg-brand border-brand-hover/60 text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97]'}
@@ -875,7 +875,7 @@ const SchedulesView = ({ openModal, setView }) => {
                                 <p className="text-body font-medium text-content-3">No hay empleados activos en esta sucursal.</p>
                             </div>
                             <button onClick={goToPersonal}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-full text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-btn text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                 Ir al módulo de Personal <ArrowRight size={14} />
                             </button>
                         </div>

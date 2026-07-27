@@ -197,7 +197,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
                     </div>
                 </div>
-                <button type="button" onClick={handleClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
+                <button type="button" onClick={handleClose} className="w-10 h-10 flex items-center justify-center rounded-btn bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
                     <X size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -347,14 +347,14 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
             </div>
 
             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
-                <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
+                <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-btn bg-surface-card border border-border-card text-content-3 font-bold text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
                     Cancelar
                 </button>
                 <button
                     type="button"
                     onClick={handleSave}
                     disabled={saving || !isValid}
-                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-btn flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                 >
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Check size={16} strokeWidth={3} /> {isEditMode ? 'Guardar Cambios' : 'Registrar Practicante'}</>}
                 </button>

@@ -179,7 +179,7 @@ function Lightbox({ url, onClose }) {
       />
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-card hover:bg-surface-card flex items-center justify-center transition-colors"
+        className="absolute top-4 right-4 w-8 h-8 rounded-btn bg-surface-card hover:bg-surface-card flex items-center justify-center transition-colors"
       >
         <X size={14} className="text-white" strokeWidth={2.5} />
       </button>
@@ -244,7 +244,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
             <button
               onClick={submit}
               disabled={rState === 'saving'}
-              className="px-1.5 py-0.5 rounded-full bg-danger-solid hover:bg-danger/80 text-white text-micro font-black transition-colors disabled:opacity-50"
+              className="px-1.5 py-0.5 rounded-btn bg-danger-solid hover:bg-danger/80 text-white text-micro font-black transition-colors disabled:opacity-50"
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>

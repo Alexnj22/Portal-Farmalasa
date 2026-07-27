@@ -112,16 +112,16 @@ const AuthPromptPanel = ({
           <div className="mt-5 sm:mt-6 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center gap-3 [@media(max-height:800px)]:gap-1.5 w-full">
 
             {promptType === 'OUT_LATE' && (
-              <button type="button" onClick={forceNormalOutHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-white/50 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]">
+              <button type="button" onClick={forceNormalOutHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-white/50 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]">
                 No, guardar según horario
               </button>
             )}
             {skipPinHandler && (
-              <button type="button" onClick={skipPinHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-warning flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={skipPinHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-warning flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <SkipForward size={14} /> Omitir PIN — Notificar a TH
               </button>
             )}
-            <button type="button" onClick={cancelHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+            <button type="button" onClick={cancelHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
               <XCircle size={14} /> Cancelar / Atrás
             </button>
           </div>

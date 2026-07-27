@@ -792,7 +792,7 @@ export default function RecepcionModal({
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-center gap-2">
                         <button onClick={goBackFromExtras} disabled={saving}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
+                            className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
                             <ChevronLeft size={14} />
                         </button>
                         <div className="flex-1 min-w-0">
@@ -989,7 +989,7 @@ export default function RecepcionModal({
                 <div {...prodSearchContainerRef} className="flex items-center gap-2">
                     {hasCajaMap && (
                         <button onClick={goBack} disabled={saving}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
+                            className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover text-content-3 hover:bg-surface-card-hover transition-all shrink-0 disabled:opacity-40">
                             <ChevronLeft size={14} />
                         </button>
                     )}
@@ -1233,7 +1233,7 @@ export default function RecepcionModal({
                                             className="flex-1 min-w-0 text-body-xl border border-chart-4/30 rounded-full px-3 py-1 focus:outline-none focus:border-chart-4 bg-surface-card placeholder-content-3"
                                         />
                                         <button onClick={confirmProblema}
-                                            className="shrink-0 flex items-center gap-1 text-caption font-bold px-2.5 py-1 rounded-full bg-chart-4-solid text-white hover:bg-chart-4/80 transition-colors">
+                                            className="shrink-0 flex items-center gap-1 text-caption font-bold px-2.5 py-1 rounded-btn bg-chart-4-solid text-white hover:bg-chart-4/80 transition-colors">
                                             <Check size={10} /> Listo
                                         </button>
                                     </div>

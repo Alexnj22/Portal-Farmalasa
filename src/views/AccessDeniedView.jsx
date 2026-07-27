@@ -64,7 +64,7 @@ const AccessDeniedView = () => {
 
                 <button
                     onClick={handleWhatsApp}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#25D366] text-white text-body font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[0_6px_20px_rgba(37,211,102,0.25)]"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-btn bg-[#25D366] text-white text-body font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[0_6px_20px_rgba(37,211,102,0.25)]"
                 >
                     <MessageCircle size={14} strokeWidth={2.5} />
                     Contactar soporte

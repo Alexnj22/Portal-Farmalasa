@@ -128,7 +128,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2 shrink-0">
         <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
+          className="w-7 h-7 flex items-center justify-center rounded-btn bg-surface-card-hover hover:bg-surface-card-hover text-content-3 transition-colors shrink-0">
           <ArrowLeft size={13} strokeWidth={2.5} />
         </button>
         <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">

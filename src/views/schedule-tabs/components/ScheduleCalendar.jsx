@@ -529,7 +529,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                             <span className="text-micro font-black uppercase tracking-widest text-chart-3-text">APOYO</span>
                         </div>
                     </div>
-                    <button onClick={onRemove} className="w-7 h-7 rounded-full bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
+                    <button onClick={onRemove} className="w-7 h-7 rounded-btn bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
                         <XIcon size={12} strokeWidth={2.5} />
                     </button>
                 </div>

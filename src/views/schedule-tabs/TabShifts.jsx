@@ -50,7 +50,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
                     : <Sparkles size={16} className="text-chart-5 animate-pulse" />}
             </div>
 
-            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-content-3 hover:text-white hover:bg-surface-card transition-all active:scale-[0.97] z-content" title="Ignorar aviso">
+            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-btn text-content-3 hover:text-white hover:bg-surface-card transition-all active:scale-[0.97] z-content" title="Ignorar aviso">
                 <X size={14} strokeWidth={2.5} />
             </button>
 

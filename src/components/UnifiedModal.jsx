@@ -771,7 +771,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     )}
                                 </div>
                             </div>
-                            <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-card-hover border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
+                            <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-btn bg-surface-card-hover border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
                                 <X size={18} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -897,7 +897,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                                 {/* CENTER: Cancelar */}
                                 <button type="button" onClick={onClose} disabled={isSaving}
-                                    className="px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                    className="px-5 h-11 rounded-btn bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all disabled:opacity-50 active:scale-[0.97]">
                                     Cancelar
                                 </button>
 
@@ -913,7 +913,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     )}
                                     {(isEditingEmp || !nextStep) && (
                                         <button type="submit" form="unified-modal-form" disabled={empSaveDisabled} title={empSaveTitle}
-                                            className={`flex items-center gap-2 px-6 h-11 font-black text-label uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success-solid text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
+                                            className={`flex items-center gap-2 px-6 h-11 font-black text-label uppercase tracking-[0.2em] rounded-btn transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success-solid text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
                                             {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
                                         </button>
                                     )}
@@ -924,14 +924,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                     return (
                         <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-base shrink-0">
-                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-surface-card hover:text-content transition-colors disabled:opacity-50">
+                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-btn bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-surface-card hover:text-content transition-colors disabled:opacity-50">
                                 Cancelar
                             </button>
                             <button
                                 type="submit"
                                 form="unified-modal-form"
                                 disabled={isSaving || !isFormValid}
-                                className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-surface-card-hover text-content-3 shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                                className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-btn flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-surface-card-hover text-content-3 shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                             >
                                 {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                             </button>

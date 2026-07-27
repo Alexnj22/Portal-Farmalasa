@@ -691,7 +691,7 @@ function PhotoLightbox({ src, onClose }) {
                 <img src={src} alt="" className="block max-w-[90vw] max-h-[90vh] object-contain" />
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors border border-border-card">
+                    className="absolute top-3 right-3 w-9 h-9 rounded-btn bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors border border-border-card">
                     <X size={16} strokeWidth={2.5} />
                 </button>
             </div>
@@ -1392,7 +1392,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                     {/* ── Cerrar (todo autoguarda: foto, devolutivo, categoría y principios) ── */}
                     <div className={`border-t ${xk.divider} pt-4 flex items-center justify-end gap-2`}>
                         <button onClick={onClose}
-                            className={`px-4 h-9 rounded-full text-label font-bold border transition-all ${xk.btnCancel}`}>
+                            className={`px-4 h-9 rounded-btn text-label font-bold border transition-all ${xk.btnCancel}`}>
                             Cerrar
                         </button>
                     </div>
@@ -1818,7 +1818,7 @@ export default function TabCatalogo({
                             <>
                                 <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
                                 <button onClick={resetFilters} title="Limpiar todos los filtros"
-                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-btn bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                     <X size={11} strokeWidth={3} />
                                 </button>
                             </>

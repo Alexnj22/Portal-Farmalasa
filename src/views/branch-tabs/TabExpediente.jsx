@@ -90,7 +90,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                             {/* Ícono Disparador (Mismo diseño que en Staff) */}
                             <button
-                                className="relative w-8 h-8 flex items-center justify-center rounded-full cursor-help transition-all duration-500 border-0 shadow-[0_0_10px_rgba(168,85,247,0.15)] group-hover/ai:shadow-[0_0_20px_rgba(168,85,247,0.5)] group-hover/ai:-translate-y-0.5"
+                                className="relative w-8 h-8 flex items-center justify-center rounded-btn cursor-help transition-all duration-500 border-0 shadow-[0_0_10px_rgba(168,85,247,0.15)] group-hover/ai:shadow-[0_0_20px_rgba(168,85,247,0.5)] group-hover/ai:-translate-y-0.5"
                                 title="Ver Análisis de IA del Documento"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-10 group-hover/ai:opacity-100 transition-all duration-500 group-hover/ai:animate-spin [animation-duration:3s]"></div>
@@ -411,7 +411,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={handleSearchClick}
-                            className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shrink-0"
+                            className="w-10 h-10 rounded-btn bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shrink-0"
                             title="Buscar Documento"
                         >
                             <Search size={16} strokeWidth={3} />
@@ -433,7 +433,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             />
                             <button
                                 onClick={handleSearchClose}
-                                className="absolute right-1.5 top-1.5 w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors"
+                                className="absolute right-1.5 top-1.5 w-7 h-7 rounded-btn flex items-center justify-center text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors"
                             >
                                 <X size={14} strokeWidth={2.5} />
                             </button>

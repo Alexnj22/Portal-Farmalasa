@@ -237,7 +237,7 @@ function FilterControls({
                 <>
                     <div className="h-5 w-px bg-divider shrink-0" />
                     <button onClick={resetAll} title="Limpiar todos los filtros"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors duration-200 shrink-0">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-btn bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>

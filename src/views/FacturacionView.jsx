@@ -127,12 +127,12 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
                     />
                     <div className="flex flex-col gap-2 shrink-0">
                         <button onClick={onConfirm} disabled={saving}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-success-solid hover:bg-success-hover text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-4 py-2 bg-success-solid hover:bg-success-hover text-white rounded-btn text-caption font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
                             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                             Confirmar
                         </button>
                         <button onClick={onCancel}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-all hover:-translate-y-0.5">
+                            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-btn text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-all hover:-translate-y-0.5">
                             <X size={12} /> Cancelar
                         </button>
                     </div>
@@ -2148,7 +2148,7 @@ export default function FacturacionView() {
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>
                 )}
-                <button onClick={closeSearch} className="w-11 h-11 rounded-full hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
+                <button onClick={closeSearch} className="w-11 h-11 rounded-btn hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -2183,7 +2183,7 @@ export default function FacturacionView() {
                     <>
                         <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                         <button onClick={openSearch}
-                            className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
+                            className="w-11 h-11 bg-brand text-white rounded-btn flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                             {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
                         </button>

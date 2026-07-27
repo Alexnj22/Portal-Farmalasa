@@ -335,7 +335,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
 
                                 <div className="relative z-toast" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                                    <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-surface-card-hover hover:text-brand-text rounded-full transition-all font-black text-caption uppercase tracking-widest shrink-0">
+                                    <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-surface-card-hover hover:text-brand-text rounded-btn transition-all font-black text-caption uppercase tracking-widest shrink-0">
                                         <Download size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Exportar</span>
                                     </button>
                                     <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>

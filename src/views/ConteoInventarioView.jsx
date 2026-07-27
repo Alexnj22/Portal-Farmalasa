@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import ViewTabBar from '../components/common/ViewTabBar';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -7,7 +8,6 @@ import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 
 const ESTADO_CFG = {
     BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-divider',  icon: Clock,       label: 'Borrador' },
@@ -45,7 +45,6 @@ export default function ConteoInventarioView() {
     const loading = useStaffStore((s) => s.conteosInventarioLoading);
     const fetchConteosInventario = useStaffStore((s) => s.fetchConteosInventario);
 
-    const [isSearchActive, setIsSearchActive] = useState(false);
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
 
@@ -53,61 +52,29 @@ export default function ConteoInventarioView() {
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchActive,
-        value: search,
-        onClear: () => setSearch(''),
-        onClose: () => setIsSearchActive(false),
-    });
 
     const { results: filtered, isFuzzy: isSearchFuzzy } = useMemo(() => {
         if (!search.trim()) return { results: conteos, isFuzzy: false };
         return smartFilter(search, conteos, (c) => [c.branches?.name]);
     }, [conteos, search]);
 
+    // D3.9 (2026-07-27): barra reescrita a mano → canónico.
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
-
-            <div inert={!(isSearchActive) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                <input
-                    ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
-                    type="text"
-                    placeholder="Buscar por sucursal..."
- className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-                {search && <button onClick={() => setSearch("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-                <button onClick={() => { setIsSearchActive(false); setSearch(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-border-card"><ChevronRight size={18} strokeWidth={2.5} /></button>
-            </div>
-
-            <div inert={isSearchActive ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
-                {canEdit && (
-                    <div className="flex items-center gap-2 md:gap-3 shrink-0 overflow-visible">
-                        <button
-                            type="button"
-                            onClick={() => setShowModal(true)}
-                            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap border border-brand/50"
-                        >
-                            <Plus size={14} strokeWidth={3} />
-                            <span className="hidden sm:inline">Nuevo Conteo</span>
-                        </button>
-                    </div>
-                )}
-
-                <div className="flex items-center shrink-0 border-l border-border-card pl-2 ml-1">
-                    <button
-                        onClick={() => setIsSearchActive(true)}
-                        className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-                        title="Buscar conteo"
-                    >
-                        <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                        {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
-                    </button>
-                </div>
-            </div>
-        </div>
+        <ViewTabBar
+            searchValue={search}
+            onSearchChange={setSearch}
+            placeholder="Buscar por sucursal..."
+            trailingActions={canEdit && (
+                <button
+                    type="button"
+                    onClick={() => setShowModal(true)}
+                    className="h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50"
+                >
+                    <Plus size={14} strokeWidth={3} />
+                    <span className="hidden sm:inline">Nuevo Conteo</span>
+                </button>
+            )}
+        />
     );
 
     return (

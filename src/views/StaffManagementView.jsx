@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
+import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
@@ -38,7 +39,6 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
@@ -558,16 +558,7 @@ const StaffManagementView = ({
   const { user, hasPermission, getScope } = useAuth();
   const canEdit = hasPermission('staff_list', 'can_edit');
 
-  const [isSearchActive, setIsSearchActive] = useState(false);
 
-  // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-  // cierra Y limpia; click afuera cierra SOLO si está vacío.
-  const { containerProps: searchContainerRef } = useSearchToggle({
-    active: isSearchActive,
-    value: searchTerm,
-    onClear: () => setSearchTerm(''),
-    onClose: () => setIsSearchActive(false),
-  });
 
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
@@ -749,18 +740,15 @@ const StaffManagementView = ({
   const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL' || activeStatFilter !== 'ALL';
 
   const handleOpenNewEmployee = () => {
-    setIsSearchActive(false);
     openModal?.('newEmployee');
   };
 
   const handleOpenNewPracticante = () => {
-    setIsSearchActive(false);
     setEditingPracticante(null);
     setShowPracticanteModal(true);
   };
 
   const handleEditPracticante = useCallback((p) => {
-    setIsSearchActive(false);
     setEditingPracticante(p);
     setShowPracticanteModal(true);
   }, []);
@@ -803,18 +791,15 @@ const StaffManagementView = ({
       );
       return;
     }
-    setIsSearchActive(false);
     openModal?.('editEmployee', emp);
   }, [openModal, employeesStatus]);
 
   const handleOpenRehireEmployee = useCallback((emp) => {
-    setIsSearchActive(false);
     openModal?.('rehireEmployee', emp);
   }, [openModal]);
 
   // 🚨 3. AQUÍ HACEMOS QUE AL CLICKEAR "VER PERFIL", CAMBIE LA URL EN VEZ DEL ESTADO LOCAL
   const handleOpenEmployee = (emp) => {
-    setIsSearchActive(false);
     if (setActiveEmployee) setActiveEmployee(emp); // Seteamos por si algún modal necesita saber quién está activo
     navigate(`/dashboard/empleado/${emp.id}`);     // 🚨 Magia del Router: Cambiamos la URL a la ficha del empleado
   };
@@ -869,31 +854,23 @@ const StaffManagementView = ({
     document.body.removeChild(link);
   };
 
+  // D3.9 (2026-07-27): esta barra estaba reescrita a mano. Los dos botones de
+  // alta pasan a `trailingActions`; el estado del buscador, el contrato de
+  // Escape / click-afuera y la accesibilidad los aporta ViewTabBar.
+  // De paso se va un `border border-white` que había en el botón de cerrar:
+  // blanco fijo, sin pasar por el tema.
   const filtersContent = (
-    <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
-
-      <div inert={!(isSearchActive) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-        <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-        <input
-          ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
-          type="text"
-          placeholder="Buscar por nombre, código o cargo..."
- className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
-      </div>
-
-      <div inert={isSearchActive ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
-
-        <div className="flex items-center gap-2 md:gap-3 shrink-0 overflow-visible">
+    <ViewTabBar
+      searchValue={searchTerm}
+      onSearchChange={setSearchTerm}
+      placeholder="Buscar por nombre, código o cargo..."
+      trailingActions={
+        <>
           <button
             type="button"
             onClick={handleOpenNewEmployee}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-btn bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-11 px-4 md:px-5 rounded-btn bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
@@ -902,25 +879,14 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewPracticante}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-btn bg-chart-3-solid text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-11 px-4 md:px-5 rounded-btn bg-chart-3-solid text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GraduationCap size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Practicante</span>
           </button>
-        </div>
-
-        <div className="flex items-center shrink-0 border-l border-border-card pl-2 ml-1">
-          <button
-            onClick={() => setIsSearchActive(true)}
-            className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-            title="Buscar empleado"
-          >
-            <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-            {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
-          </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 
   return (

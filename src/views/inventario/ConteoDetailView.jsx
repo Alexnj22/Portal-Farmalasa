@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import ViewTabBar from '../../components/common/ViewTabBar';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -13,7 +14,6 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidModal from '../../components/common/LiquidModal';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
 import PromptModal from '../../components/common/PromptModal';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -384,17 +384,10 @@ export default function ConteoDetailView() {
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
-    const [isSearchActive, setIsSearchActive] = useState(false);
     const [search, setSearch] = useState('');
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchActive,
-        value: search,
-        onClear: () => setSearch(''),
-        onClose: () => setIsSearchActive(false),
-    });
     const [filtro, setFiltro] = useState('TODOS');
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
@@ -543,32 +536,14 @@ export default function ConteoDetailView() {
     const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
     const es = conteo ? (ESTADO_CFG[conteo.status] || ESTADO_CFG.BORRADOR) : null;
 
+    // D3.9 (2026-07-27): barra reescrita a mano → canónico. Aquí era buscador
+    // puro: 26 líneas para lo que el componente ya hace.
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
-            <div inert={!(isSearchActive) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                <input
-                    ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
-                    type="text"
-                    placeholder="Buscar producto, laboratorio o lote..."
- className="flex-1 bg-transparent border-none text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-                {search && <button onClick={() => setSearch("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-                <button onClick={() => { setIsSearchActive(false); setSearch(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-border-card"><ChevronRight size={18} strokeWidth={2.5} /></button>
-            </div>
-            <div inert={isSearchActive ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
-                <button
-                    onClick={() => setIsSearchActive(true)}
-                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-                    title="Buscar producto, laboratorio o lote"
-                >
-                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
-                </button>
-            </div>
-        </div>
+        <ViewTabBar
+            searchValue={search}
+            onSearchChange={setSearch}
+            placeholder="Buscar producto, laboratorio o lote..."
+        />
     );
 
     return (

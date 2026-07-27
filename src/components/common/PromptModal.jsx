@@ -76,7 +76,7 @@ const PromptModal = ({
                         placeholder={placeholder}
                         disabled={isProcessing}
                         rows={3}
-                        className="w-full text-body-lg font-medium text-content bg-surface-card border border-border-input rounded-2xl px-4 py-3 outline-none focus:border-brand/50 focus:ring-4 focus:ring-brand/10 transition-all resize-none placeholder-content-3"
+ className="w-full text-body-lg font-medium text-content bg-surface-card border border-border-input rounded-2xl px-4 py-3 focus:border-brand/50 transition-all resize-none placeholder-content-3"
                     />
                 </div>
 

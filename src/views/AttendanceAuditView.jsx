@@ -382,7 +382,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               value={reason} onChange={e => setReason(e.target.value)}
               placeholder="Razón de la corrección (opcional)"
               rows={2}
-              className="w-full bg-surface-card border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-body-xl font-bold text-content placeholder:text-content-3 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all resize-none"
+ className="w-full bg-surface-card border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-body-xl font-bold text-content placeholder:text-content-3 focus:border-brand/40 transition-all resize-none"
             />
             <div className="flex items-center justify-between gap-2">
               <p className="text-caption font-bold text-content-3">

@@ -24,7 +24,7 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const inp = 'w-full text-body-sm bg-surface-card border border-border-card rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-chart-1/20 transition-all placeholder:text-content-3 text-content-2';
+const inp = 'w-full text-body-sm bg-surface-card border border-border-card rounded-xl px-3 py-2.5 focus:border-chart-1 transition-all placeholder:text-content-3 text-content-2';
 const lbl = 'text-caption font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────

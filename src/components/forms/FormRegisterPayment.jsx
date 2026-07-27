@@ -168,7 +168,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
                             <Calendar size={12} className={isConflict ? "text-danger" : "text-brand-text"} /> Mes que Cubre
                         </label>
-                        <div className={isConflict ? "ring-2 ring-danger/50 rounded-2xl transition-all" : ""}>
+                        <div className={isConflict ? "ring-2 ring-danger/45 rounded-2xl transition-all" : ""}>
                             <LiquidDatePicker
                                 mode="month"
                                 value={paymentData.billing_month}

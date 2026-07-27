@@ -234,7 +234,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Abandono', label: 'Abandono de Trabajo' }
     ];
 
-    const inputClasses = "w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3";
+ const inputClasses = "w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 text-body-xl font-bold text-content-2 transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:border-brand/50 placeholder:text-content-3";
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
@@ -474,7 +474,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                                 : '';
                                             setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
                                         }}
-                                        className="w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 pr-12 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+ className="w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 pr-12 text-body-xl font-bold text-content-2 transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:border-brand/50"
                                         placeholder="Ej: 3"
                                     />
                                     <span className="absolute right-4 text-content-2 text-label font-black uppercase tracking-widest">días</span>
@@ -658,7 +658,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <div className="flex items-center gap-3">
                                     <div className="relative flex-1 max-w-xs">
                                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-success" size={16} strokeWidth={3}/>
-                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-2xl h-[44px] px-4 pl-10 text-body-xl font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+ <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-2xl h-[44px] px-4 pl-10 text-body-xl font-black text-success-text transition-all hover:shadow-md focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
                                     </div>
                                     {diff !== null && !isNaN(diff) && (
                                         <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
@@ -678,7 +678,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
                             <FileText className="absolute left-3 top-3 text-content-3" size={14} strokeWidth={2.5}/>
-                            <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-2xl p-3 pl-9 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+ <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-2xl p-3 pl-9 text-body-xl font-bold text-content-2 transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
                         </div>
                     </div>
 

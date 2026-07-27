@@ -5,7 +5,48 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.66.0';
+export const APP_VERSION = '2.67.0';
+
+// v2.67.0 — feat(design): barrido y aros estandarizados. El usuario preguntó por qué
+// algunos botones tenían barrido especular y otros no, y por qué había tantas variantes
+// de aro. Ninguna de las dos era una decisión de diseño.
+//
+// BARRIDO: estaba en 3 de los 11 botones de gradiente brand, y NO en el componente
+// canónico — o sea, aparecía donde alguien había escrito el botón a mano y copiado el
+// span. La regla que faltaba: va en las variantes RELLENAS (primary, destructive),
+// porque en una superficie transparente no hay nada que refleje la luz. Ahora vive en
+// Button.jsx y sale en los 46 botones primarios en vez de en 3 al azar. Los 8 spans a
+// mano pasaron a la utilidad `sweep`; los 2 de TabMinMax eran un bucle INFINITO
+// (repeat: Infinity) y no un barrido de hover — movimiento perpetuo compitiendo por la
+// atención con el contador que el botón ya muestra. Pasan a hover como el resto.
+//
+// AROS: acá el hallazgo fue peor. El proyecto YA tenía un aro de foco canónico —una
+// regla en index.css sobre button/input/select/textarea/a/[role=button]/[tabindex]—
+// y encima había 171 aros escritos a mano en 47 archivos, cada uno con su ancho y su
+// color (ring-4/2/1 × brand/10, /20, /25, /50, chart-9/20, chart-3/70, success/50…).
+// Los 171 eran redundantes: no agregaban nada, solo tapaban el canónico con un color
+// distinto en cada formulario. Un aro de foco que es azul en un form, verde en otro y
+// naranja en un tercero no le enseña nada a nadie. Se borraron los 171.
+//
+// Y el canónico estaba roto justo donde importa: --focus-ring-color era
+// rgba(0,82,204,0.55) fijo, SIN variante por tema. Medido: 2.61:1 sobre tarjeta clara
+// y 1.63:1 sobre el navy oscuro, contra el 3:1 que exige WCAG 1.4.11 para un indicador
+// de foco. En dark era prácticamente invisible. Ahora es var(--brand) / var(--brand-text)
+// opaco: 6.42:1 y 7.18:1, verificado en vivo en los 4 temas.
+//
+// Además 20 `focus:outline-none` APAGABAN el aro canónico en inputs de Pedidos,
+// MinMax, Promociones y el kiosco: esos campos se enfocaban sin ninguna señal visible
+// (WCAG 2.4.7). Retirados.
+//
+// Aros de estado (51): el color lleva significado y se respeta; el alpha se elegía a
+// mano (el mismo warning con /20, /30, /40, /50 y sólido en cuatro archivos) y ahora
+// es /30 en 1px y /45 en 2px. Y 2 `ring-white` de recorte sobre avatares pasan a
+// ring-surface-card — en dark el blanco fijo dibujaba un halo sobre tarjeta oscura.
+//
+// Gate: categoría `ring` nueva, en 0 y BLOQUEANTE (verificada contra una violación
+// falsa antes de darla por buena). Cubre los tres casos: aro de foco a mano,
+// focus:outline-none, y alpha de estado fuera del canon.
+
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // v2.66.0 — D3 avanzada: el gate pasa de 6,333 a 267 hallazgos (96% menos).

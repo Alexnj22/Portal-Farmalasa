@@ -37,7 +37,7 @@ const FormEditContact = ({ formData, onClose }) => {
                             value={form[key]}
                             onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
                             placeholder={placeholder}
-                            className="w-full pl-10 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+ className="w-full pl-10 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
                         />
                     </div>
                 </div>

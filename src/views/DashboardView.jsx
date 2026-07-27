@@ -1672,8 +1672,8 @@ const DashboardView = ({ openModal }) => {
                           ?<img src={e.photo||e.photo_url} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-brand/30':e.isTomorrow?'border-warning/40':'border-white'}`}/>
                           :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-body-sm ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning-solid text-white border-warning/40':'bg-surface-card-hover text-content-3 border-white'}`}>{initials}</div>
                         }
-                        {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-white shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
-                        {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-white shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
+                        {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
+                        {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">

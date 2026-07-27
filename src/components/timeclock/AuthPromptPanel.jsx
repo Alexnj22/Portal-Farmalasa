@@ -91,7 +91,7 @@ const AuthPromptPanel = ({
     /* 🚨 PLACEHOLDER: Estilo independiente para evitar saltos */
     placeholder:text-body-xl placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-chart-4-text/60
     /* 🚨 CARET VIRTUAL: Oculta el cursor nativo y activa la animación del CSS */
-    caret-transparent virtual-caret-orange focus:outline-none"
+    caret-transparent virtual-caret-orange"
 />
             
             {/* Botón Flotante Limpiar */}

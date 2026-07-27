@@ -326,7 +326,7 @@ const LiquidDatePicker = ({
                                     btnClass += "text-danger font-black bg-danger/10 hover:bg-danger/20";
                                 } else {
                                     btnClass += isToday
-                                        ? "text-brand-text font-black hover:bg-surface-card-hover ring-1 ring-brand/40"
+                                        ? "text-brand-text font-black hover:bg-surface-card-hover ring-1 ring-brand/30"
                                         : "text-content-2 hover:bg-surface-card-hover hover:text-brand-text";
                                 }
 

@@ -119,7 +119,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                     } else if (isInAnyRange) {
                         btnClass += 'text-success font-black cursor-pointer hover:bg-surface-card-hover hover:shadow-sm';
                     } else if (isToday) {
-                        btnClass += 'text-brand-text font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover';
+                        btnClass += 'text-brand-text font-black ring-1 ring-brand/30 cursor-pointer hover:bg-surface-card-hover';
                     } else {
                         btnClass += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand-text';
                     }

@@ -72,7 +72,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             onChange={e => setComment(e.target.value)}
                             placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
                             rows={2}
-                            className="w-full text-body-xl border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-warning bg-surface-card resize-none transition-colors text-content-2"
+                            className="w-full text-body-xl border border-divider rounded-xl px-3 py-2 focus:border-warning bg-surface-card resize-none transition-colors text-content-2"
                         />
                     </div>
                 </PedidoModal.Body>

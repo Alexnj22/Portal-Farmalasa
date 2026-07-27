@@ -601,7 +601,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           ref={searchInputRef}
           type="text"
           placeholder="Buscar por nombre o código..."
-          className="flex-1 bg-transparent border-none outline-none text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
+ className="flex-1 bg-transparent border-none text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -676,7 +676,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 "text-left p-5 rounded-modal border transition-all duration-300 group relative overflow-hidden",
                 card.bg, card.border,
                 isActive
-                  ? "shadow-[var(--shadow-glow-brand)] ring-2 ring-brand scale-[1.02] -translate-y-0.5"
+                  ? "shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/45 scale-[1.02] -translate-y-0.5"
                   : "hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1",
               ].join(" ")}
             >

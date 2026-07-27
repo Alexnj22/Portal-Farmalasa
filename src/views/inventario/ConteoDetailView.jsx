@@ -196,7 +196,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onBlur={commit}
                     onKeyDown={handleFisicoKeyDown}
                     placeholder="—"
-                    className="w-16 text-center text-body-xl font-bold bg-surface-card border border-border-card rounded-lg px-1 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover disabled:text-content-3"
+ className="w-16 text-center text-body-xl font-bold bg-surface-card border border-border-card rounded-lg px-1 py-1 focus:border-chart-9 disabled:bg-surface-card-hover disabled:text-content-3"
                 />
             </DataCell>
             <DataCell align="center">
@@ -210,7 +210,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onChange={(e) => setNota(e.target.value)}
                     onBlur={commit}
                     placeholder="Nota..."
-                    className="w-full text-body-xl bg-surface-card border border-border-card rounded-lg px-2 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover"
+ className="w-full text-body-xl bg-surface-card border border-border-card rounded-lg px-2 py-1 focus:border-chart-9 disabled:bg-surface-card-hover"
                 />
             </DataCell>
             <DataCell align="center">
@@ -551,7 +551,7 @@ export default function ConteoDetailView() {
                     ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
                     type="text"
                     placeholder="Buscar producto, laboratorio o lote..."
-                    className="flex-1 bg-transparent border-none outline-none text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+ className="flex-1 bg-transparent border-none text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />

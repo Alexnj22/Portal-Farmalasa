@@ -3,12 +3,12 @@ import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, Alert
 import LiquidDatePicker from '../common/LiquidDatePicker';
 
 const SERVICE_CONFIG = {
-    rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3 focus:ring-chart-3/20', providerLabel: 'Nombre del Arrendador' },
-    light: { title: 'Energía Eléctrica', icon: Zap, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', ring: 'focus:border-chart-4 focus:ring-chart-4/20', providerLabel: 'Compañía Eléctrica' },
-    water: { title: 'Agua Potable', icon: Droplet, color: 'text-chart-5-text bg-chart-5/10 border-chart-5/30', ring: 'focus:border-chart-5 focus:ring-chart-5/20', providerLabel: 'Servicio de Agua' },
-    internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-chart-1-text bg-chart-1/10 border-chart-1/30', ring: 'focus:border-chart-1 focus:ring-chart-1/20', providerLabel: 'Proveedor ISP' },
-    phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-success focus:ring-success/20', providerLabel: 'Telefonía Móvil' },
-    taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-divider', ring: 'focus:border-content-3 focus:ring-content-3/20', providerLabel: 'Alcaldía / Entidad' }
+ rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },
+ light: { title: 'Energía Eléctrica', icon: Zap, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', ring: 'focus:border-chart-4', providerLabel: 'Compañía Eléctrica' },
+ water: { title: 'Agua Potable', icon: Droplet, color: 'text-chart-5-text bg-chart-5/10 border-chart-5/30', ring: 'focus:border-chart-5', providerLabel: 'Servicio de Agua' },
+ internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-chart-1-text bg-chart-1/10 border-chart-1/30', ring: 'focus:border-chart-1', providerLabel: 'Proveedor ISP' },
+ phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-success', providerLabel: 'Telefonía Móvil' },
+ taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-divider', ring: 'focus:border-content-3', providerLabel: 'Alcaldía / Entidad' }
 };
 
 const FormServicePayment = ({ formData, setFormData }) => {
@@ -96,7 +96,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                     <input 
                         required
                         type="text" 
-                        className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+ className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider transition-all font-bold text-content shadow-sm ${config.ring}`}
                         placeholder={`Ej: Proveedor de ${config.title}`}
                         value={providerValue || ""} 
                         onChange={(e) => handleChange('provider', e.target.value)} 
@@ -109,7 +109,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <input 
                             required
                             type="number" min="0" step="0.01" 
-                            className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+ className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider transition-all font-bold text-content shadow-sm ${config.ring}`}
                             placeholder="0.00"
                             value={currentData.amount || ""} 
                             onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))} 
@@ -120,7 +120,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <input 
                             required
                             type="number" min="1" max="31" 
-                            className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none transition-all font-bold text-content shadow-sm focus:ring-4 ${config.ring}`} 
+ className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider transition-all font-bold text-content shadow-sm ${config.ring}`}
                             placeholder="Ej: 15"
                             value={currentData.dueDay || ""} 
                             onChange={(e) => handleChange('dueDay', parseInt(e.target.value, 10))} 

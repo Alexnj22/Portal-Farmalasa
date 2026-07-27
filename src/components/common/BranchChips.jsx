@@ -214,7 +214,7 @@ const BranchChips = ({
                   moreOpen
                     ? "text-content bg-surface-card-hover shadow-[var(--shadow-elevation-md)]"
                     : "text-content-3 hover:text-content hover:bg-surface-card-hover hover:-translate-y-[1px] hover:shadow-[var(--shadow-elevation-md)] active:translate-y-0",
-                  isHiddenSelected ? "ring-2 ring-brand/20" : "",
+                  isHiddenSelected ? "ring-2 ring-brand/45" : "",
                 ].join(" ")}
               >
                 <span className="truncate">Ver más</span>

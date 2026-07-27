@@ -339,7 +339,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 )}
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-toast">
-                    <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
+                    <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger/45 shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
                         <LiquidSelect 
                             value={shiftId} 
                             onChange={setShiftId} 
@@ -415,7 +415,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                         type="checkbox" 
                                         checked={hasLunch} 
                                         readOnly 
-                                        className="w-4 h-4 rounded text-chart-4-text border-chart-4/30 focus:ring-chart-4/50 transition-transform group-hover/row:scale-110"
+ className="w-4 h-4 rounded text-chart-4-text border-chart-4/30 transition-transform group-hover/row:scale-110"
                                     />
                                     <span className="text-body-sm font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
@@ -435,7 +435,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                         type="checkbox" 
                                         checked={hasLactation} 
                                         readOnly 
-                                        className="w-4 h-4 rounded text-chart-6 border-chart-6/30 focus:ring-chart-6/50 transition-transform group-hover/row:scale-110" 
+ className="w-4 h-4 rounded text-chart-6 border-chart-6/30 transition-transform group-hover/row:scale-110"
                                     />
                                     <span className="text-body-sm font-bold text-chart-6-text group-hover/row:text-chart-6-text transition-colors">Lactancia</span>
                                 </div>

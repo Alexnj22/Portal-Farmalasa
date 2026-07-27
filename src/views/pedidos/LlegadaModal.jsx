@@ -209,7 +209,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja 3 aplastada, caja 4 nunca fue cargada…"
-                            className="mt-1 w-full text-body-xl rounded-xl border border-divider px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-chart-1/30"
+ className="mt-1 w-full text-body-xl rounded-xl border border-divider px-3 py-2 resize-none"
                         />
                     </div>
                 )}
@@ -347,7 +347,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     value={d.cajaNum ?? ''}
                                                     onChange={e => { setExtraField(i, 'cajaNum', e.target.value); setExtraError(null); }}
                                                     placeholder="# de caja"
-                                                    className={`w-32 text-body-xl rounded-lg border px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-warning/40 bg-surface-card ${extraError && !d.cajaNum?.trim() ? 'border-danger' : 'border-divider'}`}
+ className={`w-32 text-body-xl rounded-lg border px-2.5 py-1.5 bg-surface-card ${extraError && !d.cajaNum?.trim() ? 'border-danger' : 'border-divider'}`}
                                                 />
                                             </div>
                                         )}

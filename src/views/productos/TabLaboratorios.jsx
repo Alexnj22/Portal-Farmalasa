@@ -532,8 +532,8 @@ function GlassChip({ icon, label, sub, color }) {
 
 function GlassInput({ label, value, onChange, placeholder, accent }) {
     const focus = accent === 'amber'
-        ? 'focus:ring-2 focus:ring-warning/20 focus:border-warning/40'
-        : 'focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40';
+ ? ' focus:border-warning/40'
+ : ' focus:border-chart-9/40';
     return (
         <div className="flex items-center gap-2.5">
             <span className="text-label font-bold text-content-3 w-12 flex-shrink-0 text-right">{label}</span>

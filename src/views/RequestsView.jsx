@@ -613,7 +613,7 @@ const RequestsView = () => {
                 <button onClick={() => openCreateModal()}
                     className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-brand/72 to-brand-hover/78 backdrop-blur-xl border border-border-card hover:border-border-card text-white rounded-full font-black text-caption uppercase tracking-widest shadow-[var(--shadow-glass-2)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-200 active:scale-[0.97] shrink-0">
                     <span className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
-                        <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+                        <span className="sweep" aria-hidden="true" />
                     </span>
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Nueva Solicitud</span>
                 </button>
@@ -635,7 +635,7 @@ const RequestsView = () => {
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
-                    className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3 focus:ring-0"
+ className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
@@ -781,7 +781,7 @@ const RequestsView = () => {
                         <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
                             disabled={isActioning}
-                            className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
+ className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
                             <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
                                 className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-body font-medium hover:bg-surface-card transition-all disabled:opacity-50">
@@ -887,7 +887,7 @@ const RequestsView = () => {
                                 rows={3}
                                 placeholder="Describe la solicitud..."
                                 disabled={isCreatingReq}
-                                className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
+ className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
                             />
                         </div>
 

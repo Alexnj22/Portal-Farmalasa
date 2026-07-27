@@ -193,12 +193,12 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           <div className="flex flex-col gap-1">
             <label className="text-caption font-black text-chart-4-text uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
             <input type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
-              className="w-full text-right text-body-xl font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-chart-4/30" />
+ className="w-full text-right text-body-xl font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 rounded-xl px-3 py-2" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-caption font-black text-chart-1-text uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
             <input type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
-              className="w-full text-right text-body-xl font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-chart-1/30" />
+ className="w-full text-right text-body-xl font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl px-3 py-2" />
           </div>
         </div>
 
@@ -207,7 +207,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
             placeholder="¿Por qué este ajuste? (opcional)"
-            className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
+ className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 focus:border-brand resize-none" />
         </div>
 
         {err && <p className="text-label text-danger-text font-semibold px-1">{err}</p>}

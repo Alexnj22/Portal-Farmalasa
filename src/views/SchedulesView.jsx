@@ -98,7 +98,7 @@ const HolidaysPanel = ({
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-surface-card border border-divider rounded-xl px-3 py-2.5 text-body-xl font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
+ className="w-full bg-surface-card border border-divider rounded-xl px-3 py-2.5 text-body-xl font-bold text-content focus:border-warning transition-all" />
                         </div>
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>

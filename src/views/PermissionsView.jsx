@@ -306,7 +306,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                        shadow-[var(--shadow-glass-2)]
                        hover:shadow-[var(--shadow-glass-4)]
                        hover:-translate-y-2 hover:scale-[1.018] hover:bg-surface-card
-                       ${flash ? 'ring-2 ring-chart-1/50 shadow-[var(--shadow-glass-3)]' : ''}`
+                       ${flash ? 'ring-2 ring-chart-1/45 shadow-[var(--shadow-glass-3)]' : ''}`
                     : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-shine)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-surface-card'
         }`}>
             <div className="p-4">
@@ -725,7 +725,7 @@ const PermissionsView = () => {
                 <input
                     type="text"
                     placeholder="Buscar cargo..."
-                    className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
+ className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-content-3"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}

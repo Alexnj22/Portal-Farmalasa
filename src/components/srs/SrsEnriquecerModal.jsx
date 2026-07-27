@@ -646,14 +646,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
                                                                 placeholder="Nombre del principio"
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-divider rounded-lg text-body-xl text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-surface-card placeholder:text-content-3"
+ className="flex-1 min-w-0 px-2 py-1.5 border border-divider rounded-lg text-body-xl text-content-2 bg-surface-card placeholder:text-content-3"
                                                             />
                                                             <input
                                                                 value={item.concentracion}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
                                                                 placeholder="Cant."
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-divider rounded-lg text-body-xl text-content-2 focus:outline-none focus:ring-2 focus:ring-brand/20 bg-surface-card placeholder:text-content-3 text-center"
+ className="w-[58px] shrink-0 px-2 py-1.5 border border-divider rounded-lg text-body-xl text-content-2 bg-surface-card placeholder:text-content-3 text-center"
                                                             />
                                                             <button onClick={() => setManualItems(prev =>
                                                                 prev.length > 1

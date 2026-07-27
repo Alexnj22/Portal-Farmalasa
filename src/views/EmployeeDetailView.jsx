@@ -834,7 +834,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                     let cellBg;
                                                     if (isSelected) {
-                                                        cellBg = 'bg-success shadow-[var(--shadow-glow-success)] ring-2 ring-success/40';
+                                                        cellBg = 'bg-success shadow-[var(--shadow-glow-success)] ring-2 ring-success/45';
                                                     } else if (isToday) {
                                                         cellBg = 'bg-brand';
                                                     } else if (isInsurance && hasPermit) {
@@ -1027,7 +1027,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         const isToday = dia.day === todayName; 
 
                                                         return (
-                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-surface-card' : 'opacity-50 grayscale bg-surface-card-hover/50'} ${isToday ? 'bg-chart-1/10 ring-1 ring-brand/20 shadow-[var(--shadow-shine)]' : ''}`}>
+                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-surface-card' : 'opacity-50 grayscale bg-surface-card-hover/50'} ${isToday ? 'bg-chart-1/10 ring-1 ring-brand/30 shadow-[var(--shadow-shine)]' : ''}`}>
                                                                 
                                                                 {isToday && (
                                                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand shadow-[var(--shadow-glow-brand-md)]"></div>
@@ -1221,7 +1221,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     onChange={e => setCancelReason(e.target.value)}
                                     placeholder="Explica el motivo de la cancelación..."
                                     rows={3}
-                                    className="w-full bg-surface-card border border-border-card rounded-2xl p-3 text-body-xl text-content-2 outline-none focus:ring-2 focus:ring-danger/30 resize-none"
+ className="w-full bg-surface-card border border-border-card rounded-2xl p-3 text-body-xl text-content-2 resize-none"
                                 />
                             </>
                         )}

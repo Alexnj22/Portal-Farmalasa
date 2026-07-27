@@ -6,6 +6,18 @@ import { Loader2 } from 'lucide-react';
 // comparado lado a lado — las mayúsculas leían "dashboard 2016"). Antes cada
 // vista tenía su propio patrón inline (DESIGN.md §15). Variantes:
 // primary/secondary/ghost/destructive/icon, tamaños sm/md.
+// ── Barrido especular: la regla (A15, 2026-07-27) ────────────────────────
+// Estaba en 3 de los 11 botones de gradiente brand del proyecto, y NO en el
+// canónico. No era una decisión de diseño: era dónde alguien escribió el
+// botón a mano y copió el span. La regla que faltaba:
+//
+//   el barrido va en las variantes RELLENAS (primary, destructive) —
+//   en una superficie transparente no hay nada que refleje la luz.
+//
+// Así queda en TODOS los primarios en vez de en 3 al azar, y se apaga solo
+// en el tema sólido (que ya desactiva el movimiento decorativo).
+const HAS_SWEEP = new Set(['primary', 'destructive']);
+
 const VARIANT_CLASSES = {
     primary: `text-white bg-gradient-to-b from-brand-hover to-brand
         shadow-[var(--shadow-glass-1)]
@@ -71,7 +83,7 @@ const Button = memo(({
         <button
             type={type}
             disabled={isDisabled}
-            className={`inline-flex items-center justify-center rounded-btn font-bold tracking-[-0.005em]
+            className={`group relative overflow-hidden inline-flex items-center justify-center rounded-btn font-bold tracking-[-0.005em]
                 transition-[transform,box-shadow,background-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap
                 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
                 ${VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary}
@@ -79,12 +91,13 @@ const Button = memo(({
                 ${className}`}
             {...rest}
         >
+            {HAS_SWEEP.has(variant) && !isDisabled && <span className="sweep" aria-hidden="true" />}
             {loading ? (
-                <Loader2 size={ICON_PX[size] ?? 15} className="animate-spin" />
+                <Loader2 size={ICON_PX[size] ?? 15} className="relative animate-spin" />
             ) : (
-                Icon && <Icon size={ICON_PX[size] ?? 15} strokeWidth={2.25} />
+                Icon && <Icon size={ICON_PX[size] ?? 15} strokeWidth={2.25} className="relative" />
             )}
-            {!iconOnly && children}
+            {!iconOnly && <span className="relative">{children}</span>}
         </button>
     );
 });

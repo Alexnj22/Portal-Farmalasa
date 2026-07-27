@@ -353,7 +353,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     useImperativeHandle(ref, () => ({ save }));
 
-    const inp = 'bg-surface-card-hover border-divider text-content-2 placeholder:text-content-3 focus:ring-brand/20';
+ const inp = 'bg-surface-card-hover border-divider text-content-2 placeholder:text-content-3';
     const numCls = 'text-content-3';
     const rmBtn  = 'text-content-3 hover:text-danger hover:bg-danger/10';
     const addCls = 'text-content-3 hover:text-brand-text';
@@ -384,13 +384,13 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                                 value={item.nombre}
                                 onChange={e => updateItem(item._key, 'nombre', e.target.value)}
                                 placeholder="Nombre del principio"
-                                className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-body-xl focus:outline-none focus:ring-2 transition-colors ${inp}`}
+ className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-body-xl transition-colors ${inp}`}
                             />
                             <input
                                 value={item.concentracion || ''}
                                 onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
                                 placeholder="Cant."
-                                className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-body-xl focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
+ className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-body-xl text-center transition-colors ${inp}`}
                             />
                             <button onClick={() => removeItem(item._key)}
                                 className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${rmBtn}`}>
@@ -551,7 +551,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     const bodegaActiveBtn = 'bg-surface-card text-warning shadow-sm';
 
     const inp = (sala) =>
-        `bg-surface-card-hover text-content-2 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-divider focus:ring-brand/30' : 'border-warning/30 focus:ring-warning/30'}`;
+ `bg-surface-card-hover text-content-2 font-bold ${sala ? 'border-divider' : 'border-warning/30'}`;
 
     return (
         <div className="space-y-2">

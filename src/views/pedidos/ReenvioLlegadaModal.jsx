@@ -201,7 +201,7 @@ export default function ReenvioLlegadaModal({
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja dañada en el fondo, caja 4 nunca llegó…"
-                            className="mt-1 w-full text-body-xl rounded-xl border border-divider px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-chart-3/30"
+ className="mt-1 w-full text-body-xl rounded-xl border border-divider px-3 py-2 resize-none"
                         />
                     </div>
                 )}

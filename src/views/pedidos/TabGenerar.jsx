@@ -399,7 +399,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                         // Selection adds a glow ring; no-selection adds hover effects
                         const stateCls = isOn
-                            ? 'suc-pop border-chart-1/80 shadow-[var(--shadow-glass-3)] ring-2 ring-chart-1/25 ring-offset-0'
+                            ? 'suc-pop border-chart-1/80 shadow-[var(--shadow-glass-3)] ring-2 ring-chart-1/45 ring-offset-0'
                             : urgLevel === 'high'
                                 ? 'hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)] transition-all duration-200'
                                 : urgLevel === 'mid'

@@ -136,7 +136,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                     } else if (inRange) {
                         btnCls += 'text-brand-text font-black cursor-pointer hover:bg-surface-card-hover';
                     } else if (isToday) {
-                        btnCls += 'text-brand-text font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover';
+                        btnCls += 'text-brand-text font-black ring-1 ring-brand/30 cursor-pointer hover:bg-surface-card-hover';
                     } else {
                         btnCls += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand-text';
                     }
@@ -401,7 +401,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     } else if (isFuture) {
                                         cellCls += 'text-content-3 cursor-not-allowed ';
                                     } else if (isCurrent) {
-                                        cellCls += 'text-brand-text font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover hover:shadow-sm ';
+                                        cellCls += 'text-brand-text font-black ring-1 ring-brand/30 cursor-pointer hover:bg-surface-card-hover hover:shadow-sm ';
                                     } else {
                                         cellCls += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand-text hover:shadow-sm ';
                                     }

@@ -849,7 +849,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         whileTap={{ scale: 0.94, y: 0, transition: { duration: 0.07 } }}
                                         onClick={() => requestPublish(filteredDraftIds)}
                                         disabled={publishing}
-                                        className="relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-label font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
+                                        className="group relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-label font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
                                         style={{
                                             background: 'var(--brand)',
                                             backdropFilter: 'blur(20px) saturate(180%)',
@@ -858,8 +858,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             boxShadow: 'var(--shadow-glow-brand)',
                                             color: 'white',
                                         }}>
-                                        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
-                                            animate={{ x: ['-160%', '160%'] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 2.5 }} />
+                                        <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '.25' }} />
                                         {publishing ? <Loader2 size={10} className="animate-spin relative z-base" /> : <Upload size={10} className="relative z-base" />}
                                         <span className="relative z-base">Publicar {filterLabel} ({filteredDraftIds.length})</span>
                                     </motion.button>
@@ -872,7 +871,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         whileTap={{ scale: 0.94, y: 0, transition: { duration: 0.07 } }}
                                         onClick={() => requestPublish()}
                                         disabled={publishing}
-                                        className="relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-label font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
+                                        className="group relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-label font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
                                         style={{
                                             background: 'var(--brand)',
                                             backdropFilter: 'blur(20px) saturate(180%)',
@@ -881,8 +880,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             boxShadow: 'var(--shadow-glow-brand)',
                                             color: 'white',
                                         }}>
-                                        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
-                                            animate={{ x: ['-160%', '160%'] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 2.5 }} />
+                                        <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '.25' }} />
                                         {publishing ? <Loader2 size={10} className="animate-spin relative z-base" /> : <Upload size={10} className="relative z-base" />}
                                         <span className="relative z-base">Publicar todo ({draftCount})</span>
                                     </motion.button>
@@ -1152,7 +1150,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-warning-text bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 border-2 ${hasDraft ? 'text-warning-text bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`} />
                                                         {sep}
                                                         <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover border-border-card'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
@@ -1207,7 +1205,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-success-text bg-success/10 border-success'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 border-2 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-success-text bg-success/10 border-success'}`} />
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-micro font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-chart-1-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                 </div>

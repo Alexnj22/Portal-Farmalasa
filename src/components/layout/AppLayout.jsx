@@ -475,7 +475,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     // Anillo de foco visible por teclado — compartido por todos los controles
     // del sidebar (sobre glass oscuro) para que Tab nunca navegue a ciegas.
-    const focusRing = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-chart-3/70';
+ const focusRing = '';
 
     const allModuleKeys = useMemo(() =>
         visibleGroups.flatMap(g => g.visibleModules.filter(m => !m.comingSoon).map(m => m.key)),
@@ -543,7 +543,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     active:scale-[0.99] active:translate-y-0`}
             >
                 <span className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                    <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+                    <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '0.08' }} />
                 </span>
 
                 {indent && (
@@ -653,7 +653,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         active:scale-[0.99] active:translate-y-0`}
                 >
                     <span className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                        <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+                        <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '0.08' }} />
                     </span>
                     <GroupIcon
                         size={20}
@@ -992,7 +992,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         <div className="flex items-center justify-between px-4 py-2.5">
                             <div className="flex items-center gap-4">
                                 <button onClick={() => setIsSidebarOpen(true)} type="button" aria-label="Abrir menú"
-                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
+ className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text">
                                     <Menu size={22} strokeWidth={2.5} />
                                 </button>
                                 <div className="w-px h-6 rounded-full bg-divider" />
@@ -1003,13 +1003,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
                             <div className="flex items-center gap-2">
                                 <button onClick={() => setSearchOpen(true)} type="button" aria-label="Buscar en el menú"
-                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
+ className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text">
                                     <Search size={19} strokeWidth={2.5} />
                                 </button>
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
                                     <button onClick={() => navigate('/profile')} type="button" aria-label="Mi Perfil"
-                                        className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
+ className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-white">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                                     </button>
@@ -1050,7 +1050,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     const badge = getBadge(key);
                                     return (
                                         <button key={key} onClick={() => navigate(path)} type="button" aria-current={isActive ? 'page' : undefined}
-                                            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
+ className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-200 flex-1 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
                                             <div className="relative">
                                                 {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
                                                 <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand-text' : 'text-slate-500'} />

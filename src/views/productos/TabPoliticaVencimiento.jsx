@@ -525,7 +525,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         placeholder="0"
                         disabled={!draft.devolutivo}
                         title="Meses antes de vencer por política de devolución"
-                        className={`w-12 text-body-xl font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 text-content-2 text-center ${
+ className={`w-12 text-body-xl font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card text-content-2 text-center ${
                             draft.devolutivo && draft.meses_devolucion === '' ? 'border-danger/40 focus:border-danger/40' : 'border-border-card focus:border-chart-9/40'
                         }`}
                     />
@@ -541,7 +541,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
                         title="Viñeta: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio-viñeta vigente del producto para resolver la política automáticamente"
-                        className="w-14 text-body-xl font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 border-border-card focus:border-chart-9/40 text-content-2 text-center"
+ className="w-14 text-body-xl font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card border-border-card focus:border-chart-9/40 text-content-2 text-center"
                     />
                     <span className="text-micro font-semibold text-content-3 whitespace-nowrap">viñeta</span>
                 </div>
@@ -562,7 +562,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.notas}
                     onChange={e => setF('notas', e.target.value)}
                     placeholder="Notas (opcional)"
-                    className="flex-1 min-w-[110px] text-body-xl px-2 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
+ className="flex-1 min-w-[110px] text-body-xl px-2 py-1.5 rounded-lg border border-border-card bg-surface-card focus:border-chart-9/40 text-content-2 placeholder-content-3"
                 />
 
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -588,7 +588,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
                     onChange={e => setF('nombre', e.target.value)}
                     placeholder="Nombre del proveedor/droguería"
-                    className="w-full mt-1.5 text-body-xl font-semibold px-2.5 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
+ className="w-full mt-1.5 text-body-xl font-semibold px-2.5 py-1.5 rounded-lg border border-border-card bg-surface-card focus:border-chart-9/40 text-content-2 placeholder-content-3"
                 />
             )}
             {draft.devolutivo && draft.meses_devolucion === '' && (

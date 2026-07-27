@@ -878,7 +878,7 @@ const StaffManagementView = ({
           ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
           type="text"
           placeholder="Buscar por nombre, código o cargo..."
-          className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+ className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />

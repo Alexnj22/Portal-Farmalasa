@@ -237,7 +237,18 @@
   --backdrop-modal:  blur(48px) saturate(160%);
 
   /* Focus ring (invariante por tema hoy) */
-  --focus-ring-color: rgba(0,82,204,0.55);
+  /* Aro de foco — el ÚNICO del proyecto (A16, 2026-07-27).
+     La regla global de más abajo ya lo pintaba en todo lo enfocable desde
+     siempre; encima había 171 aros escritos a mano en 47 archivos, cada uno
+     con su propio ancho y color (ring-4/ring-2/ring-1 × brand/10, /20, /25,
+     /50, chart-9/20, chart-3/70, success/50…). Todos eran redundantes: no
+     agregaban nada, solo tapaban el canónico con un color distinto en cada
+     formulario. Se borraron los 171; queda esta regla.
+     Y estaba roto donde importa: era rgba(0,82,204,.55) fijo, sin variante
+     por tema — 2.61:1 sobre tarjeta clara y 1.63:1 sobre el navy oscuro,
+     contra el 3:1 que pide WCAG 1.4.11. Opaco y siguiendo al tema: 6.42:1
+     y 7.18:1. */
+  --focus-ring-color: var(--brand);
 
   /* Scrim (overlay de sidebar móvil / drawers) */
   --scrim: rgba(3,11,28,0.50);
@@ -521,6 +532,7 @@
   --card-tint-base:      rgba(13,20,48,0.80);
   --card-tint-base-soft: rgba(13,20,48,0.55);
   --row-expand-sheen:    rgba(255,255,255,0.05);
+  --focus-ring-color: var(--brand-text);
   --shimmer-sweep:        rgba(255,255,255,0.14);
   --shimmer-sweep-strong: rgba(255,255,255,0.28);
 
@@ -687,6 +699,7 @@
   --card-tint-base:      rgba(30,41,59,1.00);
   --card-tint-base-soft: rgba(30,41,59,1.00);
   --row-expand-sheen:    rgba(30,41,59,1.00);
+  --focus-ring-color: var(--brand-text);
   --shimmer-sweep:        rgba(255,255,255,0.14);
   --shimmer-sweep-strong: rgba(255,255,255,0.28);
 
@@ -1158,6 +1171,12 @@
   transition: transform 700ms cubic-bezier(.25,.46,.45,.94);
 }
 .group:hover > .sweep, .group:hover .sweep { transform: translateX(220%); }
+
+/* Estado y selección: acá el COLOR sí lleva significado y varía; lo que no
+   tiene por qué variar es la geometría ni el alpha, que se elegían a mano
+   (mismo warning con /20, /30, /40, /50 y sólido en cuatro archivos). */
+@utility ring-sel  { box-shadow: 0 0 0 2px var(--ring-sel-color, var(--brand)); }
+@utility ring-soft { box-shadow: 0 0 0 1px var(--ring-sel-color, var(--brand)); }
 
 @utility z-ambient         { z-index: 1;     }
 @utility z-base            { z-index: 10;    }

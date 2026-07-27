@@ -104,7 +104,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 onClick={() => setFormData({...formData, selectedEmpId: emp.id})}
                                 className={`flex flex-col gap-2 p-3 rounded-2xl cursor-pointer border relative transition-colors ${
                                     isSelected 
-                                    ? 'bg-surface-card border-brand shadow-[var(--shadow-glow-brand)] ring-1 ring-brand/20' 
+                                    ? 'bg-surface-card border-brand shadow-[var(--shadow-glow-brand)] ring-1 ring-brand/30' 
                                     : 'bg-surface-card border-border-card hover:bg-surface-card shadow-sm'
                                 }`}
                             >
@@ -217,7 +217,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         </p>
                                         
                                         <div className="space-y-3">
-                                            <label className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'REASSIGN' ? 'bg-surface-card border-brand shadow-md ring-1 ring-brand/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
+                                            <label className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'REASSIGN' ? 'bg-surface-card border-brand shadow-md ring-1 ring-brand/30' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
                                                 <div className="flex items-start gap-3">
                                                     <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-brand-text accent-brand" checked={formData.outgoingAction === 'REASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'REASSIGN'})} />
                                                     <div className="flex flex-col w-full">
@@ -261,7 +261,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                 </div>
                                             </label>
 
-                                            <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'UNASSIGN' ? 'bg-surface-card border-warning shadow-md ring-1 ring-warning/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
+                                            <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'UNASSIGN' ? 'bg-surface-card border-warning shadow-md ring-1 ring-warning/30' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
                                                 <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-warning accent-warning" checked={formData.outgoingAction === 'UNASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'UNASSIGN'})} />
                                                 <div className="flex flex-col">
                                                     <span className="text-label font-black text-content uppercase tracking-widest leading-none">Quitar Asignación (Flotante)</span>

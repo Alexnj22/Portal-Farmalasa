@@ -191,7 +191,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 onChange={e => setTotalCajasInput(e.target.value)}
                                 placeholder="Ej. 4"
                                 autoFocus
-                                className="w-full text-title-lg font-black text-content rounded-2xl border-2 border-divider bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-chart-3 focus:ring-4 focus:ring-chart-3/20 transition-all"
+ className="w-full text-title-lg font-black text-content rounded-2xl border-2 border-divider bg-surface-card px-4 py-3 pr-16 focus:border-chart-3 transition-all"
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-label font-semibold text-content-3 pointer-events-none">
                                 cajas

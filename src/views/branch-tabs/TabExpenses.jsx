@@ -14,7 +14,7 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
         return {
             state: 'pending_receipt',
             label: 'Recibo Pendiente',
-            colorClass: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[0_0_15px_rgba(217,70,239,0.15)] ring-1 ring-chart-6'
+            colorClass: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[0_0_15px_rgba(217,70,239,0.15)] ring-1 ring-chart-6/30'
         };
     }
 
@@ -28,18 +28,18 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const ptMonth = parseInt(ptMonthStr, 10);
 
     if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-chart-2-md)] ring-1 ring-success' };
+        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-chart-2-md)] ring-1 ring-success/30' };
     }
 
     if (ptYear === currentYear && ptMonth === currentMonth - 1) {
         if (currentDay > dueDay) {
-            return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger' };
+            return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger/30' };
         } else {
-            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning-md)] ring-1 ring-warning' };
+            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning-md)] ring-1 ring-warning/30' };
         }
     }
 
-    return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger' };
+    return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger/30' };
 };
 
 // ============================================================================

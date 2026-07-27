@@ -223,7 +223,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                 );
 
                 return (
-                    <div key={pedido.pedido_id} className={`${GLASS} ${anyPaused ? 'ring-1 ring-warning/50' : ''}`}>
+                    <div key={pedido.pedido_id} className={`${GLASS} ${anyPaused ? 'ring-1 ring-warning/30' : ''}`}>
                         {/* Header del pedido */}
                         <div className="flex items-center gap-3 px-4 py-3">
                             <span className="text-body font-bold text-content-2 tabular-nums">

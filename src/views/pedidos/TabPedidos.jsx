@@ -332,9 +332,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
-                                            ? 'ring-2 ring-warning shadow-[var(--shadow-glow-chart-7-lg)]'
+                                            ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-chart-7-lg)]'
                                             : hasObservacion(row) && row.pedido_status !== 'completado'
-                                                ? 'ring-2 ring-chart-4 shadow-[var(--shadow-glow-chart-4)]'
+                                                ? 'ring-2 ring-chart-4/45 shadow-[var(--shadow-glow-chart-4)]'
                                                 : isFadedOut
                                                     ? 'opacity-80'
                                                     : ''

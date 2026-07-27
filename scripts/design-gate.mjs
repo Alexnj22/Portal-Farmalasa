@@ -344,6 +344,19 @@ const SHADOW_ARBITRARY_RE = /shadow-\[[^\]]*\]/g;
 // T7.3 tokenizó 548 de 959 usos (57%) en --shadow-elevation-*/glass-*/glow-*.
 // Los 411 restantes siguen escritos a mano y nunca tuvieron gate. Una
 // `shadow-[var(--…)]` es correcta; una con el valor literal es la deuda.
+// Aros escritos a mano (A16, 2026-07-27). El proyecto YA tenía un aro de foco
+// canónico: una regla en index.css sobre button/input/select/textarea/a/
+// [role=button]/[tabindex]:focus-visible. Encima había 171 aros a mano en 47
+// archivos que no agregaban nada — solo tapaban el canónico con un color
+// distinto en cada formulario. Se borraron los 171.
+//   · `focus:ring-*`   → redundante, el canónico ya lo pinta
+//   · `focus:outline-none` → APAGA el canónico: deja el elemento sin foco
+//     visible, que es la regresión de accesibilidad que este trabajo destapó
+//   · alpha de aro de estado fuera de /30 (1px) y /45 (2px)
+const RING_FOCUS_RE = /(?:focus|focus-visible|group-focus-within):ring-[a-z0-9[]/g;
+const RING_KILL_RE = /(?:focus|focus-visible):outline-none/g;
+const RING_ALPHA_RE = /(?<![:\w-])ring-1\s+ring-(?:brand|success|warning|danger|chart-\d)(?:-\w+)?(?:\/(?!30\b)[0-9.]+)?(?![\w/-])|(?<![:\w-])ring-2\s+ring-(?:brand|success|warning|danger|chart-\d)(?:-\w+)?(?:\/(?!45\b)[0-9.]+)?(?![\w/-])/g;
+
 const SHADOW_LITERAL_RE = /shadow-\[(?!var\(--)[^\]]+\]/g;
 
 // ── Categoría 9: motion (D0.5, 2026-07-26) ──────────────────────────────
@@ -538,6 +551,23 @@ function scanFile(path) {
       let m;
       while ((m = RGB_LITERAL_RE.exec(stripped))) {
         findings.push({ line: i + 1, label: `color literal ${m[1]}() fuera de token`, category: 'inline-color', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'ring')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      for (const [re, label] of [
+        [RING_FOCUS_RE, 'aro de foco a mano — el canónico de index.css ya lo pinta'],
+        [RING_KILL_RE, 'focus:outline-none APAGA el aro de foco canónico (WCAG 2.4.7)'],
+        [RING_ALPHA_RE, 'alpha de aro fuera del canon (/30 en 1px, /45 en 2px)'],
+      ]) {
+        re.lastIndex = 0;
+        let m;
+        while ((m = re.exec(line))) {
+          findings.push({ line: i + 1, label, category: 'ring', text: line.trim().slice(0, 120) });
+        }
       }
     });
   }

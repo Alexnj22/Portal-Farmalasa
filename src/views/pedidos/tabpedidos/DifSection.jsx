@@ -143,7 +143,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             type="text" placeholder="Nota (opcional)…"
                                             value={notaSel[item.id] ?? ''}
                                             onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
-                                            className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-chart-3 bg-surface-card placeholder-content-3"
+                                            className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:border-chart-3 bg-surface-card placeholder-content-3"
                                         />
                                         <button
                                             onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}
@@ -185,7 +185,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                         if (e.key === 'Enter') onResolver(item.id, 'rechazar', null, notaRec[item.id] || null);
                                                         if (e.key === 'Escape') setRejectOpen(p => ({ ...p, [item.id]: false }));
                                                     }}
-                                                    className="flex-1 text-body-xl border border-danger/30 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-danger bg-surface-card placeholder-content-3"
+                                                    className="flex-1 text-body-xl border border-danger/30 rounded-lg px-2.5 py-1.5 focus:border-danger bg-surface-card placeholder-content-3"
                                                 />
                                                 <button
                                                     onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}
@@ -259,7 +259,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             type="text" placeholder="Nota (opcional)…"
                                             value={corrNota}
                                             onChange={e => setCorrNota(e.target.value)}
-                                            className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-success bg-surface-card placeholder-content-3"
+                                            className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:border-success bg-surface-card placeholder-content-3"
                                         />
                                         <button
                                             onClick={() => onCorregirBodega?.(corrNota || null)}

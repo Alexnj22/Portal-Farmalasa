@@ -101,10 +101,10 @@ function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
                     src={photo}
                     alt={nombre}
                     onError={() => setFailed(true)}
-                    className={`w-full h-full rounded-full object-cover object-top ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`}
+                    className={`w-full h-full rounded-full object-cover object-top ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`}
                 />
             ) : (
-                <div className={`w-full h-full rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`}
+                <div className={`w-full h-full rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`}
                     style={{ fontSize: size * 0.38 }}>
                     {initials}
                 </div>

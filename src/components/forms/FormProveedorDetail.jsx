@@ -242,7 +242,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.contacto_nombre}
                             onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
                             placeholder="Nombre del contacto"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+ className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
                         />
                     </div>
                     <div>
@@ -251,7 +251,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.telefono2}
                             onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
                             placeholder="Teléfono adicional"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+ className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
                         />
                     </div>
                     <div>
@@ -260,7 +260,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.alias}
                             onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
                             placeholder="Nombre alterno de búsqueda"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+ className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
                         />
                     </div>
                     <div>
@@ -269,7 +269,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.nombre_cheques}
                             onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
                             placeholder="Si difiere de la razón social"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+ className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
                         />
                     </div>
                 </div>
@@ -306,7 +306,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
                             rows={3}
                             placeholder="Notas internas"
-                            className="w-full px-3.5 py-2.5 bg-surface-card border border-divider rounded-2xl text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 resize-none"
+ className="w-full px-3.5 py-2.5 bg-surface-card border border-divider rounded-2xl text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50 resize-none"
                         />
                     </div>
                 </div>

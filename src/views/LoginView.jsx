@@ -67,7 +67,7 @@ const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h
             flex items-center justify-center gap-2 transition-all duration-200
             active:scale-[0.97] disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`}>
         <span className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-            <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+            <span className="sweep" aria-hidden="true" />
         </span>
         {children}
     </button>
@@ -658,7 +658,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${glow}, inset 0 1px 0 rgba(255,255,255,0.7)`; }}
                             onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; }}>
                             <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                                <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.12] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-600 ease-out" />
+                                <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '0.12' }} />
                             </div>
                             <div className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
                                 style={{ background:`${color}16`, border:`1px solid ${color}28` }}>

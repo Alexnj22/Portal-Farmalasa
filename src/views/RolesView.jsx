@@ -449,7 +449,7 @@ const RolesView = ({ openModal }) => {
                         ref={searchInputRef}
                         type="text"
                         placeholder="Buscar cargo..."
-                        className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+ className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />

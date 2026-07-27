@@ -166,7 +166,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 <div key={erpId}
                                     className={`rounded-xl px-2 py-2 border transition-colors ${
                                         isCurrent
-                                            ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/20'
+                                            ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/30'
                                             : 'border-border-card bg-surface-card'
                                     } ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">

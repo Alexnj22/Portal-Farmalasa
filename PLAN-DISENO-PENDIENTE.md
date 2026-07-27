@@ -228,6 +228,46 @@ por `gate:design`. Si el doc prescribe algo prohibido, falla.
 
 ---
 
+
+### A16 · Aros — el canónico existía y nadie lo usaba (RESUELTO v2.67.0)
+
+Al preguntar "por qué hay tantas variables" apareció algo peor que variación:
+`index.css` **ya tenía** un aro de foco canónico —una regla sobre
+`button/input/select/textarea/a/[role=button]/[tabindex]:focus-visible`— y
+encima había **171 aros escritos a mano en 47 archivos**. Los 171 eran
+redundantes: no agregaban nada, solo tapaban el canónico con un color distinto
+en cada formulario (ring-4/2/1 × brand/10, /20, /25, /50, chart-9/20,
+chart-3/70, success/50…).
+
+Y el canónico estaba roto donde importa: `--focus-ring-color` era
+`rgba(0,82,204,0.55)` fijo, **sin variante por tema**.
+
+| | contraste | WCAG 1.4.11 (3:1) |
+|---|---|---|
+| antes, tarjeta clara | 2.61:1 | ✗ |
+| antes, navy oscuro | **1.63:1** | ✗ prácticamente invisible |
+| ahora, claro | 6.42:1 | ✓ |
+| ahora, oscuro | 7.18:1 | ✓ |
+
+Y **20 `focus:outline-none`** lo apagaban del todo en inputs de Pedidos,
+MinMax, Promociones y el kiosco: esos campos se enfocaban sin ninguna señal
+visible (WCAG 2.4.7). Retirados.
+
+**Por qué importa el orden de los hallazgos**: el primer intento fue crear una
+utilidad `ring-focus` nueva. Al verificarla en vivo apareció que competía con
+una regla que ya existía — así que lo correcto no era agregar un canónico sino
+**borrar los 171 que lo tapaban**. Verificar en el navegador no confirmó el
+trabajo: lo cambió.
+
+### A17 · Buscador colapsado sigue en el orden de tabulación (ABIERTO)
+
+Encontrado mientras se verificaba A16. El buscador del header de vistas, cuando
+está colapsado, vive en un contenedor con `opacity: 0` pero **el input sigue
+siendo enfocable**: tabulando se cae en un campo invisible y el foco desaparece
+de la pantalla (WCAG 2.4.3 / 2.4.7). Se detectó porque la sonda de verificación
+aterrizaba ahí una y otra vez. Falta `inert` (o `tabIndex={-1}`) mientras esté
+cerrado.
+
 ## Revisión de los "casos únicos" (2026-07-27)
 
 A pedido del usuario se revisó si lo excepcionado era **necesario** o eran
@@ -237,7 +277,7 @@ decisiones sueltas que después driftearon. El método: ver si cada grupo es
 | grupo | veredicto |
 |---|---|
 | **Perillas de switch** (18) | El `bg-white` **sí** es necesario y es consistente en las 18 — una perilla es blanca sobre su riel en los 4 temas. **Pero todo lo demás drifteó**: 8 tamaños, 6 sombras, 8 offsets. No era una decisión, era la ausencia de un componente. → **`Switch.jsx` creado**, 3 tamaños. **A14**: migrar los 18. |
-| **Barridos especulares** (8) | **Patrón real**: 6 de 8 comparten `w-[55%]`, `translate-x-[220%]`, `duration-700`, y solo varía el alpha según el fondo, que es correcto. Copiado 8 veces. → **utilidad `sweep`** con `--sweep-alpha`. **A15**: migrar los 8; los 2 de `TabMinMax` usan otra anatomía y hay que decidir si convergen. |
+| **Barridos especulares** (8) | RESUELTO v2.67.0 — la regla faltante: va en variantes RELLENAS. Estaba en 3 de 11 botones brand y NO en el canónico. **Patrón real**: 6 de 8 comparten `w-[55%]`, `translate-x-[220%]`, `duration-700`, y solo varía el alpha según el fondo, que es correcto. Copiado 8 veces. → **utilidad `sweep`** con `--sweep-alpha`. **A15**: migrar los 8; los 2 de `TabMinMax` usan otra anatomía y hay que decidir si convergen. |
 | **Sombras direccionales** (4) | **Necesarias**, y el sentido importa: columna fija → derecha, panel lateral → derecha, overlay que sube → arriba, barra inferior → arriba. Pero eran **4, no 5**: `--shadow-sticky-b` quedó sin uso y **se borró** — un token que nadie consume es la misma escala muerta que este plan vino a arreglar. |
 | **Aros y superficies sueltas** (4) | Contextos distintos y reales (visor de foto, avatar, gradiente de tarjeta). Migrados a `border-card` / `card-tint-base`. |
 

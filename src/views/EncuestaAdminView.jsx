@@ -128,10 +128,10 @@ const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: '
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function PersonAvatar({ src, name, isJefe, size = 28 }) {
-    const cls = `rounded-full object-cover object-top shrink-0 ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`;
+    const cls = `rounded-full object-cover object-top shrink-0 ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`;
     if (src) return <img src={src} alt={name} className={cls} style={{ width: size, height: size }} />;
     return (
-        <div className={`rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black shrink-0 ${isJefe ? 'ring-2 ring-warning ring-offset-1' : ''}`}
+        <div className={`rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black shrink-0 ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`}
             style={{ width: size, height: size, fontSize: size * 0.38 }}>
             {name?.charAt(0) || '?'}
         </div>

@@ -429,7 +429,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Buscar documento..."
-                                className="w-full h-10 pl-11 pr-10 bg-transparent text-body-xl font-bold text-content-2 placeholder:text-content-3 focus:outline-none focus:ring-0 transition-all"
+ className="w-full h-10 pl-11 pr-10 bg-transparent text-body-xl font-bold text-content-2 placeholder:text-content-3 transition-all"
                             />
                             <button
                                 onClick={handleSearchClose}

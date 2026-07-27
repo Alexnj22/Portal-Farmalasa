@@ -258,7 +258,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Cantidad</label>
                     <input type="number" min="0" step="0.001" value={item.cantidad}
                         onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
-                        className="w-full bg-surface-card border border-border-card rounded-2xl px-3 py-2.5 text-body-xl font-bold text-content text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+ className="w-full bg-surface-card border border-border-card rounded-2xl px-3 py-2.5 text-body-xl font-bold text-content text-center focus:border-brand transition-all" />
                 </div>
                 <div>
                     <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
@@ -266,7 +266,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-caption font-black text-content-3">$</span>
                         <input type="number" min="0" step="0.01" value={item.precioUnitario}
                             onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
-                            className="w-full bg-surface-card border border-border-card rounded-2xl pl-6 pr-3 py-2.5 text-body-xl font-bold text-content text-right outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+ className="w-full bg-surface-card border border-border-card rounded-2xl pl-6 pr-3 py-2.5 text-body-xl font-bold text-content text-right focus:border-brand transition-all" />
                     </div>
                 </div>
             </div>
@@ -745,7 +745,7 @@ export default function CotizacionesView() {
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
                             <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
                                 placeholder="Observaciones..."
-                                className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-body-xl font-bold text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+ className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-body-xl font-bold text-content-2 placeholder-content-3 focus:border-brand transition-all" />
                         </div>
                     </div>
                 </div>

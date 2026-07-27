@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2 } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
@@ -170,10 +171,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                     <span>Primera vez: {fmtDate(formData?.primera_vez_visto)}</span>
                     <span>·</span>
                     <span>Última: {fmtDate(formData?.ultima_vez_visto)}</span>
-                    <button type="button" onClick={verDocumentos}
-                        className="ml-auto flex items-center gap-1 text-caption font-bold text-brand-text hover:underline">
-                        Ver documentos <ExternalLink size={11} />
-                    </button>
+                    <Button variant="ghost" onClick={verDocumentos}>Ver documentos <ExternalLink size={11} /></Button>
                 </div>
             </div>
 
@@ -321,10 +319,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 como el footer fijo de Nuevo Empleado). */}
             <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider">
                 {error && <div className="text-label text-danger px-1 mb-2">{error}</div>}
-                <button type="button" onClick={save} disabled={loading}
-                    className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-2xl font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
-                    {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}
-                </button>
+                <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
             </div>
         </div>
     );

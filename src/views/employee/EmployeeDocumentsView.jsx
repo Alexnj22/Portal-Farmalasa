@@ -146,14 +146,7 @@ const DocCard = ({ doc }) => {
                                 <span className="text-caption text-content-3 font-medium truncate max-w-[120px]">
                                     {doc.meta.docName || 'Documento adjunto'}
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={() => openStoredFile(doc.meta.docUrl)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-micro font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${cfg.bg} ${cfg.border} ${cfg.text}`}
-                                >
-                                    <Eye size={10} strokeWidth={2.5} />
-                                    Ver
-                                </button>
+                                <Button variant="ghost" icon={Eye} className={`${cfg.bg} ${cfg.border} ${cfg.text}`} onClick={() => openStoredFile(doc.meta.docUrl)}>Ver</Button>
                             </div>
                         ) : (
                             <span className="text-caption text-content-3 font-medium italic">Sin archivo adjunto</span>

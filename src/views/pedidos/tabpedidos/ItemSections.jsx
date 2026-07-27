@@ -275,9 +275,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                         </motion.button>
                     )}
                 </AnimatePresence>
-                <button onClick={() => setOpen(v => !v)} className="p-1.5 shrink-0">
-                    {open ? <ChevronDown size={12} className="text-content-3" /> : <ChevronRight size={12} className="text-content-3" />}
-                </button>
+                <Button variant="ghost" onClick={() => setOpen(v => !v)}>{open ? <ChevronDown size={12} className="text-content-3" /> : <ChevronRight size={12} className="text-content-3" />}</Button>
             </div>
             <AnimatePresence>
                 {open && (

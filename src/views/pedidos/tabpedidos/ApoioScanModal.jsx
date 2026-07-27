@@ -199,12 +199,8 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         <div className="flex gap-2">
                             <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                             {employee && (
-                                <button onClick={confirmApoyo} disabled={loading}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1-solid text-white font-semibold hover:bg-brand text-body transition-colors disabled:opacity-50 shadow-sm"
-                                >
-                                    {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
-                                    Confirmar
-                                </button>
+                                <Button disabled={loading} onClick={confirmApoyo}>{loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
+                                    Confirmar</Button>
                             )}
                         </div>
                     </div>

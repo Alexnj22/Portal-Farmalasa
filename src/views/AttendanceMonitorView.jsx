@@ -1,5 +1,6 @@
 // src/views/AttendanceMonitorView.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Button from '../components/common/Button';
 import { EmptyState } from '../components/common/StateViews';
 import ViewTabBar from '../components/common/ViewTabBar';
 import {
@@ -702,13 +703,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                                 {shownRows.map((row) => renderEmployeeCard(row))}
                               </div>
                               {remaining > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => showMoreInSection(sectionKey)}
-                                  className="text-caption font-black uppercase tracking-widest text-brand-text hover:text-brand-hover text-center py-2 rounded-xl hover:bg-brand/5 transition-colors"
-                                >
-                                  Ver más ({remaining} restantes)
-                                </button>
+                                <Button  onClick={() => showMoreInSection(sectionKey)}>Ver más ({remaining} restantes)</Button>
                               )}
                             </>
                           )}

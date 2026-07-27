@@ -493,9 +493,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <Package size={10} />Pedidos a incluir
                 </label>
                 {pedidosDisp.length > 0 && (
-                  <button onClick={toggleAll} className="text-caption font-semibold text-chart-3-text hover:text-chart-3-text transition-colors">
-                    {selected.size === pedidosDisp.length ? 'Deseleccionar todo' : 'Seleccionar todo'}
-                  </button>
+                  <Button variant="ghost" onClick={toggleAll}>{selected.size === pedidosDisp.length ? 'Deseleccionar todo' : 'Seleccionar todo'}</Button>
                 )}
               </div>
 
@@ -693,14 +691,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                       {Object.entries(sucNameMap)
                         .filter(([id]) => Number(id) !== 6 && coordsMap[Number(id)])
                         .map(([id, name]) => (
-                          <button
-                            key={id}
-                            onClick={() => addEncargo(Number(id))}
-                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-warning/30 bg-surface-card hover:bg-warning/10 hover:border-warning text-left transition-all active:scale-[0.97]"
-                          >
-                            <Building2 size={11} className="text-warning shrink-0" />
-                            <span className="text-label font-semibold text-content-2">{name}</span>
-                          </button>
+                          <Button tone="warning" icon={Building2} onClick={() => addEncargo(Number(id))}><span className="text-label font-semibold text-content-2">{name}</span></Button>
                         ))}
                     </div>
                   </div>
@@ -768,13 +759,10 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         {step === 1 ? (
           <>
             <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-            <button onClick={handleOptimize} disabled={selectedItems.length === 0 || optimizing}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-body hover:bg-chart-3/80 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
-              {optimizing
+            <Button tone="chart-3" disabled={selectedItems.length === 0 || optimizing} onClick={handleOptimize}>{optimizing
                 ? <><Loader2 size={14} className="animate-spin" />Calculando ruta…</>
                 : <><ArrowRight size={14} />Ver ruta optimizada</>
-              }
-            </button>
+              }</Button>
           </>
         ) : (
           <>
@@ -786,11 +774,8 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 </p>
               )}
             </div>
-            <button onClick={handleSubmit} disabled={submitting}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-body hover:bg-chart-3/80 transition-colors shadow-sm disabled:opacity-50 shrink-0">
-              {submitting ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
-              Crear Ruta
-            </button>
+            <Button tone="chart-3" disabled={submitting} onClick={handleSubmit}>{submitting ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
+              Crear Ruta</Button>
           </>
         )}
       </PedidoModal.Footer>

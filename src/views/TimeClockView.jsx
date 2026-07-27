@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
+import Button from '../components/common/Button';
 import { LogOut } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -189,24 +190,7 @@ const TimeClockView = ({ setView }) => {
       )}
 
       {/* ── Exit button ───────────────────────────────────────────── */}
-      <button
-        onClick={handleLogout}
-        className="fixed top-[max(env(safe-area-inset-top,16px),16px)] right-[max(env(safe-area-inset-right,16px),16px)] z-sidebar
-          flex items-center justify-center gap-2
-          w-10 h-10 sm:w-auto sm:h-10 sm:px-4
-          text-white/40 hover:text-white/90
-          bg-white/[0.06] hover:bg-white/[0.12]
-          border border-white/[0.10] hover:border-white/[0.22]
-          rounded-btn backdrop-blur-xl
-          shadow-[var(--shadow-glass-2)]
-          hover:shadow-[var(--shadow-glass-2)]
-          transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]
-          cursor-pointer"
-        title="Salir del Kiosco (Esc)"
-      >
-        <LogOut size={15} strokeWidth={2} />
-        <span className="hidden sm:inline text-caption uppercase tracking-widest font-semibold">Salir</span>
-      </button>
+      <Button variant="secondary" icon={LogOut} title="Salir del Kiosco (Esc)" onClick={handleLogout}><span className="hidden sm:inline text-caption uppercase tracking-widest font-semibold">Salir</span></Button>
 
       {/* ── Main content ──────────────────────────────────────────── */}
       {/* [@media(max-height:800px)] = modo compacto: mismo breakpoint que ya

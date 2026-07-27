@@ -276,14 +276,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         if (state === 'error') return <span className="text-micro text-danger whitespace-nowrap" title={result.error}>Error al detectar</span>;
         if (state === 'not_found') return <span className="text-micro text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
         return (
-            <button
-                onClick={(e) => { e.stopPropagation(); apply(); }}
-                disabled={applying}
-                title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
-                className="text-micro font-black text-success hover:text-success-text underline whitespace-nowrap disabled:opacity-50"
-            >
-                {applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}
-            </button>
+            <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}</Button>
         );
     }
 
@@ -794,15 +787,9 @@ function TabDocumentos({
                         <>
                             <div className="h-5 w-px bg-divider shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
-                                <button onClick={downloadBulk}
-                                    disabled={bulkDownloading}
-                                    title="Descargar todos los filtrados en un ZIP"
-                                    className="flex items-center gap-1.5 px-3 h-8 rounded-btn text-caption font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-divider hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
-                                    <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
-                                    {bulkProgress?.total > 0
+                                <Button variant="secondary" size="sm" icon={Download} disabled={bulkDownloading} title="Descargar todos los filtrados en un ZIP" onClick={downloadBulk}>{bulkProgress?.total > 0
                                         ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
-                                        : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
-                                </button>
+                                        : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}</Button>
                             </div>
                         </>
                     )}
@@ -870,18 +857,12 @@ function TabDocumentos({
                                     <Button variant="destructive" icon={Link2} title="Ver el PDF que justificó la anulación" onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}>Ver documento</Button>
                                 )}
                                 {row.notas_credito?.length > 0 && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}
-                                        title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`}
-                                        className="flex items-center gap-1 text-micro font-black text-warning-text bg-warning/10 border border-warning/25 px-2 py-0.5 rounded-full hover:bg-warning/20 transition-colors whitespace-nowrap"
-                                    >
-                                        <Link2 size={10} /> NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}
-                                    </button>
+                                    <Button tone="warning" icon={Link2} title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`} onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}>NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}</Button>
                                 )}
                                 {/* Inverso del badge NC — desde la NC/ND se puede ver el CCF/Factura
                                     que corrige (a pedido del usuario, misma mecánica que el badge de arriba). */}
                                 {row.documento_relacionado && (
-                                    <Button tone="chart-1" icon={Link2} title="`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`" onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}>Ver original</Button>
+                                    <Button tone="chart-1" icon={Link2} title={`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`} onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}>Ver original</Button>
                                 )}
                                 {/* Confirmado desde Revisión sin que su JSON llegara nunca — ver
                                     TabRevision "Confirmar sin JSON" y resolve_purchase_dte_review. */}
@@ -1073,13 +1054,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                             <span className="text-content-2 text-label">{row.from_email || '—'}</span>
                         </DataCell>
                         <DataCell>
-                            <button
-                                onClick={() => openFile(row)}
-                                className="text-label font-medium text-brand-text hover:underline truncate max-w-[220px] text-left"
-                                title={row.filename}
-                            >
-                                {row.filename}
-                            </button>
+                            <Button variant="ghost" title="row.filename" onClick={() => openFile(row)}>{row.filename}</Button>
                         </DataCell>
                         <DataCell align="center">
                             {canEdit && (() => {

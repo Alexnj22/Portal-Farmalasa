@@ -491,13 +491,7 @@ const RangeDatePicker = ({
                 {atajos && (
                     <div className="flex flex-wrap gap-1.5 mb-5 pb-5 border-b border-divider">
                         {atajos.map(a => (
-                            <button key={a.label} type="button" onClick={() => aplicarAtajo(a)}
-                                className="px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-wider
-                                    border border-border-card text-content-2 bg-surface-card-hover
-                                    hover:bg-brand hover:text-white hover:border-brand
-                                    transition-colors active:scale-[0.97]">
-                                {a.label}
-                            </button>
+                            <Button  onClick={() => aplicarAtajo(a)}>{a.label}</Button>
                         ))}
                     </div>
                 )}
@@ -560,13 +554,7 @@ const RangeDatePicker = ({
                         }
                         return <div className={cls}>{badgeText}</div>;
                     })()}
-                    <button
-                        type="button"
-                        onClick={handleConfirm}
-                        disabled={!multiRange && (!draftStart || !draftEnd)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-label uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[var(--shadow-glow-brand)]">
-                        <Check size={14} strokeWidth={3} /> {multiRange ? 'Listo' : 'Confirmar rango'}
-                    </button>
+                    <Button icon={Check} disabled={!multiRange && (!draftStart || !draftEnd)} onClick={handleConfirm}>{multiRange ? 'Listo' : 'Confirmar rango'}</Button>
                 </div>
             </div>
         </>,

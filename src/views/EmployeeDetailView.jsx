@@ -383,15 +383,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             {canEdit && <div className="w-px h-6 bg-divider mx-1 shrink-0"></div>}
 
             {canEdit && getEffectiveStatus(emp) === 'En Vacaciones' && (
-                <button onClick={handleVacationRecall} disabled={!canEdit}
-                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-warning to-chart-4 text-white rounded-btn font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-warning)] hover:shadow-[var(--shadow-glow-warning)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Palmtree size={14} strokeWidth={3}/> <span className="hidden sm:inline">Ingreso en Vacaciones</span>
-                </button>
+                <Button tone="warning" size="sm" icon={Palmtree} disabled={!canEdit} onClick={handleVacationRecall}><span className="hidden sm:inline">Ingreso en Vacaciones</span></Button>
             )}
             {canEdit && (
-                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-brand to-brand-hover text-white rounded-btn font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
-                </button>
+                <Button size="sm" icon={Plus} disabled={!canEdit} onClick={handleNewHRAction}><span className="hidden sm:inline">Acción RRHH</span></Button>
             )}
         </div>
     );
@@ -740,17 +735,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </h3>
                                             <div className="flex items-center gap-2">
                                                 {ausenciasSelectedDay && (
-                                                    <button onClick={() => setAusenciasSelectedDay(null)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-danger/10 border border-danger/30 text-danger text-label font-black hover:bg-danger/10 transition-all active:scale-[0.97]">
-                                                        <X size={10} strokeWidth={3}/> {ausenciasSelectedDay}
-                                                    </button>
+                                                    <Button variant="destructive" icon={X} onClick={() => setAusenciasSelectedDay(null)}>{ausenciasSelectedDay}</Button>
                                                 )}
                                                 <div {...ausenciasSearchContainerRef} className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-surface-card border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
-                                                    <button type="button"
-                                                        onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}
-                                                        className="flex-shrink-0 text-content-3 hover:text-content-2 transition-colors">
-                                                        {ausenciasSearchOpen ? <X size={11} strokeWidth={2.5}/> : <Search size={12} strokeWidth={2.5}/>}
-                                                    </button>
+                                                    <Button variant="ghost" onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}>{ausenciasSearchOpen ? <X size={11} strokeWidth={2.5}/> : <Search size={12} strokeWidth={2.5}/>}</Button>
                                                     {ausenciasSearchOpen && (
                                                         <input autoFocus type="text" value={ausenciasSearch}
                                                             onChange={e => setAusenciasSearch(e.target.value)}

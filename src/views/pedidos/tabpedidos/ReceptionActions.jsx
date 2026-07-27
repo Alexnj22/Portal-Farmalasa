@@ -60,9 +60,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-brand/10 border-brand/20 text-label">
                     <PackageCheck size={13} className="text-brand-text" />
                     <span className="text-brand-text">Paso 1 — Confirmar llegada de cajas</span>
-                    <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-caption font-semibold px-2.5 py-1 rounded-lg bg-brand text-white hover:bg-brand-hover active:scale-[0.97] transition-all disabled:opacity-50">
-                        {busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}
-                    </button>
+                    <Button disabled={busy === 'llegada'} onClick={onMarkLlegada}>{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</Button>
                 </div>
             )}
 
@@ -105,10 +103,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                         {(cicloEnCamino.electrolits ?? 0) > 0 && ` · ${cicloEnCamino.electrolits} Electrolit`}
                         {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.join(', ')}`}
                     </span>
-                    <button onClick={onSegundaLlegada} disabled={!!busy}
-                        className="ml-auto text-caption font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shrink-0">
-                        {busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}
-                    </button>
+                    <Button tone="chart-3" disabled={!!busy} onClick={onSegundaLlegada}>{busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}</Button>
                 </div>
             )}
 

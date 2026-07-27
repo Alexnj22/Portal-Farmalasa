@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { Eye, EyeOff, KeyRound, Loader2, Lock, CheckCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
@@ -46,17 +47,12 @@ const FormChangeOwnPassword = ({ onClose }) => {
  className="w-full pl-10 pr-10 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
                         />
                         {isLast && (
-                            <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 text-content-3 hover:text-content-2">
-                                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                            </button>
+                            <Button variant="ghost" onClick={() => setShowPw(v => !v)}>{showPw ? <EyeOff size={15} /> : <Eye size={15} />}</Button>
                         )}
                     </div>
                 </div>
             ))}
-            <button type="button" onClick={save} disabled={loading || !newPass || !confirm}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-2xl font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
-                {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>}
-            </button>
+            <Button size="lg" disabled={loading || !newPass || !confirm} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>}</Button>
         </div>
     );
 };

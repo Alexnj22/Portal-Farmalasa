@@ -123,13 +123,7 @@ export default function SrsBuscadorWidget({
                                     <span className="text-label text-content-3 font-medium">
                                         Pág. {page} / {lastPage}
                                     </span>
-                                    <button
-                                        disabled={page >= lastPage}
-                                        onClick={() => goPage(page + 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                    >
-                                        Sig. <ChevronRight size={11} strokeWidth={2.5} />
-                                    </button>
+                                    <Button variant="ghost" disabled={page >= lastPage} onClick={() => goPage(page + 1)}>Sig. <ChevronRight size={11} strokeWidth={2.5} /></Button>
                                 </div>
                             )}
                         </>

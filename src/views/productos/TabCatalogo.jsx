@@ -393,17 +393,11 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                                 placeholder="Cant."
  className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-body-xl text-center transition-colors ${inp}`}
                             />
-                            <button onClick={() => removeItem(item._key)}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${rmBtn}`}>
-                                <X size={10} />
-                            </button>
+                            <Button variant="ghost" size="xs" icon={X} iconOnly className={rmBtn} onClick={() => removeItem(item._key)} />
                         </div>
                     ))}
                     <div className="flex items-center gap-2 pt-1">
-                        <button onClick={addItem}
-                            className={`flex items-center gap-1 text-caption font-bold transition-colors ${addCls}`}>
-                            <Plus size={10} /> Agregar principio
-                        </button>
+                        <Button variant="ghost" icon={Plus} className={addCls} onClick={addItem}>Agregar principio</Button>
                         {savingPA && (
                             <span className="flex items-center gap-1 text-micro font-semibold text-content-3">
                                 <Loader2 size={9} className="animate-spin" /> Guardando…
@@ -654,13 +648,8 @@ function PhotoContextMenu({ pos, onPaste, onClose }) {
             className="fixed z-confirm bg-surface-card rounded-xl shadow-xl border border-divider py-1 min-w-[170px] overflow-hidden"
             style={{ top: pos.y, left: pos.x }}
             onMouseDown={e => e.stopPropagation()}>
-            <button
-                onClick={onPaste}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-body-sm font-semibold text-content-2 hover:bg-surface-card-hover transition-colors text-left">
-                <Clipboard size={13} className="shrink-0 text-content-3" />
-                Pegar imagen
-                <span className="ml-auto text-caption text-content-3">Ctrl+V</span>
-            </button>
+            <Button variant="secondary" icon={Clipboard} onClick={onPaste}>Pegar imagen
+                <span className="ml-auto text-caption text-content-3">Ctrl+V</span></Button>
         </div>,
         document.body
     );
@@ -855,11 +844,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
             </div>
 
             {rows.length > 8 && (
-                <button
-                    onClick={() => setShowAll(v => !v)}
-                    className="text-caption font-bold text-content-3 hover:text-content-2 transition-colors">
-                    {showAll ? 'Ver menos' : `Ver ${rows.length - 8} compra${rows.length - 8 !== 1 ? 's' : ''} anterior${rows.length - 8 !== 1 ? 'es' : ''}`}
-                </button>
+                <Button variant="ghost" onClick={() => setShowAll(v => !v)}>{showAll ? 'Ver menos' : `Ver ${rows.length - 8} compra${rows.length - 8 !== 1 ? 's' : ''} anterior${rows.length - 8 !== 1 ? 'es' : ''}`}</Button>
             )}
         </div>
     );
@@ -917,11 +902,7 @@ function PriceHistorySection({ history, allowedPriceFields }) {
                 </table>
             </div>
             {deduped.length > 8 && (
-                <button
-                    onClick={() => setShowAll(v => !v)}
-                    className="text-caption font-bold text-content-3 hover:text-content-2 transition-colors">
-                    {showAll ? 'Ver menos' : `Ver ${deduped.length - 8} cambio${deduped.length - 8 !== 1 ? 's' : ''} anterior${deduped.length - 8 !== 1 ? 'es' : ''}`}
-                </button>
+                <Button variant="ghost" onClick={() => setShowAll(v => !v)}>{showAll ? 'Ver menos' : `Ver ${deduped.length - 8} cambio${deduped.length - 8 !== 1 ? 's' : ''} anterior${deduped.length - 8 !== 1 ? 'es' : ''}`}</Button>
             )}
         </div>
     );
@@ -1393,10 +1374,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
 
                     {/* ── Cerrar (todo autoguarda: foto, devolutivo, categoría y principios) ── */}
                     <div className={`border-t ${xk.divider} pt-4 flex items-center justify-end gap-2`}>
-                        <button onClick={onClose}
-                            className={`px-4 h-9 rounded-btn text-label font-bold border transition-all ${xk.btnCancel}`}>
-                            Cerrar
-                        </button>
+                        <Button variant="ghost" size="sm" className={xk.btnCancel} onClick={onClose}>Cerrar</Button>
                     </div>
 
                 </div>

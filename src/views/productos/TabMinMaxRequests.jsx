@@ -103,10 +103,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       {/* Acciones */}
       {isPending && !rejecting && (
         <div className="flex items-center gap-2 mt-auto">
-          <button onClick={() => onApprove(r)} disabled={busy}
-            className="flex-1 h-9 rounded-xl text-body-sm font-bold text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
-            {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar
-          </button>
+          <Button tone="success" size="sm" disabled={busy} onClick={() => onApprove(r)}>{busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar</Button>
           <Button variant="destructive" size="sm" icon={X} disabled={busy} onClick={() => setRejecting(true)}>Rechazar</Button>
         </div>
       )}
@@ -118,10 +115,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
             placeholder="Motivo del rechazo (opcional)…"
  className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-body-xl text-content-2 placeholder-content-3 focus:border-danger/40 resize-none" />
           <div className="flex items-center gap-2">
-            <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
-              className="flex-1 h-8 rounded-xl text-label font-bold text-white bg-danger-solid hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
-              {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo
-            </button>
+            <Button variant="destructive" size="sm" disabled={busy} onClick={() => onReject(r, note.trim() || null)}>{busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo</Button>
             <Button variant="secondary" size="sm" disabled={busy} onClick={() => { setRejecting(false); setNote(''); }}>Cancelar</Button>
           </div>
         </div>
@@ -344,11 +338,8 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           {tab === 'pending' && pendingInView > 0 && (
             <>
               <div className="h-5 w-px bg-divider shrink-0" />
-              <button onClick={approveAll} disabled={bulkBusy}
-                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-btn text-label font-black text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
-                {bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
-                Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})
-              </button>
+              <Button tone="success" size="sm" disabled={bulkBusy} onClick={approveAll}>{bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
+                Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})</Button>
             </>
           )}
         </div>

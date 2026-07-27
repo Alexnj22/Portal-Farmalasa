@@ -404,10 +404,8 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             {/* BOTONES INFERIORES */}
             <div className="flex items-center justify-end gap-3 pt-2">
                 <Button variant="secondary" icon={X} disabled={isSaving} onClick={onClose}>Descartar</Button>
-                <button onClick={handleSaveDraft} disabled={isSaving} className="px-6 md:px-8 h-10 md:h-11 rounded-btn bg-brand text-white text-caption md:text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center gap-2">
-                    {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} strokeWidth={2.5}/>} 
-                    {isSaving ? 'Guardando...' : 'Aplicar Horario'}
-                </button>
+                <Button disabled={isSaving} onClick={handleSaveDraft}>{isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} strokeWidth={2.5}/>} 
+                    {isSaving ? 'Guardando...' : 'Aplicar Horario'}</Button>
             </div>
 
             <AlertModal

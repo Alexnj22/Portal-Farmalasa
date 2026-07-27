@@ -216,9 +216,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                 <div className="flex flex-col items-center gap-0.5">
                     {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-success" /> : <span className="text-content-3 text-micro">Pendiente</span>)}
                     {contadoPorNombre && (
-                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-micro font-semibold text-content-3 hover:text-chart-9-text transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
-                            <History size={9} /> {contadoPorNombre}
-                        </button>
+                        <Button variant="ghost" icon={History} title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`} onClick={() => onShowHistory(item)}>{contadoPorNombre}</Button>
                     )}
                 </div>
             </DataCell>
@@ -353,9 +351,7 @@ function EditLoteModal({ item, onClose, onSave }) {
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
                     <LiquidDatePicker value={fecha} onChange={setFecha} />
                 </div>
-                <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-label font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-50 transition-all">
-                    {saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección
-                </button>
+                <Button tone="chart-9" disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección</Button>
             </div>
         </LiquidModal>
     );
@@ -566,14 +562,10 @@ export default function ConteoDetailView() {
                                     <Button variant="secondary" icon={Printer} disabled={printing} onClick={() => handlePrint('resultados')}>Imprimir Resultados</Button>
                                 )}
                                 {canFinalize && (
-                                    <button onClick={handleFinalizar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-white bg-brand rounded-xl hover:bg-brand-hover transition-all disabled:opacity-50">
-                                        {busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Finalizar Conteo
-                                    </button>
+                                    <Button disabled={busy} onClick={handleFinalizar}>{busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Finalizar Conteo</Button>
                                 )}
                                 {canApproveNow && (
-                                    <button onClick={handleAprobar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-white bg-success-solid rounded-xl hover:bg-success-hover transition-all disabled:opacity-50">
-                                        {busy ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} />} Aprobar
-                                    </button>
+                                    <Button tone="success" disabled={busy} onClick={handleAprobar}>{busy ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} />} Aprobar</Button>
                                 )}
                             </div>
                         </div>
@@ -813,9 +805,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
                         <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
                     </div>
                 </div>
-                <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-label font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-40 transition-all">
-                    {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo
-                </button>
+                <Button tone="chart-9" disabled={!canSubmit || saving} onClick={handleSubmit}>{saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo</Button>
             </div>
         </div>
     );

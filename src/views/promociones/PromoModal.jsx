@@ -548,33 +548,14 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
 
                 {/* Footer */}
                 <div className="flex-none px-7 py-4 border-t border-divider flex items-center justify-between bg-surface-card-hover/80">
-                    <button
-                        type="button"
-                        onClick={step === 0 ? handleClose : () => setStep(s => s - 1)}
-                        className="flex items-center gap-1.5 px-4 py-2 text-label font-medium text-content-3 hover:text-content-2 transition-colors"
-                    >
-                        {step > 0 && <ChevronLeft size={13} />}
-                        {step === 0 ? 'Cancelar' : 'Atrás'}
-                    </button>
+                    <Button variant="ghost" onClick={step === 0 ? handleClose : () => setStep(s => s - 1)}>{step > 0 && <ChevronLeft size={13} />}
+                        {step === 0 ? 'Cancelar' : 'Atrás'}</Button>
 
                     {step === 0 ? (
-                        <button
-                            type="button"
-                            onClick={() => setStep(1)}
-                            className="flex items-center gap-1.5 px-5 py-2 text-body-sm font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand transition-all shadow-sm shadow-brand/20"
-                        >
-                            Siguiente <ChevronRight size={13} />
-                        </button>
+                        <Button  onClick={() => setStep(1)}>Siguiente <ChevronRight size={13} /></Button>
                     ) : (
-                        <button
-                            type="button"
-                            onClick={handleCreate}
-                            disabled={saving || products.length === 0}
-                            className="flex items-center gap-1.5 px-5 py-2 text-body-sm font-bold bg-gradient-to-r from-success to-chart-9 text-white rounded-xl hover:from-chart-9 hover:to-success disabled:opacity-40 transition-all shadow-sm shadow-success/20"
-                        >
-                            {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                            Crear Promoción
-                        </button>
+                        <Button tone="success" disabled={saving || products.length === 0} onClick={handleCreate}>{saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                            Crear Promoción</Button>
                     )}
                 </div>
         </LiquidModal>

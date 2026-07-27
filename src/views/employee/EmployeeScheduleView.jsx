@@ -404,16 +404,10 @@ const EmployeeScheduleView = () => {
 
                         <div className="flex gap-2">
                             <Button variant="secondary" onClick={() => setShowChangeForm(false)}>Cancelar</Button>
-                            <button
-                                onClick={handleSubmitChange}
-                                disabled={!reqStart || !reqEnd || submittingReq}
-                                className="flex-1 py-3 rounded-2xl bg-brand text-white text-label font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-brand-hover transition-all"
-                            >
-                                {submittingReq
+                            <Button disabled={!reqStart || !reqEnd || submittingReq} onClick={handleSubmitChange}>{submittingReq
                                     ? <><Loader2 size={13} className="animate-spin" /> Enviando…</>
                                     : <><Check size={13} strokeWidth={3} /> Enviar solicitud</>
-                                }
-                            </button>
+                                }</Button>
                         </div>
                     </div>
                 </div>

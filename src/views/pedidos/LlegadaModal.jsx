@@ -374,13 +374,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 )}
                 <div className="flex items-center justify-between gap-2">
                     <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
-                    <button onClick={handleConfirm} disabled={submitting}
-                        className="text-label font-bold px-5 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
-                        {submitting && <Loader2 size={11} className="animate-spin" />}
+                    <Button disabled={submitting} onClick={handleConfirm}>{submitting && <Loader2 size={11} className="animate-spin" />}
                         {Object.keys(estados).length === 0 && cajas.length > 0
                             ? '✓ Todas llegaron OK'
-                            : 'Confirmar llegada'}
-                    </button>
+                            : 'Confirmar llegada'}</Button>
                 </div>
             </div>
         </PedidoModal>

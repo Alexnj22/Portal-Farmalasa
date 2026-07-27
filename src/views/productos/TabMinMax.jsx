@@ -407,11 +407,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {(filterAbc !== 'all' || filterXyz !== 'all') && (
                             <>
                                 <div className="h-5 w-px bg-divider shrink-0" />
-                                <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
-                                    className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-chart-1/10 border border-chart-1/30 text-label font-black text-chart-1-text hover:bg-danger/10 hover:border-danger/30 hover:text-danger transition-colors shrink-0">
-                                    {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
-                                    <X size={9} strokeWidth={3} />
-                                </button>
+                                <Button variant="destructive" onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}>{filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
+                                    <X size={9} strokeWidth={3} /></Button>
                             </>
                         )}
 
@@ -561,11 +558,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.`}
                     </p>
                     {!isBodega && (
-                        <button onClick={handleRecalcular} disabled={calculating}
-                            className="inline-flex items-center gap-2 px-6 py-2.5 text-body font-bold text-white bg-brand rounded-xl shadow-sm hover:bg-brand-hover transition-colors disabled:opacity-60">
-                            {calculating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                            Calcular {ERP_NAMES[selectedErp]}
-                        </button>
+                        <Button disabled={calculating} onClick={handleRecalcular}>{calculating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                            Calcular {ERP_NAMES[selectedErp]}</Button>
                     )}
                 </div>
             )}
@@ -1491,10 +1485,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>
                     {toast.action && (
-                        <button onClick={toast.action.onClick}
-                            className="ml-1 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-card text-label font-bold transition-colors shrink-0">
-                            {toast.action.label}
-                        </button>
+                        <Button variant="secondary" onClick={toast.action.onClick}>{toast.action.label}</Button>
                     )}
                     <Button variant="ghost" icon={X} iconOnly onClick={() => setToast(null)} />
                 </div>,

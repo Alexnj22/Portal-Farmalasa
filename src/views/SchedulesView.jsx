@@ -127,11 +127,8 @@ const HolidaysPanel = ({
                             <RefreshCw size={11} strokeWidth={2} /> Recurrente
                         </button>
                     </div>
-                    <button onClick={onSave} disabled={hSaving || !hDate || !hName.trim()}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning-solid hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-label font-black uppercase tracking-widest rounded-2xl shadow-[var(--shadow-glow-chart-7)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
-                        {hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
-                        {hSaving ? 'Guardando...' : 'Guardar feriado'}
-                    </button>
+                    <Button tone="warning" disabled={hSaving || !hDate || !hName.trim()} onClick={onSave}>{hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
+                        {hSaving ? 'Guardando...' : 'Guardar feriado'}</Button>
                 </div>
             )}
 
@@ -204,10 +201,7 @@ const HolidaysPanel = ({
                                                 </div>
                                                 {/* Delete */}
                                                 {canEdit && (
-                                                    <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
-                                                        className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all flex-shrink-0 disabled:opacity-50">
-                                                        {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-danger" /> : <Trash2 size={14} strokeWidth={2} />}
-                                                    </button>
+                                                    <Button variant="destructive" size="sm" disabled={hDeleting === h.id} onClick={() => onDelete(h.id)}>{hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-danger" /> : <Trash2 size={14} strokeWidth={2} />}</Button>
                                                 )}
                                             </div>
                                         </div>

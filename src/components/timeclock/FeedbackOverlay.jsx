@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2, TimerReset } from 'lucide-react';
 
 // 🚨 MAPA DE TEMAS LIQUIDGLASS DARK (Glows, Bordes e Íconos)
@@ -128,14 +129,7 @@ export default function FeedbackOverlay({
                 )}
 
                 {earlyExtra && onEarlyExtra && (
-                  <button
-                    type="button"
-                    onClick={onEarlyExtra}
-                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 text-chart-3 rounded-3xl font-bold uppercase tracking-widest text-label w-full transition-all duration-300 hover:bg-chart-3/20 hover:border-chart-3/50 hover:text-white hover:shadow-[var(--shadow-glow-chart-3-md)] active:scale-[0.97]"
-                  >
-                    <TimerReset size={15} strokeWidth={2.5} className="shrink-0" />
-                    <span className="whitespace-nowrap">Registrar Tiempo Extra</span>
-                  </button>
+                  <Button tone="chart-3" icon={TimerReset} onClick={onEarlyExtra}><span className="whitespace-nowrap">Registrar Tiempo Extra</span></Button>
                 )}
 
                 {/* Reloj (Mismo ancho automático y misma curvatura de borde que el subtexto) */}

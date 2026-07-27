@@ -830,11 +830,7 @@ const RequestsView = () => {
 
                         <div className="flex items-center gap-2 pt-1">
                             <Button variant="secondary" disabled={isCreatingReq} onClick={() => !isCreatingReq && setCreateModalOpen(false)}>Cancelar</Button>
-                            <button onClick={handleCreateRequest}
-                                disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-body font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]">
-                                {isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}
-                            </button>
+                            <Button disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()} onClick={handleCreateRequest}>{isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}</Button>
                         </div>
                     </div>
                 </div>,

@@ -147,14 +147,8 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
 
                 {/* Expand toggle */}
                 {pps.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => setExpanded(e => !e)}
-                        className="flex items-center gap-1 text-caption text-content-3 hover:text-content-2 transition-colors w-full justify-center pt-1 border-t border-divider"
-                    >
-                        {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                        {expanded ? 'Ocultar productos' : 'Ver productos'}
-                    </button>
+                    <Button variant="ghost" onClick={() => setExpanded(e => !e)}>{expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                        {expanded ? 'Ocultar productos' : 'Ver productos'}</Button>
                 )}
             </div>
 

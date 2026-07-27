@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { KeyRound, Lock, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
@@ -106,17 +107,10 @@ const FormSetPassword = ({ formData, onClose }) => {
             )}
 
             {/* Submit */}
-            <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading || !password || !confirm}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-2xl font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
-            >
-                {loading
+            <Button size="lg" disabled={loading || !password || !confirm} onClick={handleSubmit}>{loading
                     ? <><Loader2 size={18} className="animate-spin" /> Guardando...</>
                     : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>
-                }
-            </button>
+                }</Button>
         </div>
     );
 };

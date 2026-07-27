@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { MessageSquarePlus, Loader2 } from 'lucide-react';
 
@@ -81,13 +82,7 @@ const PromptModal = ({
                 </div>
 
                 <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-base bg-surface-card-hover">
-                    <button
-                        onClick={onClose}
-                        disabled={isProcessing}
-                        className="py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest border border-border-card transition-all duration-300 flex-1 flex items-center justify-center text-content-2 bg-surface-card hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm"
-                    >
-                        {cancelText}
-                    </button>
+                    <Button variant="secondary" disabled={isProcessing} onClick={onClose}>{cancelText}</Button>
 
                     <button
                         onClick={() => onConfirm(text.trim())}

@@ -135,19 +135,12 @@ const KioskConfigModal = ({
               </div>
 
               {/* Botón Guardar */}
-              <button
-                type="button"
-                onClick={onSave}
-                disabled={isProcessing || !selectedBranchId || !deviceNameInput}
-                className="relative z-base w-full mt-2 text-caption sm:text-label uppercase tracking-widest font-bold text-chart-1-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-1/15 py-4 rounded-btn border border-chart-1/30 hover:bg-chart-1/25 hover:border-chart-1/50 hover:shadow-[var(--shadow-glow-chart-1-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
-              >
-                {isProcessing ? (
+              <Button tone="chart-1" disabled={isProcessing || !selectedBranchId || !deviceNameInput} onClick={onSave}>{isProcessing ? (
                   <span className="w-4 h-4 border-2 border-chart-1/30 border-t-blue-400 rounded-full animate-spin" />
                 ) : (
                   <Save size={16} />
                 )}
-                {isProcessing ? 'Autorizando...' : 'Autorizar Dispositivo'}
-              </button>
+                {isProcessing ? 'Autorizando...' : 'Autorizar Dispositivo'}</Button>
             </div>
           </div>
         )}

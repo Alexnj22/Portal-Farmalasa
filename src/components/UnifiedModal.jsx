@@ -883,11 +883,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-base shrink-0">
                                 {/* LEFT: Anterior */}
                                 {prevStep ? (
-                                    <button type="button" onClick={() => setEmpActiveTab(prevStep)} disabled={isSaving}
-                                        className="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-surface-card hover:text-content transition-all disabled:opacity-50 active:scale-[0.97]">
-                                        <ChevronLeft size={15} strokeWidth={2.5} />
-                                        {EMP_STEP_LABELS[prevStep]}
-                                    </button>
+                                    <Button variant="secondary" icon={ChevronLeft} disabled={isSaving} onClick={() => setEmpActiveTab(prevStep)}>{EMP_STEP_LABELS[prevStep]}</Button>
                                 ) : <div />}
 
                                 {/* CENTER: Cancelar */}
@@ -897,11 +893,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     presente (no hace falta llegar a Documentos para guardar) */}
                                 <div className="flex items-center gap-2">
                                     {nextStep && (
-                                        <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
-                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-brand text-white font-black text-label uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
-                                            {EMP_STEP_LABELS[nextStep]}
-                                            <ChevronRight size={15} strokeWidth={2.5} />
-                                        </button>
+                                        <Button disabled={isSaving} onClick={() => setEmpActiveTab(nextStep)}>{EMP_STEP_LABELS[nextStep]}
+                                            <ChevronRight size={15} strokeWidth={2.5} /></Button>
                                     )}
                                     {(isEditingEmp || !nextStep) && (
                                         <button type="submit" form="unified-modal-form" disabled={empSaveDisabled} title={empSaveTitle}

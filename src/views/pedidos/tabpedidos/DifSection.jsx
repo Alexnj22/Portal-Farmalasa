@@ -146,13 +146,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
                                             className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:border-chart-3 bg-surface-card placeholder-content-3"
                                         />
-                                        <button
-                                            onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}
-                                            disabled={isBusy || !selTipo}
-                                            className="text-caption font-semibold px-3 py-1.5 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
-                                        >
-                                            {isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}
-                                        </button>
+                                        <Button tone="chart-3" disabled={isBusy || !selTipo} onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}</Button>
                                     </div>
                                 </>
                             )}
@@ -188,24 +182,12 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                     }}
                                                     className="flex-1 text-body-xl border border-danger/30 rounded-lg px-2.5 py-1.5 focus:border-danger bg-surface-card placeholder-content-3"
                                                 />
-                                                <button
-                                                    onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}
-                                                    disabled={isBusy}
-                                                    className="text-caption font-semibold px-3 py-1.5 rounded-lg bg-danger-solid text-white hover:bg-danger-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
-                                                >
-                                                    {isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}
-                                                </button>
+                                                <Button variant="destructive" disabled={isBusy} onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}</Button>
                                                 <Button variant="ghost" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))}>✕</Button>
                                             </div>
                                         ) : (
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => onResolver(item.id, 'confirmar', null, null)}
-                                                    disabled={isBusy}
-                                                    className="text-caption font-semibold px-3 py-1.5 rounded-lg bg-success-solid text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
-                                                >
-                                                    {isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}
-                                                </button>
+                                                <Button tone="success" disabled={isBusy} onClick={() => onResolver(item.id, 'confirmar', null, null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}</Button>
                                                 <Button variant="destructive" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: true }))}>Rechazar</Button>
                                             </div>
                                         )
@@ -257,13 +239,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             onChange={e => setCorrNota(e.target.value)}
                                             className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:border-success bg-surface-card placeholder-content-3"
                                         />
-                                        <button
-                                            onClick={() => onCorregirBodega?.(corrNota || null)}
-                                            disabled={busyAction === 'corr_bodega'}
-                                            className="text-caption font-semibold px-3 py-1.5 rounded-lg bg-success-solid text-white hover:bg-success-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
-                                        >
-                                            {busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}
-                                        </button>
+                                        <Button tone="success" disabled={busyAction === 'corr_bodega'} onClick={() => onCorregirBodega?.(corrNota || null)}>{busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}</Button>
                                     </div>
                                 </div>
                             ) : (
@@ -279,13 +255,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         {row.corregido_bodega_nota && <p className="text-success italic">{row.corregido_bodega_nota}</p>}
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => onConfirmarCorreccion?.()}
-                                    disabled={busyAction === 'confirmar_corr'}
-                                    className="text-caption font-semibold px-3 py-1.5 rounded-lg bg-success-solid text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
-                                >
-                                    {busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar corrección recibida'}
-                                </button>
+                                <Button tone="success" disabled={busyAction === 'confirmar_corr'} onClick={() => onConfirmarCorreccion?.()}>{busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar corrección recibida'}</Button>
                             </div>
                         ) : (
                             <p className="text-caption text-content-3 italic">Esperando confirmación de sucursal…</p>
@@ -324,10 +294,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
             )}
 
             {hiddenCount > 0 && (
-                <button onClick={() => setShowAll(s => !s)}
-                    className="w-full text-caption font-semibold text-warning-text hover:text-warning-text py-1 rounded-lg hover:bg-warning/10 transition-all text-center">
-                    {showAll ? 'Ver menos ↑' : `Ver todas las diferencias (${difItems.length}) ↓`}
-                </button>
+                <Button tone="warning" onClick={() => setShowAll(s => !s)}>{showAll ? 'Ver menos ↑' : `Ver todas las diferencias (${difItems.length}) ↓`}</Button>
             )}
         </div>
     );

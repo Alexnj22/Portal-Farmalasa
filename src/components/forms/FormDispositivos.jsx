@@ -118,14 +118,7 @@ const FormDispositivos = ({ formData }) => {
                                         {isConfirming && (
                                             <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-danger/30 animate-in fade-in slide-in-from-top-2 duration-200">
                                                 <Button variant="secondary" disabled={isRevoking} onClick={() => setConfirmingId(null)}>Cancelar</Button>
-                                                <button 
-                                                    type="button" 
-                                                    disabled={isRevoking} 
-                                                    onClick={() => executeRevoke(kiosk.id, kiosk.device_name)} 
-                                                    className="w-full py-2.5 bg-danger-solid hover:bg-danger-hover text-white rounded-xl text-caption font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
-                                                >
-                                                    {isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}
-                                                </button>
+                                                <Button variant="destructive" disabled={isRevoking} onClick={() => executeRevoke(kiosk.id, kiosk.device_name)}>{isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}</Button>
                                             </div>
                                         )}
                                     </div>

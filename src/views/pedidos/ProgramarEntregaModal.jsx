@@ -107,14 +107,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
             <LiquidModal.Footer>
                 <div className="flex gap-2">
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                    <button
-                        onClick={() => value && onConfirm(new Date(value).toISOString())}
-                        disabled={!value || saving}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-body-sm font-bold px-4 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
-                    >
-                        <Check size={13} />
-                        {saving ? 'Guardando…' : isEditing ? 'Actualizar' : 'Confirmar'}
-                    </button>
+                    <Button tone="chart-3" icon={Check} disabled={!value || saving} onClick={() => value && onConfirm(new Date(value).toISOString())}>{saving ? 'Guardando…' : isEditing ? 'Actualizar' : 'Confirmar'}</Button>
                 </div>
             </LiquidModal.Footer>
         </LiquidModal>

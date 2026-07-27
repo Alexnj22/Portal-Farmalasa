@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
@@ -321,10 +322,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             <div className={GLASS + ' p-4'}>
                 <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-content-2 text-subtitle">Selecciona las sucursales a reponer</h3>
-                    <button onClick={toggleAll}
-                        className="text-body-sm text-chart-1-text hover:text-chart-1-text font-medium transition-colors p-3.5 -m-3.5">
-                        {visibleSucursales.every(id => selected.has(id)) && visibleSucursales.length > 0 ? 'Deseleccionar todas' : 'Seleccionar todas'}
-                    </button>
+                    <Button variant="ghost" onClick={toggleAll}>{visibleSucursales.every(id => selected.has(id)) && visibleSucursales.length > 0 ? 'Deseleccionar todas' : 'Seleccionar todas'}</Button>
                 </div>
                 <p className="text-label text-content-3 mb-2 flex items-center gap-1">
                     <Info size={11} />

@@ -269,23 +269,16 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-border-card">
                 <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
                 {screen === 1 ? (
-                    <button onClick={handleGoScreen2}
-                        disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0}
-                        className="text-body-sm font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
-                        {loadingPages
+                    <Button tone="chart-3" disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0} onClick={handleGoScreen2}>{loadingPages
                             ? <Loader2 size={12} className="animate-spin" />
                             : <>Siguiente <span className="opacity-60">→</span></>
-                        }
-                    </button>
+                        }</Button>
                 ) : (
-                    <button onClick={handleConfirm} disabled={submitting || !isValid}
-                        className="text-body-sm font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
-                        {submitting
+                    <Button tone="chart-3" disabled={submitting || !isValid} onClick={handleConfirm}>{submitting
                             ? <Loader2 size={12} className="animate-spin" />
                             : <PackageCheck size={13} />
                         }
-                        Confirmar y Finalizar
-                    </button>
+                        Confirmar y Finalizar</Button>
                 )}
             </div>
         </PedidoModal>

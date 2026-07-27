@@ -503,11 +503,7 @@ const PayrollView = ({ openModal }) => {
                     <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val||'ALL')} options={statusOptions} compact clearable={false} icon={ListFilter} bare />
                 </div>
                 <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-                <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
-                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}
-                </button>
+                <Button icon={Search} title="Buscar" onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}>{searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}</Button>
             </div>
         </div>
     );
@@ -583,11 +579,7 @@ const PayrollView = ({ openModal }) => {
                                                 {(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).label}
                                             </span>
                                             {(isDraft||isApproved) && (
-                                                <button onClick={handleGenerate} disabled={generating}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all disabled:opacity-50 shadow-sm">
-                                                    <RotateCcw size={12} strokeWidth={2.5} className={generating?'animate-spin':''} />
-                                                    {generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}
-                                                </button>
+                                                <Button variant="secondary" icon={RotateCcw} disabled={generating} onClick={handleGenerate}>{generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}</Button>
                                             )}
                                             {payrollEntries.length > 0 && (
                                                 <>

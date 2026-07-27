@@ -352,11 +352,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 : 'Ajusta el encuadre y aplica ediciones'}
                         </p>
                     </div>
-                    <button
-                        onClick={brushMode ? exitBrushMode : onCancel}
-                        className="w-8 h-8 flex items-center justify-center rounded-btn hover:bg-surface-card-hover text-content-3 hover:text-content transition-colors">
-                        {brushMode ? <ChevronLeft size={16} strokeWidth={2.5} /> : <X size={16} strokeWidth={2.5} />}
-                    </button>
+                    <Button variant="secondary" size="sm" onClick={brushMode ? exitBrushMode : onCancel}>{brushMode ? <ChevronLeft size={16} strokeWidth={2.5} /> : <X size={16} strokeWidth={2.5} />}</Button>
                 </div>
 
                 {/* ── Canvas / Crop area ── */}
@@ -593,14 +589,9 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                 {!brushMode && (
                     <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-divider shrink-0">
                         <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
-                        <button
-                            onClick={handleConfirm}
-                            disabled={confirming || !cropPx}
-                            className="px-5 py-2 rounded-btn text-body-sm font-bold text-white bg-brand hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-2">
-                            {confirming
+                        <Button disabled={confirming || !cropPx} onClick={handleConfirm}>{confirming
                                 ? <><Loader2 size={12} className="animate-spin" /> Guardando…</>
-                                : 'Guardar foto'}
-                        </button>
+                                : 'Guardar foto'}</Button>
                     </div>
                 )}
             </div>

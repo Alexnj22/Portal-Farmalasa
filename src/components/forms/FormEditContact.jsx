@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Button from '../../components/common/Button';
 import { Phone, Loader2, Check } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -42,10 +43,7 @@ const FormEditContact = ({ formData, onClose }) => {
                     </div>
                 </div>
             ))}
-            <button type="button" onClick={save} disabled={loading}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-2xl font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
-                {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}
-            </button>
+            <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
         </div>
     );
 };

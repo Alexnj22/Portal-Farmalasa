@@ -243,14 +243,7 @@ export default function VentasPperdidasView() {
 
                                         {/* Action */}
                                         {activeTab === 'pendiente' && (
-                                            <button
-                                                onClick={() => markProcessed(r.id)}
-                                                disabled={processing === r.id}
-                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 hover:bg-success/10 border border-success/30 text-success-text text-caption font-black transition-colors disabled:opacity-40 self-start mt-0.5"
-                                            >
-                                                <CheckCircle2 size={11} strokeWidth={2.5} />
-                                                {processing === r.id ? '...' : 'Listo'}
-                                            </button>
+                                            <Button tone="success" icon={CheckCircle2} disabled={processing === r.id} onClick={() => markProcessed(r.id)}>{processing === r.id ? '...' : 'Listo'}</Button>
                                         )}
                                         {activeTab === 'procesado' && (
                                             <span className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-success/10 border border-success/30 text-success text-micro font-black self-start mt-0.5">

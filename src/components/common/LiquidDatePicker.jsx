@@ -335,13 +335,7 @@ const LiquidDatePicker = ({
                 {atajos && (
                     <div className="flex flex-wrap gap-1.5 mb-4 pb-4 border-b border-divider">
                         {atajos.map(a => (
-                            <button key={a.label} type="button" onClick={() => aplicarAtajo(a)}
-                                className="px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-wider
-                                    border border-border-card text-content-2 bg-surface-card-hover
-                                    hover:bg-brand hover:text-white hover:border-brand
-                                    transition-colors active:scale-[0.97]">
-                                {a.label}
-                            </button>
+                            <Button  onClick={() => aplicarAtajo(a)}>{a.label}</Button>
                         ))}
                     </div>
                 )}
@@ -356,21 +350,12 @@ const LiquidDatePicker = ({
                     <div className="flex items-center gap-1">
                         {currentMode === 'days' && (
                             <>
-                                <button type="button" onClick={() => setCurrentMode('months')}
-                                    className="flex items-center gap-1 text-body-sm font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-2.5 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97]">
-                                    {MONTHS_SHORT[currentMonth]} <ChevronDown size={12} strokeWidth={3} className="opacity-60" />
-                                </button>
-                                <button type="button" onClick={() => setCurrentMode('years')}
-                                    className="flex items-center gap-1 text-body-sm font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-2.5 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97]">
-                                    {currentYear} <ChevronDown size={12} strokeWidth={3} className="opacity-60" />
-                                </button>
+                                <Button variant="secondary" onClick={() => setCurrentMode('months')}>{MONTHS_SHORT[currentMonth]} <ChevronDown size={12} strokeWidth={3} className="opacity-60" /></Button>
+                                <Button variant="secondary" onClick={() => setCurrentMode('years')}>{currentYear} <ChevronDown size={12} strokeWidth={3} className="opacity-60" /></Button>
                             </>
                         )}
                         {currentMode === 'months' && (
-                            <button type="button" onClick={() => setCurrentMode('years')}
-                                className="flex items-center gap-1 text-body-sm font-black text-content-2 uppercase tracking-widest hover:text-brand-text transition-colors px-3 py-1.5 rounded-xl hover:bg-surface-card-hover active:scale-[0.97]">
-                                {currentYear} <ChevronDown size={12} strokeWidth={3} className="opacity-60" />
-                            </button>
+                            <Button variant="secondary" onClick={() => setCurrentMode('years')}>{currentYear} <ChevronDown size={12} strokeWidth={3} className="opacity-60" /></Button>
                         )}
                         {currentMode === 'years' && (
                             <span className="text-body-sm font-black text-content-2 uppercase tracking-widest px-3 py-1.5">

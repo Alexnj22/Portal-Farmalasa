@@ -664,14 +664,11 @@ export default function RecepcionModal({
                     </div>
 
                     {!allAccessibleDone && accessibleBoxNums.length > 0 && (
-                        <button onClick={handleConfirmarTodo} disabled={saving}
-                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-success/40 bg-success/10 text-success-text font-bold text-body hover:bg-success/10 active:scale-[0.97] transition-all disabled:opacity-40">
-                            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                        <Button tone="success" disabled={saving} onClick={handleConfirmarTodo}>{saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                             Confirmar todo OK
                             {faltaCajas.length > 0 && (
                                 <span className="text-caption font-medium text-success">(omite cajas en reenvío)</span>
-                            )}
-                        </button>
+                            )}</Button>
                     )}
 
                     {allAccessibleDone && (
@@ -750,12 +747,8 @@ export default function RecepcionModal({
 
                 {/* Extras section on cajas screen */}
                 <div className="flex-none border-t border-divider px-4 py-3">
-                    <button onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
-                        className="flex items-center gap-1.5 text-label font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
-                        <PackagePlus size={13} />
-                        ¿Llegó un producto extra?
-                        {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
-                    </button>
+                    <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
+                        {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}</Button>
                 </div>
 
                 {allAccessibleDone && (
@@ -766,11 +759,8 @@ export default function RecepcionModal({
                             </div>
                         )}
                         <div className="flex justify-end">
-                            <button onClick={handleFinalizar} disabled={saving}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-success-solid text-white font-bold text-body hover:bg-success-hover disabled:opacity-50 transition-colors shadow-sm">
-                                {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-                                Finalizar recepción
-                            </button>
+                            <Button tone="success" disabled={saving} onClick={handleFinalizar}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                                Finalizar recepción</Button>
                         </div>
                     </PedidoModal.Footer>
                 )}
@@ -948,11 +938,7 @@ export default function RecepcionModal({
                     )}
                     <div className="flex items-center justify-between gap-2">
                         <Button variant="secondary" disabled={saving} onClick={goBackFromExtras}>Volver</Button>
-                        <button onClick={goBackFromExtras}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-body hover:bg-brand-hover transition-colors shadow-sm">
-                            <Check size={14} />
-                            {extras.length > 0 ? `Listo · ${extras.length} extra${extras.length !== 1 ? 's' : ''}` : 'Listo'}
-                        </button>
+                        <Button icon={Check} onClick={goBackFromExtras}>{extras.length > 0 ? `Listo · ${extras.length} extra${extras.length !== 1 ? 's' : ''}` : 'Listo'}</Button>
                     </div>
                 </PedidoModal.Footer>
             </PedidoModal>
@@ -1222,12 +1208,8 @@ export default function RecepcionModal({
 
             {/* Extras — navigate to dedicated screen */}
             <div className="flex-none border-t border-divider px-5 py-3">
-                <button onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
-                    className="flex items-center gap-1.5 text-label font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
-                    <PackagePlus size={13} />
-                    ¿Llegó un producto extra?
-                    {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
-                </button>
+                <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
+                    {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}</Button>
             </div>
 
             {/* Responsables */}
@@ -1247,19 +1229,11 @@ export default function RecepcionModal({
                     </div>
                 )}
                 <div className="flex justify-between gap-2">
-                    <button
-                        onClick={hasCajaMap ? goBack : onClose}
-                        disabled={saving}
-                        className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body transition-colors disabled:opacity-40">
-                        {hasCajaMap ? 'Volver' : 'Cancelar'}
-                    </button>
+                    <Button variant="secondary" disabled={saving} onClick={hasCajaMap ? goBack : onClose}>{hasCajaMap ? 'Volver' : 'Cancelar'}</Button>
                     <div className="flex items-center gap-2">
                         <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={handleTodoOk}>Todo OK</Button>
-                        <button onClick={handleConfirmarCaja} disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-success-solid text-white font-semibold hover:bg-success-hover text-body transition-colors disabled:opacity-50">
-                            {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-                            {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
-                        </button>
+                        <Button tone="success" disabled={saving} onClick={handleConfirmarCaja}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                            {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}</Button>
                     </div>
                 </div>
             </PedidoModal.Footer>

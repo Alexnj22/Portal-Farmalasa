@@ -655,7 +655,7 @@ const AnnouncementsView = ({ openModal }) => {
                         <SearchInput value={empSearch} onChange={setEmpSearch} placeholder="Buscar persona por nombre..." disabled={isSubmitting} />
                         {empSearch.trim() && (
                           <div className="absolute z-content w-full mt-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-elevation-lg)] max-h-60 overflow-y-auto p-1">
-                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-brand/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-body font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand-text" /></button>)) : <div className="p-3 text-body-sm text-content-3 font-bold text-center">Sin resultados.</div>}
+                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<Button  onClick={() => addEmployee(emp.id)}><p className="text-body font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand-text" /></Button>)) : <div className="p-3 text-body-sm text-content-3 font-bold text-center">Sin resultados.</div>}
                           </div>
                         )}
                       </div>

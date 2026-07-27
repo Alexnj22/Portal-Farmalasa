@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Button from '../components/common/Button';
 import { ShieldOff, LogOut, MessageCircle, Loader2 } from 'lucide-react';
 import { fetchRoleName } from '../data/permissions';
 import { useAuth } from '../context/AuthContext';
@@ -73,17 +74,11 @@ const NoAccessView = () => {
                     </button>
 
                     {/* Logout */}
-                    <button
-                        onClick={handleLogout}
-                        disabled={loggingOut}
-                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-btn bg-surface-card border border-divider text-content-2 text-body font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
-                    >
-                        {loggingOut
+                    <Button variant="secondary" disabled={loggingOut} onClick={handleLogout}>{loggingOut
                             ? <Loader2 size={14} className="animate-spin" />
                             : <LogOut size={14} strokeWidth={2.5} />
                         }
-                        {loggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
-                    </button>
+                        {loggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}</Button>
                 </div>
             </div>
         </div>

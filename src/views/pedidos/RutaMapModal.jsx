@@ -513,18 +513,11 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           <div ref={mapRef} className="w-full h-full" />
 
           {/* Botón centrar */}
-          <button
-            onClick={conductorBtnClick}
-            disabled={conductorBtnDisabled}
-            title={conductorBtnLabel}
-            className="absolute top-2 right-2 z-base flex items-center gap-1.5 bg-surface-card shadow-md border border-divider rounded-xl px-2.5 py-1.5 text-caption font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            {isConductor
+          <Button variant="secondary" disabled={conductorBtnDisabled} title="conductorBtnLabel" onClick={conductorBtnClick}>{isConductor
               ? <Crosshair size={11} className={gpsIconColor} />
               : <Truck size={11} className={gpsIconColor} />
             }
-            {conductorBtnLabel}
-          </button>
+            {conductorBtnLabel}</Button>
 
           {/* Badge mapa */}
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card backdrop-blur-sm rounded-lg px-2 py-1 text-micro font-semibold text-content-2 shadow-sm border border-border-card">

@@ -480,12 +480,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 {autoQueue.length - autoRejected.size} de {autoQueue.length} seleccionados · toca ✗ para excluir
                                             </p>
                                         </div>
-                                        <button onClick={handleApplyAuto}
-                                            disabled={applying || autoQueue.length === autoRejected.size}
-                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-btn text-label font-black text-white bg-success-solid hover:bg-success-hover transition-colors disabled:opacity-50">
-                                            {applying ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                                            Aplicar {autoQueue.length - autoRejected.size}
-                                        </button>
+                                        <Button tone="success" disabled={applying || autoQueue.length === autoRejected.size} onClick={handleApplyAuto}>{applying ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                            Aplicar {autoQueue.length - autoRejected.size}</Button>
                                     </div>
                                     <div className="max-h-52 overflow-y-auto divide-y divide-divider bg-surface-card">
                                         {autoQueue.map(entry => {
@@ -580,11 +576,8 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 pt-1 flex-wrap">
-                                            <button onClick={() => handleReviewApply(currentReview)} disabled={reviewApplying || currentReview.principios.length === 0}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-body-sm font-black text-white bg-chart-3-solid hover:bg-chart-6-solid transition-colors disabled:opacity-50">
-                                                {reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                                                Aplicar
-                                            </button>
+                                            <Button tone="chart-3" disabled={reviewApplying || currentReview.principios.length === 0} onClick={() => handleReviewApply(currentReview)}>{reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                                                Aplicar</Button>
                                             <Button tone="chart-4" icon={Package} disabled={reviewApplying} onClick={() => handleReviewMarkSinPA(currentReview)}>Insumo/Equipo</Button>
                                             <Button variant="secondary" icon={SkipForward} disabled={reviewApplying} onClick={handleReviewSkip}>Saltar</Button>
                                         </div>

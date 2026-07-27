@@ -81,14 +81,8 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                 <PedidoModal.Footer>
                     <div className="flex justify-end gap-2">
                         <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
-                        <button
-                            disabled={!canConfirm || busy}
-                            onClick={onConfirm}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-warning-solid text-white font-semibold hover:bg-warning-hover text-body transition-colors disabled:opacity-50 shadow-sm"
-                        >
-                            {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
-                            Confirmar pausa
-                        </button>
+                        <Button tone="warning" disabled={!canConfirm || busy} onClick={onConfirm}>{busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
+                            Confirmar pausa</Button>
                     </div>
                 </PedidoModal.Footer>
         </PedidoModal>

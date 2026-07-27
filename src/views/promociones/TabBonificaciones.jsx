@@ -96,14 +96,8 @@ function PayModal({ bonif, onClose, onPaid }) {
 
                 <div className="flex gap-2 justify-end mt-4">
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                    <button
-                        onClick={handlePay}
-                        disabled={saving}
-                        className="px-4 py-1.5 text-label font-semibold bg-success-solid text-white rounded-lg hover:bg-success/90 disabled:opacity-50 flex items-center gap-1.5"
-                    >
-                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
-                        Confirmar pago
-                    </button>
+                    <Button tone="success" disabled={saving} onClick={handlePay}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+                        Confirmar pago</Button>
                 </div>
             </div>
         </div>

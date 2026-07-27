@@ -258,13 +258,7 @@ const EmployeeProfileView = ({ openModal }) => {
             )}
             {(emp.phone || emp.dui) && <div className="hidden md:block w-px h-6 bg-divider mx-0.5 shrink-0" />}
             {/* Edit button */}
-            <button
-                onClick={() => openModal('editContact', emp)}
-                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-brand text-white text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
-            >
-                <Edit3 size={13} strokeWidth={2.5} />
-                <span className="hidden sm:inline">Editar</span>
-            </button>
+            <Button icon={Edit3} onClick={() => openModal('editContact', emp)}><span className="hidden sm:inline">Editar</span></Button>
             {/* Password button */}
             <Button tone="warning" icon={KeyRound} title="Cambiar contraseña" iconOnly onClick={() => openModal('changeOwnPassword', {})} />
         </div>
@@ -565,12 +559,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             {!filterFrom && !filterTo && !filterType && (
                                 timelineLimit !== null && timeline.length > timelineLimit ? (
                                     <div className="mt-3 pt-3 border-t border-divider">
-                                        <button
-                                            onClick={() => setTimelineLimit(null)}
-                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-caption font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
-                                        >
-                                            Ver todo ({timeline.length})
-                                        </button>
+                                        <Button variant="secondary" onClick={() => setTimelineLimit(null)}>Ver todo ({timeline.length})</Button>
                                     </div>
                                 ) : timelineLimit === null ? (
                                     <div className="mt-3 pt-3 border-t border-divider">

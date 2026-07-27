@@ -813,13 +813,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 )}
                             </div>
 
-                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} type="button"
-                                aria-label={isMobile ? 'Cerrar menú' : isExpanded ? 'Contraer menú' : 'Expandir menú'}
-                                className={`relative z-base w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
-                                    bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/50 hover:text-white/80
-                                    shadow-[var(--shadow-shine)] hover:shadow-[var(--shadow-glass-1)] ${focusRing}`}>
-                                {isMobile ? <X size={16} strokeWidth={2} /> : isExpanded ? <ChevronLeft size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}
-                            </button>
+                            <Button variant="secondary" size="sm" className={focusRing} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>{isMobile ? <X size={16} strokeWidth={2} /> : isExpanded ? <ChevronLeft size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}</Button>
                         </div>
 
                         {/* ── Nav ── */}
@@ -907,11 +901,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 <p className="text-body font-semibold truncate transition-colors leading-tight text-white/80 group-hover/user:text-white">{user?.name || 'Usuario'}{myBirthday ? ' 🎂' : ''}</p>
                                             </div>
                                         </button>
-                                        <button onClick={handleLogout} aria-label="Cerrar sesión"
-                                            className={`p-2 rounded-xl border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-danger hover:bg-danger/[0.14] hover:border-danger/[0.18] ${focusRing}`}
-                                            type="button">
-                                            <LogOut size={16} strokeWidth={1.8} />
-                                        </button>
+                                        <Button variant="destructive" icon={LogOut} iconOnly className={focusRing} onClick={handleLogout} />
                                     </div>
 
                                     <p className="text-center text-micro font-medium text-white/20 tracking-wider pt-1">
@@ -951,13 +941,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             </span>
                                         )}
                                     </div>
-                                    <button onClick={handleLogout} type="button" aria-label="Cerrar sesión" title="Cerrar sesión"
-                                        className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                            bg-danger/[0.08] border border-danger/[0.12] text-danger/60
-                                            hover:text-danger hover:bg-danger/[0.18] hover:border-danger/[0.22]
-                                            shadow-[var(--shadow-shine)] hover:shadow-[var(--shadow-glass-1)] ${focusRing}`}>
-                                        <LogOut size={15} strokeWidth={1.8} />
-                                    </button>
+                                    <Button variant="destructive" icon={LogOut} title="Cerrar sesión" iconOnly className={focusRing} onClick={handleLogout} />
                                     <span className="text-micro font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
                                 </div>
                             )}

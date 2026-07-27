@@ -1412,12 +1412,7 @@ export default function EncuestaView() {
                                                 }} />
                                         )}
                                         {summary && !isLoading && (
-                                            <button
-                                                onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}
-                                                title={isCollapsed ? 'Expandir' : 'Minimizar'}
-                                                className="p-1.5 rounded-lg text-content-3 hover:text-chart-3-text hover:bg-chart-3/10 transition-all">
-                                                {isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}
-                                            </button>
+                                            <Button tone="chart-3" title="isCollapsed ? 'Expandir' : 'Minimizar'" onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}>{isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}</Button>
                                         )}
                                     </div>
                                 </div>

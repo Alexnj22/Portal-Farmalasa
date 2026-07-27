@@ -98,13 +98,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 </span>
             </DataCell>
             <DataCell align="right">
-                <button
-                    onClick={() => openModal('viewAuditDetail', log)}
-                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand-text rounded-full font-bold text-caption uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
-                    title="Ver Detalles"
-                >
-                    <Database size={14} className="md:w-3 md:h-3" /> <span className="hidden md:inline">Detalles</span>
-                </button>
+                <Button variant="secondary" size="sm" icon={Database} title="Ver Detalles" onClick={() => openModal('viewAuditDetail', log)}><span className="hidden md:inline">Detalles</span></Button>
             </DataCell>
         </DataRow>
     );

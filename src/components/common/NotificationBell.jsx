@@ -294,13 +294,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     };
 
     const undoButton = (key, label = 'Deshacer') => (
-        <button
-            onClick={() => undoDelete(key)}
-            className={`flex items-center gap-1.5 text-caption font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-colors ${cx.undoBtn}`}
-        >
-            <Undo2 size={12} strokeWidth={2.5} />
-            {label}
-        </button>
+        <Button variant="ghost" icon={Undo2} className={cx.undoBtn} onClick={() => undoDelete(key)}>{label}</Button>
     );
 
     return (
@@ -518,14 +512,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             {unread && <span className="w-2 h-2 rounded-full bg-brand flex-shrink-0 mt-2 shadow-[var(--shadow-glow-brand-sm)]" />}
                                                         </button>
                                                         {/* Borrar individual — visible al hover en desktop, siempre tenue en touch */}
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }}
-                                                            title="Borrar"
-                                                            aria-label="Borrar notificación"
-                                                            className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg transition-all opacity-60 lg:opacity-0 lg:group-hover:opacity-100 focus-within:opacity-100 ${cx.iconBtn} hover:!text-danger`}
-                                                        >
-                                                            <X size={13} strokeWidth={2.5} />
-                                                        </button>
+                                                        <Button variant="ghost" icon={X} title="Borrar" iconOnly className={cx.iconBtn} onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }} />
                                                     </motion.div>
                                                 );
                                             })}

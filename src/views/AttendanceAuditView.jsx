@@ -389,13 +389,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               <p className="text-caption font-bold text-content-3">
                 Por: <span className="text-content-2">{user?.name || user?.email || '—'}</span>
               </p>
-              <button
-                onClick={handleAdd}
-                disabled={saving || !newType || !newTime}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-2xl text-label font-black uppercase tracking-widest hover:bg-brand-hover transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-              >
-                {saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}
-              </button>
+              <Button disabled={saving || !newType || !newTime} onClick={handleAdd}>{saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}</Button>
             </div>
           </div>
 
@@ -1226,10 +1220,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
       {/* Period nav pill — quincena */}
       <div className={pillWrap}>
-        <button type="button" onClick={() => setSelectedQuincena(prevQuincena(selectedQuincena))}
-          className={`${pillIconBtn} active:scale-[0.90]`}>
-          <ChevronLeft size={14} strokeWidth={2.5} />
-        </button>
+        <Button variant="ghost" icon={ChevronLeft} iconOnly className={pillIconBtn} onClick={() => setSelectedQuincena(prevQuincena(selectedQuincena))} />
         <div className={pillDivider} />
         <button type="button" onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
           className="flex flex-col items-center px-2 py-1 min-w-[110px] rounded-2xl hover:bg-black/[0.04] transition-all">
@@ -1239,23 +1230,15 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
           </span>
         </button>
         <div className={pillDivider} />
-        <button type="button" onClick={() => setSelectedQuincena(nextQuincena(selectedQuincena))}
-          disabled={isCurrentQuincena}
-          className={`${pillIconBtn} active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed`}>
-          <ChevronRight size={14} strokeWidth={2.5} />
-        </button>
+        <Button variant="ghost" icon={ChevronRight} disabled={isCurrentQuincena} iconOnly className={pillIconBtn} onClick={() => setSelectedQuincena(nextQuincena(selectedQuincena))} />
       </div>
 
       {/* Branch dropdown pill */}
       {getScope('time_audit') !== 'BRANCH' && <div className="relative shrink-0" ref={branchDropRef}>
-        <button type="button" onClick={() => setBranchDropOpen(v => !v)}
-          className={`${pillWrap} cursor-pointer`}>
-          <Building2 size={13} className="opacity-60 shrink-0" />
-          <span className={`text-caption font-black tracking-widest uppercase whitespace-nowrap mx-1 ${pillLabelText}`}>
+        <Button variant="ghost" icon={Building2} className={pillWrap} onClick={() => setBranchDropOpen(v => !v)}><span className={`text-caption font-black tracking-widest uppercase whitespace-nowrap mx-1 ${pillLabelText}`}>
             {currentBranchLabel}
           </span>
-          <ChevronDown size={12} className={`opacity-50 transition-transform duration-200 shrink-0 ${branchDropOpen ? 'rotate-180' : ''}`} />
-        </button>
+          <ChevronDown size={12} className={`opacity-50 transition-transform duration-200 shrink-0 ${branchDropOpen ? 'rotate-180' : ''}`} /></Button>
         {branchDropOpen && (
           <div className="absolute left-0 top-full mt-2 z-sidebar min-w-[190px] rounded-2xl border border-black/[0.08] bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-lg)] overflow-hidden py-1">
             {sortedBranchOptions.map(opt => (
@@ -1279,13 +1262,10 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
             <Button onClick={() => navigate('/payroll')}>Ver planilla →</Button>
           </div>
         ) : quincenaTS.length > 0 ? (
-          <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}
-            className="flex items-center gap-1.5 text-caption font-black text-white bg-brand hover:bg-brand-hover disabled:opacity-60 px-3 py-1.5 rounded-btn shrink-0 shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
-            {isClosingQuincena
+          <Button disabled={isClosingQuincena} onClick={handleCloseQuincena}>{isClosingQuincena
               ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
               : <LockKeyhole size={11} strokeWidth={2.5} />}
-            {isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena'}
-          </button>
+            {isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena'}</Button>
         ) : null
       )}
     </div>
@@ -1350,27 +1330,18 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                         <span className="text-content-3 text-xs">–</span>
                         <TimePicker12 value={editEnd} onChange={setEditEnd}
                           className="bg-surface-card border border-chart-3/40 rounded-xl" />
-                        <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}
-                          className="bg-success-solid hover:bg-success-hover text-white text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
-                          {isBusy ? '…' : 'Aplicar'}
-                        </button>
+                        <Button tone="success" disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}>{isBusy ? '…' : 'Aplicar'}</Button>
                         <Button variant="ghost" onClick={() => setEditingExId(null)}>Cancelar</Button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         {meta.declaredStart && meta.declaredEnd && (
                           <>
-                            <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', meta.declaredStart, meta.declaredEnd)}
-                              className="bg-success/10 hover:bg-success/20 text-success-text text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-success/30 disabled:opacity-50 transition-all">
-                              {isBusy ? '…' : 'Confirmar'}
-                            </button>
+                            <Button tone="success" disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', meta.declaredStart, meta.declaredEnd)}>{isBusy ? '…' : 'Confirmar'}</Button>
                             <Button tone="chart-3" disabled={isBusy} onClick={() => { setEditingExId(req.id); setEditStart(meta.declaredStart); setEditEnd(meta.declaredEnd); }}>Editar</Button>
                           </>
                         )}
-                        <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'REJECT', null, null)}
-                          className="bg-danger/10 hover:bg-danger/10 text-danger text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-danger/30 disabled:opacity-50 transition-all">
-                          {isBusy ? '…' : 'Rechazar'}
-                        </button>
+                        <Button variant="destructive" disabled={isBusy} onClick={() => handleProcessShiftException(req, 'REJECT', null, null)}>{isBusy ? '…' : 'Rechazar'}</Button>
                       </div>
                     )}
                   </div>

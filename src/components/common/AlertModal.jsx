@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../../components/common/Button';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import ModalShell from './ModalShell';
 
@@ -60,12 +61,7 @@ const AlertModal = ({
 
                 {/* FOOTER */}
                 <div className="p-5 border-t border-divider flex relative z-base bg-surface-card-hover">
-                    <button 
-                        onClick={onClose}
-                        className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-label uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] transform-gpu border-none ${currentConfig.btn}`}
-                    >
-                        {buttonText}
-                    </button>
+                    <Button variant="ghost" className={currentConfig.btn} onClick={onClose}>{buttonText}</Button>
                 </div>
             </div>
         </ModalShell>

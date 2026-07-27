@@ -760,11 +760,7 @@ const EmployeeAnnouncementsView = () => {
                 </div>
 
                 <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-                <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                    className={`relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
-                    <Search size={15} strokeWidth={2.5} />
-                    {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
-                </button>
+                <Button icon={Search} onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}>{searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}</Button>
             </div>
         </div>
     );
@@ -824,13 +820,7 @@ const EmployeeAnnouncementsView = () => {
                     {/* Botón "Ver anteriores" — siempre visible en tab READ cuando hay avisos de otros meses */}
                     {(hasOldRead || showOldRead) && (
                         <div className="flex justify-end mb-4">
-                            <button
-                                onClick={() => setShowOldRead(v => !v)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-card backdrop-blur-sm border border-border-card text-content-3 text-caption font-black uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shadow-sm"
-                            >
-                                <Clock size={12} strokeWidth={2.5} />
-                                {showOldRead ? 'Solo este mes' : 'Ver anteriores'}
-                            </button>
+                            <Button variant="secondary" icon={Clock} onClick={() => setShowOldRead(v => !v)}>{showOldRead ? 'Solo este mes' : 'Ver anteriores'}</Button>
                         </div>
                     )}
 

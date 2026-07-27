@@ -1053,10 +1053,7 @@ export default function EncuestaAdminView() {
                                                     <Button tone="chart-3" size="xs" icon={TrendingUp} onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}>Ver análisis</Button>
                                                 )}
                                                 {!isExpanded && (
-                                                    <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                        className="flex items-center gap-1 text-caption font-black uppercase tracking-widest text-brand-text px-3 h-7 rounded-full bg-brand/10 hover:bg-brand/20 transition-colors border border-brand/20 active:scale-[0.97]">
-                                                        Ver detalle <ChevronDown size={10} strokeWidth={2.5} />
-                                                    </button>
+                                                    <Button size="xs" onClick={e => { e.stopPropagation(); toggleExpand(s); }}>Ver detalle <ChevronDown size={10} strokeWidth={2.5} /></Button>
                                                 )}
                                             </div>
                                         </div>
@@ -1153,15 +1150,11 @@ export default function EncuestaAdminView() {
                                                                                 <React.Fragment key={row.id}>
                                                                                     <tr className={`border-b border-border-card last:border-0 transition-colors group/row ${isRowExp ? 'bg-brand/5' : 'hover:bg-surface-card'}`}>
                                                                                         <td className="py-2.5 pl-5 pr-3">
-                                                                                            <button
-                                                                                                className="flex items-center gap-2 text-left w-full"
-                                                                                                onClick={() => setExpandedResponseId(isRowExp ? null : row.id)}>
-                                                                                                <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
+                                                                                            <Button variant="ghost" onClick={() => setExpandedResponseId(isRowExp ? null : row.id)}><PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
                                                                                                 <span className="text-body-sm font-black text-content">{nombre}</span>
                                                                                                 {isRowExp
                                                                                                     ? <ChevronUp size={10} className="text-brand-text ml-1 shrink-0" strokeWidth={2.5} />
-                                                                                                    : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity" strokeWidth={2.5} />}
-                                                                                            </button>
+                                                                                                    : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity" strokeWidth={2.5} />}</Button>
                                                                                         </td>
                                                                                         <td className="py-2.5 px-2 text-center">
                                                                                             <span className={`text-micro font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-warning/10 text-warning-text' : 'bg-surface-card-hover text-content-3'}`}>

@@ -184,14 +184,8 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
                   {/* Conductor action */}
                   {isCondcutor && !isBranch && !isEntregado && ruta.status === 'en_ruta' && (
-                    <button
-                      onClick={() => handleEntregarStop(stop)}
-                      disabled={isBusy}
-                      className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
-                    >
-                      {isBusy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
-                      Entregué
-                    </button>
+                    <Button tone="success" disabled={isBusy} onClick={() => handleEntregarStop(stop)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
+                      Entregué</Button>
                   )}
                   {isEntregado && (
                     <CheckCircle2 size={16} className="text-success shrink-0" />
@@ -205,24 +199,12 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           {!isBranch && (
             <div className="flex gap-2 pt-1">
               {ruta.status === 'pendiente' && isCondcutor && (
-                <button
-                  onClick={handleIniciarRuta}
-                  disabled={busyRuta === 'iniciar'}
-                  className="flex items-center gap-1.5 text-label font-bold px-3 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
-                >
-                  {busyRuta === 'iniciar' ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
-                  Iniciar ruta
-                </button>
+                <Button tone="chart-3" disabled={busyRuta === 'iniciar'} onClick={handleIniciarRuta}>{busyRuta === 'iniciar' ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
+                  Iniciar ruta</Button>
               )}
               {ruta.status === 'en_ruta' && (isCondcutor || canEdit) && entregadas === total && total > 0 && (
-                <button
-                  onClick={handleVueltaBase}
-                  disabled={busyRuta === 'vuelta'}
-                  className="flex items-center gap-1.5 text-label font-bold px-3 py-2 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
-                >
-                  {busyRuta === 'vuelta' ? <Loader2 size={12} className="animate-spin" /> : <Home size={12} />}
-                  Vuelta en base
-                </button>
+                <Button tone="chart-8" disabled={busyRuta === 'vuelta'} onClick={handleVueltaBase}>{busyRuta === 'vuelta' ? <Loader2 size={12} className="animate-spin" /> : <Home size={12} />}
+                  Vuelta en base</Button>
               )}
               {ruta.vuelta_base_at && (
                 <span className="text-caption text-content-3 flex items-center gap-1 px-2">

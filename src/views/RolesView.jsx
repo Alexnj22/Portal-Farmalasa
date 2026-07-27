@@ -779,14 +779,8 @@ const RolesView = ({ openModal }) => {
                                 >
                                     {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
                                 </button>
-                                <button
-                                    onClick={toggleFullScreen}
-                                    disabled={isExporting}
-                                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl shadow-[var(--shadow-glow-brand)] text-caption font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
-                                >
-                                    {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
-                                    <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span>
-                                </button>
+                                <Button disabled={isExporting} onClick={toggleFullScreen}>{isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+                                    <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span></Button>
 
                                 <div className="ml-auto flex items-center gap-2 bg-surface-card backdrop-blur-sm border border-border-card rounded-xl px-2 py-1 shadow-sm">
                                     <Button variant="secondary" onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}>-</Button>

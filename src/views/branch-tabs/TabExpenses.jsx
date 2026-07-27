@@ -100,12 +100,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             {isPendingReceipt ? (
                 <Button tone="chart-6" icon={UploadCloud} onClick={onUploadReceipt}>Subir Comprobante</Button>
             ) : (
-                <button
-                    onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-caption uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-surface-card-hover transition-all active:scale-[0.97] shadow-sm relative z-base"
-                >
-                    {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
-                </button>
+                <Button variant="secondary" onClick={onAction}>{isConfigured ? 'Registrar Pago' : 'Configurar Pago'}</Button>
             )}
         </div>
     );

@@ -1642,10 +1642,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 {depAgeOnly ? 'Edad' : 'Fecha de Nacimiento'}
                                                                 {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
                                                             </span>
-                                                            <button type="button" onClick={() => toggleDependentAgeMode(idx)}
-                                                                className="text-brand-text font-bold normal-case tracking-normal hover:text-chart-1-text transition-colors">
-                                                                {depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}
-                                                            </button>
+                                                            <Button variant="ghost" onClick={() => toggleDependentAgeMode(idx)}>{depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}</Button>
                                                         </label>
                                                         {depAgeOnly ? (
                                                             <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${depAgeInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>

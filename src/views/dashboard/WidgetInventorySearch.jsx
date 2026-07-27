@@ -238,13 +238,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
               onChange={e => setQty(e.target.value)}
               className="w-10 px-1.5 py-0.5 rounded-lg border border-divider text-body-xl font-black text-content-2 text-center outline-none focus:border-danger"
             />
-            <button
-              onClick={submit}
-              disabled={rState === 'saving'}
-              className="px-1.5 py-0.5 rounded-btn bg-danger-solid hover:bg-danger/80 text-white text-micro font-black transition-colors disabled:opacity-50"
-            >
-              {rState === 'saving' ? '…' : 'OK'}
-            </button>
+            <Button variant="destructive" disabled={rState === 'saving'} onClick={submit}>{rState === 'saving' ? '…' : 'OK'}</Button>
             <Button variant="ghost" icon={X} iconOnly onClick={() => setFormOpen(false)} />
           </div>
         ) : (

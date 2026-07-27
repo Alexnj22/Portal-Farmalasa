@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -359,15 +360,8 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
                                     <span className="text-caption font-bold uppercase tracking-wide text-content-2">Proveedores</span>
-                                    <button
-                                        onClick={onMarkND}
-                                        disabled={markingND}
-                                        title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-btn border border-divider bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-micro font-bold disabled:opacity-50 shrink-0"
-                                    >
-                                        {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
-                                        Marcar todo como ND
-                                    </button>
+                                    <Button tone="warning" disabled={markingND} title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos" onClick={onMarkND}>{markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
+                                        Marcar todo como ND</Button>
                                 </div>
                             )}
                             {proveedores.length === 0 && newRowIds.length === 0 && (
@@ -387,12 +381,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                             ))}
 
                             {canEdit && (
-                                <button
-                                    onClick={onStartAdd}
-                                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-chart-9/30 text-chart-9-text hover:bg-chart-9/10 hover:border-chart-9/40 transition-colors text-label font-bold"
-                                >
-                                    <Plus className="w-3.5 h-3.5" /> Agregar proveedor
-                                </button>
+                                <Button tone="chart-9" onClick={onStartAdd}><Plus className="w-3.5 h-3.5" /> Agregar proveedor</Button>
                             )}
                         </div>
                     </motion.div>
@@ -446,12 +435,8 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
             )}
             {canEdit && (
                 <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => setEditing(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-content-3 hover:text-chart-9-text hover:bg-chart-9/10 transition-colors">
-                        <Pencil className="w-3 h-3" />
-                    </button>
-                    <button onClick={() => onDelete(proveedor)} className="w-6 h-6 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors">
-                        <Trash2 className="w-3 h-3" />
-                    </button>
+                    <Button tone="chart-9" size="xs" onClick={() => setEditing(true)}><Pencil className="w-3 h-3" /></Button>
+                    <Button variant="destructive" size="xs" onClick={() => onDelete(proveedor)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
             )}
         </div>
@@ -573,13 +558,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     ) : null}
                 </div>
 
-                <button
-                    onClick={onCancel}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-divider bg-surface-card hover:bg-danger/10 hover:border-danger/30 text-content-3 hover:text-danger transition-all shrink-0"
-                    title="Cerrar"
-                >
-                    <X className="w-3.5 h-3.5" />
-                </button>
+                <Button variant="destructive" size="xs" title="Cerrar" onClick={onCancel}><X className="w-3.5 h-3.5" /></Button>
             </div>
 
             {isOtro && (

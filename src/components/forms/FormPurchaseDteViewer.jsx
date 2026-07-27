@@ -247,16 +247,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             </div>
                         )}
                         {document?.pdf_path && (
-                            <button
-                                type="button"
-                                onClick={downloadAll}
-                                disabled={downloadingAll}
-                                title="Descargar PDF + JSON en un ZIP"
-                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-2xl font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
-                            >
-                                <Archive size={14} strokeWidth={2} className={downloadingAll ? 'animate-pulse' : ''} />
-                                {downloadingAll ? 'Armando ZIP…' : 'Todo'}
-                            </button>
+                            <Button variant="secondary" icon={Archive} disabled={downloadingAll} title="Descargar PDF + JSON en un ZIP" onClick={downloadAll}>{downloadingAll ? 'Armando ZIP…' : 'Todo'}</Button>
                         )}
                         {document?.pdf_path && (
                             <Button variant="secondary" icon={Download} onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}>PDF</Button>
@@ -278,15 +269,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 No ampara deducciones ni crédito fiscal (Art. 119-E Código Tributario).
                             </p>
                             {invalidacionSource?.file_path && (
-                                <button
-                                    type="button"
-                                    onClick={openInvalidacionPdf}
-                                    disabled={openingInvalidacionPdf}
-                                    className="mt-1.5 inline-flex items-center gap-1.5 text-caption font-black text-danger-text hover:text-danger-text underline disabled:opacity-50"
-                                >
-                                    <ExternalLink size={11} strokeWidth={2} />
-                                    {openingInvalidacionPdf ? 'Abriendo…' : 'Ver PDF de anulación'}
-                                </button>
+                                <Button variant="ghost" icon={ExternalLink} disabled={openingInvalidacionPdf} onClick={openInvalidacionPdf}>{openingInvalidacionPdf ? 'Abriendo…' : 'Ver PDF de anulación'}</Button>
                             )}
                         </div>
                     </div>

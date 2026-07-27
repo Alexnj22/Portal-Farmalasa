@@ -114,11 +114,8 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
                         value={comment} onChange={e => setComment(e.target.value)}
                     />
                     <div className="flex flex-col gap-2 shrink-0">
-                        <button onClick={onConfirm} disabled={saving}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-success-solid hover:bg-success-hover text-white rounded-btn text-caption font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
-                            {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                            Confirmar
-                        </button>
+                        <Button tone="success" disabled={saving} onClick={onConfirm}>{saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                            Confirmar</Button>
                         <Button variant="destructive" icon={X} onClick={onCancel}>Cancelar</Button>
                     </div>
                 </div>
@@ -377,10 +374,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                     </div>
                 ))}
                 {activeVisitedCount > 0 && (
-                    <button onClick={clearVisited}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-caption font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
-                        <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
-                    </button>
+                    <Button tone="warning" icon={Check} onClick={clearVisited}>{activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar</Button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
                     {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
@@ -523,10 +517,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)} />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
-                                                                    <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
-                                                                    </button>
+                                                                    <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
                                                                     <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
@@ -591,10 +582,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                 );
                             })}
                             <div className="px-5 py-3 border-t border-divider flex justify-center">
-                                <button onClick={() => setShowAllResolved(v => !v)}
-                                    className="text-label font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
-                                    {showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}
-                                </button>
+                                <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}</Button>
                             </div>
                         </div>
                     )}
@@ -829,10 +817,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     </div>
                 ))}
                 {activeVisitedCount > 0 && (
-                    <button onClick={clearVisited}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-caption font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
-                        <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
-                    </button>
+                    <Button tone="warning" icon={Check} onClick={clearVisited}>{activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar</Button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
                     {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
@@ -1007,10 +992,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     value={comment} onChange={e => setComment(e.target.value)}
                                                                 />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
-                                                                    <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
-                                                                    </button>
+                                                                    <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
                                                                     <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
@@ -1078,10 +1060,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                 );
                             })}
                             <div className="px-5 py-3 border-t border-divider flex justify-center">
-                                <button onClick={() => setShowAllResolved(v => !v)}
-                                    className="text-label font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
-                                    {showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}
-                                </button>
+                                <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}</Button>
                             </div>
                         </div>
                     )}
@@ -1325,10 +1304,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={comment} onChange={e => setComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
-                                                                <button onClick={() => handleSolveGap(g)} disabled={saving}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                                    {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
-                                                                </button>
+                                                                <Button tone="success" disabled={saving} onClick={() => handleSolveGap(g)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
                                                                 <Button variant="destructive" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
@@ -1428,10 +1404,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={nullComment} onChange={e => setNullComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
-                                                                <button onClick={() => handleSolveNull(n)} disabled={nullSaving}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                                    {nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
-                                                                </button>
+                                                                <Button tone="success" disabled={nullSaving} onClick={() => handleSolveNull(n)}>{nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
                                                                 <Button variant="destructive" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
@@ -1492,10 +1465,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                 );
                             })}
                             <div className="px-5 py-3 border-t border-divider flex justify-center">
-                                <button onClick={() => setShowAllResolved(v => !v)}
-                                    className="text-label font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
-                                    {showAllResolved ? `Ver solo este mes (${resolvedGapsThisMonth.length})` : `Ver todos (${resolvedGaps.length})`}
-                                </button>
+                                <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedGapsThisMonth.length})` : `Ver todos (${resolvedGaps.length})`}</Button>
                             </div>
                         </div>
                     )}
@@ -1787,10 +1757,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
                                                     <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                     <DataCell align="right">
-                                                        <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                            className={`text-white px-4 py-2 rounded-2xl text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
-                                                            <Check size={13} strokeWidth={2.5} /> Confirmar
-                                                        </button>
+                                                        <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>Confirmar</Button>
                                                     </DataCell>
                                                 </DataRow>
                                                 {isConfirming && (
@@ -1816,10 +1783,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     </label>
                                                                 </div>
                                                                 <div className="flex flex-col gap-2 shrink-0">
-                                                                    <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
-                                                                        className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
-                                                                        {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
-                                                                    </button>
+                                                                    <Button variant="ghost" disabled={confirmSaving} className={theme.btn} onClick={() => handleConfirm(r.id)}>{confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar</Button>
                                                                     <Button variant="destructive" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                                 </div>
                                                             </div>
@@ -1893,10 +1857,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
                                                             <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                             <DataCell align="right">
-                                                                <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                    className={`text-white px-4 py-2 rounded-2xl text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
-                                                                    <Check size={13} strokeWidth={2.5} /> Confirmar
-                                                                </button>
+                                                                <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>Confirmar</Button>
                                                             </DataCell>
                                                         </DataRow>
                                                         {isConfirming && (
@@ -1918,10 +1879,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                             </label>
                                                                         </div>
                                                                         <div className="flex flex-col gap-2 shrink-0">
-                                                                            <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
-                                                                                className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
-                                                                                {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
-                                                                            </button>
+                                                                            <Button variant="ghost" disabled={confirmSaving} className={theme.btn} onClick={() => handleConfirm(r.id)}>{confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar</Button>
                                                                             <Button variant="destructive" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                                         </div>
                                                                     </div>
@@ -1943,11 +1901,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Confirmados */}
             {confirmed.length > 0 && (
                 <div className="border-t border-divider">
-                    <button onClick={() => setShowConfirmed(v => !v)}
-                        className="w-full flex items-center justify-between px-5 pl-8 py-3 text-label font-bold uppercase tracking-widest text-content-2 hover:text-content-2 hover:bg-surface-card-hover/40 transition-colors">
-                        <span className="flex items-center gap-2"><Check size={12} className="text-chart-1-text" strokeWidth={3} />{confirmed.length} confirmado{confirmed.length !== 1 ? 's' : ''}</span>
-                        {showConfirmed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
+                    <Button variant="secondary" onClick={() => setShowConfirmed(v => !v)}><span className="flex items-center gap-2"><Check size={12} className="text-chart-1-text" strokeWidth={3} />{confirmed.length} confirmado{confirmed.length !== 1 ? 's' : ''}</span>
+                        {showConfirmed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</Button>
                     {showConfirmed && (
                         <div>
                             <div className="px-5 pl-8 py-3 border-b border-divider flex items-center gap-3 bg-surface-card-hover/40">
@@ -2014,10 +1969,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             <DataCell className="whitespace-nowrap">{dt}</DataCell>
                                             <DataCell>
                                                 {r.proof_url ? (
-                                                    <button type="button" onClick={() => openStoredFile(r.proof_url)}
-                                                        className="inline-flex items-center gap-1.5 text-label font-bold text-chart-1-text hover:text-brand-text transition-colors">
-                                                        <Paperclip size={12} /> Ver <ExternalLink size={10} />
-                                                    </button>
+                                                    <Button variant="ghost" icon={Paperclip} onClick={() => openStoredFile(r.proof_url)}>Ver <ExternalLink size={10} /></Button>
                                                 ) : <span className="text-body-sm text-content-3 italic">Sin comprobante</span>}
                                             </DataCell>
                                             <DataCell className="max-w-[180px]">{r.notes || <span className="italic text-content-3">—</span>}</DataCell>

@@ -467,13 +467,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
                                             )}
                                             {canActuar && (
-                                                <button
-                                                    onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}
-                                                    disabled={printingPdf === row.pedido_id}
-                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
-                                                >
-                                                    {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
-                                                </button>
+                                                <Button variant="secondary" disabled={printingPdf === row.pedido_id} onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}>{printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF</Button>
                                             )}
                                             {canActuar && !isBranch && stage === 'preparado' && (
                                                 <button
@@ -493,10 +487,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     <Button tone="success" icon={CheckCircle2} onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
                                                 );
                                             })()}
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-1-solid    text-white hover:bg-chart-1/80    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
-                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-warning-solid   text-white hover:bg-warning-hover   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-6-solid  text-white hover:bg-chart-6/80  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
-                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
+                                            {canIniciar      && <Button tone="chart-1" disabled={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</Button>}
+                                            {canPausar       && <Button tone="warning" disabled={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</Button>}
+                                            {canFinalizar    && <Button tone="chart-6" disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</Button>}
+                                            {canReanudar     && <Button tone="success" disabled={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</Button>}
                                             {canAnular && (
                                                 <Button variant="destructive" icon={Ban} onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
                                             )}
@@ -516,9 +510,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
-                                                        {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
-                                                    </button>
+                                                    <Button variant="destructive" disabled={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })}>{busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}</Button>
                                                 );
                                             })()}
                                         </div>
@@ -871,17 +863,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                     </div>
                     <div className="px-5 pb-5 pt-2 flex gap-2 justify-end border-t border-border-card">
                         <Button variant="secondary" onClick={() => setReenviarConfirmModal(null)}>Cancelar</Button>
-                        <button
-                            disabled={busyAction === 'reenvio'}
-                            onClick={() => {
+                        <Button variant="destructive" disabled={busyAction === 'reenvio'} onClick={() => {
                                 const { pedidoId, sucId, numero, cajas, electrolits, especiales } = reenviarConfirmModal;
                                 setReenviarConfirmModal(null);
                                 handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
-                            }}
-                            className="flex items-center gap-1.5 text-body-sm font-bold px-4 py-2 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
-                        >
-                            {busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}
-                        </button>
+                            }}>{busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}</Button>
                     </div>
                 </PedidoModal>
             )}

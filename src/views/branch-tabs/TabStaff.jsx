@@ -134,9 +134,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     {employee.phone && (
                         <div className="flex items-center gap-1 shrink-0">
                             <Button variant="secondary" icon={MessageCircle} title="WhatsApp" iconOnly onClick={(e) => handleAction(e, 'wa', employee.phone)} />
-                            <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-content-3 hover:text-brand-text bg-surface-card hover:bg-surface-card-hover shadow-sm rounded-md border border-white transition-all" title="Copiar">
-                                {copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-success" /> : <Copy size={12} strokeWidth={2} />}
-                            </button>
+                            <Button variant="secondary" title="Copiar" onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')}>{copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-success" /> : <Copy size={12} strokeWidth={2} />}</Button>
                         </div>
                     )}
                 </div>
@@ -155,13 +153,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             <div className="absolute bottom-3 right-3 z-content">
-                <button
-                    onClick={(e) => { e.stopPropagation(); onClick(employee); }}
-                    className="h-9 w-9 rounded-full flex items-center justify-center bg-surface-card shadow-sm border border-white transition-all hover:bg-brand hover:border-brand hover:shadow-[var(--shadow-glow-brand)] text-content-3 hover:text-white group/btn"
-                    title="Ver Expediente de Personal"
-                >
-                    <CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" />
-                </button>
+                <Button size="sm" title="Ver Expediente de Personal" onClick={(e) => { e.stopPropagation(); onClick(employee); }}><CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" /></Button>
             </div>
         </div>
     );
@@ -256,13 +248,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                     </h4>
                     <p className="text-content-3 font-bold text-caption mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
                 </div>
-                <button
-                    onClick={startHistoricalSync}
-                    disabled={isSyncing}
-                    className="px-5 py-2.5 bg-brand hover:bg-chart-1-solid disabled:bg-slate-700 text-white text-label font-black uppercase tracking-widest rounded-xl transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97]"
-                >
-                    {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
-                </button>
+                <Button disabled={isSyncing} onClick={startHistoricalSync}>{isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}</Button>
             </div>
 
             {isSyncing && (

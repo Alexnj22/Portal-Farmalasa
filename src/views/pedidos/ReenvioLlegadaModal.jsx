@@ -232,11 +232,8 @@ export default function ReenvioLlegadaModal({
                 )}
                 <div className="flex items-center justify-between gap-2">
                     <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
-                    <button onClick={handleConfirm} disabled={submitting || !hasContent || electrolitPending}
-                        className="text-label font-bold px-5 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
-                        {submitting && <Loader2 size={11} className="animate-spin" />}
-                        {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}
-                    </button>
+                    <Button tone="chart-3" disabled={submitting || !hasContent || electrolitPending} onClick={handleConfirm}>{submitting && <Loader2 size={11} className="animate-spin" />}
+                        {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}</Button>
                 </div>
             </div>
         </PedidoModal>

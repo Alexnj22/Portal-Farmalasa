@@ -378,10 +378,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 {/* RIGHT: pill — glassmorphism, siempre rounded-2xl completo */}
                 <div className="flex items-center shrink-0 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.92)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.11),inset_0_1px_0_rgba(255,255,255,0.95)] transition-shadow duration-300"
                      style={{
-                         background: 'rgba(255,255,255,0.70)',
-                         backdropFilter: 'blur(20px) saturate(180%)',
-                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                         border: '1px solid rgba(255,255,255,0.82)',
+                         // D1.2 — era rgba(255,255,255,0.70) + borde blanco fijo. Al ir
+                         // en `style` inline no lo veía el gate (que lee clases), pero sí
+                         // el escáner en vivo: era la única superficie blanca que quedaba
+                         // sobre el tema oscuro tras el barrido.
+                         background: 'var(--surface-card)',
+                         backdropFilter: 'var(--backdrop-card)',
+                         WebkitBackdropFilter: 'var(--backdrop-card)',
+                         border: '1px solid var(--border-card)',
                      }}>
 
                     {/* Buttons section — sin bg propio, el glass del outer cubre */}

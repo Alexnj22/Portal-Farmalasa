@@ -178,7 +178,20 @@ Depende de D2.5b (definir las variantes primero).
 **Cierre:** o se adoptan, o se eliminan si el patrón real resultó ser otro.
 Un canónico con 1 import es peor que ninguno: aparenta un estándar que no existe.
 
-### D3.6 — `UnifiedModal` sobre `ModalShell`
+### D3.6 — `UnifiedModal` sobre `ModalShell` · ✓ YA ESTABA HECHA
+
+El plan asumía mal. La cadena **ya existe**:
+`UnifiedModal` → `LiquidModal` → `ModalShell`, y `AlertModal` → `ModalShell`.
+Las 940 líneas de `UnifiedModal` no son una implementación de modal: son un
+**despachador** que carga en lazy el formulario que corresponde. No hay nada que
+migrar ahí.
+
+Lo que sí queda medido: **6 modales fuera de la cadena** —`MenuSearchModal`,
+`PromptModal`, `PhotoEditorModal`, `EmployeeDetailView`, más los paneles de
+`ViewTabBar` y `LiquidDatePicker` que son hojas, no modales—. Esos tres primeros
+sí son candidatos reales.
+
+#### Suposición original (incorrecta)
 
 Decisión ya tomada. Lo que el canónico no cubra se le agrega, no se resuelve
 inline.
@@ -497,16 +510,13 @@ los extremos juntos, sin atajos, sin feriados.
 
 ## Abiertos sin resolver
 
-- **`MenuSearchModal` no se adapta al tema — siempre claro** (reportado
-  2026-07-27). Lo llamativo es que el código ya parece correcto: usa
-  `data-surface="dropdown"`, tokens de texto en todo, y se portalea a
-  `document.body`, así que hereda el `data-theme` del `<html>`. Y
-  `--surface-dropdown` sí tiene los 4 valores por tema
-  (`rgba(240,248,255,.72)` claro · `rgba(10,15,38,.88)` oscuro · blanco sólido ·
-  `rgba(30,41,59,1)` sólido oscuro). **No alcancé a medirlo en vivo**, así que
-  la causa está sin identificar: hay algo que gana sobre el surface. Primer
-  sospechoso a descartar: `backdrop-filter: var(--backdrop-card)` sobre un fondo
-  translúcido puede estar lavando el color en oscuro.
+- **`MenuSearchModal` — NO REPRODUCIDO.** Reportado como "siempre claro".
+  Medido en vivo en los 4 temas contra el build actual: el fondo del modal
+  resuelve correctamente en cada uno (`rgba(240,248,255,.72)` claro ·
+  `rgba(10,15,38,.88)` oscuro · blanco sólido · `rgb(30,41,59)` sólido oscuro).
+  Dos explicaciones posibles: o lo arregló de rebote alguno de los cambios de
+  tema de esta sesión, o lo que se vio fue el acceso **móvil**, que se eliminó
+  en v2.71.1 junto con la lupa del header. Queda anotado por si reaparece.
 
 ## Observaciones sin confirmar (2026-07-27)
 

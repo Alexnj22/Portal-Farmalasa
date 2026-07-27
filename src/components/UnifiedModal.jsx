@@ -6,6 +6,7 @@ import {
 import { useStaffStore as useStaff } from '../store/staffStore';
 import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
+import { LoadingState } from './common/StateViews';
 import { supabase } from '../supabaseClient'; 
 
 // -------------------------
@@ -715,12 +716,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     if (!isOpen) return null;
 
-    const FallbackLoader = () => (
-        <div className="w-full h-64 flex flex-col items-center justify-center text-content-3 gap-3">
-            <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
-            <p className="font-bold text-caption uppercase tracking-widest animate-pulse">Cargando Módulo...</p>
-        </div>
-    );
+    const FallbackLoader = () => <LoadingState variant="content" label="Cargando Módulo…" />;
 
     // Tipos que necesitan que su contenido llene el modal (visor de PDF/documento con
     // scroll interno propio) en vez de altura natural por contenido. `min-h-full`/`h-full`

@@ -10,6 +10,7 @@ import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
+import { EmptyState } from '../components/common/StateViews';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import { useSearchToggle } from '../hooks/useSearchToggle';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -98,21 +99,6 @@ function useSortable(defaultKey, defaultDir = 'asc') {
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
-function EmptyState({ icon: Icon, iconClass, glowClass, title, subtitle }) {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
-            <div className="relative group flex flex-col items-center text-center">
-                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${glowClass}`} />
-                <div className={`relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${iconClass}`}>
-                    <Icon size={40} strokeWidth={2} />
-                </div>
-                <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">{title}</h3>
-                <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">{subtitle}</p>
-            </div>
-        </div>
-    );
-}
-
 // ─── Solve Row ────────────────────────────────────────────────────────────────
 function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, placeholder }) {
     return (

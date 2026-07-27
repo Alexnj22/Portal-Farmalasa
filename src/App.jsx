@@ -14,6 +14,7 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import AppLayout from "./components/layout/AppLayout";
 import UnifiedModal from "./components/UnifiedModal";
 import LiquidToast from './components/common/LiquidToast';
+import { LoadingState } from './components/common/StateViews';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
@@ -154,29 +155,13 @@ const PermissionGuard = ({ moduleKey, children }) => {
 // ⏳ FALLBACK DE SUSPENSE — mismo lenguaje glass del loader de sesión, para
 // la carga diferida (React.lazy) de cada vista por ruta.
 // ============================================================================
-const RouteLoadingFallback = () => (
-    <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-header">
-        {/* D1.4 — seguía hardcodeado en claro (bg-white/35 border-white/70 +
-            sombra literal) y se ve en CADA cambio de ruta. Se escapó del
-            barrido de v2.62.4 porque aquel buscaba stops de gradiente, no
-            `bg-white/NN` a secas — el mismo punto ciego del gate que cerró D0. */}
-        <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-[2rem] px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
-            <Loader2 className="text-brand-text animate-spin" size={28} strokeWidth={2.5} />
-            <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3">Cargando…</span>
-        </div>
-    </div>
-);
+const RouteLoadingFallback = () => <LoadingState variant="route" />;
 
 // Fallback SOLO para el área de contenido dentro de AppLayout — un Suspense
 // separado del de nivel raíz evita que cambiar de ruta ya autenticado
 // desmonte el sidebar entero (React reemplaza TODO el subárbol del Suspense
 // más cercano al suspender, no solo el componente lazy).
-const ContentLoadingFallback = () => (
-    <div className="w-full h-full flex items-center justify-center">
-        <Loader2 className="text-brand-text animate-spin" size={28} strokeWidth={2.5} />
-    </div>
-);
-
+const ContentLoadingFallback = () => <LoadingState variant="content" />;
 // ============================================================================
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================

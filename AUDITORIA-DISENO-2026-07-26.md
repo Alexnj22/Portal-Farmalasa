@@ -803,6 +803,23 @@ por padding. De los 83 que sí, salieron 4 clusters con razón de ser propia y
 principal · `lg` hero/full-width), todos derivados de `--control-h` con
 `max()` contra su propio piso táctil.
 
+**Estados (skeleton · vacío · carga)** — la familia sin ningún canónico.
+Convivían **dos idiomas de skeleton** sin criterio: la clase CSS `.skeleton`
+(129 usos, con shimmer real) y `animate-pulse` a mano (99 usos en 53 archivos,
+que solo parpadea opacidad); los 4 componentes skeleton existentes eran
+locales a su archivo. El `EmptyState` que `DESIGN.md` §18 declara **obligatorio
+en toda vista sin datos** era una función **local dentro de
+`FacturacionView.jsx`**, con 32 archivos copiando el patrón a mano. Y había
+**tres pantallas de carga con tres spinners distintos**.
+
+Resuelto con `components/common/StateViews.jsx`: `Skeleton` / `SkeletonText`
+(sobre `.skeleton`, que comunica carga en vez de solo parpadear y ya respeta
+`prefers-reduced-motion`), `EmptyState` (promovido desde el local, más `action`
+para ofrecer la salida en vez de dejar una pantalla muerta) y `LoadingState`
+con 3 variantes (`route` · `content` · `inline`). Adoptado ya en `App.jsx`
+(las 2 pantallas de ruta), `UnifiedModal` (que tenía un borde rotatorio
+bespoke) y `FacturacionView` (su local eliminado).
+
 **Badges** — 1,258 elementos: 11 radios, 9 tamaños de texto, 5 pesos, 20
 paddings. El canónico ya estaba en los datos: **85% del texto en dos tamaños**
 (9 y 10px) y **79% del peso en `font-black`**. `Badge` queda con 2 tamaños, 14

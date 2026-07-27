@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
 import ViewTabBar from '../components/common/ViewTabBar';
+import TabBarAction from '../components/common/TabBarAction';
 import Badge from '../components/common/Badge';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
@@ -866,24 +867,14 @@ const StaffManagementView = ({
       placeholder="Buscar por nombre, código o cargo..."
       trailingActions={
         <>
-          <button
-            type="button"
-            onClick={handleOpenNewEmployee}
-            disabled={!canEdit}
-            className="h-11 px-4 md:px-5 rounded-btn bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <UserPlus size={14} strokeWidth={3} />
-            <span className="hidden sm:inline">Nuevo Empleado</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleOpenNewPracticante}
-            disabled={!canEdit}
-            className="h-11 px-4 md:px-5 rounded-btn bg-chart-3-solid text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <GraduationCap size={14} strokeWidth={3} />
-            <span className="hidden sm:inline">Nuevo Practicante</span>
-          </button>
+          <TabBarAction icon={UserPlus} variant="primary"
+            onClick={handleOpenNewEmployee} disabled={!canEdit}>
+            Nuevo Empleado
+          </TabBarAction>
+          <TabBarAction icon={GraduationCap} tone="chart-3"
+            onClick={handleOpenNewPracticante} disabled={!canEdit}>
+            Nuevo Practicante
+          </TabBarAction>
         </>
       }
     />

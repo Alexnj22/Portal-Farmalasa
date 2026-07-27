@@ -1,0 +1,80 @@
+import React, { memo } from 'react';
+
+/**
+ * TabBarAction — acción dentro de la barra flotante de vista (`ViewTabBar`).
+ *
+ * Creado en D3.10 (2026-07-27). Al consolidar las 13 barras reescritas a mano
+ * quedó a la vista que cada vista también escribía sus botones de acción, y con
+ * los mismos tres problemas en todas:
+ *
+ *   · `shadow-glow-*` fijo — el halo se dibuja igual sobre fondo claro que
+ *     oscuro, así que en los temas sólidos no se ve luminoso, se ve sucio.
+ *   · `rounded-btn` (14px) dentro de una barra donde todo lo demás es píldora:
+ *     dos lenguajes de forma en el mismo control.
+ *   · gradiente `from-brand to-brand-hover` a mano, distinto en cada vista.
+ *
+ * Dos variantes, aprobadas sobre lámina en los 4 temas:
+ *
+ *   primary  una sola por barra — la acción que más se hace. Relleno plano del
+ *            token de marca, sin gradiente ni halo.
+ *   quiet    el resto. Superficie neutra y el COLOR solo en el ícono, que es lo
+ *            que identifica la categoría sin competir con la primaria.
+ *
+ * Sobre el modo oscuro: la superficie `quiet` va MÁS OSCURA que la barra, no
+ * más clara. Un velo blanco sobre riel oscuro se lee como una pastilla blanca
+ * y rompe el modo oscuro — el usuario lo señaló mirando la lámina. Por eso
+ * `--tabaction-bg` no es "blanco al N%" sino un valor propio por tema.
+ */
+
+const TONE_ICON = {
+    brand:     'text-brand-text',
+    success:   'text-success-text',
+    warning:   'text-warning-text',
+    danger:    'text-danger-text',
+    'chart-1': 'text-chart-1-text', 'chart-2': 'text-chart-2-text',
+    'chart-3': 'text-chart-3-text', 'chart-4': 'text-chart-4-text',
+    'chart-5': 'text-chart-5-text', 'chart-6': 'text-chart-6-text',
+    'chart-7': 'text-chart-7-text', 'chart-8': 'text-chart-8-text',
+    'chart-9': 'text-chart-9-text',
+};
+
+const BASE = `h-11 px-4 md:px-[18px] rounded-full shrink-0 whitespace-nowrap
+    inline-flex items-center justify-center gap-2 border
+    text-micro md:text-caption font-black uppercase tracking-widest
+    transition-[background-color,border-color,color,transform] duration-200
+    ease-[cubic-bezier(0.23,1,0.32,1)]
+    hover:-translate-y-px active:translate-y-0 active:scale-[0.97]
+    disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0`;
+
+const TabBarAction = memo(({
+    icon: Icon,
+    children,
+    variant = 'quiet',
+    tone = 'brand',
+    label,
+    className = '',
+    ...rest
+}) => {
+    const isPrimary = variant === 'primary';
+
+    return (
+        <button
+            type="button"
+            aria-label={label || (typeof children === 'string' ? children : undefined)}
+            className={`${BASE} ${className}
+                ${isPrimary
+                    ? 'bg-brand border-brand text-white hover:bg-brand-hover hover:border-brand-hover'
+                    : 'bg-[var(--tabaction-bg)] border-[var(--tabaction-border)] text-content-2 hover:bg-[var(--tabaction-hover)] hover:text-content'}`}
+            {...rest}
+        >
+            {/* En `quiet` el color vive solo acá: identifica la categoría sin
+                competir con la acción primaria. En `primary` el botón entero ya
+                es del color, así que el ícono va en blanco con el texto. */}
+            {Icon && <Icon size={14} strokeWidth={2.75}
+                className={isPrimary ? '' : (TONE_ICON[tone] || TONE_ICON.brand)} />}
+            {children && <span className="hidden sm:inline">{children}</span>}
+        </button>
+    );
+});
+
+export default TabBarAction;

@@ -5,7 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.67.3';
+export const APP_VERSION = '2.68.0';
+
+// v2.68.0 — feat(design): ViewTabBar canonico en 4 vistas + TabBarAction nuevo.
+//
+// D3.9 — CONSOLIDACION DE LA BARRA. 13 vistas tenian el buscador flotante reescrito a
+// mano; 15 usaban el canonico. Migradas 4: EmployeeDocumentsView, StaffManagementView,
+// ConteoInventarioView y ConteoDetailView. Entre las cuatro, ~190 lineas de marcado
+// menos y cuatro copias del estado del buscador que desaparecen.
+// Cambio de comportamiento en StaffManagementView: seis handlers colapsaban la barra al
+// abrir un modal (setIsSearchActive(false)); con el canonico ese estado vive adentro, asi
+// que la busqueda queda abierta detras del modal y el termino no se pierde al volver.
+//
+// D3.10 — TabBarAction. Al mover los botones adentro de la barra quedo a la vista que
+// competian: dos pildoras rellenas y el buscador, los tres con halo, en 54px de alto.
+// Tres problemas reales, iguales en todas las vistas:
+//   · shadow-glow-* fijo: el halo se dibuja igual sobre fondo claro que oscuro, asi que
+//     en los temas solidos no se ve luminoso, se ve sucio.
+//   · rounded-btn (14px) dentro de una barra donde todo lo demas es pildora.
+//   · gradiente from-brand to-brand-hover escrito a mano, distinto en cada vista.
+// Direccion elegida sobre lamina en los 4 temas: UNA accion primaria (relleno plano del
+// token de marca, sin gradiente ni halo) y el resto tranquilas, con el color reducido al
+// icono, que identifica la categoria sin competir.
+//
+// El usuario detecto mirando la lamina que en liquid oscuro las pastillas se leian
+// BLANCAS. Verificado en el producto: la barra si es oscura (rgba(13,20,48,.5), borde al
+// 8%) — lo que se leia blanco eran las superficies internas, que en oscuro son velos
+// blancos al 7-14%. Por eso --tabaction-bg NO es "blanco al N%" sino un valor propio por
+// tema: en los oscuros la accion tranquila va MAS OSCURA que la barra, no mas clara.
+// Un velo blanco sobre riel oscuro se lee como pastilla blanca y rompe el modo oscuro.
+//
+// El boton de buscar de ViewTabBar pierde el halo y pasa a pildora, por la misma razon.
 
 // v2.67.3 — fix(a11y): barrido completo de 25 rutas con la cuenta QA (acceso total).
 //

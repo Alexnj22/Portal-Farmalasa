@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import ViewTabBar from '../components/common/ViewTabBar';
+import TabBarAction from '../components/common/TabBarAction';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -65,14 +66,9 @@ export default function ConteoInventarioView() {
             onSearchChange={setSearch}
             placeholder="Buscar por sucursal..."
             trailingActions={canEdit && (
-                <button
-                    type="button"
-                    onClick={() => setShowModal(true)}
-                    className="h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50"
-                >
-                    <Plus size={14} strokeWidth={3} />
-                    <span className="hidden sm:inline">Nuevo Conteo</span>
-                </button>
+                <TabBarAction icon={Plus} variant="primary" onClick={() => setShowModal(true)}>
+                    Nuevo Conteo
+                </TabBarAction>
             )}
         />
     );

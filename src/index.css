@@ -154,6 +154,14 @@
      235,255,0.35), un azulado) no coincidía con el pill real (bg-white/10).
      Confirmado por grep: ningún otro archivo depende del valor viejo. */
   --surface-tab-track:  rgba(255,255,255,0.10);
+  /* Acción tranquila dentro de la barra (D3.10). En los temas CLAROS es un
+     velo blanco, como el resto del vidrio. En los OSCUROS va más OSCURA que
+     la barra, no más clara: un velo blanco al 7% sobre riel oscuro se lee
+     como una pastilla blanca —el usuario lo señaló— y rompe el modo oscuro. */
+  --tabaction-bg:      rgba(255,255,255,0.55);
+  --tabaction-border:  rgba(255,255,255,0.80);
+  --tabaction-hover:   rgba(255,255,255,0.80);
+
   --tab-track-radius:   2.5rem;
   --tab-track-backdrop: blur(40px) saturate(180%);
 
@@ -507,6 +515,10 @@
   --surface-input:      rgba(13,20,48,0.55);
   --surface-dropdown:   rgba(10,15,38,0.88);
   --surface-tab-track:  rgba(13,20,48,0.50);
+  --tabaction-bg:      rgba(3,7,25,0.55);
+  --tabaction-border:  rgba(255,255,255,0.09);
+  --tabaction-hover:   rgba(3,7,25,0.78);
+
 
   --border-card:   rgba(255,255,255,0.10);
   --border-header: rgba(255,255,255,0.08);
@@ -608,6 +620,10 @@
   --surface-input:      rgba(255,255,255,1.00);
   --surface-dropdown:   rgba(255,255,255,1.00);
   --surface-tab-track:  rgba(241,245,249,1.00);
+  --tabaction-bg:      rgba(255,255,255,1.00);
+  --tabaction-border:  rgba(148,163,184,0.28);
+  --tabaction-hover:   rgba(248,250,252,1.00);
+
   --surface-tab-active: #ffffff;
 
   --border-card:   rgba(148,163,184,0.28);
@@ -680,6 +696,10 @@
   --surface-input:      rgba(15,23,42,1.00);
   --surface-dropdown:   rgba(30,41,59,1.00);
   --surface-tab-track:  rgba(15,23,42,1.00);
+  --tabaction-bg:      rgba(2,6,23,1.00);
+  --tabaction-border:  rgba(148,163,184,0.16);
+  --tabaction-hover:   rgba(8,14,34,1.00);
+
   --surface-tab-active: rgba(255,255,255,0.10);
 
   --border-card:   rgba(148,163,184,0.12);

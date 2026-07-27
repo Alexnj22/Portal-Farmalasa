@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ViewTabBar from '../../components/common/ViewTabBar';
+import TabBarAction from '../../components/common/TabBarAction';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
     FolderOpen, Search, X, ExternalLink, FileCheck, Stethoscope,
@@ -252,16 +253,10 @@ const EmployeeDocumentsView = () => {
             onSearchChange={setSearch}
             placeholder="Buscar documento..."
             trailingActions={
-                <button onClick={() => setFilterOpen(v => !v)}
-                    className={`px-3 md:px-4 h-11 rounded-full text-micro md:text-caption font-black uppercase tracking-widest
-                        transition-all duration-300 flex items-center gap-1.5 shrink-0 border
-                        ${hasFilters
-                            ? 'bg-surface-tab-active text-brand-text border-surface-tab-active shadow-md'
-                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content'}`}>
-                    <Filter size={10} strokeWidth={2.5} />
+                <TabBarAction icon={Filter} onClick={() => setFilterOpen(v => !v)}
+                    className={hasFilters ? 'text-brand-text' : ''}>
                     Filtrar
-                    {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}
-                </button>
+                </TabBarAction>
             }
         />
     );

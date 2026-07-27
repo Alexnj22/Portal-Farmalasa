@@ -157,11 +157,16 @@ export default function ViewTabBar({
 
         {trailingActions}
 
+        {/* D3.10: el botón de buscar iba con `--shadow-glow-brand` y
+            `rounded-btn`. El halo se dibuja igual sobre fondo claro que oscuro
+            —en los temas sólidos no se ve luminoso, se ve sucio— y el radio de
+            14px chocaba con las píldoras del resto de la barra. Ahora es
+            relleno plano y píldora, igual que `TabBarAction variant="primary"`. */}
         {showSearch && (
           <button onClick={openSearch}
-            className="w-11 h-11 rounded-btn flex items-center justify-center shrink-0
-              transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative
-              bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover">
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
+              transition-[background-color,transform] duration-200 hover:-translate-y-px active:scale-[0.97] transform-gpu relative
+              bg-brand text-white hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchValue && (
               <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />

@@ -342,6 +342,50 @@ es donde aparecen los componentes que faltan.
 ---
 
 
+
+## D3.9 — Consolidar la barra de vista (9 restantes)
+
+**Hecho (4/13)**: `EmployeeDocumentsView`, `StaffManagementView`,
+`ConteoInventarioView`, `ConteoDetailView` — ~190 líneas menos.
+Canónicos disponibles: `ViewTabBar` + `TabBarAction` (D3.10).
+
+### Grupo 1 · swap directo (3)
+La barra tiene los dos estados estándar; todo lo que no es buscador pasa a
+`trailingActions`.
+
+| vista | qué lleva al canónico |
+|---|---|
+| `FacturacionView` | 6 tabs propios + 5 `LiquidSelect` de filtro |
+| `PermissionsView` | buscador de cargos + 2 selects |
+| `AttendanceMonitorView` | filtro de sucursal (respeta `getScope`) |
+
+### Grupo 2 · barra con más controles (2)
+Mismos dos estados, pero el bloque normal trae media docena de controles.
+Van igual, con `trailingActions` más largo.
+
+| vista | qué lleva |
+|---|---|
+| `TabHistory` | botón de IA, menú de descarga, select de tipo, rango de fechas, reset |
+| `RolesView` | tabs propios; hay que ver por qué tiene un solo estado colapsable |
+
+### Grupo 3 · tercer estado (4)
+**No son swap.** Tienen un selector de filtro que se expande *dentro* de la
+misma barra — un estado que el canónico no modela. Para estas hay que decidir
+antes: o `ViewTabBar` gana un modo `filterPicker`, o se quedan aparte con la
+razón escrita.
+
+| vista | estados colapsables |
+|---|---|
+| `AnnouncementsView` | 3 |
+| `RequestsView` | 4 |
+| `AuditView` | 5 |
+| `BranchesView` | 7 |
+
+### Regla de cierre
+Cada vista migrada: `npm run build` + `eslint` en verde, la barra abierta y
+cerrada verificada en vivo, y 0 paradas de foco invisibles en su ruta. Al
+terminar, `gate:design` en verde y una pasada por las 25 rutas.
+
 ## Observaciones sin confirmar (2026-07-27)
 
 No son hallazgos: son cosas que vi una vez y **no pude reproducir**. Se anotan

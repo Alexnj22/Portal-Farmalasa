@@ -1010,8 +1010,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const isExterna = selectedBranch?.type === 'EXTERNA';
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-surface-card";
+    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-card-soft)]";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-panel)] hover:bg-surface-card";
 
     // 🚨 Propiedades base para que los selects floten libres del Modal
     const portalSelectProps = {
@@ -1303,7 +1303,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[var(--shadow-inset-hi)]">
                                     <GraduationCap size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Nivel Académico</h4>
@@ -1569,7 +1569,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[var(--shadow-inset-hi)]">
                                     <Car size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Vehículo y Acreditaciones</h4>
@@ -1609,7 +1609,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-xl border border-chart-5/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-xl border border-chart-5/20 shadow-[var(--shadow-inset-hi)]">
                                     <Users size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Personas que Dependen Económicamente</h4>
@@ -2072,7 +2072,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[var(--shadow-inset-hi)]">
                                     <CreditCard size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Cuentas y Retenciones</h4>
@@ -2109,7 +2109,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className={`${islandClass} ${islandHoverClass}`}>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-chart-8-solid text-white rounded-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]"><AtSign size={16} strokeWidth={2.5} /></div>
+                                    <div className="p-2 bg-chart-8-solid text-white rounded-xl shadow-[var(--shadow-inset-hi)]"><AtSign size={16} strokeWidth={2.5} /></div>
                                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Login de App Móvil</h4>
                                 </div>
                                 <PortalInput label="Usuario (Auto-generado)" name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />

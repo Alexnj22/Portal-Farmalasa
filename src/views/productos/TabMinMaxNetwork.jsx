@@ -188,7 +188,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
             <div className="flex items-center gap-2.5 flex-wrap">
 
                 {/* Filter pill: ABC | Alert | Clear */}
-                <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0">
+                <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-chip)] transition-all duration-300 hover:shadow-[var(--shadow-glass-raised)] hover:-translate-y-0.5 shrink-0">
                     {/* ABC */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (

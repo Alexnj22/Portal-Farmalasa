@@ -1075,7 +1075,7 @@ const EmployeeRequestsView = () => {
 
                 {/* ── PANEL IZQUIERDO: Formulario ── */}
                 <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar transform-gpu">
-                    <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                    <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[var(--shadow-glass-card)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-brand text-white shadow-sm">

@@ -93,7 +93,7 @@ const FormAnnouncements = ({ data }) => {
 
       {/* CONTENIDO DEL MENSAJE */}
       {(readersModal.content || readersModal.message || readersModal.body) && (
-        <div className="mb-8 shrink-0 relative overflow-hidden bg-surface-card backdrop-blur-sm rounded-2xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+        <div className="mb-8 shrink-0 relative overflow-hidden bg-surface-card backdrop-blur-sm rounded-2xl border border-border-card shadow-[var(--shadow-inset-glow)]">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand/40"></div>
             <div className="p-4 md:px-5 md:py-4">
                 {/* 🚨 SCROLL OCULTO EN EL TEXTO DEL MENSAJE */}
@@ -150,7 +150,7 @@ const FormAnnouncements = ({ data }) => {
                   <PaginationControls currentPage={confirmedPage} totalPages={totalConfirmedPages} setPage={setConfirmedPage} />
                 </div>
               ) : (
-                <div className="p-5 bg-surface-card rounded-2xl border border-border-card text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+                <div className="p-5 bg-surface-card rounded-2xl border border-border-card text-center shadow-[var(--shadow-inset-glow)]">
                   <p className="text-body-sm text-content-3 font-bold flex items-center justify-center gap-2">
                     Nadie ha abierto este aviso todavía <span className="text-lg">🫣</span>
                   </p>

@@ -337,7 +337,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         </div>
 
         {/* Filter pill estándar */}
-        <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] shrink-0">
+        <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-chip)] shrink-0">
           <div className="px-2 py-1.5" style={{ minWidth: 150 }}>
             <LiquidSelect value={sucFilter === 'all' ? '' : sucFilter}
               onChange={v => setSucFilter(v || 'all')}

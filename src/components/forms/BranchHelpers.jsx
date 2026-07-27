@@ -91,8 +91,8 @@ export const FileUploader = ({ label, file, url, onChange }) => {
             
             <div className={`relative flex items-center gap-3 rounded-2xl p-2 transition-all duration-300 border transform-gpu ${
                 !hasFile 
-                    ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:bg-warning/10 hover:border-warning/40 hover:shadow-md cursor-pointer group' 
-                    : 'bg-success/10 backdrop-blur-sm border-success/30 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:shadow-md'
+                    ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[var(--shadow-inset-glow)] hover:bg-warning/10 hover:border-warning/40 hover:shadow-md cursor-pointer group' 
+                    : 'bg-success/10 backdrop-blur-sm border-success/30 shadow-[var(--shadow-inset-glow)] hover:shadow-md'
             }`}
             onClick={() => !hasFile && fileInputRef.current?.click()}
             >

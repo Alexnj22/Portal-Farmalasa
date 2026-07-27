@@ -571,7 +571,7 @@ const RolesView = ({ openModal }) => {
                         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
                             <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
                                 ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
-                                : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] group-hover/panel:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                : 'border border-border-card shadow-[var(--shadow-glass-card)] group-hover/panel:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 }`}>
 
                                 <div className="flex justify-between items-center mb-6">

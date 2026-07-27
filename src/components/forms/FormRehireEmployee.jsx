@@ -22,7 +22,7 @@ const portalProps = {
 };
 
 const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50';
-const island    = 'bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]';
+const island    = 'bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-card-soft)]';
 const reqBadge  = <Badge variant="danger" size="sm" uppercase={false}>Requerido</Badge>;
 
 const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {

@@ -13,7 +13,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
 
     return (
         <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
-            <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)]">
+            <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-8 shadow-[var(--shadow-glass-dark)]">
 
                 <div className="flex flex-col items-center text-center mb-6">
                     <div className="inline-flex p-4 rounded-3xl mb-3 bg-warning/10 border border-warning/40 shadow-[0_0_40px_rgba(245,158,11,0.15)]">

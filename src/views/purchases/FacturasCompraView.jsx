@@ -821,7 +821,7 @@ function TabDocumentos({
 
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex items-start justify-end gap-3 flex-wrap shrink-0">
-                <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-divider shrink-0 overflow-visible max-w-full flex-wrap">
+                <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-chip)] transition-all duration-300 hover:shadow-[var(--shadow-glass-raised)] hover:-translate-y-0.5 hover:border-divider shrink-0 overflow-visible max-w-full flex-wrap">
 
                     {/* Período + clear individual */}
                     <div className="flex items-center">

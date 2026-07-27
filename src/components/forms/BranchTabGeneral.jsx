@@ -21,8 +21,8 @@ const BranchTabGeneral = ({
     , [municipalityList]);
 
     // 🚨 DISEÑO COMPACTO: p-4 y rounded-3xl para ahorrar espacio vertical
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-surface-card";
+    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-card-soft)]";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-panel)] hover:bg-surface-card";
     
     // Altura optimizada h-[40px] para encajar perfecto
     const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50";
@@ -34,7 +34,7 @@ const BranchTabGeneral = ({
             {/* ISLA 1: IDENTIDAD */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[var(--shadow-inset-hi)]">
                         <Building2 size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Identidad de Sucursal</h4>
@@ -70,7 +70,7 @@ const BranchTabGeneral = ({
             {/* ISLA 2: UBICACIÓN */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[var(--shadow-inset-hi)]">
                         <MapPin size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Ubicación Geográfica</h4>
@@ -174,7 +174,7 @@ const BranchTabGeneral = ({
             {/* ISLA 3: CONTACTO */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[var(--shadow-inset-hi)]">
                         <Phone size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Canales de Contacto</h4>

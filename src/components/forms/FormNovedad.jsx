@@ -342,7 +342,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {/* 🚨 ISLA DE FECHAS (Liquid Glass) */}
-            {type && <div className="bg-surface-card backdrop-blur-md p-5 rounded-3xl border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
+            {type && <div className="bg-surface-card backdrop-blur-md p-5 rounded-3xl border border-border-card shadow-[var(--shadow-glass-card-soft)]">
                 
                 {/* SI ES VACACIONES — RangeDatePicker estilo booking */}
                 {isVacation ? (

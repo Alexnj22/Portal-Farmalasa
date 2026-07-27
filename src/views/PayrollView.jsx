@@ -280,7 +280,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                 const branchName = branch?.name || 'Otras áreas';
                 return (
                     <div key={branch?.id || '__none__'}
-                        className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
+                        className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card shadow-[var(--shadow-glass-card)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
                         style={{ animationDelay: `${gi * 80}ms` }}>
 
                         {/* Branch header */}
@@ -547,7 +547,7 @@ const PayrollView = ({ openModal }) => {
 
                     {/* ── Sidebar: Períodos ── */}
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
-                        <div className="backdrop-blur-[30px] rounded-header p-5 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                        <div className="backdrop-blur-[30px] rounded-header p-5 bg-surface-card border border-border-card shadow-[var(--shadow-glass-card)]">
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
                                 <button onClick={() => openModal?.('newPayrollPeriod')}
@@ -592,7 +592,7 @@ const PayrollView = ({ openModal }) => {
                         ) : (
                             <>
                                 {/* Period summary card */}
-                                <div className="backdrop-blur-[30px] rounded-header p-6 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="backdrop-blur-[30px] rounded-header p-6 bg-surface-card border border-border-card shadow-[var(--shadow-glass-card)] animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
                                             <h2 className="text-body-xl font-black text-content tracking-tight">{activePeriod.name}</h2>

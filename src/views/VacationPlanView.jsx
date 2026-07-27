@@ -748,7 +748,7 @@ const VacationPlanView = () => {
                         <div className={`backdrop-blur-[30px] rounded-header p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative ${
                             editingPlan
                                 ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
-                                : 'bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                : 'bg-surface-card border border-border-card shadow-[var(--shadow-glass-card)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                         }`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
@@ -873,7 +873,7 @@ const VacationPlanView = () => {
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
 
                         {/* Plan header status card */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-5 shadow-[var(--shadow-glass-card)]">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand-purple flex items-center justify-center shadow-sm">
@@ -926,7 +926,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Gantt */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[var(--shadow-glass-card)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
                             <div className="flex items-center justify-between mb-5">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
@@ -937,7 +937,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Tabla */}
-                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
+                        <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-header p-6 shadow-[var(--shadow-glass-card)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>
@@ -1084,7 +1084,7 @@ const VacationPlanView = () => {
 
                         {/* Solicitudes de cambio */}
                         {vacationChangeRequests.length > 0 && (
-                            <div className="bg-surface-card backdrop-blur-[30px] border border-warning/30 rounded-header p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                            <div className="bg-surface-card backdrop-blur-[30px] border border-warning/30 rounded-header p-6 shadow-[var(--shadow-glass-card)]">
                                 <p className="text-caption font-black uppercase tracking-widest text-warning flex items-center gap-1.5 mb-4">
                                     <MessageSquare size={10} /> Solicitudes de cambio ({vacationChangeRequests.length})
                                 </p>

@@ -85,8 +85,8 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
 // Componente Principal
 const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
 
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-surface-card";
+    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-card-soft)]";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-panel)] hover:bg-surface-card";
 
     return (
         <div className="w-full">
@@ -94,7 +94,7 @@ const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
                 
                 {/* ENCABEZADO PRO */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[var(--shadow-inset-hi)]">
                         <Clock size={16} strokeWidth={2.5} />
                     </div>
                     <div className="flex flex-col">

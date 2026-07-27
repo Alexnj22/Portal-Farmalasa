@@ -150,7 +150,7 @@ export default function FeedbackOverlay({
 
             {/* COLUMNA DERECHA: Tarjeta de Aviso Liquid Glass */}
             {announcement && (
-              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-modal overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
+              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-modal overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[var(--shadow-glass-dark)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
                 {isBirthday && (
                   <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-modal">
                     <div className="absolute -top-8 -right-8 text-[120px] opacity-[0.07] select-none">🎂</div>
@@ -195,7 +195,7 @@ export default function FeedbackOverlay({
                 className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 rounded-header md:rounded-header flex items-center justify-center border backdrop-blur-3xl transition-all duration-500 
                 ${color === 'red'
                     ? 'bg-danger/10 border-danger/40 shadow-[0_0_50px_rgba(239,68,68,0.2),inset_0_2px_20px_rgba(255,255,255,0.1)] animate-[pulse_2s_infinite]'
-                    : 'bg-white/[0.03] border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)]'
+                    : 'bg-white/[0.03] border-white/10 shadow-[var(--shadow-glass-dark)]'
                   }`}>
                 {Icon && (
                   <div className={color === 'red' ? 'animate-bounce' : ''}>

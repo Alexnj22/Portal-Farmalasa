@@ -225,11 +225,11 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     const isDaysOffPerfect = daysOffCount === 1;
 
     // Configuración visual de la barra de progreso
-    let barColor = 'bg-success shadow-[0_0_10px_rgba(52,211,153,0.5)]'; // Estado Perfecto
+    let barColor = 'bg-success shadow-[var(--shadow-glow-chart-9-md)]'; // Estado Perfecto
     if (isHoursOver || daysOffCount === 0) {
-        barColor = 'bg-danger shadow-[0_0_10px_rgba(239,68,68,0.5)]'; // Infracción Grave
+        barColor = 'bg-danger shadow-[var(--shadow-glow-danger-md)]'; // Infracción Grave
     } else if (isHoursUnder || daysOffCount > 1) {
-        barColor = 'bg-warning shadow-[0_0_10px_rgba(251,191,36,0.5)]'; // Falta rellenar
+        barColor = 'bg-warning shadow-[var(--shadow-glow-chart-7-md)]'; // Falta rellenar
     }
 
     const shortName = shortEmployeeName(emp);
@@ -559,7 +559,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                         onClick={e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch)}>
                         <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay
-                                ? 'bg-chart-3/10 border border-chart-3/40 shadow-[0_2px_8px_rgba(99,102,241,0.10)]'
+                                ? 'bg-chart-3/10 border border-chart-3/40 shadow-[var(--shadow-glow-chart-3-md)]'
                                 : hasShift
                                     ? 'bg-surface-card border border-divider opacity-40'
                                     : 'border border-dashed border-divider bg-surface-card-hover/10 opacity-30'
@@ -728,7 +728,7 @@ const ScheduleCalendar = memo(({
                                 let dayTextColor = "text-content-3";
                                 
                                 if (dayColor === 'var(--txvol-critica)') { // Crítico (Rojo)
-                                    headerBg = "bg-danger/10 border-danger/30 shadow-[0_4px_15px_rgba(244,63,94,0.05)]";
+                                    headerBg = "bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger-md)]";
                                     headerTextColor = "text-danger-text";
                                     dayTextColor = "text-danger-text";
                                 } else if (dayColor === 'var(--txvol-pico)') { // Pico (Naranja)

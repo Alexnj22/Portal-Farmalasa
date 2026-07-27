@@ -292,7 +292,7 @@ const BranchCard = memo(({
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                             {aiSummaryData?.split('\n').map((paragraph, index) => (
                                 <div key={index} className="relative mb-4 group/p">
-                                    <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
+                                    <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
                                     
                                     <p className="text-body font-medium text-content-2 leading-relaxed text-justify pl-4">
                                         {paragraph.split('**').map((text, i) => (
@@ -318,7 +318,7 @@ const BranchCard = memo(({
                                 if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }
                                 else { generateBranchAiSummary(e); }
                             }}
-                            className="relative group/ai-btn w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_10px_rgba(168,85,247,0.2)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] hover:-translate-y-0.5"
+                            className="relative group/ai-btn w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:-translate-y-0.5"
                             title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
                         >
                             {aiMode ? (
@@ -376,7 +376,7 @@ const BranchCard = memo(({
                             <div className="flex items-center gap-2">
                                 <h3 className="text-title-sm font-bold text-content leading-tight group-hover/header:text-brand-text transition-colors duration-300 line-clamp-2">{branch.name}</h3>
                                 <div className="relative group/status flex items-center justify-center p-1.5 cursor-help shrink-0">
-                                    {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
+                                    {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[var(--shadow-glow-warning-md)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[var(--shadow-glow-chart-2-md)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 bg-slate-800/90 backdrop-blur-xl text-white text-micro font-black uppercase tracking-widest rounded-lg shadow-xl opacity-0 invisible group-hover/status:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-sidebar pointer-events-none border border-border-card">
                                         {isInactive ? 'Inactiva' : currentStatus.status === 'OPEN' ? 'Abierta Ahora' : 'Cerrada Ahora'}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-800/90"></div>
@@ -513,7 +513,7 @@ const BranchCard = memo(({
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={`text-body-lg font-black leading-none ${activeKiosks > 0 ? 'text-chart-3-text' : 'text-content-3'}`}>{activeKiosks} <span className="text-caption font-bold text-content-3">/ 3</span></span>
-                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-success border-success/30 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-surface-card shadow-inner border-border-card'}`} />
+                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-success border-success/30 shadow-[var(--shadow-glow-chart-2-md)] animate-pulse' : 'bg-surface-card shadow-inner border-border-card'}`} />
                             </div>
                         </button>
                     </>

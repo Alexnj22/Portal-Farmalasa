@@ -28,7 +28,7 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
         case 'REVOCAR_KIOSCO':
         case 'CREAR_TURNO_CATALOGO':
         case 'ELIMINAR_TURNO':
-            return { icon: Settings, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[0_4px_20px_rgba(99,102,241,0.15)]' };
+            return { icon: Settings, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3-lg)]' };
         case 'PERSONAL_ASIGNADO':
         case 'EDITAR_EMPLEADO':
         case 'ELIMINAR_EMPLEADO':
@@ -316,7 +316,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <button 
                                     onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateGlobalAiSummary}
                                     disabled={printHistory.length === 0 && !aiMode}
-                                    className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-1 active:scale-[0.97]'}`}
+                                    className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-1 active:scale-[0.97]'}`}
                                     title={aiMode ? "Cerrar Resumen IA" : "Resumen Inteligente del Historial"}
                                 >
                                     {aiMode ? (
@@ -425,7 +425,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm relative z-base animate-in slide-in-from-bottom-4 duration-500">
                                     {aiSummaryData?.split('\n').map((paragraph, index) => (
                                         <div key={index} className="relative mb-6 last:mb-0 group/p">
-                                            <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
+                                            <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
                                             <p className="text-body md:text-subtitle font-medium text-content-2 leading-relaxed text-justify pl-5">
                                                 {paragraph.split('**').map((text, i) => (
                                                     i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text

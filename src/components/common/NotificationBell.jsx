@@ -520,7 +520,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            {unread && <span className="w-2 h-2 rounded-full bg-brand flex-shrink-0 mt-2 shadow-[0_0_6px_rgba(0,82,204,0.6)]" />}
+                                                            {unread && <span className="w-2 h-2 rounded-full bg-brand flex-shrink-0 mt-2 shadow-[var(--shadow-glow-brand-sm)]" />}
                                                         </button>
                                                         {/* Borrar individual — visible al hover en desktop, siempre tenue en touch */}
                                                         <button

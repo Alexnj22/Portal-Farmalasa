@@ -62,7 +62,7 @@ export default function FeedbackOverlay({
 
         {isLactationAction && (
           <div className="absolute top-10 right-10 flex items-center gap-2 bg-chart-6/10 backdrop-blur-2xl border border-chart-6/30 px-5 py-2.5 rounded-full text-white font-bold animate-pulse shadow-[var(--shadow-glass-2)] overflow-hidden">
-            <Baby size={20} className="text-chart-6 drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]" /> Periodo de Lactancia
+            <Baby size={20} className="text-chart-6 drop-shadow-[var(--shadow-glow-chart-6-md)]" /> Periodo de Lactancia
           </div>
         )}
 
@@ -131,7 +131,7 @@ export default function FeedbackOverlay({
                   <button
                     type="button"
                     onClick={onEarlyExtra}
-                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 text-chart-3 rounded-3xl font-bold uppercase tracking-widest text-label w-full transition-all duration-300 hover:bg-chart-3/20 hover:border-chart-3/50 hover:text-white hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.97]"
+                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 text-chart-3 rounded-3xl font-bold uppercase tracking-widest text-label w-full transition-all duration-300 hover:bg-chart-3/20 hover:border-chart-3/50 hover:text-white hover:shadow-[var(--shadow-glow-chart-3-md)] active:scale-[0.97]"
                   >
                     <TimerReset size={15} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">Registrar Tiempo Extra</span>
@@ -158,7 +158,7 @@ export default function FeedbackOverlay({
                   </div>
                 )}
                 <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[var(--shadow-shine-lg)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[var(--shadow-shine-lg)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
                     {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
                   <div className="flex flex-col text-left">
@@ -176,7 +176,7 @@ export default function FeedbackOverlay({
                     <p className={`text-subtitle md:text-body-xl font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-btn font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-btn font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-chart-2-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
                     {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : isBirthday ? <><span className="text-body-xl">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>

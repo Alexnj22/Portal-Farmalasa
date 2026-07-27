@@ -46,7 +46,7 @@ const AuthPromptPanel = ({
 
         {/* TOP */}
         <div className="flex flex-col items-center text-center w-full mb-5 sm:mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
-          <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-3 sm:mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
+          <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-3 sm:mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]">
             <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl sm:text-3xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5 transition-colors">
@@ -106,7 +106,7 @@ const AuthPromptPanel = ({
               </button>
             )}
 
-            <div className="absolute inset-0 z-base rounded-3xl opacity-0 transition-opacity duration-500 pointer-events-none shadow-[0_0_20px_rgba(249,115,22,0.2)] group-focus-within/input:opacity-100" />
+            <div className="absolute inset-0 z-base rounded-3xl opacity-0 transition-opacity duration-500 pointer-events-none shadow-[var(--shadow-glow-chart-4-lg)] group-focus-within/input:opacity-100" />
           </div>
 
           <div className="mt-5 sm:mt-6 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center gap-3 [@media(max-height:800px)]:gap-1.5 w-full">
@@ -117,11 +117,11 @@ const AuthPromptPanel = ({
               </button>
             )}
             {skipPinHandler && (
-              <button type="button" onClick={skipPinHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-warning flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={skipPinHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-warning flex items-center justify-center w-full gap-2 transition-all duration-300 bg-warning/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-warning/30 hover:bg-warning/20 hover:border-warning/50 hover:shadow-[var(--shadow-glow-warning-md)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <SkipForward size={14} /> Omitir PIN — Notificar a TH
               </button>
             )}
-            <button type="button" onClick={cancelHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+            <button type="button" onClick={cancelHandler} className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center w-full gap-2 transition-all duration-300 bg-danger/10 px-5 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)] hover:-translate-y-0.5 active:scale-[0.97]">
               <XCircle size={14} /> Cancelar / Atrás
             </button>
           </div>

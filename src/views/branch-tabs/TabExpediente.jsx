@@ -17,7 +17,7 @@ const getDocStatus = (url, expDate) => {
 
     if (expDate) {
         const diff = Math.ceil((new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24));
-        if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', color: 'text-danger bg-danger/10 border-danger/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]', icon: AlertTriangle };
+        if (diff < 0) return { type: 'EXPIRED', label: 'Vencido', color: 'text-danger bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger-md)]', icon: AlertTriangle };
         if (diff <= 45) return { type: 'WARNING', label: `Vence en ${diff}d`, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', icon: Clock };
     }
 
@@ -90,7 +90,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                             {/* Ícono Disparador (Mismo diseño que en Staff) */}
                             <button
-                                className="relative w-8 h-8 flex items-center justify-center rounded-btn cursor-help transition-all duration-500 border-0 shadow-[0_0_10px_rgba(168,85,247,0.15)] group-hover/ai:shadow-[0_0_20px_rgba(168,85,247,0.5)] group-hover/ai:-translate-y-0.5"
+                                className="relative w-8 h-8 flex items-center justify-center rounded-btn cursor-help transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] group-hover/ai:shadow-[var(--shadow-glow-chart-3-lg)] group-hover/ai:-translate-y-0.5"
                                 title="Ver Análisis de IA del Documento"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-10 group-hover/ai:opacity-100 transition-all duration-500 group-hover/ai:animate-spin [animation-duration:3s]"></div>
@@ -127,7 +127,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                     </div>
 
                                     {/* Contenido */}
-                                    <div className="relative z-base max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
+                                    <div className="relative z-base max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
                                         <p className="text-label font-semibold text-content-2 leading-relaxed text-justify pl-3">
                                             {doc.aiSummary}
                                         </p>

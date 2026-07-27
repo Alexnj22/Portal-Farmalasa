@@ -502,7 +502,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-white/42 group-hover:text-white/80';
         const accentBarInactive = 'bg-white/20';
-        const accentBarActive   = 'bg-gradient-to-b from-logo-green to-logo-magenta shadow-[0_0_10px_rgba(152,29,151,0.6)]';
+        const accentBarActive   = 'bg-gradient-to-b from-logo-green to-logo-magenta shadow-[var(--shadow-glow-logo-magenta-md)]';
 
         if (comingSoon) {
             return (
@@ -577,7 +577,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {alert && (
                             <span className="relative z-base flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-danger shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-danger shadow-[var(--shadow-glow-danger-md)]" />
                             </span>
                         )}
                         {badge > 0 && (
@@ -1108,7 +1108,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
                                         </span>
                                     )}
-                                    {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
+                                    {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
                                 </button>
                             </div>
                         ) : flyout.type === 'group' ? (
@@ -1119,7 +1119,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     shadow-[var(--shadow-glass-4)]">
 
                                     <div className="px-4 pt-3.5 pb-2.5 border-b border-white/8 flex items-center gap-2">
-                                        <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#7DB8FF] to-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.6)]" />
+                                        <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#7DB8FF] to-[#4D94FF] shadow-[var(--shadow-glow-chart-1-sm)]" />
                                         <span className="text-white/60 text-caption font-black uppercase tracking-[0.18em]">{flyout.label}</span>
                                     </div>
 
@@ -1158,7 +1158,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                         />
                                                     </div>
                                                     <span className="text-body font-medium whitespace-nowrap flex-1">{m.label}</span>
-                                                    {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
+                                                    {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
                                                     {m.badge > 0 && (
                                                         <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center">
                                                             {m.badge > 9 ? '9+' : m.badge}

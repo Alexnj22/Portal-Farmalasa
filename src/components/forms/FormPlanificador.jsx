@@ -56,7 +56,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
 const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
     const isOrange = theme === 'orange';
     const activeBg = isOrange ? 'bg-chart-4' : 'bg-chart-6';
-    const shadowHover = isOrange ? 'hover:shadow-[var(--shadow-glow-chart-4)]' : 'hover:shadow-[0_2px_8px_rgba(236,72,153,0.3)]';
+    const shadowHover = isOrange ? 'hover:shadow-[var(--shadow-glow-chart-4)]' : 'hover:shadow-[var(--shadow-glow-chart-6-md)]';
 
     return (
         <button

@@ -285,7 +285,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
   const rowCelebrationClass = birthdayInfo?.isToday
-    ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-chart-6/10 via-warning/10 to-chart-6/10 ring-1 ring-chart-6/30 shadow-[0_2px_16px_rgba(236,72,153,0.10)]'
+    ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-chart-6/10 via-warning/10 to-chart-6/10 ring-1 ring-chart-6/30 shadow-[var(--shadow-glow-chart-6-md)]'
     : '';
 
   return (

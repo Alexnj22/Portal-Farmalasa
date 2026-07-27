@@ -9,7 +9,7 @@ import { ScanBarcode, ShieldAlert, XCircle, Bell } from 'lucide-react';
 // usuario — "no quiero que aparezca un input, nada se ingresa a mano".
 function ScanReadyRing({ specialMode }) {
   const ring = specialMode ? 'border-chart-4/40' : 'border-chart-1/40';
-  const core = specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_0_24px_rgba(249,115,22,0.25)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[0_0_24px_rgba(59,130,246,0.25)]';
+  const core = specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)]';
   const iconColor = specialMode ? 'text-chart-4-text' : 'text-chart-1-text';
   return (
     <div className="w-full flex flex-col items-center gap-3.5 [@media(max-height:800px)]:gap-1.5 py-2 [@media(max-height:800px)]:py-0.5">
@@ -47,7 +47,7 @@ export default function IdleScanPanel({
 
         {/* TOP: Ícono y Títulos */}
         <div className="flex flex-col items-center text-center w-full mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
-          <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
+          <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]'
             }`}>
             {specialMode
               ? <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
@@ -63,11 +63,11 @@ export default function IdleScanPanel({
 
           <div className="mt-5 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center">
             {specialMode ? (
-              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-danger/30 hover:bg-danger/20 hover:shadow-[var(--shadow-glow-danger-md)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <XCircle size={14} /> Cancelar Permiso
               </button>
             ) : (
-              <button type="button" onClick={specialOutHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={specialOutHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-btn border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[var(--shadow-glow-chart-4-md)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <ShieldAlert size={14} /> Autorizar Permiso / Salida
               </button>
             )}

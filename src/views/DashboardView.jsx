@@ -1368,7 +1368,7 @@ const DashboardView = ({ openModal }) => {
                       <div key={h} className="flex-1 flex flex-col justify-end relative h-full"
                         onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
                         onMouseLeave={()=>setSalesBarTip(null)}>
-                        {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-base"/>}
+                        {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[var(--shadow-glow-chart-9-sm)] animate-pulse z-base"/>}
                         <div className="w-full rounded-t-[2px] transition-[height,opacity]" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
                       </div>
                     );

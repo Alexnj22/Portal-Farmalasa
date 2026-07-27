@@ -332,7 +332,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
-                                            ? 'ring-2 ring-warning shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
+                                            ? 'ring-2 ring-warning shadow-[var(--shadow-glow-chart-7-lg)]'
                                             : hasObservacion(row) && row.pedido_status !== 'completado'
                                                 ? 'ring-2 ring-chart-4 shadow-[var(--shadow-glow-chart-4)]'
                                                 : isFadedOut
@@ -636,7 +636,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const fmtT = (iso) => iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
                             const conductorEmp = ruta.conductor_id ? empMap.get(ruta.conductor_id) : null;
                             return (
-                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-surface-card shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-border-card' : 'border-chart-3/30'}`}>
+                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-surface-card shadow-[var(--shadow-glow-chart-3-md)] ${isCompletada ? 'border-border-card' : 'border-chart-3/30'}`}>
                                     {/* Header sin color — glass */}
                                     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-divider bg-surface-card" onClick={e => e.stopPropagation()}>
                                         {/* Foto/icono conductor */}

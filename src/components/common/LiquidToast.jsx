@@ -15,7 +15,7 @@ const LiquidToast = () => {
         },
         error: {
             icon: <AlertCircle size={20} strokeWidth={2.5} className="text-white" />,
-            iconContainer: 'bg-danger shadow-[0_4px_12px_rgba(240,68,56,0.4)]'
+            iconContainer: 'bg-danger shadow-[var(--shadow-glow-danger-md)]'
         },
         info: {
             icon: <Info size={20} strokeWidth={2.5} className="text-white" />,
@@ -23,7 +23,7 @@ const LiquidToast = () => {
         },
         birthday: {
             icon: <Cake size={20} strokeWidth={2.5} className="text-white animate-[bounce_2s_infinite]" />,
-            iconContainer: 'bg-chart-6 shadow-[0_4px_12px_rgba(236,72,153,0.4)]'
+            iconContainer: 'bg-chart-6 shadow-[var(--shadow-glow-chart-6-md)]'
         }
     }[type] || {
         icon: <Info size={20} strokeWidth={2.5} className="text-white" />,

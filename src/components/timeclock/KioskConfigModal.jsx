@@ -53,7 +53,7 @@ const KioskConfigModal = ({
              ESTADO: KIOSCO VINCULADO (ACTIVO)
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
-            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[0_0_40px_rgba(16,185,129,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[var(--shadow-glow-chart-2-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-2-lg)]">
               <MonitorCheck size={42} className="text-success drop-shadow-[var(--shadow-glow-success)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
@@ -78,7 +78,7 @@ const KioskConfigModal = ({
               type="button"
               onClick={onRevoke}
               disabled={isProcessing}
-              className="relative z-content w-full text-caption sm:text-label uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="relative z-content w-full text-caption sm:text-label uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-btn border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={16} /> Revocar Permisos Locales
             </button>
@@ -88,7 +88,7 @@ const KioskConfigModal = ({
              ESTADO: VINCULAR KIOSCO (SETUP)
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
-            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]">
+            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]">
               <Settings size={42} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
@@ -145,7 +145,7 @@ const KioskConfigModal = ({
                 type="button"
                 onClick={onSave}
                 disabled={isProcessing || !selectedBranchId || !deviceNameInput}
-                className="relative z-base w-full mt-2 text-caption sm:text-label uppercase tracking-widest font-bold text-chart-1-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-1/15 py-4 rounded-btn border border-chart-1/30 hover:bg-chart-1/25 hover:border-chart-1/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+                className="relative z-base w-full mt-2 text-caption sm:text-label uppercase tracking-widest font-bold text-chart-1-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-1/15 py-4 rounded-btn border border-chart-1/30 hover:bg-chart-1/25 hover:border-chart-1/50 hover:shadow-[var(--shadow-glow-chart-1-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isProcessing ? (
                   <span className="w-4 h-4 border-2 border-chart-1/30 border-t-blue-400 rounded-full animate-spin" />

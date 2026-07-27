@@ -384,6 +384,69 @@
   --shadow-glow-danger:  0 4px 15px rgba(240,68,56,.35);
   --shadow-ring-brand:   0 0 0 4px rgba(0,82,204,.15);
 
+  /* ── ESCALA DE GLOW (2026-07-27) ────────────────────────────────────────
+     Mismo hallazgo que las sombras de vidrio, en otra familia. 143 de las 158
+     sombras literales que quedaban eran GLOWS de color, y parecían 131
+     decisiones distintas. No lo eran: al medirlas, los tres ejes agrupan.
+
+       blur   → 4-6px (13 usos) · 8-15px (48) · 20-50px (26)
+       alpha  → .1-.2 (25) · .3-.5 (37) · .6+ (25)
+       color  → SIEMPRE un token que ya existe: danger 20, chart-3 14,
+                chart-4 11, chart-1 9, warning 8, chart-2 7, chart-9 6…
+                Varias eran el token EXACTO escrito como rgba a mano —
+                rgba(18,183,106,.4) es --success, rgba(240,68,56,.4) es
+                --danger, rgba(152,29,151,.6) es --logo-magenta.
+
+     --shadow-glow-* ya existía pero en UNA sola intensidad, y por eso cada
+     quien escribía la suya. Estos son los 3 escalones × los colores del
+     sistema. El color sale de `color-mix` sobre el token, así que si la
+     paleta cambia el glow la sigue — no queda un rgba congelado. */
+  --shadow-glow-brand-sm: 0 0 8px color-mix(in srgb, var(--brand) 40%, transparent);
+  --shadow-glow-brand-md: 0 0 16px color-mix(in srgb, var(--brand) 35%, transparent);
+  --shadow-glow-brand-lg: 0 0 40px color-mix(in srgb, var(--brand) 22%, transparent);
+  --shadow-glow-success-sm: 0 0 8px color-mix(in srgb, var(--success) 40%, transparent);
+  --shadow-glow-success-md: 0 0 16px color-mix(in srgb, var(--success) 35%, transparent);
+  --shadow-glow-success-lg: 0 0 40px color-mix(in srgb, var(--success) 22%, transparent);
+  --shadow-glow-warning-sm: 0 0 8px color-mix(in srgb, var(--warning) 40%, transparent);
+  --shadow-glow-warning-md: 0 0 16px color-mix(in srgb, var(--warning) 35%, transparent);
+  --shadow-glow-warning-lg: 0 0 40px color-mix(in srgb, var(--warning) 22%, transparent);
+  --shadow-glow-danger-sm: 0 0 8px color-mix(in srgb, var(--danger) 40%, transparent);
+  --shadow-glow-danger-md: 0 0 16px color-mix(in srgb, var(--danger) 35%, transparent);
+  --shadow-glow-danger-lg: 0 0 40px color-mix(in srgb, var(--danger) 22%, transparent);
+  --shadow-glow-chart-1-sm: 0 0 8px color-mix(in srgb, var(--chart-1) 40%, transparent);
+  --shadow-glow-chart-1-md: 0 0 16px color-mix(in srgb, var(--chart-1) 35%, transparent);
+  --shadow-glow-chart-1-lg: 0 0 40px color-mix(in srgb, var(--chart-1) 22%, transparent);
+  --shadow-glow-chart-2-sm: 0 0 8px color-mix(in srgb, var(--chart-2) 40%, transparent);
+  --shadow-glow-chart-2-md: 0 0 16px color-mix(in srgb, var(--chart-2) 35%, transparent);
+  --shadow-glow-chart-2-lg: 0 0 40px color-mix(in srgb, var(--chart-2) 22%, transparent);
+  --shadow-glow-chart-3-sm: 0 0 8px color-mix(in srgb, var(--chart-3) 40%, transparent);
+  --shadow-glow-chart-3-md: 0 0 16px color-mix(in srgb, var(--chart-3) 35%, transparent);
+  --shadow-glow-chart-3-lg: 0 0 40px color-mix(in srgb, var(--chart-3) 22%, transparent);
+  --shadow-glow-chart-4-sm: 0 0 8px color-mix(in srgb, var(--chart-4) 40%, transparent);
+  --shadow-glow-chart-4-md: 0 0 16px color-mix(in srgb, var(--chart-4) 35%, transparent);
+  --shadow-glow-chart-4-lg: 0 0 40px color-mix(in srgb, var(--chart-4) 22%, transparent);
+  --shadow-glow-chart-5-sm: 0 0 8px color-mix(in srgb, var(--chart-5) 40%, transparent);
+  --shadow-glow-chart-5-md: 0 0 16px color-mix(in srgb, var(--chart-5) 35%, transparent);
+  --shadow-glow-chart-5-lg: 0 0 40px color-mix(in srgb, var(--chart-5) 22%, transparent);
+  --shadow-glow-chart-6-sm: 0 0 8px color-mix(in srgb, var(--chart-6) 40%, transparent);
+  --shadow-glow-chart-6-md: 0 0 16px color-mix(in srgb, var(--chart-6) 35%, transparent);
+  --shadow-glow-chart-6-lg: 0 0 40px color-mix(in srgb, var(--chart-6) 22%, transparent);
+  --shadow-glow-chart-7-sm: 0 0 8px color-mix(in srgb, var(--chart-7) 40%, transparent);
+  --shadow-glow-chart-7-md: 0 0 16px color-mix(in srgb, var(--chart-7) 35%, transparent);
+  --shadow-glow-chart-7-lg: 0 0 40px color-mix(in srgb, var(--chart-7) 22%, transparent);
+  --shadow-glow-chart-8-sm: 0 0 8px color-mix(in srgb, var(--chart-8) 40%, transparent);
+  --shadow-glow-chart-8-md: 0 0 16px color-mix(in srgb, var(--chart-8) 35%, transparent);
+  --shadow-glow-chart-8-lg: 0 0 40px color-mix(in srgb, var(--chart-8) 22%, transparent);
+  --shadow-glow-chart-9-sm: 0 0 8px color-mix(in srgb, var(--chart-9) 40%, transparent);
+  --shadow-glow-chart-9-md: 0 0 16px color-mix(in srgb, var(--chart-9) 35%, transparent);
+  --shadow-glow-chart-9-lg: 0 0 40px color-mix(in srgb, var(--chart-9) 22%, transparent);
+  --shadow-glow-logo-green-sm: 0 0 8px color-mix(in srgb, var(--logo-green) 40%, transparent);
+  --shadow-glow-logo-green-md: 0 0 16px color-mix(in srgb, var(--logo-green) 35%, transparent);
+  --shadow-glow-logo-green-lg: 0 0 40px color-mix(in srgb, var(--logo-green) 22%, transparent);
+  --shadow-glow-logo-magenta-sm: 0 0 8px color-mix(in srgb, var(--logo-magenta) 40%, transparent);
+  --shadow-glow-logo-magenta-md: 0 0 16px color-mix(in srgb, var(--logo-magenta) 35%, transparent);
+  --shadow-glow-logo-magenta-lg: 0 0 40px color-mix(in srgb, var(--logo-magenta) 22%, transparent);
+
   /* Glow por acento categórico (--chart-N) — misma idea que brand/success/
      warning/danger de arriba pero para los hues categóricos de T7.1. Se
      agregaron en la 2ª pasada de T7.3 al auditar el resto de shadow-[...]:

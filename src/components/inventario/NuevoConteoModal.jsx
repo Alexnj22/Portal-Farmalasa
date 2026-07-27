@@ -184,7 +184,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                     type="button"
                     onClick={handleCreate}
                     disabled={saving || !isValid || !canEdit}
-                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-btn flex items-center gap-2 transition-all duration-300 ${(!isValid || !canEdit) && !saving ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-chart-9-solid text-white shadow-[0_8px_20px_rgba(13,148,136,0.3)] hover:bg-chart-9/90 hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-btn flex items-center gap-2 transition-all duration-300 ${(!isValid || !canEdit) && !saving ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-chart-9-solid text-white shadow-[var(--shadow-glow-chart-2-lg)] hover:bg-chart-9/90 hover:-translate-y-0.5 active:scale-[0.97]'}`}
                 >
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Generando snapshot...</> : <><Check size={16} strokeWidth={3} /> Iniciar Conteo</>}
                 </button>

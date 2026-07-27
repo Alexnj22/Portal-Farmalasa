@@ -117,7 +117,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
         : null;
 
     return (
-        <div className="p-5 rounded-modal border-2 border-chart-5/30 bg-gradient-to-br from-chart-5/10 to-[var(--card-tint-base)] backdrop-blur-2xl flex flex-col gap-4 shadow-[0_4px_20px_rgba(6,182,212,0.1)]">
+        <div className="p-5 rounded-modal border-2 border-chart-5/30 bg-gradient-to-br from-chart-5/10 to-[var(--card-tint-base)] backdrop-blur-2xl flex flex-col gap-4 shadow-[var(--shadow-glow-chart-5-lg)]">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
@@ -982,7 +982,7 @@ const EmployeeRequestsView = () => {
                                 value={payload.days || ''}
                                 onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
                                 placeholder="Ej. 3"
-                                className="w-full py-2.5 px-4 bg-surface-card border border-divider focus:bg-surface-card focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-body-xl font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
+                                className="w-full py-2.5 px-4 bg-surface-card border border-divider focus:bg-surface-card focus:border-danger/40 focus:shadow-[var(--shadow-glow-danger-sm)] rounded-xl text-body-xl font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
                             />
                         </div>
                     </div>

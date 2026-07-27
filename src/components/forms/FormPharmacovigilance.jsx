@@ -63,7 +63,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
             
             {/* TARJETA CONTENEDOR PADRE */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-modal shadow-[var(--shadow-elevation-xs)] hover:shadow-[0_12px_40px_rgba(147,51,234,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-modal shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">

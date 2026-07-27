@@ -1061,7 +1061,7 @@ export default function EncuestaAdminView() {
                                                 )}
                                                 {s.tipo === 'clima' && (
                                                     <button onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}
-                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-caption font-black uppercase tracking-widest bg-gradient-to-r from-chart-3 to-chart-6 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-[0.97]">
+                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-caption font-black uppercase tracking-widest bg-gradient-to-r from-chart-3 to-chart-6 text-white shadow-[var(--shadow-glow-chart-3-md)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-chart-3-md)] transition-all active:scale-[0.97]">
                                                         <TrendingUp size={10} strokeWidth={2.5} /> Ver análisis
                                                     </button>
                                                 )}

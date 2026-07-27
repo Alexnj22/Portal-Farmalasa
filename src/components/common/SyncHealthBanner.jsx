@@ -7,10 +7,10 @@ const WARN_MINS  = 8;
 const STALE_MINS = 15;
 
 function dotColor(minsAgo, hasError) {
-  if (hasError || minsAgo === null) return 'bg-danger shadow-[0_0_5px_rgba(240,68,56,0.6)]';
-  if (minsAgo > STALE_MINS) return 'bg-danger shadow-[0_0_5px_rgba(240,68,56,0.6)]';
-  if (minsAgo > WARN_MINS)  return 'bg-warning shadow-[0_0_5px_rgba(247,144,9,0.6)]';
-  return 'bg-success shadow-[0_0_5px_rgba(18,183,106,0.6)]';
+  if (hasError || minsAgo === null) return 'bg-danger shadow-[var(--shadow-glow-danger-sm)]';
+  if (minsAgo > STALE_MINS) return 'bg-danger shadow-[var(--shadow-glow-danger-sm)]';
+  if (minsAgo > WARN_MINS)  return 'bg-warning shadow-[var(--shadow-glow-warning-sm)]';
+  return 'bg-success shadow-[var(--shadow-glow-success-sm)]';
 }
 
 // Inner content for the sync_health dashboard widget.

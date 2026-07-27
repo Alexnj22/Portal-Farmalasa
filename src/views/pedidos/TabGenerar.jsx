@@ -496,7 +496,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-subtitle transition-all duration-200 ${
                             selected.size === 0
                                 ? 'bg-surface-card-hover text-content-3 cursor-not-allowed'
-                                : 'bg-success-solid text-white hover:bg-success/90 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
+                                : 'bg-success-solid text-white hover:bg-success/90 shadow-[var(--shadow-glow-success-lg)] hover:shadow-[var(--shadow-glow-success-lg)] hover:-translate-y-0.5 active:scale-[0.98]'
                         }`}
                     >
                         {confirming ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}

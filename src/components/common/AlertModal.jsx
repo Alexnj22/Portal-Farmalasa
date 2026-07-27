@@ -18,13 +18,13 @@ const AlertModal = ({
             icon: CheckCircle2,
             glow: 'bg-success/15',
             iconColor: 'text-success',
-            btn: 'bg-success hover:bg-success-hover shadow-[0_4px_15px_rgba(18,183,106,0.3)]'
+            btn: 'bg-success hover:bg-success-hover shadow-[var(--shadow-glow-success-md)]'
         },
         error: {
             icon: AlertCircle,
             glow: 'bg-danger/15',
             iconColor: 'text-danger animate-pulse',
-            btn: 'bg-danger hover:bg-danger-hover shadow-[0_4px_15px_rgba(240,68,56,0.3)]'
+            btn: 'bg-danger hover:bg-danger-hover shadow-[var(--shadow-glow-danger-md)]'
         },
         info: {
             icon: Info,

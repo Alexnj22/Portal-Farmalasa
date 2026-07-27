@@ -629,7 +629,7 @@ const PayrollView = ({ openModal }) => {
                                             )}
                                             {isDraft && payrollEntries.length > 0 && (
                                                 <button onClick={() => setConfirming({ action:'APPROVED', label:'aprobar' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-caption font-black transition-all shadow-[0_3px_8px_rgba(34,197,94,0.35)]">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-caption font-black transition-all shadow-[var(--shadow-glow-success-md)]">
                                                     <CheckCircle2 size={12} strokeWidth={2.5} /> Aprobar
                                                 </button>
                                             )}

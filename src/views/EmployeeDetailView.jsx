@@ -1030,11 +1030,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-surface-card' : 'opacity-50 grayscale bg-surface-card-hover/50'} ${isToday ? 'bg-chart-1/10 ring-1 ring-brand/20 shadow-[var(--shadow-shine)]' : ''}`}>
                                                                 
                                                                 {isToday && (
-                                                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand shadow-[0_0_10px_rgba(0,82,204,0.4)]"></div>
+                                                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand shadow-[var(--shadow-glow-brand-md)]"></div>
                                                                 )}
 
                                                                 <div className="flex items-center gap-3 w-32 shrink-0 relative">
-                                                                    <div className={`w-2.5 h-2.5 rounded-full ${dia.active ? 'bg-success shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-content-3'}`}></div>
+                                                                    <div className={`w-2.5 h-2.5 rounded-full ${dia.active ? 'bg-success shadow-[var(--shadow-glow-chart-9-md)]' : 'bg-content-3'}`}></div>
                                                                     <span className={`text-body-sm font-black uppercase tracking-widest ${dia.active ? 'text-content-2' : 'text-content-2'}`}>{dia.day}</span>
                                                                     {isToday && (
                                                                         <span className="ml-2 px-1.5 py-0.5 rounded text-micro font-black uppercase tracking-widest bg-brand text-white shadow-sm animate-pulse">Hoy</span>

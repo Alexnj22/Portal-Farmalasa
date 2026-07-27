@@ -33,7 +33,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
     return (
         <div className={`p-5 rounded-header border bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
             ${isError
-                ? 'border-danger/30 shadow-[var(--shadow-glass-3)] hover:shadow-[0_15px_40px_rgba(244,63,94,0.2)]'
+                ? 'border-danger/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glow-danger-lg)]'
                 : 'border-chart-5/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
 
             <div className="absolute inset-0 rounded-header overflow-hidden pointer-events-none">
@@ -61,7 +61,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
 
             {insight.action && (
                 <div className="mt-auto pt-4 relative z-base">
-                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-chart-5 hover:bg-chart-5 text-content rounded-xl text-label font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
+                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-chart-5 hover:bg-chart-5 text-content rounded-xl text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-5-md)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
                         <Zap size={14} strokeWidth={2.5} /> Crear este turno
                     </button>
                 </div>

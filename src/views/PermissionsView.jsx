@@ -842,13 +842,13 @@ const PermissionsView = () => {
                                     className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? isSURol
-                                                ? 'bg-gradient-to-br from-warning/10 to-chart-4/10 border-warning/30 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
+                                                ? 'bg-gradient-to-br from-warning/10 to-chart-4/10 border-warning/30 shadow-[var(--shadow-glow-chart-4-lg)]'
                                                 : `${cs.bg} ${cs.border} shadow-[var(--shadow-elevation-md)]`
                                             : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[var(--shadow-elevation-sm)]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`relative w-8 h-8 rounded-xl bg-gradient-to-br ${isSURol ? 'from-warning to-chart-4 shadow-[0_2px_8px_rgba(217,119,6,0.35)]' : cs.color + ' shadow-sm'} flex items-center justify-center flex-shrink-0`}>
+                                        <div className={`relative w-8 h-8 rounded-xl bg-gradient-to-br ${isSURol ? 'from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)]' : cs.color + ' shadow-sm'} flex items-center justify-center flex-shrink-0`}>
                                             <ShieldCheck size={13} className="text-white" strokeWidth={2} />
                                             {isSURol && (
                                                 <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
@@ -911,7 +911,7 @@ const PermissionsView = () => {
                                         <div className="flex items-center justify-between">
                                             <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                                                 isRoleSU
-                                                    ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[0_3px_12px_rgba(217,119,6,0.45)] scale-100'
+                                                    ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)] scale-100'
                                                     : 'bg-surface-card border border-border-card scale-90'
                                             }`}>
                                                 <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={1.8} />

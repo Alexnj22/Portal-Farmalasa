@@ -42,7 +42,7 @@ const DOC_CFG = {
         label: 'Cambio Turno', Icon: RefreshCw,
         bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30',
         iconBg: 'bg-chart-5/10', accent: 'bg-chart-5',
-        glow: 'hover:shadow-[0_8px_24px_rgba(6,182,212,0.12)]',
+        glow: 'hover:shadow-[var(--shadow-glow-chart-5-lg)]',
     },
 };
 const DEFAULT_CFG = {

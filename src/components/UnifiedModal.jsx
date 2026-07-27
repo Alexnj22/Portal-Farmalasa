@@ -909,7 +909,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     )}
                                     {(isEditingEmp || !nextStep) && (
                                         <button type="submit" form="unified-modal-form" disabled={empSaveDisabled} title={empSaveTitle}
-                                            className={`flex items-center gap-2 px-6 h-11 font-black text-label uppercase tracking-[0.2em] rounded-btn transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success-solid text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
+                                            className={`flex items-center gap-2 px-6 h-11 font-black text-label uppercase tracking-[0.2em] rounded-btn transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success-solid text-white shadow-[var(--shadow-glow-success-md)] hover:bg-success-hover hover:shadow-[var(--shadow-glow-success-lg)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
                                             {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
                                         </button>
                                     )}

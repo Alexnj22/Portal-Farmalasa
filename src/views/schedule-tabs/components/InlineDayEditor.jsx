@@ -339,7 +339,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 )}
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-toast">
-                    <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger shadow-[0_0_15px_rgba(244,63,94,0.3)]' : ''}`}>
+                    <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
                         <LiquidSelect 
                             value={shiftId} 
                             onChange={setShiftId} 
@@ -376,7 +376,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-surface-card-hover border rounded-2xl relative z-base animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
+                        <div className={`flex flex-col gap-3 p-3 bg-surface-card-hover border rounded-2xl relative z-base animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[var(--shadow-glow-danger-md)]' : 'border-border-card'}`}>
                             
                             <div className="flex items-center justify-between border-b border-divider pb-2">
                                 <span className="text-micro font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">

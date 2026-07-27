@@ -197,7 +197,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         {/* Fecha Anualidad */}
                                         <div className="group/date-amber flex flex-col justify-end">
                                             <label className="text-micro font-black text-warning/80 uppercase tracking-widest ml-1 mb-1 block group-focus-within/date-amber:text-warning-text transition-colors">Vencimiento</label>
-                                            <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-xl h-[46px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.15)] flex items-center border border-warning/30 hover:border-warning focus-within:border-warning overflow-hidden">
+                                            <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-xl h-[46px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-glow-warning-sm)] flex items-center border border-warning/30 hover:border-warning focus-within:border-warning overflow-hidden">
                                                  <div className="w-full relative -top-0.5">
                                                     <LiquidDatePicker 
                                                         value={nurse.anualidadExp || ""} 

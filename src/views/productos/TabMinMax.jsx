@@ -724,8 +724,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={clearAllFilters}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-bold text-danger-text bg-danger/10 border border-danger/30 shadow-[0_2px_8px_rgba(244,63,94,0.10)] backdrop-blur-sm whitespace-nowrap
-                                        transition-[background-color,box-shadow] duration-100 hover:bg-danger/20 hover:shadow-[0_2px_12px_rgba(244,63,94,0.18)]">
+                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-bold text-danger-text bg-danger/10 border border-danger/30 shadow-[var(--shadow-glow-danger-md)] backdrop-blur-sm whitespace-nowrap
+                                        transition-[background-color,box-shadow] duration-100 hover:bg-danger/20 hover:shadow-[var(--shadow-glow-danger-md)]">
                                     <X size={10} strokeWidth={2.5} />
                                     Limpiar
                                 </motion.button>

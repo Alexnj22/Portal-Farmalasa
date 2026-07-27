@@ -270,7 +270,7 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
           iconBgActive: 'bg-chart-4/10', iconColor: 'text-chart-4-text',
           numColor: n => n > 0 ? 'text-chart-4-text' : 'text-content-3' },
         { id: 'mayorista', Icon: Truck, label: 'Mayorista', sub: 'compra por volumen · no agregar',
-          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[0_4px_16px_rgba(99,102,241,0.20)] -translate-y-1',
+          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[var(--shadow-glow-chart-3-md)] -translate-y-1',
           iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
           numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',

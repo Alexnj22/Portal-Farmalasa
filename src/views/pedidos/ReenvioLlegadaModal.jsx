@@ -67,7 +67,7 @@ export default function ReenvioLlegadaModal({
         <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm" className="max-h-[90vh]">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
-                <div className="w-9 h-9 rounded-xl bg-chart-3 shadow-[0_2px_10px_rgba(99,102,241,0.4)] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-chart-3 shadow-[var(--shadow-glow-chart-3-md)] flex items-center justify-center shrink-0">
                     <Truck size={16} className="text-white" />
                 </div>
                 <div className="flex-1">

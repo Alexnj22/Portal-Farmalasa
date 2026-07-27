@@ -365,8 +365,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                             const cur  = i === doneCount;
                             return (
                                 <div key={i} className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-                                    done ? 'w-2.5 h-2.5 bg-success shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
-                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-brand shadow-[0_0_8px_rgba(0,82,204,0.5)]') :
+                                    done ? 'w-2.5 h-2.5 bg-success shadow-[var(--shadow-glow-chart-9-sm)]' :
+                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-danger shadow-[var(--shadow-glow-danger-md)]' : 'bg-brand shadow-[var(--shadow-glow-brand-md)]') :
                                            'w-2.5 h-2.5 bg-surface-card-hover'
                                 }`} />
                             );

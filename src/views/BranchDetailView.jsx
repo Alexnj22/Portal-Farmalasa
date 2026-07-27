@@ -313,8 +313,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                             <Icon size={14} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-brand-text' : ''} />
                                             <span className="hidden xl:inline">{tab.label}</span>
 
-                                            {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-danger rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
-                                            {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-warning rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)] border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
+                                            {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-danger rounded-full shadow-[var(--shadow-glow-danger-md)] animate-pulse border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
+                                            {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-warning rounded-full shadow-[var(--shadow-glow-warning-md)] border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
                                         </button>
                                     );
                                 })}
@@ -379,7 +379,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         >
                             <div className="flex items-center gap-3">
                                 <span className="text-title md:text-title-lg font-black text-content leading-none tracking-tight">{liveBranch?.name || "Detalle de Sucursal"}</span>
-                                <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-content-3'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
+                                <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-success shadow-[var(--shadow-glow-chart-2-md)] animate-pulse' : 'bg-content-3'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
 
                                 <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-brand border-brand text-white translate-x-1' : 'bg-brand/10 border-brand/20 text-brand-text group-hover/title:translate-x-0.5'}`}>
                                     <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />

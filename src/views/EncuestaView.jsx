@@ -1392,12 +1392,12 @@ export default function EncuestaView() {
                             <div
                                 key={seg.key}
                                 onClick={() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] }))}
-                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-200 ${canToggle ? 'cursor-pointer hover:shadow-[0_6px_28px_rgba(99,102,241,0.18)] hover:border-chart-3/50' : ''}`}
+                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-200 ${canToggle ? 'cursor-pointer hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:border-chart-3/50' : ''}`}
                             >
                                 {/* Segment header bar */}
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-chart-3/20 bg-gradient-to-r from-chart-3/10 to-chart-3/5">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center shadow-[0_0_8px_rgba(139,92,246,0.35)]">
+                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center shadow-[var(--shadow-glow-chart-3-md)]">
                                             <Sparkles size={10} className="text-white" />
                                         </div>
                                         <span className="text-body-sm font-black text-content-2 tracking-tight">

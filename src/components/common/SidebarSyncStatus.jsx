@@ -10,10 +10,10 @@ const STALE_MINS = 15;
 
 function dotClass(minsAgo, hasError) {
   if (hasError || minsAgo === null || minsAgo > STALE_MINS)
-    return 'bg-danger shadow-[0_0_4px_rgba(240,68,56,0.8)]';
+    return 'bg-danger shadow-[var(--shadow-glow-danger-sm)]';
   if (minsAgo > WARN_MINS)
-    return 'bg-warning shadow-[0_0_4px_rgba(247,144,9,0.8)]';
-  return 'bg-success shadow-[0_0_4px_rgba(18,183,106,0.8)]';
+    return 'bg-warning shadow-[var(--shadow-glow-warning-sm)]';
+  return 'bg-success shadow-[var(--shadow-glow-success-sm)]';
 }
 
 export default function SidebarSyncStatus() {

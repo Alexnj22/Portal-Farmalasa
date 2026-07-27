@@ -42,7 +42,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
           : ann.isCompleted
             ? 'border-border-card opacity-80 hover:opacity-100 shadow-sm bg-surface-card backdrop-blur-md hover:-translate-y-1 hover:shadow-md'
             : isScheduled
-              ? 'border-chart-3/30 shadow-[0_4px_20px_rgba(99,102,241,0.05)] bg-chart-3/10 backdrop-blur-2xl hover:-translate-y-1'
+              ? 'border-chart-3/30 shadow-[var(--shadow-glow-chart-3-lg)] bg-chart-3/10 backdrop-blur-2xl hover:-translate-y-1'
               : ann.priority === 'URGENT'
                 ? 'border-danger/40 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] bg-surface-card backdrop-blur-xl hover:-translate-y-1'
                 : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'

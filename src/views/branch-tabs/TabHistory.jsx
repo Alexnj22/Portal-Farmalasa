@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import ViewTabBar from '../../components/common/ViewTabBar';
 import { AiThinkingState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { smartFilter } from '../../utils/searchUtils';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
 
@@ -45,7 +45,6 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
     const [typeFilter, setTypeFilter] = useState('ALL');
     const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
     const [searchQuery, setSearchQuery] = useState('');
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [showAllHistory, setShowAllHistory] = useState(false);
     
     // 🤖 ESTADOS PARA EL MODO INTELIGENCIA ARTIFICIAL GLOBAL
@@ -61,12 +60,6 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchOpen,
-        value: searchQuery,
-        onClear: () => setSearchQuery(''),
-        onClose: () => setIsSearchOpen(false),
-    });
 
     const openDateStr = liveBranch?.opening_date || liveBranch?.openingDate;
 
@@ -294,89 +287,69 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     <p className="text-label font-bold text-content-3 uppercase tracking-widest">Expediente Centralizado Interactivo</p>
                 </div>
 
-                {/* CONTENEDOR PRINCIPAL TIPO PÍLDORA */}
-                <div
-                    {...searchContainerRef}
-                    className={`flex items-center bg-surface-card backdrop-blur-[40px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
-                >
-                    {isSearchOpen ? (
-                        <div className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}>
-                            <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
- <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 min-w-[200px] xl:w-[600px] placeholder:text-content-3" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                            {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
-                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
-                                <ChevronRight size={18} strokeWidth={2.5} />
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-between w-full h-full pl-2 pr-2 md:pr-3 animate-in fade-in slide-in-from-left-4 duration-500">
-                            <div className="flex items-center gap-1 md:gap-2 h-full py-0.5">
-                                
-                                {/* 🤖 BOTÓN MAESTRO DE IA ESTANDARIZADO (A LA IZQUIERDA) 🤖 */}
-                                <button 
-                                    onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateGlobalAiSummary}
-                                    disabled={printHistory.length === 0 && !aiMode}
-                                    className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-1 active:scale-[0.97]'}`}
-                                    title={aiMode ? "Cerrar Resumen IA" : "Resumen Inteligente del Historial"}
-                                >
-                                    {aiMode ? (
-                                        <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
-                                            <X size={16} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                            <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
-                                            <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
-                                            <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
-                                        </>
-                                    )}
-                                </button>
-
-                                <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
-
-                                <div className="relative z-toast" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                                    <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-surface-card-hover hover:text-brand-text rounded-btn transition-all font-black text-caption uppercase tracking-widest shrink-0">
-                                        <Download size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Exportar</span>
-                                    </button>
-                                    <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
-                                        <div className="w-[160px] bg-surface-card backdrop-blur-xl border border-border-card shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
-                                            <button onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-caption font-bold text-content-2 hover:bg-brand/10 hover:text-brand-text rounded-xl transition-colors"><Printer size={14} strokeWidth={2.5} /> Reporte PDF</button>
-                                            <button onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-caption font-bold text-content-2 hover:bg-success/10 hover:text-success rounded-xl transition-colors"><FileOutput size={14} strokeWidth={2.5} /> Datos CSV</button>
-                                        </div>
+                {/* D3.9 (2026-07-27): esta barra estaba reescrita a mano y con
+                    renderizado condicional (isSearchOpen ? A : B) en vez de las dos
+                    mitades colapsables — por eso su forma no calzaba con las otras
+                    doce. Ahora sale del canónico; todos los controles (IA, exportar,
+                    filtro de tipo, rango de fechas y reset) van en `trailingActions`. */}
+                <ViewTabBar
+                    searchValue={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    placeholder="Buscar en historial..."
+                    trailingActions={
+                        <>
+                            {/* 🤖 BOTÓN MAESTRO DE IA ESTANDARIZADO (A LA IZQUIERDA) 🤖 */}
+                            <button 
+                                onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateGlobalAiSummary}
+                                disabled={printHistory.length === 0 && !aiMode}
+                                className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-1 active:scale-[0.97]'}`}
+                                title={aiMode ? "Cerrar Resumen IA" : "Resumen Inteligente del Historial"}
+                            >
+                                {aiMode ? (
+                                    <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
+                                        <X size={16} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
                                     </div>
-                                </div>
-
-                                <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
-
-                                <Filter size={14} className="text-brand-text ml-1 shrink-0 hidden sm:block" strokeWidth={2.5} />
-                                <div className="w-[140px] sm:w-[160px] shrink-0">
-                                    <div className="w-[140px] sm:w-[160px] shrink-0">
-                                        <LiquidSelect value={typeFilter} onChange={(value) => setTypeFilter(value)} options={[{ value: 'ALL', label: 'Todo' }, { value: 'LEGAL', label: 'Legal' }, { value: 'HR', label: 'Personal' }, { value: 'OPERATIVE', label: 'Operativo' }, { value: 'FINANCE', label: 'Finanzas' }]} clearable={false} />
-                                    </div>
-                                </div>
-
-                                <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
-
-                                <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.start} onChange={(v) => setDateFilter({ ...dateFilter, start: v })} placeholder="Desde" compact /></div>
-                                <span className="text-content-3 font-black shrink-0">-</span>
-                                <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.end} onChange={(v) => setDateFilter({ ...dateFilter, end: v })} placeholder="Hasta" compact /></div>
-
-                                {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
-                                    <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-danger-solid hover:text-white transition-colors shrink-0 shadow-sm">
-                                        <X size={12} strokeWidth={3} />
-                                    </button>
+                                ) : (
+                                    <>
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
+                                        <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
+                                        <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
+                                        <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
+                                    </>
                                 )}
+                            </button>
+                            <div className="relative z-toast" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                                <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-surface-card-hover hover:text-brand-text rounded-btn transition-all font-black text-caption uppercase tracking-widest shrink-0">
+                                    <Download size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Exportar</span>
+                                </button>
+                                <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                                    <div className="w-[160px] bg-surface-card backdrop-blur-xl border border-border-card shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
+                                        <button onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-caption font-bold text-content-2 hover:bg-brand/10 hover:text-brand-text rounded-xl transition-colors"><Printer size={14} strokeWidth={2.5} /> Reporte PDF</button>
+                                        <button onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-caption font-bold text-content-2 hover:bg-success/10 hover:text-success rounded-xl transition-colors"><FileOutput size={14} strokeWidth={2.5} /> Datos CSV</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <Filter size={14} className="text-brand-text ml-1 shrink-0 hidden sm:block" strokeWidth={2.5} />
+                            <div className="w-[140px] sm:w-[160px] shrink-0">
+                                <div className="w-[140px] sm:w-[160px] shrink-0">
+                                    <LiquidSelect value={typeFilter} onChange={(value) => setTypeFilter(value)} options={[{ value: 'ALL', label: 'Todo' }, { value: 'LEGAL', label: 'Legal' }, { value: 'HR', label: 'Personal' }, { value: 'OPERATIVE', label: 'Operativo' }, { value: 'FINANCE', label: 'Finanzas' }]} clearable={false} />
+                                </div>
                             </div>
 
-                            <div className={`flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-divider shrink-0`}>
-                                <button onClick={() => setIsSearchOpen(true)} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
-                                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                            <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
+
+                            <div className="w-[168px] shrink-0"><LiquidDatePicker value={dateFilter.start} onChange={(v) => setDateFilter({ ...dateFilter, start: v })} placeholder="Desde" compact /></div>
+                            <span className="text-content-3 font-black shrink-0">-</span>
+                            <div className="w-[168px] shrink-0"><LiquidDatePicker value={dateFilter.end} onChange={(v) => setDateFilter({ ...dateFilter, end: v })} placeholder="Hasta" compact /></div>
+
+                            {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
+                                <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-danger-solid hover:text-white transition-colors shrink-0 shadow-sm">
+                                    <X size={12} strokeWidth={3} />
                                 </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                            )}
+                        </>
+                    }
+                />
             </div>
 
             {/* ============================================================================ */}

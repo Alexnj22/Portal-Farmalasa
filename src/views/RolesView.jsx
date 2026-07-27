@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import {
@@ -15,7 +16,6 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 import { smartFilter } from '../utils/searchUtils';
 
 const SCOPE_OPTIONS = [
@@ -43,9 +43,7 @@ const RolesView = ({ openModal }) => {
     const [scope, setScope] = useState('BRANCH');
     const [maxLimit, setMaxLimit] = useState(1);
 
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const searchInputRef = useRef(null);
 
     const [activeTab, setActiveTab] = useState('list');
 
@@ -65,12 +63,6 @@ const RolesView = ({ openModal }) => {
     // ============================================================================
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchExpanded,
-        value: searchQuery,
-        onClear: () => setSearchQuery(''),
-        onClose: () => setIsSearchExpanded(false),
-    });
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -436,79 +428,22 @@ const RolesView = ({ openModal }) => {
     // 🎨 CONSTRUIMOS EL CONTENIDO DE LA PÍLDORA DEL HEADER
     // ==========================================================
     const renderFiltersContent = () => (
-        <div
-            {...searchContainerRef}
-            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
-        >
-            {isSearchExpanded ? (
-                <div
-                    className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}
-                >
-                    <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Buscar cargo..."
- className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery("")}
-                            className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
-                        >
-                            <X size={16} strokeWidth={2.5} />
-                        </button>
-                    )}
-                    <button
-                        onClick={() => { setIsSearchExpanded(false); setSearchQuery(''); }}
-                        className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
-                        title="Cerrar Búsqueda"
-                    >
-                        <ChevronRight size={18} strokeWidth={2.5} />
-                    </button>
-                </div>
-            ) : (
-                <div className="flex items-center justify-between w-full h-full pl-2 pr-2 md:pr-3 animate-in fade-in slide-in-from-left-4 duration-500">
-                    <div className="flex items-center gap-1 md:gap-2 h-full py-0.5">
-                        <div className="flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] gap-2 md:gap-3 pr-2 md:pr-3">
-                            <button
-                                onClick={() => setActiveTab('list')}
-                                className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'list'
-                                        ? "bg-surface-card text-content border-border-card shadow-md scale-[1.02]"
-                                        : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
-                                    }`}
-                            >
-                                <ShieldCheck size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'list' ? 'text-brand-text' : 'text-content-3'}`} />
-                                Listado
-                            </button>
-                            <button
-                                onClick={() => { setActiveTab('chart'); resetZoomAndPan(); }}
-                                className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'chart'
-                                        ? "bg-surface-card text-content border-border-card shadow-md scale-[1.02]"
-                                        : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
-                                    }`}
-                            >
-                                <LayoutTemplate size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'chart' ? 'text-brand-text' : 'text-content-3'}`} />
-                                Visual
-                            </button>
-                        </div>
-                    </div>
-
-                    <div inert={!(activeTab === 'list') ? true : undefined} className={`flex items-center transition-all duration-500 ease-in-out origin-right ${activeTab === 'list' ? 'max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-border-card' : 'max-w-0 opacity-0 scale-50 pointer-events-none m-0 p-0 border-transparent overflow-hidden'}`}>
-                        <button
-                            onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                            className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-                            title="Buscar cargos"
-                            tabIndex={activeTab === 'list' ? 0 : -1}
-                        >
-                            <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
+        // D3.9 (2026-07-27): barra reescrita a mano → canónico. El buscador solo
+        // aplica al listado, no al organigrama: eso es exactamente `showSearch`,
+        // que ya existía en ViewTabBar. Antes se resolvía con un `inert` + un
+        // `tabIndex={-1}` a mano sobre el botón.
+        <ViewTabBar
+            tabs={[
+                { key: 'list',  label: 'Listado', icon: ShieldCheck },
+                { key: 'chart', label: 'Visual',  icon: LayoutTemplate },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(key) => { setActiveTab(key); if (key === 'chart') resetZoomAndPan(); }}
+            showSearch={activeTab === 'list'}
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            placeholder="Buscar cargo..."
+        />
     );
 
     // ==========================================================

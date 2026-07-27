@@ -538,6 +538,70 @@ del sistema. Gana en familiaridad y accesibilidad gratis. **Pero para un rango
 se cae**: el sistema no tiene el concepto, serían dos ruedas separadas, sin ver
 los extremos juntos, sin atajos, sin feriados.
 
+
+## Estado de D3 al 2026-07-27 (medido, no estimado)
+
+### Cerradas
+| | |
+|---|---|
+| D3.1 estados de carga | ✓ |
+| D3.2 estado vacío | ✓ 0 copias locales |
+| D3.6 modales | ✓ ya estaba hecha (`UnifiedModal → LiquidModal → ModalShell`) |
+| D3.7 `NotFoundView` | ✓ |
+
+### Los cinco canónicos que faltaban
+El hallazgo que se repitió toda la semana: **lo que parecía un caso especial era
+un componente que nadie había nombrado.**
+
+| componente | qué destapó |
+|---|---|
+| `Switch` | 3 implementaciones locales compitiendo, 8 tamaños de perilla |
+| `TabBarAction` | cada vista escribía su botón de barra, con halo fijo |
+| `Checkbox` | 16 casillas **nativas** — el único control sin pasar por el tema |
+| `SegmentedControl` | 123 botones con `X === valor ? activo : inactivo` |
+| `Notice` | 58 avisos inline; existía el modal y el banner, faltaba el del medio |
+
+### D3.3 — botones · 940 → 337
+| grupo | cuántos | qué falta decidir |
+|---|---|---|
+| migrados | 603 | — |
+| segmentados restantes | ~117 | caso por caso: **no todos son el mismo control**. Los de `AnnouncementsView` son tarjetas de elección a ancho completo, no un segmentado compacto. |
+| con `<div>` adentro | 50 | probablemente **tarjetas clickeables**, no botones. Hay que mirarlas: si son tarjetas, el canónico que falta es otro. |
+| varios `<span>` con estilo | 6 | composición real |
+| sin `onClick` / sin clase | 11 | triviales |
+
+**Aprendizajes del migrador** (los tres errores que cometió y cómo se
+corrigieron) están en el changelog de v2.76.0. El más importante:
+`title={\`plantilla\`}` se serializaba como string con backticks adentro —
+**el build pasaba igual**, lo atrapó eslint por la variable huérfana.
+
+### D3.4 — inputs
+| tipo | cuántos | destino |
+|---|---|---|
+| checkbox | ✓ 0 | `Checkbox` |
+| text / number / tel / password | 49 | `PortalInput` **no calza en todos**: varios son celdas numéricas densas (`h-8`, bordes de color, dentro de una grilla). Necesitan una variante compacta del canónico o quedarse. |
+| file | 18 | sin canónico; existe `FileUploader` en `BranchHelpers`, hay que ver si sirve |
+| radio | 2 | podrían ir a `SegmentedControl` |
+| range | 2 | sin canónico, y con 2 usos probablemente no lo amerita |
+
+### D3.5 — Badge · 249 pendientes
+Los 316 "chips" se separaron en 249 badges reales, 58 avisos (→ `Notice`, ya
+creado) y 9 contadores flotantes. Los 249 son mecánicos pero **hay que verificar
+que `Badge` cubra sus variantes**: el mismo error que casi se comete con los
+botones sería migrarlos sin medir primero.
+
+### D3.8 — baseline del gate
+`inline-color` 59 · `shadow-literal` 32 · `motion` 5. Diez categorías en 0 y
+bloqueantes.
+
+### Abiertos que NO son de D3
+- **`MenuSearchModal`** reportado como "siempre claro" — medido en los 4 temas y
+  resuelve bien. No reproducido.
+- **3 modales fuera de la cadena** `ModalShell`: `MenuSearchModal`,
+  `PromptModal`, `PhotoEditorModal`.
+- **`useThemeSync`** tiene un `set-state-in-effect` que el lint marca desde antes
+  de esta sesión.
+
 ## Abiertos sin resolver
 
 - **`MenuSearchModal` — NO REPRODUCIDO.** Reportado como "siempre claro".

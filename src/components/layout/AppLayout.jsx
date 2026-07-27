@@ -980,45 +980,46 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         las barras de Safari y el header queda pegado arriba. SIN
                         backdrop-filter (bugs de compositor standalone). Pinta su fondo bajo
                         el status bar vía padding-top: safe-area. */}
+                    {/* 2026-07-27: el fondo era un lila claro FIJO para los 4 temas, y por
+                        eso el texto también estaba literal — en dark el header seguía claro.
+                        Se había dejado así por el bug de compositor de iOS standalone, pero
+                        ese bug es del `backdrop-filter`, no de un color sólido: un
+                        background-color por tema no lo reintroduce. Ahora fondo, borde,
+                        sombra y texto salen de --header-mobile*. */}
                     <div
-                        className="lg:hidden shrink-0 w-full sticky top-0 z-tabs border-b border-white/25"
+                        className="lg:hidden shrink-0 w-full sticky top-0 z-tabs border-b"
                         style={{
                             paddingTop: 'env(safe-area-inset-top, 0px)',
-                            background: 'rgba(226,222,252,0.97)',
-                            boxShadow: '0 4px 20px rgba(110,70,220,0.10)',
+                            background: 'var(--header-mobile)',
+                            borderColor: 'var(--header-mobile-border)',
+                            boxShadow: 'var(--header-mobile-shadow)',
+                            color: 'var(--header-mobile-text)',
                         }}
                     >
-                        {/* Nota: el fondo de esta barra es fijo (no reactivo al tema, ver
-                            comentario arriba — sin backdrop-filter por bug de compositor
-                            standalone iOS). Los colores de texto/ícono de ESTE bloque se
-                            dejan literales a propósito, no tokens de texto/superficie que
-                            varían por tema: si reaccionaran al tema quedarían ilegibles
-                            sobre este fondo claro fijo en dark/solid-dark. Solo brand/
-                            danger/success/warning son seguros aquí porque son constantes
-                            entre los 4 temas (declarados una sola vez en la raíz). */}
                         <div className="flex items-center justify-between px-4 py-2.5">
                             <div className="flex items-center gap-4">
                                 <button onClick={() => setIsSidebarOpen(true)} type="button" aria-label="Abrir menú"
- className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text">
+ className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] hover:text-brand-text">
                                     <Menu size={22} strokeWidth={2.5} />
                                 </button>
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
-                                    <h1 className="text-body-lg font-black leading-none tracking-tight text-slate-800">Portal</h1>
+                                    <h1 className="text-body-lg font-black leading-none tracking-tight">Portal</h1>
                                     <p className="text-micro font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button onClick={() => setSearchOpen(true)} type="button" aria-label="Buscar en el menú"
- className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text">
-                                    <Search size={19} strokeWidth={2.5} />
-                                </button>
+                                {/* El buscador de MENÚ se quitó de acá (2026-07-27, pedido
+                                    del usuario): al lado de las notificaciones y la foto se
+                                    leía como un buscador de CONTENIDO de la vista, que es
+                                    otra cosa y vive dentro de cada pantalla. Sigue estando
+                                    en el menú lateral, que es su lugar. */}
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
                                     <button onClick={() => navigate('/profile')} type="button" aria-label="Mi Perfil"
- className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-white">
+ className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
-                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
+                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
                                     </button>
                                     {myBirthday && (
                                         <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>

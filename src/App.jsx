@@ -549,6 +549,13 @@ function MainApp() {
                                 <ErrorBoundary>
                                 <Suspense fallback={<ContentLoadingFallback />}>
                                 <Routes>
+                                    {/* La raíz no tenía ruta (2026-07-27): `/` caía en el
+                                        catch-all y mostraba el 404. Por eso el botón "Volver
+                                        al inicio" de NotFoundView parecía no responder — sí
+                                        navegaba, pero a otro 404. Ahora `/` manda a la
+                                        primera vista con permiso de cada usuario. */}
+                                    <Route index element={<Navigate to={defaultRedirect} replace />} />
+
                                     {/* ── Self-service ── */}
                                     <Route path="my-requests" element={<PermissionGuard moduleKey="emp_requests"><EmployeeRequestsView /></PermissionGuard>} />
                                     <Route path="my-announcements" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />

@@ -154,6 +154,48 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
     );
 };
 
+// D3.11 (2026-07-27) · corregido el mismo día.
+// RangeDatePicker no tenía entrada por teclado — un rango NO se podía completar
+// sin mouse (WCAG 2.1.1). LiquidDatePicker sí la tenía; acá se replica.
+//
+// ESTE COMPONENTE VA ACÁ AFUERA A PROPÓSITO. La primera versión lo definía
+// DENTRO de RangeDatePicker: React trata cada render como un tipo de componente
+// nuevo, así que desmontaba y remontaba el input en cada tecla y el foco se
+// perdía al primer caracter. Medido: tras escribir "15/07/2026", activeElement
+// era BODY. Eso es lo que se sentía como "lento y no renderiza bien".
+const TeclaFecha = ({ valor, onSet, etiqueta }) => {
+    const [txt, setTxt] = useState(valor ? valor.split('-').reverse().join('/') : '');
+    useEffect(() => { setTxt(valor ? valor.split('-').reverse().join('/') : ''); }, [valor]);
+
+    const commit = (raw) => {
+        const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (!m) return;
+        const [, d, mo, y] = m;
+        const dd = String(d).padStart(2, '0'), mm = String(mo).padStart(2, '0');
+        if (+mm < 1 || +mm > 12 || +dd < 1 || +dd > 31) return;
+        onSet(`${y}-${mm}-${dd}`);
+    };
+
+    // Se autoformatea al tipear: 15072026 → 15/07/2026, sin pelear con el cursor.
+    const alEscribir = (e) => {
+        const solo = e.target.value.replace(/\D/g, '').slice(0, 8);
+        const partes = [solo.slice(0, 2), solo.slice(2, 4), solo.slice(4, 8)].filter(Boolean);
+        const v = partes.join('/');
+        setTxt(v);
+        commit(v);
+    };
+
+    return (
+        <input
+            type="text" inputMode="numeric" aria-label={etiqueta} placeholder="DD/MM/AAAA"
+            value={txt} onChange={alEscribir} onBlur={(e) => commit(e.target.value)}
+            className="w-[104px] bg-surface-card-hover border border-border-card rounded-lg px-2 py-1
+                text-body-sm font-bold text-content text-center placeholder:text-content-3
+                tabular-nums outline-none focus:border-brand transition-colors"
+        />
+    );
+};
+
 const RangeDatePicker = ({
     startDate,
     endDate,
@@ -343,33 +385,6 @@ const RangeDatePicker = ({
     const daysCount = draftStart && draftEnd
         ? Math.round((new Date(draftEnd + 'T12:00:00') - new Date(draftStart + 'T12:00:00')) / 86400000) + 1
         : 0;
-
-    // D3.11: RangeDatePicker no tenía entrada por teclado — un rango NO se podía
-    // completar sin mouse, que es una barrera de accesibilidad real (WCAG 2.1.1).
-    // LiquidDatePicker sí la tenía; acá se replica para los dos extremos.
-    const TeclaFecha = ({ valor, onSet, etiqueta }) => {
-        const [txt, setTxt] = useState(valor ? valor.split('-').reverse().join('/') : '');
-        useEffect(() => { setTxt(valor ? valor.split('-').reverse().join('/') : ''); }, [valor]);
-        const commit = (raw) => {
-            const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (!m) return;
-            const [, d, mo, y] = m;
-            const dd = String(d).padStart(2, '0'), mm = String(mo).padStart(2, '0');
-            if (+mm < 1 || +mm > 12 || +dd < 1 || +dd > 31) return;
-            onSet(`${y}-${mm}-${dd}`);
-        };
-        return (
-            <input
-                type="text" inputMode="numeric" aria-label={etiqueta} placeholder="DD/MM/AAAA"
-                value={txt}
-                onChange={(e) => { const v = e.target.value.replace(/[^\d/]/g, ''); setTxt(v); commit(v); }}
-                onBlur={(e) => commit(e.target.value)}
-                className="w-[104px] bg-surface-card-hover border border-border-card rounded-lg px-2 py-1
-                    text-body-sm font-bold text-content text-center placeholder:text-content-3
-                    tabular-nums outline-none focus:border-brand transition-colors"
-            />
-        );
-    };
 
     const SHORTCUTS_DEFAULT = [
         { label: 'Últimos 7 días', dias: 7 },

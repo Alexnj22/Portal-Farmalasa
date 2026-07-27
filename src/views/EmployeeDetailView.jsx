@@ -346,7 +346,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     };
 
     const headerControls = (
-        <div className="flex items-center gap-2 md:gap-3 bg-surface-card backdrop-blur-2xl border border-border-card p-2 md:p-2.5 rounded-[2.5rem] shadow-sm w-max max-w-full overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-2 md:gap-3 bg-surface-card backdrop-blur-2xl border border-border-card p-2 md:p-2.5 rounded-header shadow-sm w-max max-w-full overflow-x-auto hide-scrollbar">
             
             <div className="flex items-center relative bg-surface-card border border-border-card rounded-full p-1 shrink-0 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]">
                 <div
@@ -413,7 +413,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         </button>
                     )}
 
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl md:rounded-2xl bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
                         <User size={20} className="md:w-6 md:h-6" strokeWidth={2} />
                     </div>
 
@@ -431,28 +431,28 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                     {/* --- MINI-DASHBOARD (SIGNOS VITALES) --- */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 mb-4 md:mb-5">
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-success/10 text-success rounded-xl shadow-sm border border-success/30"><CheckCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Estado</p>
                                 <p className="text-body md:text-body-lg font-bold text-content">{emp.effectiveStatus || emp.status || 'Activo'}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-chart-1/10 text-brand-text rounded-xl shadow-sm border border-chart-1/30"><Briefcase size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Antigüedad</p>
                                 <p className="text-body md:text-body-lg font-bold text-content truncate">{tenure}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-chart-6/10 text-chart-6 rounded-xl shadow-sm border border-chart-6/30"><Cake size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Edad</p>
                                 <p className="text-body md:text-body-lg font-bold text-content">{age ? `${age} Años` : 'N/D'}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-surface-card-hover text-content-3 border-divider'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Tardanzas (Mes)</p>
@@ -465,7 +465,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         
                         {/* --- TARJETA DE PERFIL (IZQUIERDA) --- */}
                         <div className="lg:col-span-4 space-y-5">
-                            <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-border-card bg-surface-card shadow-[var(--shadow-elevation-sm)] backdrop-blur-2xl">
+                            <div className="relative w-full overflow-hidden rounded-header border border-border-card bg-surface-card shadow-[var(--shadow-elevation-sm)] backdrop-blur-2xl">
                                 
                                 <div className="absolute top-0 h-32 w-full bg-gradient-to-b from-brand/15 to-transparent"></div>
                                 
@@ -514,7 +514,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     
                                     <div className="w-full space-y-3">
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Correo</p>
                                                 <p className="text-body-sm font-bold text-content-2 truncate">{emp.email || emp.username || 'No registrado'}</p>
@@ -522,7 +522,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)] relative">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Celular</p>
                                                 <p className="text-body-sm font-bold text-content-2">{emp.phone || 'No registrado'}</p>
@@ -535,7 +535,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
                                                 <p className="text-body-sm font-bold text-content-2">{emp.dui || 'No registrado'}</p>
@@ -543,7 +543,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-surface-card border border-divider rounded-[0.8rem] shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
                                                 <p className="text-body-sm font-bold text-content-2 truncate">{branch ? branch.name : 'Sin Asignar'}</p>
@@ -555,7 +555,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                             {/* TARJETA DE EMERGENCIA */}
                             {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                                <div className="w-full bg-danger/10 backdrop-blur-md rounded-[2rem] border border-danger/30 shadow-sm p-6 relative overflow-hidden group">
+                                <div className="w-full bg-danger/10 backdrop-blur-md rounded-modal border border-danger/30 shadow-sm p-6 relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 text-danger group-hover:scale-110 transition-transform duration-500"><HeartPulse size={80} /></div>
                                     <h3 className="text-caption font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2">
                                         <HeartPulse size={14} strokeWidth={3}/> Contacto de Emergencia
@@ -591,7 +591,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                         {/* --- CONTENIDO PRINCIPAL (DERECHA) --- */}
                         <div className="lg:col-span-8">
-                            <div className="bg-surface-card backdrop-blur-2xl rounded-[2.5rem] border border-border-card shadow-[var(--shadow-elevation-xs)] p-5 md:p-8 min-h-[600px] overflow-hidden relative">
+                            <div className="bg-surface-card backdrop-blur-2xl rounded-header border border-border-card shadow-[var(--shadow-elevation-xs)] p-5 md:p-8 min-h-[600px] overflow-hidden relative">
                                 
                                 {/* PESTAÑA 1: HISTORIAL */}
                                 {currentTab === 'history' && (
@@ -791,7 +791,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         {/* ── Calendario ── */}
-                                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.5rem] p-4 shadow-sm overflow-visible">
+                                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-3xl p-4 shadow-sm overflow-visible">
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }}
@@ -935,7 +935,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             hover: 'hover:bg-warning/10 hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)]' };
 
                                                     return (
-                                                        <div key={ev.id || idx} className={`group/card ${cfg.bg} border ${cfg.border} rounded-[1.5rem] p-4 flex flex-col gap-3 ${cfg.hover} hover:-translate-y-0.5 transition-all duration-300 shadow-sm cursor-default`}>
+                                                        <div key={ev.id || idx} className={`group/card ${cfg.bg} border ${cfg.border} rounded-3xl p-4 flex flex-col gap-3 ${cfg.hover} hover:-translate-y-0.5 transition-all duration-300 shadow-sm cursor-default`}>
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div className="flex items-center gap-2.5">
                                                                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.badge} border group-hover/card:scale-110 transition-transform duration-300`}>
@@ -1008,11 +1008,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     </h3>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="p-5 bg-gradient-to-br from-success/10 to-white rounded-[1.5rem] border border-success/30 shadow-sm">
+                                                    <div className="p-5 bg-gradient-to-br from-success/10 to-white rounded-3xl border border-success/30 shadow-sm">
                                                         <p className="text-caption font-black uppercase tracking-widest text-success/70 mb-1">Salario Base Contractual</p>
                                                         <p className="text-2xl font-black text-success-text tracking-tight">${emp.salary || emp.base_salary || '0.00'}</p>
                                                     </div>
-                                                    <div className="p-5 bg-surface-card rounded-[1.5rem] border border-border-card shadow-sm flex flex-col justify-center">
+                                                    <div className="p-5 bg-surface-card rounded-3xl border border-border-card shadow-sm flex flex-col justify-center">
                                                         <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Depósito de Planilla</p>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-body-lg font-bold text-content-2">{emp.bank_name || 'No configurado'}</span>
@@ -1030,7 +1030,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 </h3>
                                             </div>
                                             
-                                            <div className="bg-surface-card border border-border-card rounded-[2rem] overflow-hidden shadow-sm">
+                                            <div className="bg-surface-card border border-border-card rounded-modal overflow-hidden shadow-sm">
                                                 <div className="grid grid-cols-1 divide-y divide-divider">
                                                     {scheduleData.map((dia, idx) => {
                                                         const isToday = dia.day === todayName; 
@@ -1101,8 +1101,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         {isLoadingEmpReqs ? (
                                             <div className="space-y-3">
                                                 {Array.from({ length: 4 }).map((_, i) => (
-                                                    <div key={i} className="flex items-start gap-4 p-4 rounded-[1.5rem] border border-black/[0.06] bg-surface-card">
-                                                        <div className="w-9 h-9 skeleton rounded-[1rem] shrink-0" />
+                                                    <div key={i} className="flex items-start gap-4 p-4 rounded-3xl border border-black/[0.06] bg-surface-card">
+                                                        <div className="w-9 h-9 skeleton rounded-2xl shrink-0" />
                                                         <div className="flex-1 space-y-2">
                                                             <div className="flex gap-2">
                                                                 <div className="h-5 w-20 skeleton rounded-md" />
@@ -1125,8 +1125,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
                                                     const TypeIcon = { VACATION: Palmtree, PERMIT: FileText, SHIFT_CHANGE: RefreshCw, OVERTIME: Coffee, ADVANCE: DollarSign, CERTIFICATE: FileCheck }[req.type] || FileText;
                                                     return (
-                                                        <div key={req.id} className={`flex items-start gap-4 p-4 rounded-[1.5rem] border bg-surface-card backdrop-blur-md ${typeConf.border}`}>
-                                                            <div className={`w-9 h-9 rounded-[1rem] flex items-center justify-center flex-shrink-0 ${typeConf.color}`}>
+                                                        <div key={req.id} className={`flex items-start gap-4 p-4 rounded-3xl border bg-surface-card backdrop-blur-md ${typeConf.border}`}>
+                                                            <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${typeConf.color}`}>
                                                                 <TypeIcon size={16} strokeWidth={2} />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
@@ -1173,10 +1173,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         {resetResult && createPortal(
             <div className="fixed inset-0 z-confirm flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={() => setResetResult(null)} />
-                <div className="relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] overflow-hidden shadow-[var(--shadow-elevation-xl)]">
+                <div className="relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)]">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-success" />
                     <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
-                        <div className="w-14 h-14 rounded-[1.2rem] flex items-center justify-center mb-4 border bg-surface-card border-success/30 shadow-sm text-success">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border bg-surface-card border-success/30 shadow-sm text-success">
                             <KeyRound size={26} strokeWidth={2.5} />
                         </div>
                         <h3 className="text-title-sm font-black uppercase tracking-tight mb-1 text-content text-center">Contraseña temporal</h3>
@@ -1213,10 +1213,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     className={`absolute inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-300 ${showCancelModal ? 'opacity-100' : 'opacity-0'}`}
                     onClick={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : undefined}
                 />
-                <div className={`relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] overflow-hidden shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
+                <div className={`relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-danger"></div>
                     <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
-                        <div className="w-14 h-14 rounded-[1.2rem] flex items-center justify-center mb-5 border bg-surface-card border-border-card shadow-sm text-danger">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 border bg-surface-card border-border-card shadow-sm text-danger">
                             {isCancelling ? <Loader2 size={28} strokeWidth={2.5} className="animate-spin"/> : <AlertTriangle size={28} strokeWidth={2.5}/>}
                         </div>
                         <h3 className="text-title-sm font-black uppercase tracking-tight mb-2 text-content text-center">

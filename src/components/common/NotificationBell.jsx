@@ -305,7 +305,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     return (
         <div ref={rootRef} className="relative">
             {isDesktop && totalBadge > 0 && (
-                <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none ${hasUrgentAnn ? 'bg-danger/30' : 'bg-brand/20'}`} />
+                <div className={`absolute -inset-3 rounded-modal blur-xl pointer-events-none ${hasUrgentAnn ? 'bg-danger/30' : 'bg-brand/20'}`} />
             )}
 
             {/* ── Botón campana ── */}
@@ -313,7 +313,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 onClick={() => setIsOpen(o => !o)}
                 title="Notificaciones"
                 aria-label="Notificaciones"
-                className={`relative flex items-center justify-center w-11 h-11 rounded-[1.25rem] backdrop-blur-2xl border
+                className={`relative flex items-center justify-center w-11 h-11 rounded-2xl backdrop-blur-2xl border
                     hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-200
                     ${isDark
                         ? `shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)]
@@ -447,7 +447,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 {notifications.length === 0 ? (
                                     <div className="relative flex flex-col items-center justify-center py-12 px-6 text-center">
                                         <div className="absolute w-28 h-28 rounded-full bg-brand/10 blur-2xl" />
-                                        <div className={`relative w-14 h-14 rounded-[1.25rem] border shadow-[0_8px_24px_rgba(0,82,204,0.10),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center mb-4 ${cx.emptyIconBox}`}>
+                                        <div className={`relative w-14 h-14 rounded-2xl border shadow-[0_8px_24px_rgba(0,82,204,0.10),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center mb-4 ${cx.emptyIconBox}`}>
                                             <Bell size={22} strokeWidth={1.5} />
                                         </div>
                                         <p className={`relative text-body-lg font-bold ${cx.emptyTitle}`}>Todo al día</p>

@@ -66,7 +66,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     if (isMissing) {
         return (
-            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-1 min-h-[260px]">
+            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-1 min-h-[260px]">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
@@ -80,7 +80,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     }
 
     return (
-        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-[1.5rem] backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_10px_rgba(255,255,255,0.6)] ${theme.bg} ${theme.shadow}`}>
+        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_10px_rgba(255,255,255,0.6)] ${theme.bg} ${theme.shadow}`}>
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
@@ -245,7 +245,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
     };
 
     return (
-        <div className="mt-8 p-5 bg-slate-900 rounded-[1.5rem] border border-slate-700 shadow-xl flex flex-col gap-4 no-print">
+        <div className="mt-8 p-5 bg-slate-900 rounded-3xl border border-slate-700 shadow-xl flex flex-col gap-4 no-print">
             <div className="flex justify-between items-center">
                 <div>
                     <h4 className="text-white font-black uppercase tracking-widest text-body-sm flex items-center gap-2">
@@ -464,7 +464,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
                                 </div>
                             </div>
-                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
+                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
                                 {wfmApplied ? (
                                     <>
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3 border-b border-slate-700/50 pb-1">Desglose de Horas Hombre (WFM)</p>
@@ -516,7 +516,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className={`h-full transition-all duration-1000 ease-out ${scoreTheme}`} style={{ width: `${complianceScore}%` }}></div>
                             </div>
                         </div>
-                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
+                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1">Auditoría Regulatoria</p>
                             {complianceIssues.length > 0 ? (
                                 <ul className="space-y-2">
@@ -565,7 +565,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
-                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
 
                             {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -633,7 +633,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */
                         <div className="space-y-8 mb-8 pt-2">
                             {/* Dashboard Skeleton */}
-                            <div className="bg-surface-card border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
+                            <div className="bg-surface-card border border-chart-1/30 rounded-3xl p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full skeleton"></div>
                                     <div className="flex flex-col gap-2 w-1/3">
@@ -651,7 +651,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className="h-3 skeleton rounded w-48 mb-4"></div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {[1, 2].map((i) => (
-                                        <div key={`skel-jefe-${i}`} className="bg-surface-card border border-border-card rounded-[1.5rem] h-[220px] p-5 flex flex-col items-center">
+                                        <div key={`skel-jefe-${i}`} className="bg-surface-card border border-border-card rounded-3xl h-[220px] p-5 flex flex-col items-center">
                                             <div className="w-16 h-16 rounded-full skeleton mb-4"></div>
                                             <div className="h-4 skeleton rounded w-3/4 mb-2"></div>
                                             <div className="h-3 skeleton rounded w-1/2 mb-auto"></div>
@@ -665,7 +665,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <div className="pt-2">
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-3xl p-5 shadow-sm relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand-text flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />
@@ -754,7 +754,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     ))}
 
                                     {(wfmApplied || isNewBranch || isStaffDeficit) && Array.from({ length: minStaff > coverageStaffCount ? minStaff - coverageStaffCount : 0 }).map((_, i) => (
-                                        <div key={`deficit-${i}`} onClick={handleEditHROperative} className="group flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
+                                        <div key={`deficit-${i}`} onClick={handleEditHROperative} className="group flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
                                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-tab-active border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>

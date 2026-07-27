@@ -76,11 +76,11 @@ export default function FeedbackOverlay({
               <div className="relative mb-16 shrink-0 flex flex-col items-center">
                 
                 {/* Orbe de luz interno */}
-                <div className={`absolute inset-0 rounded-[2.5rem] blur-2xl opacity-60 ${theme.glow}`}></div>
+                <div className={`absolute inset-0 rounded-header blur-2xl opacity-60 ${theme.glow}`}></div>
                 
                 {/* Contenedor de la Foto */}
                 <div
-                  className={`relative h-36 w-36 md:h-44 md:w-44 rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
+                  className={`relative h-36 w-36 md:h-44 md:w-44 rounded-modal md:rounded-header flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
                   {(employee?.photo || employee?.photo_url) ? (
                     <img
                       src={employee.photo || employee.photo_url}
@@ -114,14 +114,14 @@ export default function FeedbackOverlay({
               <div className="flex flex-col items-stretch gap-3 w-max max-w-[95vw] mx-auto">
                 
                 {/* Subtexto (Píldora adaptable al 100% del contenedor padre) */}
-                <div className={`flex items-center justify-center bg-white/5 backdrop-blur-2xl rounded-[1.5rem] px-8 py-3.5 border shadow-sm w-full ${color === 'red' ? 'border-danger/40' : 'border-white/10'}`}>
+                <div className={`flex items-center justify-center bg-white/5 backdrop-blur-2xl rounded-3xl px-8 py-3.5 border shadow-sm w-full ${color === 'red' ? 'border-danger/40' : 'border-white/10'}`}>
                   <p className="text-xs sm:text-sm md:text-subtitle text-white font-bold uppercase tracking-[0.15em] text-center whitespace-nowrap">
                     {subtext}
                   </p>
                 </div>
 
                 {warning && (
-                  <div className="flex items-center justify-center gap-2 px-8 py-3 bg-warning/10 backdrop-blur-xl border border-warning/30 text-warning rounded-[1.5rem] font-bold uppercase tracking-widest text-label animate-pulse shadow-sm w-full">
+                  <div className="flex items-center justify-center gap-2 px-8 py-3 bg-warning/10 backdrop-blur-xl border border-warning/30 text-warning rounded-3xl font-bold uppercase tracking-widest text-label animate-pulse shadow-sm w-full">
                     <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">{warning}</span>
                   </div>
@@ -131,7 +131,7 @@ export default function FeedbackOverlay({
                   <button
                     type="button"
                     onClick={onEarlyExtra}
-                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 text-chart-3 rounded-[1.5rem] font-bold uppercase tracking-widest text-label w-full transition-all duration-300 hover:bg-chart-3/20 hover:border-chart-3/50 hover:text-white hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.97]"
+                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 text-chart-3 rounded-3xl font-bold uppercase tracking-widest text-label w-full transition-all duration-300 hover:bg-chart-3/20 hover:border-chart-3/50 hover:text-white hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.97]"
                   >
                     <TimerReset size={15} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">Registrar Tiempo Extra</span>
@@ -139,7 +139,7 @@ export default function FeedbackOverlay({
                 )}
 
                 {/* Reloj (Mismo ancho automático y misma curvatura de borde que el subtexto) */}
-                <div className="flex items-center justify-center gap-3 text-white font-light tabular-nums text-3xl md:text-4xl bg-white/[0.03] backdrop-blur-2xl px-8 py-4 rounded-[1.5rem] border border-white/10 shadow-[inset_0_2px_15px_rgba(255,255,255,0.02)] w-full">
+                <div className="flex items-center justify-center gap-3 text-white font-light tabular-nums text-3xl md:text-4xl bg-white/[0.03] backdrop-blur-2xl px-8 py-4 rounded-3xl border border-white/10 shadow-[inset_0_2px_15px_rgba(255,255,255,0.02)] w-full">
                   <Clock size={32} className="text-white/30 shrink-0" /> 
                   <span className="whitespace-nowrap">{time}</span>
                 </div>
@@ -150,15 +150,15 @@ export default function FeedbackOverlay({
 
             {/* COLUMNA DERECHA: Tarjeta de Aviso Liquid Glass */}
             {announcement && (
-              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-[2rem] overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
+              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-modal overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
                 {isBirthday && (
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2rem]">
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-modal">
                     <div className="absolute -top-8 -right-8 text-[120px] opacity-[0.07] select-none">🎂</div>
                     <div className="absolute -bottom-4 -left-4 text-[80px] opacity-[0.07] select-none">🎉</div>
                   </div>
                 )}
                 <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
-                  <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center backdrop-blur-md shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
                     {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
                   <div className="flex flex-col text-left">
@@ -190,9 +190,9 @@ export default function FeedbackOverlay({
           <div className="flex flex-col items-center justify-center animate-in zoom-in-95 duration-500 w-full max-w-lg mx-auto">
 
             <div className="relative mb-8 shrink-0">
-              <div className={`absolute inset-0 rounded-[3rem] blur-2xl opacity-60 ${theme.glow}`}></div>
+              <div className={`absolute inset-0 rounded-header blur-2xl opacity-60 ${theme.glow}`}></div>
               <div
-                className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 rounded-[2.5rem] md:rounded-[3rem] flex items-center justify-center border backdrop-blur-3xl transition-all duration-500 
+                className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 rounded-header md:rounded-header flex items-center justify-center border backdrop-blur-3xl transition-all duration-500 
                 ${color === 'red'
                     ? 'bg-danger/10 border-danger/40 shadow-[0_0_50px_rgba(239,68,68,0.2),inset_0_2px_20px_rgba(255,255,255,0.1)] animate-[pulse_2s_infinite]'
                     : 'bg-white/[0.03] border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)]'

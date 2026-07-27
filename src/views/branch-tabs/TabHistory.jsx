@@ -296,7 +296,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 {/* CONTENEDOR PRINCIPAL TIPO PÍLDORA */}
                 <div
                     {...searchContainerRef}
-                    className={`flex items-center bg-surface-card backdrop-blur-[40px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
+                    className={`flex items-center bg-surface-card backdrop-blur-[40px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-full xl:w-max overflow-visible`}
                 >
                     {isSearchOpen ? (
                         <div className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}>
@@ -385,7 +385,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
-                    <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
+                    <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
                         
                         {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -468,7 +468,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     </div>
                                     <div className="absolute left-[20px] md:left-1/2 w-8 h-8 skeleton rounded-full border-4 border-white -translate-x-[20px] md:-translate-x-1/2 z-tabs" />
                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 ${i % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
-                                        <div className="h-32 bg-surface-card border border-border-card rounded-[1.5rem] p-5 w-full space-y-3">
+                                        <div className="h-32 bg-surface-card border border-border-card rounded-3xl p-5 w-full space-y-3">
                                             <div className="h-3 skeleton rounded-full w-1/3" />
                                             <div className="h-5 skeleton rounded-full w-3/4" />
                                             <div className="h-3 skeleton rounded-full w-1/2 mt-2" />
@@ -585,13 +585,13 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     </div>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-content ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
-                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-[1.5rem] p-5 transition-all duration-500 hover:bg-surface-card-hover hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,1)] shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.7)] text-left`}>
+                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-3xl p-5 transition-all duration-500 hover:bg-surface-card-hover hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,1)] shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.7)] text-left`}>
 
                                                                                             <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
 
                                                                                             <div className="relative z-base">
                                                                                                 <div className="mb-3">
-                                                                                                    <span className={`px-2.5 py-1 rounded-[6px] text-micro font-black uppercase tracking-widest border shadow-[var(--shadow-elevation-sm)] ${theme.bg} ${theme.text} ${theme.border}`}>
+                                                                                                    <span className={`px-2.5 py-1 rounded-md text-micro font-black uppercase tracking-widest border shadow-[var(--shadow-elevation-sm)] ${theme.bg} ${theme.text} ${theme.border}`}>
                                                                                                         {actionLabel}
                                                                                                     </span>
                                                                                                 </div>

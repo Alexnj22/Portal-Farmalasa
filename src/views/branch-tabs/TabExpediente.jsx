@@ -41,7 +41,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
     const isMissing = status.type === 'MISSING';
 
     return (
-        <div className={`group relative flex flex-col p-5 rounded-[1.5rem] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-sidebar ${isMissing
+        <div className={`group relative flex flex-col p-5 rounded-3xl transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-sidebar ${isMissing
             ? 'bg-surface-card border-2 border-dashed border-divider hover:border-brand/40 hover:bg-surface-card min-h-[160px]'
             : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] min-h-[160px]'
             }`}>
@@ -104,7 +104,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>
 
-                                <div className="bg-surface-card backdrop-blur-2xl border border-chart-3/30 p-4 rounded-[1.25rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
+                                <div className="bg-surface-card backdrop-blur-2xl border border-chart-3/30 p-4 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
 
                                     {/* Fondo de luz sutil interno (Estilo holográfico) */}
                                     <div className="absolute inset-0 pointer-events-none z-0">
@@ -444,7 +444,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
             {/* ESTADO VACÍO */}
             {isSearchEmpty && (
-                <div className="flex flex-col items-center justify-center p-12 bg-surface-card border-2 border-dashed border-white rounded-[2rem] animate-in fade-in duration-500">
+                <div className="flex flex-col items-center justify-center p-12 bg-surface-card border-2 border-dashed border-white rounded-modal animate-in fade-in duration-500">
                     {searchTerm ? (
                         <>
                             <Search size={40} className="text-content-3 mb-3" strokeWidth={1.5} />

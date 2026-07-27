@@ -473,7 +473,7 @@ export default function EncuestaAdminView() {
 
     // ── Header ────────────────────────────────────────────────────────────────
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
                 <button className="px-3 md:px-5 h-9 md:h-10 rounded-btn text-micro md:text-caption font-black uppercase tracking-widest bg-surface-card text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
                     <ClipboardList size={12} strokeWidth={2.5} />
@@ -498,7 +498,7 @@ export default function EncuestaAdminView() {
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && canManage && (
-                        <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
+                        <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
                             editingSurvey
                                 ? 'border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
@@ -716,7 +716,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey || !canManage}
-                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingSurvey
                                             ? 'bg-warning hover:bg-warning-hover shadow-warning/30'
                                             : 'bg-brand hover:bg-brand-hover'
@@ -733,7 +733,7 @@ export default function EncuestaAdminView() {
 
                     {/* ── Response form ────────────────────────────────────────── */}
                     {leftPanel === 'response-form' && canManage && (
-                        <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                        <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning-solid' : 'bg-brand'}`}>
@@ -946,7 +946,7 @@ export default function EncuestaAdminView() {
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveResponse}
                                     disabled={(!editingResponse && !rfEmployeeId) || savingResponse || !canManage}
-                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingResponse ? 'bg-warning hover:bg-warning-hover shadow-warning/30' : 'bg-brand hover:bg-brand-hover'
                                     }`}>
                                     {savingResponse
@@ -973,7 +973,7 @@ export default function EncuestaAdminView() {
                             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-brand" />
-                                    <div className="relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-700">
+                                    <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-700">
                                         <BarChart2 size={40} strokeWidth={2} />
                                     </div>
                                     <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Sin encuestas aún</h3>
@@ -989,7 +989,7 @@ export default function EncuestaAdminView() {
                             const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices, invertedIndices) : null;
 
                             return (
-                                <div key={s.id} className={`rounded-[2.5rem] border flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
+                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
                                     isExpanded
                                         ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl z-base'
                                         : isEditing
@@ -1113,7 +1113,7 @@ export default function EncuestaAdminView() {
 
                                             {/* Pending employees */}
                                             {pendingEmployees.length > 0 && (
-                                                <div className="p-4 rounded-[1.5rem] border border-warning/30 bg-warning/10 backdrop-blur-xl flex flex-col gap-2.5">
+                                                <div className="p-4 rounded-3xl border border-warning/30 bg-warning/10 backdrop-blur-xl flex flex-col gap-2.5">
                                                     <p className="text-caption font-black uppercase tracking-widest text-warning flex items-center gap-1.5">
                                                         <AlertCircle size={12} strokeWidth={2.5} />
                                                         Pendientes ({pendingEmployees.length})
@@ -1148,7 +1148,7 @@ export default function EncuestaAdminView() {
                                                 responsesByBranch.map(([branchName, group]) => {
                                                     const allRows = [...group.jefes, ...group.colabs];
                                                     return (
-                                                        <div key={branchName} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden">
+                                                        <div key={branchName} className="rounded-card border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden">
                                                             <div className="flex items-center gap-2 px-5 py-3 border-b border-border-card bg-surface-card">
                                                                 <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
                                                                 <span className="text-body-sm font-black text-content-2">{branchName}</span>

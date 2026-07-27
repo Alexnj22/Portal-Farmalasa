@@ -239,7 +239,7 @@ const TimeClockView = ({ setView }) => {
               bg-gradient-to-b from-blue-950/[0.30] to-white/[0.02]
               backdrop-blur-[60px] backdrop-saturate-[160%]
               border border-white/[0.10]
-              rounded-[2.5rem] px-5 py-7 [@media(max-height:800px)]:py-3
+              rounded-header px-5 py-7 [@media(max-height:800px)]:py-3
               shadow-[0_32px_72px_rgba(0,0,0,0.45),inset_0_2px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(255,255,255,0.03)]
               transition-all duration-500 hover:border-white/[0.16] hover:-translate-y-1
               hover:shadow-[0_40px_80px_rgba(0,0,0,0.55),inset_0_2px_0_rgba(255,255,255,0.09)]"

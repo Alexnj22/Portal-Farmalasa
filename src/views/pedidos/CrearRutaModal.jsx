@@ -513,7 +513,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
                           isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-surface-card border-divider hover:border-chart-3/30 hover:bg-chart-3/10'
                         }`}>
-                        <div className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 transition-colors ${
                           isSel ? 'bg-chart-3 border-chart-3' : 'border-divider'
                         }`}>
                           {isSel && <CheckCircle2 size={10} className="text-white" strokeWidth={3} />}

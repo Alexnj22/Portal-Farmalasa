@@ -19,8 +19,8 @@ const BranchTabGeneral = ({
         (municipalityList || []).map(m => ({ value: m, label: m }))
     , [municipalityList]);
 
-    // 🚨 DISEÑO COMPACTO: p-4 y rounded-[1.5rem] para ahorrar espacio vertical
-    const islandClass = "bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
+    // 🚨 DISEÑO COMPACTO: p-4 y rounded-3xl para ahorrar espacio vertical
+    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
     const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-surface-card";
     
     // Altura optimizada h-[40px] para encajar perfecto
@@ -33,7 +33,7 @@ const BranchTabGeneral = ({
             {/* ISLA 1: IDENTIDAD */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-brand/10 text-brand-text rounded-[0.8rem] border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Building2 size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Identidad de Sucursal</h4>
@@ -55,7 +55,7 @@ const BranchTabGeneral = ({
                     </div>
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Apertura</label>
-                        <div className={`bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] px-1.5 relative z-tabs ${inputHoverClass}`}>
+                        <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 relative z-tabs ${inputHoverClass}`}>
                             <LiquidDatePicker
                                 value={openingDate}
                                 onChange={(val) => setFormData(prev => ({ ...prev, openingDate: val, opening_date: val }))}
@@ -69,7 +69,7 @@ const BranchTabGeneral = ({
             {/* ISLA 2: UBICACIÓN */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-success/10 text-success rounded-[0.8rem] border border-success/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <MapPin size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Ubicación Geográfica</h4>
@@ -78,7 +78,7 @@ const BranchTabGeneral = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative z-content"> 
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                        <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
                             <LiquidSelect
                                 value={location.department || ""}
                                 onChange={(val) => {
@@ -97,7 +97,7 @@ const BranchTabGeneral = ({
                             Distrito / Municipio
                             {getTabStatus(1) === 'orange' && !location.municipality && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                        <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
                             <LiquidSelect
                                 value={location.municipality || ""}
                                 onChange={(val) => updateNestedSetting('location', 'municipality', val)}
@@ -173,7 +173,7 @@ const BranchTabGeneral = ({
             {/* ISLA 3: CONTACTO */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Phone size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Canales de Contacto</h4>

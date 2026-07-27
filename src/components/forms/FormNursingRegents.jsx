@@ -41,7 +41,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
 
             {/* 📝 PERMISO DEL ESTABLECIMIENTO (TARJETA PADRE 1) */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 rounded-[2rem] shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 rounded-modal shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
                 <div className="flex items-center gap-2 mb-2">
                     <Award size={16} className="text-brand-text" strokeWidth={2.5}/>
                     <h4 className="text-label font-black uppercase tracking-widest text-content">
@@ -86,7 +86,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
                         Permiso Físico (PDF/IMG)
                     </label>
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'}`}>
+                    <div className={`relative group border-2 border-dashed rounded-3xl p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'}`}>
                         <input type="file" accept="application/pdf,image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base" onChange={(e) => updateLegalField('nursingServicePermitFile', e.target.files?.[0] || null)} />
                         
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-surface-card text-brand-text border border-chart-1/30' : 'bg-surface-card text-content-3 group-hover:text-brand-text'}`}>
@@ -118,7 +118,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                 <div className="space-y-6">
                     {nursingRegents.map((nurse, index) => (
                         /* TARJETA PADRE 2 (DINÁMICA) */
-                        <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-[2rem] relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
+                        <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-modal relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
                             
                             <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-danger/30 text-danger rounded-full shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all duration-300 opacity-0 group-hover:opacity-100 z-content active:scale-[0.97] hover:scale-110">
                                 <Trash2 size={14} strokeWidth={2.5}/>
@@ -130,7 +130,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                     <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
                                         Empleado en Planilla
                                     </label>
-                                    <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-[1.5rem]">
+                                    <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-3xl">
                                         <LiquidSelect 
                                             value={nurse.employeeId} 
                                             onChange={(val) => updateNurse(index, 'employeeId', val)} 
@@ -214,7 +214,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     ))}
                     
                     {nursingRegents.length === 0 && (
-                        <div className="py-10 text-center border-2 border-dashed border-divider rounded-[2rem] bg-surface-card backdrop-blur-sm mt-4 transition-all duration-500 hover:bg-surface-card hover:-translate-y-1 hover:shadow-md cursor-pointer transform-gpu" onClick={addNurse}>
+                        <div className="py-10 text-center border-2 border-dashed border-divider rounded-modal bg-surface-card backdrop-blur-sm mt-4 transition-all duration-500 hover:bg-surface-card hover:-translate-y-1 hover:shadow-md cursor-pointer transform-gpu" onClick={addNurse}>
                             <div className="w-12 h-12 bg-surface-tab-active rounded-full flex items-center justify-center text-brand-text mx-auto mb-3 shadow-[var(--shadow-glow-brand)] border border-chart-1/30">
                                 <Plus size={20} strokeWidth={2.5}/>
                             </div>

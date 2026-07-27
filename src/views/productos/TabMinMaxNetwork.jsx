@@ -193,7 +193,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (
                             <button key={cls} onClick={() => { setFilterAbc(cls); setPage(1); }}
-                                className={`px-2.5 py-1 rounded-[10px] text-label font-black transition-all duration-150 ${filterAbc === cls ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
+                                className={`px-2.5 py-1 rounded-xl text-label font-black transition-all duration-150 ${filterAbc === cls ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
                                 {cls === 'all' ? 'ABC' : cls}
                             </button>
                         ))}
@@ -208,7 +208,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                             if (cnt === 0) return null;
                             return (
                                 <button key={key} onClick={() => { setFilterAlert(key); setPage(1); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-label font-black transition-all ${filterAlert === key ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-label font-black transition-all ${filterAlert === key ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
                                     {key !== 'all' && <span className={`w-1.5 h-1.5 rounded-full ${ALERT_DOT[key]}`} />}
                                     {key === 'all' ? 'Todos' : ALERT_LABELS[key]}
                                     {cnt !== null && <span className="tabular-nums">{cnt}</span>}

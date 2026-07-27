@@ -68,7 +68,7 @@ export const EmptyState = memo(({
         animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${className}`}>
         <div className="relative group flex flex-col items-center text-center">
             <div className={`absolute top-2 ${compact ? 'w-20 h-20' : 'w-28 h-28'} rounded-full blur-[40px] opacity-30 ${glowClass}`} />
-            <div className={`relative z-base ${compact ? 'w-16 h-16 rounded-2xl mb-4' : 'w-24 h-24 rounded-[2rem] mb-6'}
+            <div className={`relative z-base ${compact ? 'w-16 h-16 rounded-2xl mb-4' : 'w-24 h-24 rounded-modal mb-6'}
                 flex items-center justify-center bg-surface-card backdrop-blur-xl border border-border-card
                 shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
                 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${iconClass}`}>
@@ -97,7 +97,7 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
     if (variant === 'route') {
         return (
             <div className={`fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-header ${className}`}>
-                <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-[2rem]
+                <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-modal
                     px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
                     {spinner}
                     <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3">

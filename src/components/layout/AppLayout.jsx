@@ -507,7 +507,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             return (
                 <div
                     key={key}
-                    className={`w-full flex items-center gap-2.5 rounded-[1rem] relative
+                    className={`w-full flex items-center gap-2.5 rounded-2xl relative
                         ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                         opacity-50 cursor-default select-none`}
                 >
@@ -537,13 +537,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!isExpanded ? label : undefined}
                 title={(!isExpanded && !isMobile) ? label : undefined}
-                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden
+                className={`w-full flex items-center gap-2.5 rounded-2xl transition-all duration-200 group relative text-left overflow-hidden
                     ${indent ? `px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5${isMobile ? ' min-h-[44px]' : ''}` : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                     ${isActive ? 'text-white' : navItemInactive}
                     ${focusRing}
                     active:scale-[0.99] active:translate-y-0`}
             >
-                <span className="absolute inset-0 overflow-hidden rounded-[1rem] pointer-events-none">
+                <span className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                     <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
                 </span>
 
@@ -646,14 +646,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     aria-controls={isExpanded ? `nav-group-${key}` : undefined}
                     aria-label={!isExpanded ? label : undefined}
                     title={(!isExpanded && !isMobile) ? label : undefined}
-                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-200 group text-left overflow-hidden
+                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-2xl transition-all duration-200 group text-left overflow-hidden
                         ${hasActiveChild
                             ? 'text-white'
                             : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]'}
                         ${focusRing}
                         active:scale-[0.99] active:translate-y-0`}
                 >
-                    <span className="absolute inset-0 overflow-hidden rounded-[1rem] pointer-events-none">
+                    <span className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                         <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
                     </span>
                     <GroupIcon
@@ -743,19 +743,19 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 >
                     <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-base pointer-events-none">
                         <div className="absolute top-0 left-0 right-0 h-2/3 rounded-t-[2.6rem] bg-slate-500/[0.06] blur-3xl" />
-                        <div className="absolute -inset-5 right-0 rounded-[3.5rem] bg-black/35 blur-[45px] opacity-80" />
-                        <div className="absolute -inset-10 right-[-4px] rounded-[5rem] bg-black/20 blur-[70px] opacity-50" />
+                        <div className="absolute -inset-5 right-0 rounded-header bg-black/35 blur-[45px] opacity-80" />
+                        <div className="absolute -inset-10 right-[-4px] rounded-header bg-black/20 blur-[70px] opacity-50" />
                     </div>
 
                     {/* ── Glass container ── */}
-                    <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-base rounded-[2.5rem] overflow-hidden flex flex-col
+                    <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-base rounded-header overflow-hidden flex flex-col
                         bg-[#07031a]/95 lg:bg-[#07031a]/80 lg:backdrop-blur-2xl
                         border border-white/[0.10]
                         shadow-[inset_1px_0_0_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.15),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.40)]">
 
                         {/* Eco del logo real (public/Logo512.png): verde arriba, magenta abajo —
                             reemplaza el violeta/azul genérico sin relación con la marca (2026-07-23) */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[2.5rem]" style={{ zIndex: 0 }}>
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-header" style={{ zIndex: 0 }}>
                             <div className="animate-ambient-drift absolute rounded-full" style={{ width:'220px', height:'220px', top:'-10%', left:'-30%', background:'radial-gradient(circle, rgba(142,195,15,0.26) 0%, transparent 70%)', filter:'blur(20px)', animationDuration:'14s' }} />
                             <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'170px', height:'170px', bottom:'8%', right:'-25%', background:'radial-gradient(circle, rgba(152,29,151,0.24) 0%, transparent 70%)', filter:'blur(16px)', animationDuration:'18s', animationDelay:'5s' }} />
                             <div className="animate-ambient-drift absolute rounded-full" style={{ width:'130px', height:'130px', top:'42%', right:'-15%', background:'radial-gradient(circle, rgba(152,29,151,0.16) 0%, transparent 70%)', filter:'blur(14px)', animationDuration:'11s', animationDelay:'2s' }} />
@@ -784,9 +784,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
 
                             <div className="flex items-center gap-3 relative z-base">
-                                <button type="button" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-[1.25rem] ${focusRing}`} onClick={() => navigate('/')}>
-                                    <div className="absolute -inset-2 rounded-[1.75rem] blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
-                                    <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
+                                <button type="button" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`} onClick={() => navigate('/')}>
+                                    <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
+                                    <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
                                         transition-all duration-300 group-hover/logo:scale-105
                                         bg-white/12 border border-logo-magenta/20
                                         shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.2)]
@@ -827,7 +827,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 onClick={() => setSearchOpen(true)}
                                 aria-label="Buscar en el menú"
                                 title={`Buscar en el menú (${SHORTCUT_LABEL})`}
-                                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden
+                                className={`w-full flex items-center gap-2.5 rounded-2xl transition-all duration-200 group relative text-left overflow-hidden
                                     px-3 py-3 xl:px-4 xl:py-3.5
                                     bg-white/[0.045] border border-white/[0.07]
                                     text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
@@ -845,7 +845,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="h-px bg-white/[0.07] mx-1 my-2" />
 
                             <div
-                                className={`absolute left-2 right-2 rounded-[0.875rem] transform-gpu transition-opacity duration-200 pointer-events-none
+                                className={`absolute left-2 right-2 rounded-xl transform-gpu transition-opacity duration-200 pointer-events-none
                                     bg-gradient-to-r from-logo-magenta/[0.22] via-logo-magenta/[0.10] to-logo-green/[0.06]
                                     border border-logo-magenta/[0.20]
                                     shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_28px_rgba(152,29,151,0.22),0_4px_16px_rgba(0,0,0,0.30)]
@@ -884,10 +884,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
                                         <button onClick={() => navigate('/profile')}
-                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] ${focusRing}`}
+                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] ${focusRing}`}
                                             type="button">
                                             <div className="relative h-9 w-9 flex-shrink-0">
-                                                <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
+                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
                                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
@@ -901,7 +901,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             </div>
                                         </button>
                                         <button onClick={handleLogout} aria-label="Cerrar sesión"
-                                            className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-danger hover:bg-danger/[0.14] hover:border-danger/[0.18] ${focusRing}`}
+                                            className={`p-2 rounded-xl border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-danger hover:bg-danger/[0.14] hover:border-danger/[0.18] ${focusRing}`}
                                             type="button">
                                             <LogOut size={16} strokeWidth={1.8} />
                                         </button>
@@ -932,7 +932,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                             }}
                                             onMouseLeave={closeFlyout} aria-label="Mi Perfil" title="Mi Perfil"
-                                            className={`w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                            className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
                                                 bg-white/[0.08] border border-white/[0.12] text-white/55
                                                 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_12px_rgba(0,0,0,0.4)]
                                                 hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[0_6px_18px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18)] ${focusRing}`}>
@@ -945,7 +945,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         )}
                                     </div>
                                     <button onClick={handleLogout} type="button" aria-label="Cerrar sesión" title="Cerrar sesión"
-                                        className={`w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                        className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
                                             bg-danger/[0.08] border border-danger/[0.12] text-danger/60
                                             hover:text-danger hover:bg-danger/[0.18] hover:border-danger/[0.22]
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
@@ -1010,7 +1010,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
                                     <button onClick={() => navigate('/profile')} type="button" aria-label="Mi Perfil"
-                                        className="w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
+                                        className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                                     </button>
@@ -1043,7 +1043,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     apilamiento — el fixed anidado era lo que standalone no pintaba) */}
                 {hasSelfOnly && (
                         <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
-                            <div className="flex items-center justify-around rounded-[1.75rem] px-2 py-2 border
+                            <div className="flex items-center justify-around rounded-card px-2 py-2 border
                                 bg-white/95 border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {
                                     const pathSeg = path.replace(/^\//, '').split('/')[0];
@@ -1051,7 +1051,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     const badge = getBadge(key);
                                     return (
                                         <button key={key} onClick={() => navigate(path)} type="button" aria-current={isActive ? 'page' : undefined}
-                                            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
+                                            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
                                             <div className="relative">
                                                 {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
                                                 <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand-text' : 'text-slate-500'} />
@@ -1081,7 +1081,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
                                 <button
                                     onClick={() => { navigate(flyout.path); setFlyout(null); }}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-[1rem]
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         backdrop-blur-2xl backdrop-saturate-150 border shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]
                                         transition-all duration-150 active:scale-[0.97] group/fi ${focusRing}
                                         ${flyout.isActive
@@ -1089,7 +1089,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             : 'bg-[#0D2040]/80 border-[#1E3A6E]/60 hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60'}`}
                                     type="button"
                                 >
-                                    <div className={`w-8 h-8 rounded-[0.65rem] flex items-center justify-center flex-shrink-0
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
                                         ${flyout.isActive ? 'bg-[#4D94FF]/25' : 'bg-white/8 group-hover/fi:bg-[#4D94FF]/20'}`}>
                                         <flyout.icon
                                             size={16}
@@ -1114,7 +1114,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
                         ) : flyout.type === 'group' ? (
                             <div className="relative animate-in fade-in slide-in-from-left-2 duration-150 min-w-[220px]">
-                                <div className="relative rounded-[1.4rem] overflow-hidden
+                                <div className="relative rounded-3xl overflow-hidden
                                     bg-[#0A1628]/80 backdrop-blur-2xl backdrop-saturate-150
                                     border border-white/12
                                     shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]">
@@ -1129,7 +1129,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             const MIcon = m.icon;
                                             if (m.comingSoon) return (
                                                 <div key={m.key}
-                                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[0.85rem] opacity-50 cursor-default select-none"
+                                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-50 cursor-default select-none"
                                                 >
                                                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/6">
                                                         <MIcon size={14} strokeWidth={1.5} className="text-white/40" />
@@ -1145,7 +1145,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     key={m.key}
                                                     onClick={() => { navigate(m.path); setFlyout(null); }}
                                                     type="button"
-                                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[0.85rem] transition-all duration-150 text-left group/fi active:scale-[0.97] ${focusRing}
+                                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left group/fi active:scale-[0.97] ${focusRing}
                                                         ${m.isActive
                                                             ? 'bg-[#1A3560] text-white border border-[#2D5499]/50'
                                                             : 'text-white hover:bg-[#1A3560]'}`}
@@ -1183,13 +1183,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
                                 <button
                                     onClick={() => { navigate('/profile'); setFlyout(null); }}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-[1rem]
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         bg-[#0D2040]/80 backdrop-blur-2xl backdrop-saturate-150 border border-[#1E3A6E]/60
                                         shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]
                                         hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60 transition-all duration-150 active:scale-[0.97] ${focusRing}`}
                                     type="button"
                                 >
-                                    <div className="w-9 h-9 rounded-[0.75rem] overflow-hidden flex-shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
+                                    <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} className="text-[#7DB8FF]" />}
                                     </div>
                                     <div className="flex flex-col items-start pr-1">

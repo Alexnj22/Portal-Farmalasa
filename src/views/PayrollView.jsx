@@ -279,7 +279,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                 const branchName = branch?.name || 'Otras áreas';
                 return (
                     <div key={branch?.id || '__none__'}
-                        className="backdrop-blur-[30px] rounded-[2.5rem] bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
+                        className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
                         style={{ animationDelay: `${gi * 80}ms` }}>
 
                         {/* Branch header */}
@@ -495,7 +495,7 @@ const PayrollView = ({ openModal }) => {
     });
 
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
             {/* Search mode */}
             <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[700px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[240px] border border-border-card shadow-sm">
@@ -546,7 +546,7 @@ const PayrollView = ({ openModal }) => {
 
                     {/* ── Sidebar: Períodos ── */}
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
-                        <div className="backdrop-blur-[30px] rounded-[2.5rem] p-5 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                        <div className="backdrop-blur-[30px] rounded-header p-5 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
                                 <button onClick={() => openModal?.('newPayrollPeriod')}
@@ -581,7 +581,7 @@ const PayrollView = ({ openModal }) => {
                     {/* ── Main content ── */}
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
                         {!activePeriod ? (
-                            <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                            <div className="backdrop-blur-[30px] rounded-header p-12 bg-surface-card border border-border-card flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
                                 <div className="w-16 h-16 bg-gradient-to-tr from-brand to-brand-purple rounded-2xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
@@ -591,7 +591,7 @@ const PayrollView = ({ openModal }) => {
                         ) : (
                             <>
                                 {/* Period summary card */}
-                                <div className="backdrop-blur-[30px] rounded-[2.5rem] p-6 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="backdrop-blur-[30px] rounded-header p-6 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
                                             <h2 className="text-body-xl font-black text-content tracking-tight">{activePeriod.name}</h2>
@@ -673,7 +673,7 @@ const PayrollView = ({ openModal }) => {
 
                                 {/* Entries */}
                                 {isLoadingPayroll ? (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] bg-surface-card border border-border-card overflow-hidden">
+                                    <div className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card overflow-hidden">
                                         <div className="px-6 py-4 border-b border-border-card bg-surface-card flex items-center gap-3">
                                             <div className="w-8 h-8 skeleton rounded-xl" />
                                             <div className="space-y-1.5">
@@ -709,7 +709,7 @@ const PayrollView = ({ openModal }) => {
                                         </table>
                                     </div>
                                 ) : filteredEntries.length === 0 ? (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card text-center text-content-3 text-body-sm animate-in fade-in duration-500">
+                                    <div className="backdrop-blur-[30px] rounded-header p-12 bg-surface-card border border-border-card text-center text-content-3 text-body-sm animate-in fade-in duration-500">
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (

@@ -469,7 +469,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const renderEmployeeCard = ({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => (
     <div
       key={emp.id}
-      className="p-4 rounded-[2rem] border border-border-card bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-md)] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu"
+      className="p-4 rounded-modal border border-border-card bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-md)] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu"
     >
       <button
         type="button"
@@ -587,7 +587,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const filtersContent = (
     <div
       {...searchContainerRef}
-      className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden"
+      className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden"
     >
       {/* Buscador activo */}
       <div
@@ -673,7 +673,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               type="button"
               onClick={() => setStatusTab(card.id)}
               className={[
-                "text-left p-5 rounded-[2rem] border transition-all duration-300 group relative overflow-hidden",
+                "text-left p-5 rounded-modal border transition-all duration-300 group relative overflow-hidden",
                 card.bg, card.border,
                 isActive
                   ? "shadow-[var(--shadow-glow-brand)] ring-2 ring-brand scale-[1.02] -translate-y-0.5"
@@ -715,7 +715,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
       {/* TABLERO POR ESTADO */}
       {employeeDataList.length === 0 ? (
-        <div className="rounded-[2rem] p-20 text-center border border-border-card bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] flex flex-col items-center gap-4 mt-8">
+        <div className="rounded-modal p-20 text-center border border-border-card bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] flex flex-col items-center gap-4 mt-8">
           <div className="w-20 h-20 bg-surface-card-hover rounded-full flex items-center justify-center animate-pulse">
             <Users size={32} className="text-content-3" />
           </div>
@@ -735,7 +735,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             const groups = groupRowsByBranch(rows);
 
             return (
-              <div key={col.id} className={`rounded-[2rem] border backdrop-blur-xl p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
+              <div key={col.id} className={`rounded-modal border backdrop-blur-xl p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${col.dot}`} />

@@ -42,11 +42,11 @@ const AuthPromptPanel = ({
   return (
     <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
       
-      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-5 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
+      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
 
         {/* TOP */}
         <div className="flex flex-col items-center text-center w-full mb-5 sm:mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
-          <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-[1.5rem] mb-3 sm:mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
+          <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-3 sm:mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
             <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl sm:text-3xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5 transition-colors">

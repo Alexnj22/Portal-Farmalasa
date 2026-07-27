@@ -1515,42 +1515,9 @@ a:focus-visible,
   --radius-3xl: 0.75rem;    /* 12px  ← 24px */
 }
 
-/* Arbitrarios, mapeados al token del rol que cumplen. La especificidad de
-   [data-theme=…] .clase ya gana sobre .clase — sin !important. */
-[data-theme="solid"] .rounded-\[1\.75rem\],
-[data-theme="solid-dark"] .rounded-\[1\.75rem\] { border-radius: var(--card-radius); }
-[data-theme="solid"] .rounded-\[2rem\],
-[data-theme="solid-dark"] .rounded-\[2rem\]     { border-radius: var(--modal-radius); }
-[data-theme="solid"] .rounded-\[2\.5rem\],
-[data-theme="solid-dark"] .rounded-\[2\.5rem\]  { border-radius: var(--header-radius); }
-[data-theme="solid"] .rounded-t-\[2\.5rem\],
-[data-theme="solid-dark"] .rounded-t-\[2\.5rem\] { border-top-left-radius: var(--header-radius); border-top-right-radius: var(--header-radius); }
-
-/* Contenedores intermedios (1–1.5rem): un escalón sobre la card. */
-[data-theme="solid"] .rounded-\[1rem\],      [data-theme="solid-dark"] .rounded-\[1rem\],
-[data-theme="solid"] .rounded-\[1\.1rem\],   [data-theme="solid-dark"] .rounded-\[1\.1rem\],
-[data-theme="solid"] .rounded-\[1\.2rem\],   [data-theme="solid-dark"] .rounded-\[1\.2rem\],
-[data-theme="solid"] .rounded-\[1\.25rem\],  [data-theme="solid-dark"] .rounded-\[1\.25rem\],
-[data-theme="solid"] .rounded-\[1\.4rem\],   [data-theme="solid-dark"] .rounded-\[1\.4rem\],
-[data-theme="solid"] .rounded-\[1\.5rem\],   [data-theme="solid-dark"] .rounded-\[1\.5rem\] {
-  border-radius: 0.625rem; /* 10px */
-}
-
-/* Controles chicos (<1rem): al radio de input del tema. */
-[data-theme="solid"] .rounded-\[0\.6rem\],   [data-theme="solid-dark"] .rounded-\[0\.6rem\],
-[data-theme="solid"] .rounded-\[0\.65rem\],  [data-theme="solid-dark"] .rounded-\[0\.65rem\],
-[data-theme="solid"] .rounded-\[0\.7rem\],   [data-theme="solid-dark"] .rounded-\[0\.7rem\],
-[data-theme="solid"] .rounded-\[0\.75rem\],  [data-theme="solid-dark"] .rounded-\[0\.75rem\],
-[data-theme="solid"] .rounded-\[0\.8rem\],   [data-theme="solid-dark"] .rounded-\[0\.8rem\],
-[data-theme="solid"] .rounded-\[0\.85rem\],  [data-theme="solid-dark"] .rounded-\[0\.85rem\],
-[data-theme="solid"] .rounded-\[0\.875rem\], [data-theme="solid-dark"] .rounded-\[0\.875rem\] {
-  border-radius: var(--input-radius);
-}
-
-/* Superficies grandes (≥2.2rem): al radio de header, el techo del tema. */
-[data-theme="solid"] .rounded-\[2\.2rem\],   [data-theme="solid-dark"] .rounded-\[2\.2rem\],
-[data-theme="solid"] .rounded-\[3rem\],      [data-theme="solid-dark"] .rounded-\[3rem\],
-[data-theme="solid"] .rounded-\[3\.5rem\],   [data-theme="solid-dark"] .rounded-\[3\.5rem\],
-[data-theme="solid"] .rounded-\[5rem\],      [data-theme="solid-dark"] .rounded-\[5rem\] {
-  border-radius: var(--header-radius);
-}
+/* Los overrides por valor arbitrario que N3 necesitaba se BORRARON al cerrar
+   D2.3: los 627 `rounded-[…]` se migraron a los tokens semánticos
+   (`rounded-card`/`modal`/`header`) y a la rampa nombrada de Tailwind, que ya
+   es theme-aware por el bloque de arriba. Eran un parche por valor; ahora el
+   sistema se sostiene solo y cualquier `rounded-2xl` nuevo hereda la
+   geometría del tema sin agregar una regla. */

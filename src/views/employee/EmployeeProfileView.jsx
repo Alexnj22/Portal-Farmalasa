@@ -44,7 +44,7 @@ const WEEK_DAYS = [
 ];
 
 const SectionCard = ({ children, className = '' }) => (
-    <div className={`bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] p-5 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-0.5 transition-all duration-300 ${className}`}>
+    <div className={`bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal p-5 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-0.5 transition-all duration-300 ${className}`}>
         {children}
     </div>
 );
@@ -194,17 +194,17 @@ const EmployeeProfileView = ({ openModal }) => {
         <GlassViewLayout icon={User} title="Mi Perfil" transparentBody={true}>
             <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 flex flex-col lg:flex-row gap-5 items-start animate-in fade-in duration-300">
                 <div className="w-full lg:w-[400px] shrink-0 space-y-4">
-                    <div className="skeleton rounded-[2.5rem] h-80" />
+                    <div className="skeleton rounded-header h-80" />
                     <div className="grid grid-cols-2 gap-3">
                         <div className="skeleton rounded-2xl h-11" />
                         <div className="skeleton rounded-2xl h-11" />
                     </div>
-                    <div className="skeleton rounded-[2rem] h-44" />
+                    <div className="skeleton rounded-modal h-44" />
                 </div>
                 <div className="flex-1 min-w-0 space-y-4">
-                    <div className="skeleton rounded-[2rem] h-24" />
-                    <div className="skeleton rounded-[2rem] h-32" />
-                    <div className="skeleton rounded-[2rem] h-72" />
+                    <div className="skeleton rounded-modal h-24" />
+                    <div className="skeleton rounded-modal h-32" />
+                    <div className="skeleton rounded-modal h-72" />
                 </div>
             </div>
         </GlassViewLayout>
@@ -240,7 +240,7 @@ const EmployeeProfileView = ({ openModal }) => {
     );
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
             {/* Info chips */}
             {emp.phone && (
                 <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-surface-card border border-border-card rounded-2xl">
@@ -347,7 +347,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                     {/* Emergencia */}
                     {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-[2rem] p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-0.5 transition-all duration-300">
+                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-modal p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-0.5 transition-all duration-300">
                             <SectionLabel icon={HeartPulse} label="Contacto de Emergencia" color="text-danger" />
                             <div className="space-y-2">
                                 <Field label="Avisar a"            value={emp.emergency_contact_name}  icon={User} />

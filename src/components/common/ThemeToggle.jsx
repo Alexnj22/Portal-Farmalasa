@@ -176,7 +176,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
           onClick={handleTrigger}
           title={`Tema: ${styleLabel} · ${modeLabel}`}
           aria-expanded={isOpen}
-          className={`relative w-11 h-11 flex items-center justify-center rounded-[1.1rem]
+          className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
             border transition-colors duration-150 ${className}
             ${isOpen
               ? 'bg-white/12 border-white/20 text-white/90'
@@ -195,13 +195,13 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
         ref={triggerRef}
         onClick={handleTrigger}
         aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[0.875rem]
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
           border transition-colors duration-150 text-left ${className}
           ${isOpen
             ? 'bg-white/10 border-white/15'
             : 'bg-white/5 border-white/8 hover:bg-white/10 hover:border-white/15'}`}
       >
-        <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 bg-white/10">
+        <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 bg-white/10">
           <StyleIcon size={14} strokeWidth={2} className="text-white/70" />
         </div>
         <div className="flex-1 overflow-hidden">

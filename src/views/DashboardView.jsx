@@ -226,10 +226,10 @@ const Skel = ({ className = '', style }) => (
 );
 
 const KpiCardSkeleton = () => (
-  <div className="relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3">
-    <div className="absolute inset-0 pointer-events-none rounded-[1.5rem]" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
+  <div className="relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3">
+    <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     <div className="flex items-center gap-2">
-      <Skel className="w-7 h-7 rounded-[0.7rem] flex-shrink-0" />
+      <Skel className="w-7 h-7 rounded-xl flex-shrink-0" />
       <Skel className="h-2.5 flex-1 max-w-[110px]" />
     </div>
     <div className="flex items-end justify-between gap-1">
@@ -240,7 +240,7 @@ const KpiCardSkeleton = () => (
 );
 
 const SalesBranchSkeleton = () => (
-  <div className="bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] p-3.5 flex flex-col gap-2">
+  <div className="bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] p-3.5 flex flex-col gap-2">
     <div className="flex items-start justify-between gap-2">
       <Skel className="h-3 w-24" />
       <Skel className="h-3 w-14 shrink-0" />
@@ -262,11 +262,11 @@ const SalesBranchSkeleton = () => (
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
   <div data-surface="card" onClick={onClick}
-    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
-    <div className="absolute inset-0 pointer-events-none rounded-[1.5rem]" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
+    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
+    <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
-      <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: color + '18', border: `1px solid ${color}20` }}>
+      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: color + '18', border: `1px solid ${color}20` }}>
         <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
       <p className="text-label font-semibold text-content-3 leading-snug">{label}</p>
@@ -283,15 +283,15 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => {
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
-    <div data-surface="card" className={`h-full relative rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
+    <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
       {/* backdrop-filter on inner absolute div — Chrome bug: overflow-hidden + backdrop-filter on same element breaks blur */}
-      <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
+      <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
       {/* Glass shine */}
-      <div className="absolute inset-0 pointer-events-none rounded-[1.75rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
+      <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
       {/* Header */}
       <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-border-card shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-[0.65rem] flex items-center justify-center shrink-0"
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: cat.accent, border: `1px solid ${cat.border}` }}>
             <Icon size={13} style={{ color: cat.color }} strokeWidth={2.2} />
           </div>
@@ -1343,12 +1343,12 @@ const DashboardView = ({ openModal }) => {
       const nowH=new Date().getHours();
       const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
       return wrapWidget(wid,
-        <div data-surface="card" className="h-full relative rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden">
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden">
           {/* Mismas 2 capas que WidgetCard (blur + glass shine) — antes esta
               mini-card se pintaba a mano sin la capa de brillo, por eso se
               veía más opaca/gris que el resto de widgets del dashboard. */}
-          <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
-          <div className="absolute inset-0 pointer-events-none rounded-[1.75rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
+          <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
+          <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           <div className="relative h-full p-3.5 flex flex-col gap-1.5">
             <div className="flex items-start justify-between gap-1">
               <p className="text-body-sm font-black text-content-2 leading-tight truncate">{b.name}</p>
@@ -1402,7 +1402,7 @@ const DashboardView = ({ openModal }) => {
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
-                <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0" />
+                <Skel className="w-7 h-7 rounded-lg flex-shrink-0" />
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <Skel className="h-3 w-3/4" />
                   <Skel className="h-2.5 w-1/2" />
@@ -1416,7 +1416,7 @@ const DashboardView = ({ openModal }) => {
                 const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
                 return (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
-                    <div className={`w-7 h-7 rounded-[0.6rem] border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
+                    <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
                     <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}`}</p></div>
                     <span className={`text-micro font-black px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</span>
                   </div>
@@ -1443,7 +1443,7 @@ const DashboardView = ({ openModal }) => {
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
-                <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0" />
+                <Skel className="w-7 h-7 rounded-lg flex-shrink-0" />
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <Skel className="h-3 w-3/4" />
                   <Skel className="h-2.5 w-1/2" />
@@ -1455,7 +1455,7 @@ const DashboardView = ({ openModal }) => {
               :displayReqs.map(r=>(
                 <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
                   className={`w-full flex items-center gap-3 px-5 py-3 transition-colors text-left ${canManage('dash_requests')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
-                  <div className="w-7 h-7 rounded-[0.6rem] bg-warning/10 border border-warning/30 flex items-center justify-center shrink-0"><ClipboardList size={13} className="text-warning"/></div>
+                  <div className="w-7 h-7 rounded-lg bg-warning/10 border border-warning/30 flex items-center justify-center shrink-0"><ClipboardList size={13} className="text-warning"/></div>
                   <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption text-content-3 font-medium">{REQUEST_TYPE_LABELS[r.type]||r.type}</p></div>
                   <span className="text-caption text-content-3 shrink-0">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>
                 </button>
@@ -1574,7 +1574,7 @@ const DashboardView = ({ openModal }) => {
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
-                <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0 mt-0.5" />
+                <Skel className="w-7 h-7 rounded-lg flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <Skel className="h-3 w-4/5" />
                   <Skel className="h-2.5 w-1/3" />
@@ -1584,7 +1584,7 @@ const DashboardView = ({ openModal }) => {
               :recentAnnouncements.map(a=>(
                 <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
                   className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left ${canManage('dash_announcements')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
-                  <div className={`w-7 h-7 rounded-[0.6rem] flex items-center justify-center shrink-0 mt-0.5 ${a.priority==='URGENT'?'bg-danger/10 border border-danger/30':'bg-chart-1/10 border border-chart-1/30'}`}>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${a.priority==='URGENT'?'bg-danger/10 border border-danger/30':'bg-chart-1/10 border border-chart-1/30'}`}>
                     {a.priority==='URGENT'?<Flame size={13} className="text-danger"/>:<Megaphone size={13} className="text-chart-1-text"/>}
                   </div>
                   <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{a.title}</p><p className="text-caption text-content-3 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
@@ -1605,17 +1605,17 @@ const DashboardView = ({ openModal }) => {
         : birthdaysOfMonth;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
-        <div data-surface="card" className="h-full relative rounded-[1.75rem] border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col overflow-hidden">
-          <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col overflow-hidden">
+          <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
           {/* Mismas 2 capas que WidgetCard — este widget era hand-rolled sin
               el glass shine ni data-surface="card" (mismo bug que
               sales_branch_*, encontrado en la misma auditoría). */}
-          <div className="absolute inset-0 pointer-events-none rounded-[1.75rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
+          <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           {/* Header */}
           <div className="relative px-4 py-3 border-b border-border-card shrink-0">
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-[0.6rem] bg-brand/10 border border-brand/15 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-brand/10 border border-brand/15 flex items-center justify-center">
                   <Gift size={13} className="text-brand-text" strokeWidth={2.2}/>
                 </div>
                 <h3 className="text-body-sm font-black text-content tracking-tight">Cumpleaños</h3>
@@ -2017,7 +2017,7 @@ const DashboardView = ({ openModal }) => {
           const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
           return (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm p-4 space-y-3">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-surface-card rounded-3xl border border-divider shadow-sm p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
@@ -2026,12 +2026,12 @@ const DashboardView = ({ openModal }) => {
                 </button>
               </div>
               {/* Tab selector inside panel */}
-              <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-[0.875rem] p-1">
+              <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl p-1">
                 {TABS.map(tab => {
                   const TabIcon = tab.icon;
                   return (
                     <button key={tab.id} onClick={() => setConfigTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-label font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-label font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
                         configTab === tab.id ? 'bg-surface-card text-brand-text shadow-sm' : 'text-content-3 hover:text-content-2'
                       }`}>
                       <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
@@ -2047,7 +2047,7 @@ const DashboardView = ({ openModal }) => {
                   const WIcon = w.icon;
                   return (
                     <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
-                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
+                      className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
                       <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
                       <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-brand' : 'bg-surface-card-hover'}`}>
@@ -2133,7 +2133,7 @@ const DashboardView = ({ openModal }) => {
                 pointerEvents:   'none',
                 zIndex: 25,
               }}
-              className={`rounded-[1.75rem] border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-warning/60 bg-warning/10'}`}
+              className={`rounded-card border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-warning/60 bg-warning/10'}`}
             />
           )}
         </div>

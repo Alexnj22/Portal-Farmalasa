@@ -668,7 +668,7 @@ export default function CotizacionesView() {
             <div className="p-4 lg:p-6 space-y-4">
 
                 {/* ── Cabecera ─────────────────────────────────────────────── */}
-                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm space-y-4">
+                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm space-y-4">
                     <div className="flex items-center gap-2.5 pb-3 border-b border-border-card">
                         <div className="w-8 h-8 rounded-xl bg-chart-1/10 text-chart-1-text border border-chart-1/30 flex items-center justify-center">
                             <FileText size={16} strokeWidth={2.5} />
@@ -750,7 +750,7 @@ export default function CotizacionesView() {
                 </div>
 
                 {/* ── Productos ─────────────────────────────────────────────── */}
-                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm space-y-3">
+                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm space-y-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-xl bg-success/10 text-success border border-success/30 flex items-center justify-center">
@@ -778,7 +778,7 @@ export default function CotizacionesView() {
 
                     {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-10 gap-3 text-content-3">
-                            <div className="w-12 h-12 rounded-[1rem] bg-surface-card-hover flex items-center justify-center border border-divider"><Package size={22} strokeWidth={1.5} /></div>
+                            <div className="w-12 h-12 rounded-2xl bg-surface-card-hover flex items-center justify-center border border-divider"><Package size={22} strokeWidth={1.5} /></div>
                             <p className="text-body-sm font-bold">Busca y selecciona productos</p>
                         </div>
                     ) : (
@@ -794,7 +794,7 @@ export default function CotizacionesView() {
                 {/* ── Totales ───────────────────────────────────────────────── */}
                 {items.length > 0 && (
                     <div className="flex justify-end">
-                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
+                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card mb-1">
                                 <Calculator size={14} className="text-chart-1-text" />
                                 <h3 className="text-label font-black uppercase tracking-widest text-content-2">Resumen</h3>
@@ -960,7 +960,7 @@ export default function CotizacionesView() {
 
                     {/* Totales */}
                     <div className="flex justify-end">
-                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-5 shadow-sm w-full max-w-[380px] space-y-2">
+                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card">
                                 <Calculator size={14} className="text-chart-1-text" />
                                 <h3 className="text-label font-black uppercase tracking-widest text-content-2">Totales</h3>

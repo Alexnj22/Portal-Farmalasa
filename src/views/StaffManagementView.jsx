@@ -376,7 +376,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {rolesArray.map((roleObj, idx) => {
             const theme = getRoleTheme(roleObj.original);
             return (
-              <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-[6px] text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${theme.bg} ${theme.text} ${theme.border}`}>
+              <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${theme.bg} ${theme.text} ${theme.border}`}>
                 {roleObj.display}
               </span>
             );
@@ -472,7 +472,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       </DataCell>
 
       <DataCell className="max-w-[200px]">
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
           <GraduationCap size={10} strokeWidth={2.5} /> Horas Sociales
         </span>
       </DataCell>
@@ -869,7 +869,7 @@ const StaffManagementView = ({
   };
 
   const filtersContent = (
-    <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+    <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />

@@ -18,7 +18,7 @@ const BranchTabLegal = ({
     };
 
     // 🚨 ESTILOS LIQUID GLASS
-    const islandClass = "bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col h-full";
+    const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col h-full";
     const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-white";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
@@ -56,7 +56,7 @@ const BranchTabLegal = ({
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento de Licencia
                             </label>
-                            <div className={`bg-warning/10 rounded-[1rem] border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
+                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
                                 <LiquidDatePicker
                                     value={legal.srsExpiration || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'srsExpiration', val)}
@@ -90,7 +90,7 @@ const BranchTabLegal = ({
                                 Regente Asignado
                                 {availableRegents.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
                             </label>
-                            <div className={`rounded-[1rem] h-[42px] ${inputHoverClass}`}>
+                            <div className={`rounded-2xl h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect
                                     value={legal.regentEmployeeId || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'regentEmployeeId', val)}
@@ -103,7 +103,7 @@ const BranchTabLegal = ({
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
                             </label>
-                            <div className={`bg-warning/10 rounded-[1rem] border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
+                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
                                 <LiquidDatePicker
                                     value={legal.regentCredentialExp || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'regentCredentialExp', val)}
@@ -136,7 +136,7 @@ const BranchTabLegal = ({
                                 Referente Asignado
                                 {availablePharmacovigilance.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
                             </label>
-                            <div className={`rounded-[1rem] h-[42px] ${inputHoverClass}`}>
+                            <div className={`rounded-2xl h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect
                                     value={legal.pharmacovigilanceEmployeeId || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceEmployeeId', val)}
@@ -149,7 +149,7 @@ const BranchTabLegal = ({
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
                             </label>
-                            <div className={`bg-warning/10 rounded-[1rem] border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
+                            <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
                                 <LiquidDatePicker
                                     value={legal.pharmacovigilanceExp || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceExp', val)}
@@ -184,9 +184,9 @@ const BranchTabLegal = ({
                             <div>
                                 <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Enfermeros Autorizados</label>
                                 {availableNurses.length === 0 ? (
-                                    <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-[1rem] border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
+                                    <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-2xl border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
                                 ) : (
-                                    <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-[1.5rem] border border-white max-h-[100px] overflow-y-auto custom-scrollbar shadow-[inset_0_2px_10px_rgba(0,0,0,0.03)]">
+                                    <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-3xl border border-white max-h-[100px] overflow-y-auto custom-scrollbar shadow-[inset_0_2px_10px_rgba(0,0,0,0.03)]">
                                         {availableNurses.map(emp => {
                                             const isSelected = (legal.nurses || []).includes(emp.id);
                                             return (
@@ -194,7 +194,7 @@ const BranchTabLegal = ({
                                                     key={emp.id}
                                                     type="button"
                                                     onClick={() => toggleNurse(emp.id)}
-                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-label font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/30 hover:shadow-sm'}`}
+                                                    className={`px-3 py-1.5 rounded-xl text-label font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/30 hover:shadow-sm'}`}
                                                 >
                                                     {emp.name.split(' ')[0]} {isSelected && '✓'}
                                                 </button>
@@ -216,7 +216,7 @@ const BranchTabLegal = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex items-center justify-center py-8 text-center bg-surface-card backdrop-blur-sm rounded-[1.5rem] border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)]">
+                        <div className="flex-1 flex items-center justify-center py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)]">
                             <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center gap-1.5">
                                 <AlertCircle size={14} /> Módulo Desactivado
                             </p>
@@ -258,7 +258,7 @@ const BranchTabLegal = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="py-8 text-center bg-surface-card backdrop-blur-sm rounded-[1.5rem] border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)] animate-in fade-in duration-300">
+                    <div className="py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)] animate-in fade-in duration-300">
                         <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-1.5">
                             <AlertCircle size={14} /> Módulo Desactivado
                         </p>

@@ -46,14 +46,14 @@ const KioskConfigModal = ({
     <div className="absolute inset-0 z-sidebar-desktop bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
       
       {/* Tarjeta Liquid Glass */}
-      <div className="w-full max-w-[420px] max-h-full overflow-y-auto scrollbar-hide flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] text-center relative">
+      <div className="w-full max-w-[420px] max-h-full overflow-y-auto scrollbar-hide flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] text-center relative">
         
         {parsedConfig ? (
           /* =========================================
              ESTADO: KIOSCO VINCULADO (ACTIVO)
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
-            <div className="inline-flex p-4 rounded-[1.5rem] mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[0_0_40px_rgba(16,185,129,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[0_0_40px_rgba(16,185,129,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(16,185,129,0.3)]">
               <MonitorCheck size={42} className="text-success drop-shadow-[var(--shadow-glow-success)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
@@ -88,7 +88,7 @@ const KioskConfigModal = ({
              ESTADO: VINCULAR KIOSCO (SETUP)
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
-            <div className="inline-flex p-4 rounded-[1.5rem] mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]">
+            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]">
               <Settings size={42} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
@@ -130,7 +130,7 @@ const KioskConfigModal = ({
                 <div className="relative">
                   <Laptop size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" strokeWidth={2} />
                   <input
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-[1.5rem] p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-body-xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-3xl p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-body-xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
                     placeholder="Ej: Tablet Entrada"
                     value={deviceNameInput}
                     onChange={(e) => onChangeDeviceName?.(e.target.value)}

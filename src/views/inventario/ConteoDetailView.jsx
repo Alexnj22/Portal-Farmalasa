@@ -542,7 +542,7 @@ export default function ConteoDetailView() {
     const es = conteo ? (ESTADO_CFG[conteo.status] || ESTADO_CFG.BORRADOR) : null;
 
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input
@@ -577,7 +577,7 @@ export default function ConteoDetailView() {
                 </button>
 
                 {conteo && (
-                    <div className="bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-sm">
+                    <div className="bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-sm">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2 mb-1">

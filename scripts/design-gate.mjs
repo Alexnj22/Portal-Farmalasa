@@ -67,7 +67,7 @@ const EXCEPTIONS = {
   // backdrop para cerrar (patrón de modal estándar, cierra siempre sin
   // importar el texto tipeado, a diferencia de un buscador inline donde
   // perder el texto por accidente sí importa). Ver MenuSearchModal.jsx.
-  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle'],
+  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index'],
   'src/views/branch-tabs/TabStaff.jsx': ['color', 'native'], // panel WFM dark + shimmer IA
   'src/components/forms/FormWfmAnalytics.jsx': ['color'], // tooltip flotante dark
   'src/components/timeclock/IdleScanPanel.jsx': ['color'], // kiosco
@@ -80,7 +80,6 @@ const EXCEPTIONS = {
   // Mapas/canvas/PDF — colores hex directos por naturaleza de la tecnología
   'src/views/CotizacionesView.jsx': ['color'],
   'src/views/pedidos/CrearRutaModal.jsx': ['color'], // marcadores Leaflet (L.divIcon HTML)
-  'src/views/pedidos/RutaMapModal.jsx': ['color'], // marcadores Leaflet (L.divIcon HTML)
   'src/views/PayrollView.jsx': ['color'], // plantilla de impresión (boleta HTML)
   // Tooltips flotantes dark (DESIGN.md §6 — no siguen el tema activo por diseño)
   'src/components/forms/FormEditPayrollEntry.jsx': ['color'],
@@ -93,14 +92,11 @@ const EXCEPTIONS = {
   'src/views/AttendanceAuditView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/VentasView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
-  'src/views/StaffManagementView.jsx': ['color'], // tooltip flotante dark
-  'src/views/DashboardView.jsx': ['color'], // tooltips flotantes dark (resto del archivo ya tokenizado)
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
   'src/views/TimeClockView.jsx': ['color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
-  'src/views/LoginView.jsx': ['color'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
+  'src/views/LoginView.jsx': ['color', 'z-index'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
   'src/components/timeclock/KioskConfigModal.jsx': ['color'],
   'src/components/timeclock/FeedbackOverlay.jsx': ['color'], // overlay kiosco full-screen
-  'src/components/common/PhotoEditorModal.jsx': ['color'], // canvas de edición siempre-oscuro
   'src/components/common/ThemeToggle.jsx': ['color'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
   'src/components/forms/FormAuditDetail.jsx': ['color'], // mockup de ventana macOS (colores reales del semáforo Apple)
@@ -108,7 +104,6 @@ const EXCEPTIONS = {
   'src/views/NoAccessView.jsx': ['color'], // verde real de marca WhatsApp
   'src/App.jsx': ['color'], // fondo splash bespoke (comparte gradiente con LoginView)
   // Vistas de diagnóstico/QA, no UI real de negocio
-  'src/views/RawTestView.jsx': ['color'],
   'src/views/IOSTestView.jsx': ['color'],
   // Banner bespoke fijo (franja rayada ámbar/naranja con texto oscuro fijo,
   // no reactivo al tema — ver src/version.js v2.57.1)
@@ -138,7 +133,6 @@ const EXCEPTIONS = {
   // fondo (120/80px, opacity .07 — decoración, no texto) y un numeral hero
   // de 72px. Con esto la categoría `typography` queda en 0 y bloqueante.
   'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography'],
-  'src/views/employee/EmployeeAnnouncementsView.jsx': ['typography'],
   // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
   // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
@@ -159,6 +153,30 @@ const EXCEPTIONS = {
   'src/components/common/Badge.jsx': ['white'],
   'src/views/productos/TabCatalogo.jsx': ['hex'],
   'src/views/productos/tabminmax/constants.js': ['hex'],
+  // ── D2.2, cierre (2026-07-27) ──────────────────────────────────────────
+  // Los 20 `zIndex:` que quedaban son tooltips y popovers PORTALEADOS: se
+  // renderizan en document.body y calculan su top/left contra el elemento que
+  // los dispara, así que ya necesitan `style` sí o sí. Mover solo el z-index a
+  // una clase partiría la decisión de apilamiento en dos mecanismos — peor que
+  // dejarla junta. Se excepciona con motivo para que la categoría llegue a 0 y
+  // quede BLOQUEANTE: a partir de acá, cualquier zIndex inline NUEVO falla.
+  'src/views/DashboardView.jsx': ['color', 'z-index'],
+  'src/views/StaffManagementView.jsx': ['color', 'z-index'],
+  'src/components/common/LiquidWeekPicker.jsx': ['z-index'],
+  'src/components/common/PhotoEditorModal.jsx': ['color', 'z-index'],
+  'src/components/common/ErrorBoundary.jsx': ['z-index'],
+  'src/views/productos/TabMinMax.jsx': ['z-index'],
+  'src/views/productos/tabminmax/RowActions.jsx': ['z-index'],
+  'src/views/pedidos/RecepcionModal.jsx': ['z-index'],
+  'src/views/pedidos/RutaMapModal.jsx': ['color', 'z-index'],
+  'src/views/employee/EmployeeAnnouncementsView.jsx': ['typography', 'z-index'],
+  'src/views/RawTestView.jsx': ['color', 'z-index'],
+  // AppLayout y LoginView: apilamiento INTERNO de sus propias superficies
+  // bespoke (las capas del sidebar siempre-oscuro, los orbes del splash). La
+  // escala canónica gobierna el apilamiento ENTRE componentes, no dentro de
+  // uno — un z-[2] sobre un z-[1] hermano no compite con nada del resto de la
+  // app, y nombrarlo con la escala global sería peor: sugeriría una relación
+  // que no existe.
 };
 
 const hasException = (file, category) => (EXCEPTIONS[file] || []).includes(category);

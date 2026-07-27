@@ -341,7 +341,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                 const active = dayPhase === 'idle' && fini === p.start && ffin === p.end;
                                 return (
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
-                                        className={`px-2 py-2 rounded-[0.875rem] text-[10.5px] font-bold transition-all text-center leading-tight
+                                        className={`px-2 py-2 rounded-xl text-[10.5px] font-bold transition-all text-center leading-tight
                                             ${active
                                                 ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-[1.03]'
                                                 : 'bg-surface-card-hover text-content-2 hover:bg-surface-card hover:text-brand-text hover:shadow-md hover:-translate-y-0.5 border border-border-card'
@@ -472,7 +472,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     return (
         <>
             <div ref={triggerRef} onClick={open}
-                className="flex items-center gap-2 h-full px-3 cursor-pointer rounded-[1rem] transition-all hover:bg-surface-card-hover group">
+                className="flex items-center gap-2 h-full px-3 cursor-pointer rounded-2xl transition-all hover:bg-surface-card-hover group">
                 <CalendarDays size={13}
                     className={fini ? 'text-brand-text' : 'text-content-3 group-hover:text-brand-text transition-colors'}
                     strokeWidth={2.5} />

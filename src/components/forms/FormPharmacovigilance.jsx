@@ -36,8 +36,8 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     // ==========================================
     if (possibleReferents.length === 0) {
         return (
-            <div className="bg-warning/10 backdrop-blur-xl border border-warning/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[var(--shadow-glow-warning)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
-                <div className="w-16 h-16 bg-surface-card rounded-[1.5rem] shadow-sm border border-warning/30 flex items-center justify-center text-warning mb-5 relative overflow-hidden">
+            <div className="bg-warning/10 backdrop-blur-xl border border-warning/30 p-8 rounded-modal flex flex-col items-center text-center shadow-[var(--shadow-glow-warning)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
+                <div className="w-16 h-16 bg-surface-card rounded-3xl shadow-sm border border-warning/30 flex items-center justify-center text-warning mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-base" />
                 </div>
@@ -63,7 +63,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
             
             {/* TARJETA CONTENEDOR PADRE */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-[2rem] shadow-[var(--shadow-elevation-xs)] hover:shadow-[0_12px_40px_rgba(147,51,234,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 md:p-8 rounded-modal shadow-[var(--shadow-elevation-xs)] hover:shadow-[0_12px_40px_rgba(147,51,234,0.08)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">
@@ -85,7 +85,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-chart-3-text transition-colors">
                         Referente Técnico Asignado
                     </label>
-                    <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-[1.5rem]">
+                    <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-3xl">
                         <LiquidSelect 
                             value={legalData.farmacovigilanciaId || ""} 
                             onChange={(val) => updateLegalField('farmacovigilanciaId', val)} 
@@ -109,7 +109,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
                         Autorización de la SRS (PDF/IMG)
                     </label>
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-divider hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
+                    <div className={`relative group border-2 border-dashed rounded-3xl p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-divider hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
                         <input 
                             type="file"
                             accept="application/pdf,image/jpeg,image/png,image/webp"

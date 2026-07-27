@@ -58,7 +58,7 @@ const FormSetPassword = ({ formData, onClose }) => {
     return (
         <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
             {/* Email pill */}
-            <div className="px-4 py-3 bg-brand/5 border border-brand/15 rounded-[1rem]">
+            <div className="px-4 py-3 bg-brand/5 border border-brand/15 rounded-2xl">
                 <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Usuario del Portal</p>
                 <p className="text-body font-bold text-brand-text truncate">{username}@farmalasa.app</p>
             </div>
@@ -75,7 +75,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                         value={password}
                         onChange={e => { setPassword(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                     />
                 </div>
             </div>
@@ -92,7 +92,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Repite la contraseña"
                         value={confirm}
                         onChange={e => { setConfirm(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                     />
                 </div>
             </div>
@@ -110,7 +110,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || !password || !confirm}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
+                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-2xl font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
             >
                 {loading
                     ? <><Loader2 size={18} className="animate-spin" /> Guardando...</>

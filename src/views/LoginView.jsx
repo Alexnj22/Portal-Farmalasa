@@ -61,12 +61,12 @@ const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h
             bg-gradient-to-b from-brand/72 to-brand-hover/78
             backdrop-blur-xl
             border border-border-card hover:border-border-card
-            text-white rounded-[1.5rem] font-black text-body uppercase tracking-widest
+            text-white rounded-3xl font-black text-body uppercase tracking-widest
             shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
             hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
             flex items-center justify-center gap-2 transition-all duration-200
             active:scale-[0.97] disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`}>
-        <span className="absolute inset-0 overflow-hidden rounded-[1.5rem] pointer-events-none">
+        <span className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
             <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
         </span>
         {children}
@@ -93,7 +93,7 @@ const CameraScanner = ({ videoRef }) => (
             <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', background:'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.35) 100%)', pointerEvents:'none' }} />
             <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'inset 0 0 32px rgba(0,0,0,0.30)', pointerEvents:'none' }} />
         </div>
-        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-border-card rounded-[1.25rem] shadow-[0_4px_14px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.85)]">
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-border-card rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.85)]">
             <div className="relative shrink-0">
                 <div className="w-2 h-2 rounded-full bg-brand" />
                 <div className="absolute inset-0 rounded-full bg-brand/40 animate-ping" />
@@ -374,7 +374,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         return (
             <div className="flex flex-col gap-2.5">
                 <div className={[
-                    'flex items-center gap-3 px-4 rounded-[1.5rem] border backdrop-blur-md transition-all duration-300',
+                    'flex items-center gap-3 px-4 rounded-3xl border backdrop-blur-md transition-all duration-300',
                     compact ? 'py-2.5' : 'py-3',
                     st === 'error'   ? 'bg-danger/10 border-danger/30' :
                     st === 'success' ? 'bg-success/10 border-success/30' :
@@ -382,7 +382,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                        'bg-brand/[0.05] border-brand/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]',
                 ].join(' ')}>
                     <div className={[
-                        'relative shrink-0 flex items-center justify-center rounded-[1rem] border transition-all duration-300',
+                        'relative shrink-0 flex items-center justify-center rounded-2xl border transition-all duration-300',
                         compact ? 'w-10 h-10' : 'w-11 h-11',
                         st === 'error'   ? 'bg-danger/10 border-danger/30' :
                         st === 'success' ? 'bg-success/10 border-success/30' :
@@ -434,7 +434,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             onClick={toggleCamera}
                             title={cameraActive ? 'Cerrar cámara' : 'Escanear con cámara'}
                             className={[
-                                'shrink-0 flex items-center justify-center rounded-[1rem] border backdrop-blur-md',
+                                'shrink-0 flex items-center justify-center rounded-2xl border backdrop-blur-md',
                                 'transition-all duration-300 active:scale-[0.93]',
                                 compact ? 'w-10 h-10' : 'w-11 h-11',
                                 cameraActive
@@ -473,11 +473,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <input ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
-                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-body-xl':'pl-12 pr-5 py-4 text-body-xl'} rounded-[1.5rem]`} />
+                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-body-xl':'pl-12 pr-5 py-4 text-body-xl'} rounded-3xl`} />
                     </div>
                 ))}
                 {error && (
-                    <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 py-3 bg-danger/10 backdrop-blur-md border border-danger/30 rounded-[1.25rem] flex items-center gap-3">
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 py-3 bg-danger/10 backdrop-blur-md border border-danger/30 rounded-2xl flex items-center gap-3">
                         <AlertCircle size={15} className="text-danger shrink-0" strokeWidth={2.5} />
                         <p className="text-danger text-caption font-black uppercase tracking-widest">{error}</p>
                     </div>
@@ -501,10 +501,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 <style>{keyframeStyles}</style>
                 <AmbientBG />
                 <div className={`relative z-base w-full max-w-[420px] mx-5 transition-all duration-600 ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
-                    <div className="rounded-[2.5rem] p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[0_32px_80px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6">
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-[2.5rem]" />
+                    <div className="rounded-header p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[0_32px_80px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6">
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-header" />
                         <div className="relative flex flex-col items-center gap-3">
-                            <div className="w-14 h-14 rounded-[1.25rem] bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                            <div className="w-14 h-14 rounded-2xl bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
                             <h3 className="text-title-lg font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
@@ -514,7 +514,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
                                     <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
-                                    <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-body-xl rounded-[1.25rem]`} />
+                                    <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-body-xl rounded-2xl`} />
                                 </div>
                             ))}
                             {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-body-sm font-bold leading-relaxed">{changePassError}</span></div>}
@@ -536,8 +536,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         <div className="flex flex-col items-center justify-between min-h-[100dvh] w-full px-5 py-8 gap-4">
             <div className={`flex flex-col items-center gap-2 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
                 <div className="relative">
-                    <div className="absolute -inset-3 rounded-[2rem] blur-xl opacity-40 bg-gradient-to-tr from-chart-3/60 to-chart-1/40" />
-                    <div className="relative w-16 h-16 rounded-[1.5rem] bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[0_8px_24px_rgba(110,70,220,0.18),inset_0_2px_0_rgba(255,255,255,1)]">
+                    <div className="absolute -inset-3 rounded-modal blur-xl opacity-40 bg-gradient-to-tr from-chart-3/60 to-chart-1/40" />
+                    <div className="relative w-16 h-16 rounded-3xl bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[0_8px_24px_rgba(110,70,220,0.18),inset_0_2px_0_rgba(255,255,255,1)]">
                         <img src="/Logo192.png" alt="FarmaLasa" className="w-10 h-10 object-contain" />
                     </div>
                 </div>
@@ -548,16 +548,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             </div>
 
             <div className={`relative w-full max-w-[420px] transition-all duration-700 delay-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.94] translate-y-5'}`}>
-                <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-[2.5rem]" />
-                <div className="rounded-[2.5rem] p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[0_24px_60px_rgba(0,0,0,0.10),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-4">
+                <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-header" />
+                <div className="rounded-header p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[0_24px_60px_rgba(0,0,0,0.10),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-4">
                     {renderLoginForm(true)}
                     {!isMobileOrApp() && (
                         <>
                             <div className="h-px bg-divider mx-2" />
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-3 rounded-[1.5rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
+                                className="group w-full p-3 rounded-3xl bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-[0.875rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-colors shadow-sm">
+                                    <div className="w-9 h-9 rounded-xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-colors shadow-sm">
                                         <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2.2} />
                                     </div>
                                     <div className="text-left">
@@ -580,7 +580,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {href:'https://farmalasa.com',Icon:Pill,label:'FarmaLasa',color:'#6929C4'},
                 ].map(({href,Icon,label,color})=>(
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-[1.25rem] transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5">
+                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5">
                         <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-200 group-hover:scale-110" />
                         <span className="text-caption font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
                     </a>
@@ -592,16 +592,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const renderDesktopLayout = () => (
         <div className="relative flex items-center justify-center w-full min-h-[100dvh] px-6 py-10">
             <div className={`relative w-full max-w-[480px] z-base transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
-                <div className="absolute -inset-6 rounded-[3.5rem] blur-2xl opacity-18 bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none" />
+                <div className="absolute -inset-6 rounded-header blur-2xl opacity-18 bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none" />
 
-                <div className="relative rounded-[3rem] px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[0_40px_100px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/26 via-transparent to-transparent pointer-events-none rounded-[3rem]" />
+                <div className="relative rounded-header px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[0_40px_100px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/26 via-transparent to-transparent pointer-events-none rounded-header" />
 
                     {/* Logo */}
                     <div className="relative flex flex-col items-center gap-3">
                         <div className="relative group/logo">
-                            <div className="absolute -inset-4 rounded-[2.5rem] blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-500 bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
-                            <div className="relative w-[88px] h-[88px] rounded-[1.75rem] bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[0_12px_40px_rgba(110,70,220,0.16),inset_0_2px_0_rgba(255,255,255,1)]"
+                            <div className="absolute -inset-4 rounded-header blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-500 bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
+                            <div className="relative w-[88px] h-[88px] rounded-card bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[0_12px_40px_rgba(110,70,220,0.16),inset_0_2px_0_rgba(255,255,255,1)]"
                                 style={{ animation:'lgn-logo 4.5s ease-in-out infinite' }}>
                                 <img src="/Logo192.png" alt="FarmaLasa" className="w-[58px] h-[58px] object-contain" />
                             </div>
@@ -622,9 +622,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {!isMobileOrApp() && (
                         <div className="relative">
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-4 rounded-[1.75rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5">
+                                className="group w-full p-4 rounded-card bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5">
                                 <div className="flex items-center gap-3.5">
-                                    <div className="w-11 h-11 rounded-[1.1rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-all duration-200 shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]">
+                                    <div className="w-11 h-11 rounded-2xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-all duration-200 shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]">
                                         <Clock size={19} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
@@ -643,8 +643,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
             {/* Quick links */}
             <div className={`absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-content transition-all duration-700 delay-[300ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-x-0':'opacity-0 translate-x-8'}`}>
-                <div className="rounded-[2rem] p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[0_20px_50px_rgba(0,0,0,0.09),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-3 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-[2rem]" />
+                <div className="rounded-modal p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[0_20px_50px_rgba(0,0,0,0.09),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-3 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-modal" />
                     <div className="relative flex items-center gap-2 px-1 mb-1">
                         <Sparkles size={11} className="text-chart-3-text" strokeWidth={2} />
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
@@ -654,13 +654,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         {href:'https://farmalasa.com',Icon:Pill,label:'Farmalasa',sub:'Sitio web oficial',color:'#6929C4',glow:'rgba(105,41,196,0.22)'},
                     ].map(({href,Icon,label,sub,color,glow})=>(
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-border-card hover:border-border-card rounded-[1.25rem] transition-all duration-250 active:scale-[0.97] hover:scale-[1.02] hover:-translate-y-0.5 w-[210px] overflow-hidden"
+                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-250 active:scale-[0.97] hover:scale-[1.02] hover:-translate-y-0.5 w-[210px] overflow-hidden"
                             onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${glow}, inset 0 1px 0 rgba(255,255,255,0.7)`; }}
                             onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; }}>
-                            <div className="absolute inset-0 overflow-hidden rounded-[1.25rem] pointer-events-none">
+                            <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                                 <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.12] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-600 ease-out" />
                             </div>
-                            <div className="relative w-9 h-9 rounded-[0.875rem] flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
+                            <div className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
                                 style={{ background:`${color}16`, border:`1px solid ${color}28` }}>
                                 <Icon size={16} strokeWidth={2} style={{color}} />
                             </div>

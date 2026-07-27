@@ -297,7 +297,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
     };
 
     return (
-        <div className={`rounded-[1.5rem] border transition-all duration-500 ease-out transform-gpu ${
+        <div className={`rounded-3xl border transition-all duration-500 ease-out transform-gpu ${
             isComing
                 ? 'bg-surface-card backdrop-blur-xl border-border-card opacity-40 select-none'
                 : hasAnyPerm
@@ -717,7 +717,7 @@ const PermissionsView = () => {
     );
 
     const filtersContent = (
-        <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+        <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             {/* MODO BÚSQUEDA */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
@@ -777,7 +777,7 @@ const PermissionsView = () => {
                         {/* Skeleton left column */}
                         <div className="w-full lg:w-64 shrink-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] xl:pt-[200px] space-y-2.5 lg:pb-10">
                             {[...Array(6)].map((_, i) => (
-                                <div key={i} className="animate-stagger-child rounded-[1.5rem] border border-border-card bg-surface-card p-4" style={{ '--stagger-delay': `${i * 60}ms` }}>
+                                <div key={i} className="animate-stagger-child rounded-3xl border border-border-card bg-surface-card p-4" style={{ '--stagger-delay': `${i * 60}ms` }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-xl skeleton flex-shrink-0" />
                                         <div className="flex-1 space-y-1.5">
@@ -795,7 +795,7 @@ const PermissionsView = () => {
                                     <div className="h-3 w-24 skeleton mx-auto mb-3" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((_, i) => (
-                                            <div key={i} className="animate-stagger-child bg-surface-card rounded-[1.5rem] border border-border-card p-4" style={{ '--stagger-delay': `${(gi * 3 + i) * 50}ms` }}>
+                                            <div key={i} className="animate-stagger-child bg-surface-card rounded-3xl border border-border-card p-4" style={{ '--stagger-delay': `${(gi * 3 + i) * 50}ms` }}>
                                                 <div className="flex gap-3 mb-4">
                                                     <div className="w-9 h-9 rounded-xl skeleton flex-shrink-0" />
                                                     <div className="flex-1 space-y-1.5 pt-0.5">
@@ -838,7 +838,7 @@ const PermissionsView = () => {
                                 <button
                                     key={r.id}
                                     onClick={() => setSelectedRoleId(r.id)}
-                                    className={`w-full text-left rounded-[1.5rem] border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
+                                    className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? isSURol
                                                 ? 'bg-gradient-to-br from-warning/10 to-chart-4/10 border-warning/30 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
@@ -887,7 +887,7 @@ const PermissionsView = () => {
                         {!selectedRoleId ? (
                             /* Empty state */
                             <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 animate-in fade-in duration-500">
-                                <div className="w-16 h-16 rounded-[1.5rem] bg-surface-card border border-border-card shadow-sm flex items-center justify-center mb-4">
+                                <div className="w-16 h-16 rounded-3xl bg-surface-card border border-border-card shadow-sm flex items-center justify-center mb-4">
                                     <MousePointerClick size={28} className="text-content-3" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-subtitle font-black text-content-3">Selecciona un cargo</p>

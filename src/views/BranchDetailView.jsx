@@ -245,7 +245,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
     const renderHeaderActions = () => {
         return (
-            <div className={`flex items-center overflow-x-auto hide-scrollbar backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors duration-500 transform-gpu shrink-0 w-max max-w-full hover:-translate-y-[2px] ${showProfile ? 'bg-surface-card' : 'bg-surface-card'}`}>
+            <div className={`flex items-center overflow-x-auto hide-scrollbar backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors duration-500 transform-gpu shrink-0 w-max max-w-full hover:-translate-y-[2px] ${showProfile ? 'bg-surface-card' : 'bg-surface-card'}`}>
 
                 {showProfile ? (
                     <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
@@ -368,7 +368,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand-text transition-colors relative z-base" />
                         </button>
 
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl md:rounded-2xl bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
                             <Building2 size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
                         </div>
 
@@ -399,7 +399,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 <div className="w-full flex-1 flex flex-col relative z-base pb-12">
                     <div ref={sentinelRef} className="absolute -top-10 h-1 w-full pointer-events-none" aria-hidden="true" />
 
-                    <div className="bg-surface-card backdrop-blur-[20px] backdrop-saturate-[180%] rounded-[2.5rem] border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_15px_rgba(255,255,255,0.6)] p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
+                    <div className="bg-surface-card backdrop-blur-[20px] backdrop-saturate-[180%] rounded-header border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_15px_rgba(255,255,255,0.6)] p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
                         <div key={activeTab} className="animate-view-enter flex-1 flex flex-col">
                         {activeTab === 'history' && (
                             <TabHistory liveBranch={liveBranch} history={history} isLoadingHistory={isLoadingHistory} employees={employees} openModal={openModal} />

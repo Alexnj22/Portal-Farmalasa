@@ -61,7 +61,7 @@ const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
         <button
             type="button"
             onClick={() => onChange(!checked)}
-            className={`w-4 h-4 rounded-[4px] flex items-center justify-center transition-all duration-200 border cursor-pointer outline-none ${
+            className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all duration-200 border cursor-pointer outline-none ${
                 checked 
                 ? `${activeBg} border-transparent shadow-sm scale-110` 
                 : `bg-surface-card border-divider ${shadowHover} hover:bg-surface-card-hover`
@@ -129,7 +129,7 @@ const DayRow = memo(({
     };
 
     return (
-        <div className={`rounded-[1.2rem] border transition-all duration-200 overflow-visible flex flex-col ${
+        <div className={`rounded-2xl border transition-all duration-200 overflow-visible flex flex-col ${
             conflict ? `${conflict.bg} ${conflict.border} shadow-sm` 
             : isWorking ? 'bg-surface-card shadow-[0_4px_12px_rgba(0,0,0,0.03),inset_0_1px_1px_rgba(255,255,255,0.9)] border-border-card' 
             : 'bg-surface-card border-border-card hover:bg-surface-card'
@@ -214,7 +214,7 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-micro font-bold text-content-2 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
+                                    <div className="h-[34px] rounded-xl bg-surface-card border border-dashed border-divider flex items-center justify-center text-micro font-bold text-content-2 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
                                 )}
                             </div>
 
@@ -239,7 +239,7 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-micro font-bold text-content-2 uppercase tracking-widest shadow-inner">No Aplica</div>
+                                    <div className="h-[34px] rounded-xl bg-surface-card border border-dashed border-divider flex items-center justify-center text-micro font-bold text-content-2 uppercase tracking-widest shadow-inner">No Aplica</div>
                                 )}
                             </div>
                         </div>
@@ -269,7 +269,7 @@ const DayRow = memo(({
                     </div>
                 ) : (
                     <div className="flex-1 flex items-center justify-center xl:border-l xl:border-divider xl:pl-6 pt-3 xl:pt-0 border-t border-divider xl:border-t-0">
-                        <div className="w-full xl:w-auto px-5 py-2 rounded-[1rem] bg-surface-card border border-dashed border-divider text-content-3 flex justify-center items-center gap-2 shadow-inner">
+                        <div className="w-full xl:w-auto px-5 py-2 rounded-2xl bg-surface-card border border-dashed border-divider text-content-3 flex justify-center items-center gap-2 shadow-inner">
                             <Palmtree size={14} strokeWidth={2.5}/>
                             <span className="text-[9.5px] font-black uppercase tracking-widest">Día de Descanso</span>
                         </div>
@@ -388,7 +388,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         <div className="flex flex-col h-full -mx-6 -my-6 p-4 md:-mx-10 md:-my-8 md:p-10 relative z-base">
             
             {/* 🚨 DASHBOARD COMPACTO Y ELEGANTE */}
-            <div className="bg-surface-card backdrop-blur-md p-3 md:p-4 rounded-[1.2rem] border border-border-card shadow-[0_2px_15px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.9)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+            <div className="bg-surface-card backdrop-blur-md p-3 md:p-4 rounded-2xl border border-border-card shadow-[0_2px_15px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.9)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
                 <div className="flex-1 w-full">
                     <div className="flex justify-between items-end mb-1.5">
                         <div>
@@ -412,19 +412,19 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
 
                 <div className="flex flex-wrap md:flex-col gap-1.5 shrink-0 w-full md:w-auto">
                     {currentStats.isExcess && (
-                        <div className="flex items-center gap-1.5 bg-danger/10 border border-danger/30 text-danger px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
+                        <div className="flex items-center gap-1.5 bg-danger/10 border border-danger/30 text-danger px-2 py-1 rounded-lg shadow-sm animate-in fade-in">
                             <AlertTriangle size={10} strokeWidth={2.5}/>
                             <span className="text-micro font-black uppercase tracking-widest">Exceso (+{Number((currentStats.hours - maxHours).toFixed(1))}h)</span>
                         </div>
                     )}
                     {currentStats.noDaysOff && (
-                        <div className="flex items-center gap-1.5 bg-warning/10 border border-warning/30 text-warning px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
+                        <div className="flex items-center gap-1.5 bg-warning/10 border border-warning/30 text-warning px-2 py-1 rounded-lg shadow-sm animate-in fade-in">
                             <AlertTriangle size={10} strokeWidth={2.5}/>
                             <span className="text-micro font-black uppercase tracking-widest">Sin días de descanso</span>
                         </div>
                     )}
                     {!currentStats.isExcess && !currentStats.noDaysOff && (
-                        <div className="flex items-center gap-1.5 bg-success/10 border border-success/30 text-success px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
+                        <div className="flex items-center gap-1.5 bg-success/10 border border-success/30 text-success px-2 py-1 rounded-lg shadow-sm animate-in fade-in">
                             <CheckCircle2 size={10} strokeWidth={2.5}/>
                             <span className="text-micro font-black uppercase tracking-widest">Programación Óptima</span>
                         </div>

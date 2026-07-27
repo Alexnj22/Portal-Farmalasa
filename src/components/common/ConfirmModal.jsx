@@ -59,7 +59,7 @@ const ConfirmModal = ({
                 <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-base">
 
                     {/* ÍCONO OPTIMIZADO */}
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm transition-all duration-300 ${
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm transition-all duration-300 ${
                         isDestructive ? 'text-danger' : 'text-brand-text'
                     }`}>
                         {isProcessing ? (

@@ -43,7 +43,7 @@ const BranchTabInmueble = ({
         <div className="space-y-6 w-full" style={gpuLockStyle}>
 
             {/* ISLA 1: INMUEBLE Y ARRENDAMIENTO */}
-            <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+            <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-border-card pb-5">
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
@@ -69,7 +69,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {isRented ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-surface-card p-5 rounded-[1.5rem] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-surface-card p-5 rounded-3xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
                         <div className="md:col-span-2">
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
@@ -166,7 +166,7 @@ const BranchTabInmueble = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="py-10 text-center bg-surface-card rounded-[1.5rem] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                    <div className="py-10 text-center bg-surface-card rounded-3xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
                         <div className="w-16 h-16 bg-chart-3/10 text-chart-3-text rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                             <Building2 size={28} strokeWidth={2} />
                         </div>
@@ -184,7 +184,7 @@ const BranchTabInmueble = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* ISLA 2: ALCALDÍA */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <Landmark size={16} strokeWidth={2.5} /> Permisos Municipales
                     </h4>
@@ -226,7 +226,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {/* ISLA 3: DESECHOS BIOINFECCIOSOS */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex flex-col mb-5">
                         <div className="flex items-center justify-between">
                             <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
@@ -277,7 +277,7 @@ const BranchTabInmueble = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center bg-surface-card rounded-[1.5rem] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] p-6">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center bg-surface-card rounded-3xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] p-6">
                             <div className="w-12 h-12 bg-surface-card-hover text-content-3 rounded-full flex items-center justify-center mb-3">
                                 <Trash2 size={20} strokeWidth={2} />
                             </div>
@@ -293,7 +293,7 @@ const BranchTabInmueble = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* ISLA 4: EXTINTORES */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-chart-4-text mb-5 flex items-center gap-2">
                         <Flame size={16} strokeWidth={2.5} /> Extintores
                     </h4>
@@ -339,7 +339,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {/* ISLA 5: CONTROL DE PLAGAS Y FUMIGACIÓN */}
-                <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-success mb-5 flex items-center gap-2">
                         <BugOff size={16} strokeWidth={2.5} /> Control de Plagas y Fumigación
                     </h4>

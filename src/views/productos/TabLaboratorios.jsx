@@ -441,7 +441,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                         <button
                                             key={t.key}
                                             onClick={() => setSection(t.key)}
-                                            className={`flex-1 text-label font-semibold py-1.5 px-2 rounded-[10px] transition-all duration-150 ${
+                                            className={`flex-1 text-label font-semibold py-1.5 px-2 rounded-xl transition-all duration-150 ${
                                                 section === t.key ? t.active : 'text-content-3 hover:text-content-2'
                                             }`}
                                         >

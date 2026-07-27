@@ -89,7 +89,7 @@ export const FileUploader = ({ label, file, url, onChange }) => {
         <div className="mt-2 w-full">
             {label && <label className="text-caption font-black uppercase tracking-[0.15em] text-content-3 ml-1 mb-1.5 block">{label}</label>}
             
-            <div className={`relative flex items-center gap-3 rounded-[1.25rem] p-2 transition-all duration-300 border transform-gpu ${
+            <div className={`relative flex items-center gap-3 rounded-2xl p-2 transition-all duration-300 border transform-gpu ${
                 !hasFile 
                     ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:bg-warning/10 hover:border-warning/40 hover:shadow-md cursor-pointer group' 
                     : 'bg-success/10 backdrop-blur-sm border-success/30 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:shadow-md'
@@ -157,7 +157,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
                 minLength={minLength}
                 maxLength={maxLength}
                 // 🚨 Fusión de la clase enviada (className) con la estética base Liquidglass
-                className={`w-full py-3.5 bg-surface-card border border-border-card rounded-[1.25rem] text-body-xl font-bold text-content-2 placeholder-content-3 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
+                className={`w-full py-3.5 bg-surface-card border border-border-card rounded-2xl text-body-xl font-bold text-content-2 placeholder-content-3 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
                 placeholder={placeholder}
                 value={localValue}
                 onChange={(e) => setLocalValue(e.target.value)}

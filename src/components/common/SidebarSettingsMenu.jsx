@@ -123,7 +123,7 @@ export default function SidebarSettingsMenu({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 }}
       transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-      className="fixed z-confirm p-3 flex flex-col gap-3 transform-gpu rounded-[1.4rem]
+      className="fixed z-confirm p-3 flex flex-col gap-3 transform-gpu rounded-3xl
         bg-[#0A1628]/92 backdrop-blur-2xl backdrop-saturate-150 border border-white/12
         shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]"
     >
@@ -156,7 +156,7 @@ export default function SidebarSettingsMenu({
           onClick={handleTrigger}
           title="Ajustes"
           aria-expanded={isOpen}
-          className={`relative w-11 h-11 flex items-center justify-center rounded-[1.1rem]
+          className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
             border transition-colors duration-150 ${className}
             ${isOpen
               ? 'bg-white/12 border-white/20 text-white/90'
@@ -175,13 +175,13 @@ export default function SidebarSettingsMenu({
         ref={triggerRef}
         onClick={handleTrigger}
         aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[0.875rem]
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
           border transition-colors duration-150 text-left ${className}
           ${isOpen
             ? 'bg-white/10 border-white/15'
             : 'bg-white/5 border-white/8 hover:bg-white/10 hover:border-white/15'}`}
       >
-        <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 bg-white/10">
+        <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 bg-white/10">
           <Settings size={14} strokeWidth={2} className="text-white/70" />
         </div>
         <span className="flex-1 text-label font-bold text-white/80">Ajustes</span>

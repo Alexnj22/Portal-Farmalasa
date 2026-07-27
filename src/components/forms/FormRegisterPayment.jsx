@@ -115,7 +115,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
 
             {/* 🎨 HEADER LIQUID GLASS */}
-            <div className="relative overflow-hidden rounded-[2rem] p-5 border border-success/30 bg-gradient-to-br from-success/10 to-success/20 backdrop-blur-xl shadow-[var(--shadow-glow-success)]">
+            <div className="relative overflow-hidden rounded-modal p-5 border border-success/30 bg-gradient-to-br from-success/10 to-success/20 backdrop-blur-xl shadow-[var(--shadow-glow-success)]">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-success/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
                 <div className="relative z-base flex items-center gap-4">
                     <div className="w-14 h-14 bg-surface-card backdrop-blur-md rounded-2xl flex items-center justify-center text-success shadow-sm border border-success/30 shrink-0">
@@ -138,7 +138,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
             </div>
 
             {/* 📝 CONTENEDOR DE CAMPOS (GLASSMORPHISM) */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 space-y-5 shadow-[var(--shadow-elevation-xs)]">
+            <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 space-y-5 shadow-[var(--shadow-elevation-xs)]">
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* MONTO EXACTO */}
@@ -210,7 +210,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <UploadCloud size={12} className="text-brand-text" /> Comprobante / Recibo (Foto o PDF)
                     </label>
 
-                    <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
+                    <div className={`relative group border-2 border-dashed rounded-3xl p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
                             ? 'bg-success/10 border-success/50 hover:bg-success/10'
                             : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'
                         }`}>

@@ -83,7 +83,7 @@ const SearchInput = forwardRef(function SearchInput({
                 className={`flex items-center h-8 transition-[flex-grow,flex-basis,background-color,border-color] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${
                     open
                         ? 'flex-1 min-w-0 cursor-text'
-                        : 'flex-none w-8 rounded-[0.65rem] bg-surface-card-hover border border-border-card cursor-pointer'
+                        : 'flex-none w-8 rounded-lg bg-surface-card-hover border border-border-card cursor-pointer'
                 } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
             >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0" style={accentColor ? { color: accentColor } : undefined}>

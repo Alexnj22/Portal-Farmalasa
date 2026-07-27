@@ -43,7 +43,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                             placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número"
                             value={val}
                             onChange={e => setter(e.target.value)}
-                            className="w-full pl-10 pr-10 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full pl-10 pr-10 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                         {isLast && (
                             <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 text-content-3 hover:text-content-2">
@@ -54,7 +54,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                 </div>
             ))}
             <button type="button" onClick={save} disabled={loading || !newPass || !confirm}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-2xl font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
                 {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>}
             </button>
         </div>

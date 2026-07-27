@@ -118,7 +118,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
     };
 
     return (
-        <div className={`rounded-[2rem] border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
+        <div className={`rounded-modal border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
             ${isUrgent ? 'border-danger' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}
@@ -618,7 +618,7 @@ const RequestsView = () => {
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Nueva Solicitud</span>
                 </button>
             )}
-        <div {...searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div {...searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Pending dot — outside the overflow-hidden area via outline trick */}
             {pendingCount > 0 && !isSearchMode && (
@@ -688,7 +688,7 @@ const RequestsView = () => {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
-                                        <div key={i} className="rounded-[2rem] border border-black/[0.06] bg-surface-card p-4 flex items-center gap-3">
+                                        <div key={i} className="rounded-modal border border-black/[0.06] bg-surface-card p-4 flex items-center gap-3">
                                             <div className="w-9 h-9 skeleton rounded-full shrink-0" />
                                             <div className="flex-1 space-y-2">
                                                 <div className="h-3 w-28 skeleton rounded-full" />
@@ -704,7 +704,7 @@ const RequestsView = () => {
                     <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                         <div className="relative group flex flex-col items-center text-center">
                             <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-success' : statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'}`} />
-                            <div className={`relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
+                            <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
                                 {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
                             </div>
                             <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
@@ -764,8 +764,8 @@ const RequestsView = () => {
             {actionModal && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
-                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2.5rem] shadow-[var(--shadow-elevation-lg)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-                        <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
+                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-header shadow-[var(--shadow-elevation-lg)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+                        <div className={`w-14 h-14 rounded-card flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
                             {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
                         </div>
                         <h3 className="text-title-sm font-bold text-content text-center mb-1">
@@ -781,7 +781,7 @@ const RequestsView = () => {
                         <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
                             disabled={isActioning}
-                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
+                            className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
                             <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
                                 className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-body font-medium hover:bg-surface-card transition-all disabled:opacity-50">
@@ -806,7 +806,7 @@ const RequestsView = () => {
             {createModalOpen && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isCreatingReq && setCreateModalOpen(false)} />
-                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2.5rem] shadow-[var(--shadow-elevation-lg)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-header shadow-[var(--shadow-elevation-lg)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center gap-3 mb-1">
                             <div className="w-11 h-11 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
                                 <ClipboardList size={20} className="text-brand-text" strokeWidth={2} />
@@ -887,7 +887,7 @@ const RequestsView = () => {
                                 rows={3}
                                 placeholder="Describe la solicitud..."
                                 disabled={isCreatingReq}
-                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
+                                className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
                             />
                         </div>
 

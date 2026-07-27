@@ -133,8 +133,8 @@ const hasInjections = legal.injections === true;
 
                         if (!emp) {
                             return (
-                                <div key={slot.id} className="flex items-center gap-4 p-5 rounded-[1.5rem] border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-sm h-[100px]">
-                                    <div className="w-12 h-12 rounded-[1rem] bg-surface-card flex items-center justify-center text-danger shadow-sm border border-danger/30 shrink-0">
+                                <div key={slot.id} className="flex items-center gap-4 p-5 rounded-3xl border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-sm h-[100px]">
+                                    <div className="w-12 h-12 rounded-2xl bg-surface-card flex items-center justify-center text-danger shadow-sm border border-danger/30 shrink-0">
                                         <slot.icon size={20} strokeWidth={2.5} />
                                     </div>
                                     <div className="flex flex-col">
@@ -148,10 +148,10 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group relative overflow-hidden cursor-pointer rounded-[1.5rem] bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
+                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group relative overflow-hidden cursor-pointer rounded-3xl bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
                                 {/* Frente Normal */}
                                 <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-4 group-hover:opacity-0">
-                                    <div className={`w-14 h-14 rounded-[1.2rem] border flex items-center justify-center font-black text-xl shrink-0 overflow-hidden shadow-inner ${!photoUrl ? COLOR_MAP[slot.color] : 'bg-surface-card-hover p-0'}`}>
+                                    <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center font-black text-xl shrink-0 overflow-hidden shadow-inner ${!photoUrl ? COLOR_MAP[slot.color] : 'bg-surface-card-hover p-0'}`}>
                                         {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -193,7 +193,7 @@ const hasInjections = legal.injections === true;
 
                         if (!emp) {
                             return (
-                                <div key={slot.id} className="flex items-center gap-3 p-3 rounded-[1rem] bg-surface-card-hover/50 backdrop-blur-sm border border-dashed border-divider h-[72px]">
+                                <div key={slot.id} className="flex items-center gap-3 p-3 rounded-2xl bg-surface-card-hover/50 backdrop-blur-sm border border-dashed border-divider h-[72px]">
                                     <div className="w-9 h-9 rounded-lg bg-surface-card flex items-center justify-center text-content-3 shrink-0 border border-divider">
                                         <slot.icon size={14} strokeWidth={2.5} />
                                     </div>
@@ -206,7 +206,7 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-[1rem] bg-surface-card-hover/50 backdrop-blur-sm border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
+                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-2xl bg-surface-card-hover/50 backdrop-blur-sm border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-caption border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-surface-card-hover border-divider p-0'}`}>
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>

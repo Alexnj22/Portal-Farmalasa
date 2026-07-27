@@ -234,7 +234,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Abandono', label: 'Abandono de Trabajo' }
     ];
 
-    const inputClasses = "w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3";
+    const inputClasses = "w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3";
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
@@ -288,7 +288,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {/* 🚨 ALERTA ROJA DE HEADCOUNT (Bloqueante) */}
             {headcountWarning && (
-                <div className="bg-danger/10 border border-danger/40 p-4 rounded-[1.5rem] flex gap-3 items-start animate-in zoom-in-95 shadow-[var(--shadow-glow-danger)]">
+                <div className="bg-danger/10 border border-danger/40 p-4 rounded-3xl flex gap-3 items-start animate-in zoom-in-95 shadow-[var(--shadow-glow-danger)]">
                     <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/>
                     <div>
                         <p className="text-label font-black uppercase tracking-widest text-danger-text">Límite de Organigrama Excedido</p>
@@ -342,7 +342,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {/* 🚨 ISLA DE FECHAS (Liquid Glass) */}
-            {type && <div className="bg-surface-card backdrop-blur-md p-5 rounded-[1.5rem] border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
+            {type && <div className="bg-surface-card backdrop-blur-md p-5 rounded-3xl border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
                 
                 {/* SI ES VACACIONES — RangeDatePicker estilo booking */}
                 {isVacation ? (
@@ -474,7 +474,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                                 : '';
                                             setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
                                         }}
-                                        className="w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 pr-12 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                                        className="w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 pr-12 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                                         placeholder="Ej: 3"
                                     />
                                     <span className="absolute right-4 text-content-2 text-label font-black uppercase tracking-widest">días</span>
@@ -492,7 +492,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {type && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isPromotion && (
-                    <div className="col-span-1 md:col-span-2 relative z-tabs animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-[1.5rem]">
+                    <div className="col-span-1 md:col-span-2 relative z-tabs animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-3xl">
                         <div className="flex items-center justify-between mb-3">
                             <label className="text-caption font-black uppercase tracking-widest text-chart-1-text">Nuevo Cargo Asignado</label>
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -526,7 +526,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isTermination && (
-                    <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-[1.5rem]">
+                    <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-3xl">
                         <label className="text-caption font-black uppercase tracking-widest text-danger ml-1 mb-1.5 block">Motivo Legal de Baja</label>
                         <div className="h-[40px] mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
@@ -539,11 +539,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isCodeChange && (
-                    <div className="col-span-1 md:col-span-2 animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[var(--shadow-elevation-xs)]">
+                    <div className="col-span-1 md:col-span-2 animate-in fade-in bg-surface-card p-5 border border-border-card rounded-3xl shadow-[var(--shadow-elevation-xs)]">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className={labelClasses}>Código Actual</label>
-                                <div className="h-[40px] bg-surface-card-hover/50 border border-divider rounded-[1rem] flex items-center justify-center px-4 text-body-lg font-black tracking-widest text-content-3 line-through decoration-content-3 opacity-60">
+                                <div className="h-[40px] bg-surface-card-hover/50 border border-divider rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-widest text-content-3 line-through decoration-content-3 opacity-60">
                                     {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
                                 </div>
                             </div>
@@ -636,7 +636,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     const newSalary = parseFloat(formData?.newSalary);
                     const diff = currentSalary && newSalary ? newSalary - parseFloat(currentSalary) : null;
                     return (
-                        <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-surface-card p-5 border border-border-card rounded-[1.5rem] shadow-[var(--shadow-elevation-xs)] space-y-4">
+                        <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-surface-card p-5 border border-border-card rounded-3xl shadow-[var(--shadow-elevation-xs)] space-y-4">
                             {/* Contexto actual */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-surface-card-hover/80 border border-divider rounded-2xl p-3 text-center">
@@ -658,7 +658,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <div className="flex items-center gap-3">
                                     <div className="relative flex-1 max-w-xs">
                                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-success" size={16} strokeWidth={3}/>
-                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-body-xl font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-2xl h-[44px] px-4 pl-10 text-body-xl font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
                                     </div>
                                     {diff !== null && !isNaN(diff) && (
                                         <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
@@ -678,13 +678,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
                             <FileText className="absolute left-3 top-3 text-content-3" size={14} strokeWidth={2.5}/>
-                            <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-[1.25rem] p-3 pl-9 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+                            <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-2xl p-3 pl-9 text-body-xl font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
                         </div>
                     </div>
 
                     <div>
                         <label className={labelClasses}>Soporte Digital {isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}</label>
-                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-success bg-success/10' : 'border-divider bg-surface-card hover:bg-surface-card hover:border-brand/50'}`}>
+                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-3xl cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-success bg-success/10' : 'border-divider bg-surface-card hover:bg-surface-card hover:border-brand/50'}`}>
                             {formData?.file ? (
                                 <div className="flex flex-col items-center gap-1 text-success animate-in zoom-in-95">
                                     <div className="p-2 bg-success/10 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>

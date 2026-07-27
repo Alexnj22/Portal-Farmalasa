@@ -569,7 +569,7 @@ export default function EncuestaView() {
     const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
 
     const filtersContent = (
-        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
                 {TABS.map(({ key, label, Icon }) => (
                     <button key={key} onClick={() => setTab(key)}
@@ -644,7 +644,7 @@ export default function EncuestaView() {
                                 </div>
                             ))}
                         </div>
-                        <div className="rounded-[1.5rem] border border-divider bg-surface-card shadow-sm p-5 space-y-3">
+                        <div className="rounded-3xl border border-divider bg-surface-card shadow-sm p-5 space-y-3">
                             {Array.from({ length: 5 }).map((_, i) => (
                                 <div key={i} className="flex items-center gap-3 py-2 border-b border-divider last:border-0">
                                     <div className="h-3 w-8 skeleton rounded-full" />
@@ -1214,7 +1214,7 @@ export default function EncuestaView() {
                         </div>
 
                         {personasBySucursal.map(([branchName, branchRows]) => (
-                            <div key={branchName} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden shadow-sm">
+                            <div key={branchName} className="rounded-card border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden shadow-sm">
                                 <div className="flex items-center gap-2 px-5 py-3 border-b border-divider bg-surface-card">
                                     <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
                                     <span className="text-body-sm font-black text-content-2">{branchName}</span>

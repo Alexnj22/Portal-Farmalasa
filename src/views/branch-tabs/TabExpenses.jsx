@@ -61,10 +61,10 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
     return (
         <div
-            className={`group relative backdrop-blur-md rounded-[2rem] p-5 transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:-translate-y-1 hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
+            className={`group relative backdrop-blur-md rounded-modal p-5 transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:-translate-y-1 hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
             style={{ animationDelay: `${delay}ms`, willChange: 'transform, opacity' }}
         >
-            <div className="absolute inset-0 bg-surface-card rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
             <div className="flex justify-between items-start mb-4 relative z-base">
                 <div className="flex items-center gap-3">
@@ -265,7 +265,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <p className="text-label font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="px-4 py-2 bg-success/10 text-success rounded-[1.25rem] border border-success/30 shadow-sm flex items-center gap-2 backdrop-blur-md">
+                    <div className="px-4 py-2 bg-success/10 text-success rounded-2xl border border-success/30 shadow-sm flex items-center gap-2 backdrop-blur-md">
                         <DollarSign size={16} strokeWidth={2.5} />
                         <span className="text-label font-black uppercase tracking-widest">Total Operativo Actual</span>
                         <span className="text-body-lg font-black">${totalMonthlyEst.toFixed(2)}</span>
@@ -278,9 +278,9 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* SKELETON DE CARGA DASHBOARD */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     {/* Gráfico Skeleton */}
-                    <div className="lg:col-span-2 bg-surface-card border border-border-card rounded-[2rem] p-6 shadow-sm flex flex-col min-h-[280px]">
+                    <div className="lg:col-span-2 bg-surface-card border border-border-card rounded-modal p-6 shadow-sm flex flex-col min-h-[280px]">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 skeleton rounded-[1.25rem]"></div>
+                            <div className="w-12 h-12 skeleton rounded-2xl"></div>
                             <div className="flex flex-col gap-2 w-1/3">
                                 <div className="h-3.5 skeleton rounded-full w-3/4"></div>
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
@@ -298,14 +298,14 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
 
                     {/* Métricas Rápidas Skeleton */}
                     <div className="flex flex-col gap-5">
-                        <div className="bg-surface-card border border-border-card rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                        <div className="bg-surface-card border border-border-card rounded-modal p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-4 h-4 rounded-full skeleton"></div>
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
                             <div className="h-8 skeleton rounded-lg w-1/3 mt-2"></div>
                         </div>
-                        <div className="bg-surface-card border border-border-card rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                        <div className="bg-surface-card border border-border-card rounded-modal p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-lg skeleton"></div>
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
@@ -318,12 +318,12 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* DASHBOARD REAL */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
                     {/* Gráfico de Barras */}
-                    <div className="group lg:col-span-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-[var(--shadow-elevation-xs)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[var(--shadow-glow-brand)]">
+                    <div className="group lg:col-span-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-[var(--shadow-elevation-xs)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[var(--shadow-glow-brand)]">
                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
                         
                         <div className="flex justify-between items-start mb-6 relative z-base">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-surface-card text-brand-text rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
+                                <div className="w-12 h-12 bg-surface-card text-brand-text rounded-2xl flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
                                     <BarChart3 size={22} strokeWidth={2.5}/>
                                 </div>
                                 <div>
@@ -377,7 +377,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <div className="flex flex-col gap-5">
                         
                         {/* Tarjeta de Variación Mensual */}
-                        <div className="group bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
+                        <div className="group bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
                             <div className="flex items-center gap-2 mb-3 relative z-base">
                                 <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
@@ -395,7 +395,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
+                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-base">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-white">

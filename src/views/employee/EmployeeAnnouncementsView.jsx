@@ -41,7 +41,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
 
     return (
         <div
-            className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1 ${
+            className={`p-6 rounded-header border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1 ${
                 isUrgent && !isRead
                     ? 'border-danger/40 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] bg-surface-card backdrop-blur-xl'
                     : isUrgent && isRead
@@ -284,7 +284,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-success -translate-y-10" />
-                    <div className="relative z-base w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-500">
+                    <div className="relative z-base w-28 h-28 rounded-modal flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-500">
                         <Sparkles size={44} strokeWidth={1.6} />
                     </div>
                     <h3 className="font-black text-display text-content tracking-tight mb-2">¡Todo al día!</h3>
@@ -418,7 +418,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                 >
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
-                        <div className="absolute inset-0 z-content flex flex-col items-center justify-center rounded-[2.5rem] bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
+                        <div className="absolute inset-0 z-content flex flex-col items-center justify-center rounded-header bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[var(--shadow-glow-success)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>
@@ -427,7 +427,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     )}
 
                     <div
-                        className={`rounded-[2.5rem] border flex flex-col transition-all duration-500 group/card hover:-translate-y-1.5 ${
+                        className={`rounded-header border flex flex-col transition-all duration-500 group/card hover:-translate-y-1.5 ${
                             phase === 'check'
                                 ? 'border-success/50 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-surface-card'
                                 : isUrgent
@@ -696,7 +696,7 @@ const EmployeeAnnouncementsView = () => {
     };
 
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
                 <Search size={16} className="text-brand-text shrink-0" strokeWidth={2.5} />
@@ -778,7 +778,7 @@ const EmployeeAnnouncementsView = () => {
                 {isStoreLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="animate-stagger-child bg-surface-card backdrop-blur-md border border-border-card rounded-[2.5rem] p-6 space-y-4" style={{ '--stagger-delay': `${i * 55}ms` }}>
+                            <div key={i} className="animate-stagger-child bg-surface-card backdrop-blur-md border border-border-card rounded-header p-6 space-y-4" style={{ '--stagger-delay': `${i * 55}ms` }}>
                                 <div className="flex gap-2">
                                     <div className="skeleton rounded-full h-4 w-4" />
                                     <div className="skeleton rounded-md h-4 w-20" />
@@ -810,7 +810,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                             <div className="relative flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-success" />
-                                <div className="relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
+                                <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
                                     <CheckCircle2 size={40} strokeWidth={1.5} />
                                 </div>
                                 <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Todo al día</h3>
@@ -841,7 +841,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-content-3" />
-                                <div className="relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 transform-gpu overflow-hidden">
+                                <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 transform-gpu overflow-hidden">
                                     {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
                                 </div>
                                 <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">

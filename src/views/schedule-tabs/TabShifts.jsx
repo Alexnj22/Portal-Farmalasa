@@ -31,12 +31,12 @@ const formatBranchNames = (names) => {
 const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
     const isError = insight.type === 'error';
     return (
-        <div className={`p-5 rounded-[2.5rem] border bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
+        <div className={`p-5 rounded-header border bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
             ${isError
                 ? 'border-danger/30 shadow-[inset_0_2px_10px_rgba(244,63,94,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(244,63,94,0.2)]'
                 : 'border-chart-5/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
 
-            <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 rounded-header overflow-hidden pointer-events-none">
                 <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-danger' : 'bg-chart-5'}`} />
             </div>
 
@@ -96,7 +96,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
     }, [group]);
 
     return (
-        <div className={`p-5 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
+        <div className={`p-5 rounded-header border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
             isEditingThis
                 ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.15),inset_0_2px_10px_rgba(255,255,255,0.9)] animate-subtle-shake z-tabs'
                 : isArchived
@@ -105,7 +105,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
         }`}>
 
             {confirmAction && (
-                <div className="absolute inset-0 z-sidebar-desktop bg-surface-card backdrop-blur-xl flex flex-col items-center justify-center gap-3 animate-in zoom-in-95 duration-300 p-5 rounded-[2.5rem]">
+                <div className="absolute inset-0 z-sidebar-desktop bg-surface-card backdrop-blur-xl flex flex-col items-center justify-center gap-3 animate-in zoom-in-95 duration-300 p-5 rounded-header">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-tab-active border ${confirmAction === 'archive' ? 'text-danger border-danger/30' : 'text-success border-success/30'}`}>
                         {confirmAction === 'archive' ? <AlertTriangle size={20} strokeWidth={2.5} /> : <RotateCcw size={20} strokeWidth={2.5} />}
                     </div>
@@ -418,7 +418,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
             {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
             <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar transform-gpu">
-                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
+                <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-base">
                         <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
@@ -515,7 +515,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <button
                             type="submit"
                             disabled={isLoading || hasBlockingError || !currentForm.start || !currentForm.end}
-                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-body-sm transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-warning hover:bg-warning-hover shadow-[var(--shadow-glow-warning)]' : 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'}`}
+                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-body-sm transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-warning hover:bg-warning-hover shadow-[var(--shadow-glow-warning)]' : 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'}`}
                         >
                             {isLoading
                                 ? <><Loader2 size={18} className="animate-spin" /> Procesando...</>
@@ -549,7 +549,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${searchTerm ? 'bg-brand' : shiftTab === 'ACTIVE' ? 'bg-success' : 'bg-content-3'}`} />
-                                <div className={`relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${searchTerm ? 'text-brand-text' : shiftTab === 'ACTIVE' ? 'text-success' : 'text-content-3'}`}>
+                                <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${searchTerm ? 'text-brand-text' : shiftTab === 'ACTIVE' ? 'text-success' : 'text-content-3'}`}>
                                     {searchTerm ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                                 </div>
                                 <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">

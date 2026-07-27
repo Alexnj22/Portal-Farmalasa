@@ -70,7 +70,7 @@ const GlassViewLayout = ({
                             `from-white/60` sin pasar por el sistema de temas, así que en
                             dark/solid-dark pintaba un borrón blanco feo encima del header
                             oscuro. Ahora usa --header-sheen (token por tema, ver index.css). */}
-                        <div className="absolute inset-0 rounded-[2.5rem] pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--header-sheen), transparent)' }} />
+                        <div className="absolute inset-0 rounded-header pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--header-sheen), transparent)' }} />
 
                         <div className="relative z-base flex flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-2.5 min-w-0 shrink-0">

@@ -58,7 +58,7 @@ const FormDispositivos = ({ formData }) => {
 
             {/* BANNER DE ERROR DINÁMICO */}
             <div className={`transition-all duration-300 overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-[1rem] text-label font-bold flex items-center gap-2 shadow-sm text-danger">
+                <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-2xl text-label font-bold flex items-center gap-2 shadow-sm text-danger">
                     <AlertCircle size={16} strokeWidth={2.5} />
                     <span>{errorMsg}</span>
                 </div>
@@ -91,12 +91,12 @@ const FormDispositivos = ({ formData }) => {
                                 const isConfirming = confirmingId === kiosk.id;
 
                                 return (
-                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-[1.5rem] transition-all duration-300 ${isConfirming ? 'bg-surface-card border-2 border-danger/30 shadow-md' : 'bg-surface-card border border-divider shadow-[var(--shadow-elevation-xs)] hover:shadow-md hover:-translate-y-0.5'}`}>
+                                    <div key={kiosk.id} className={`flex flex-col p-4 rounded-3xl transition-all duration-300 ${isConfirming ? 'bg-surface-card border-2 border-danger/30 shadow-md' : 'bg-surface-card border border-divider shadow-[var(--shadow-elevation-xs)] hover:shadow-md hover:-translate-y-0.5'}`}>
                                         
                                         {/* FILA 1: INFORMACIÓN PRINCIPAL (Nunca se desborda gracias al min-w-0 y truncate) */}
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover border border-divider text-content-3'}`}>
+                                                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover border border-divider text-content-3'}`}>
                                                     <Laptop size={20} strokeWidth={isConfirming ? 2.5 : 2} />
                                                 </div>
                                                 <div className="min-w-0">
@@ -142,7 +142,7 @@ const FormDispositivos = ({ formData }) => {
                                 );
                             })
                         ) : (
-                            <div className="text-center py-10 rounded-[1.5rem] bg-surface-card border border-divider shadow-sm">
+                            <div className="text-center py-10 rounded-3xl bg-surface-card border border-divider shadow-sm">
                                 <div className="w-12 h-12 bg-surface-card-hover border border-divider rounded-xl flex items-center justify-center mx-auto mb-3 text-content-3">
                                     <Laptop size={20} strokeWidth={2} />
                                 </div>

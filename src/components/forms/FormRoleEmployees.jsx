@@ -17,7 +17,7 @@ const FormRoleEmployees = ({ formData }) => {
             <div className="relative p-8 md:p-10 pb-8 overflow-hidden bg-gradient-to-b from-brand/5 to-transparent border-b border-divider rounded-t-[2.5rem]">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
                 <div className="relative flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-[1.2rem] bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
+                    <div className="w-16 h-16 rounded-2xl bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
                         <ShieldCheck size={32} strokeWidth={1.5} />
                     </div>
                     <div>
@@ -37,10 +37,10 @@ const FormRoleEmployees = ({ formData }) => {
                     employeesInRole.map(emp => (
                         <div 
                             key={emp.id} 
-                            className="flex items-center justify-between p-4 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm group hover:border-brand/30 hover:shadow-md transition-all"
+                            className="flex items-center justify-between p-4 bg-surface-card rounded-3xl border border-divider shadow-sm group hover:border-brand/30 hover:shadow-md transition-all"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-[1rem] bg-surface-card-hover border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-content-3">
+                                <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-content-3">
                                     {emp.photo ? (
                                         <img src={emp.photo} className="w-full h-full object-cover" alt="Perfil" />
                                     ) : (
@@ -63,7 +63,7 @@ const FormRoleEmployees = ({ formData }) => {
                         </div>
                     ))
                 ) : (
-                    <div className="text-center py-12 bg-surface-card backdrop-blur-md rounded-[2rem] border-2 border-dashed border-divider">
+                    <div className="text-center py-12 bg-surface-card backdrop-blur-md rounded-modal border-2 border-dashed border-divider">
                         <User className="mx-auto text-content-3 mb-4" size={40} strokeWidth={1.5} />
                         <p className="text-content-3 font-bold text-subtitle">No hay empleados asignados.</p>
                         <p className="text-caption text-content-2 mt-1.5 uppercase tracking-widest font-bold px-4">

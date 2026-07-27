@@ -294,7 +294,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
         {types.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
           <button key={key} onClick={() => onSelect(key)}
             className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left hover:-translate-y-0.5 transition-all ${bg}`}>
-            <div className={`w-8 h-8 rounded-[0.65rem] flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
               <Icon size={15} strokeWidth={2} className={color} />
             </div>
             <div className="flex-1 min-w-0">
@@ -927,7 +927,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         <SearchInput expandable accentColor="var(--success)" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
 
         {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
-        <div className="h-8 shrink-0 rounded-[0.65rem] border border-divider bg-surface-card flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
+        <div className="h-8 shrink-0 rounded-lg border border-divider bg-surface-card flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
           <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
         </div>
       </div>

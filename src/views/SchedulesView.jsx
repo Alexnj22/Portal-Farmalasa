@@ -73,17 +73,17 @@ const HolidaysPanel = ({
         <div className="p-4 md:p-6 space-y-6 animate-view-enter">
             {/* Year toggle + Add button */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-1 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-1 shadow-sm">
+                <div className="flex items-center gap-1 bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-1 shadow-sm">
                     {[currentYear - 1, currentYear, currentYear + 1].map(y => (
                         <button key={y} onClick={() => setHolidayYear(y)}
-                            className={`px-4 py-1.5 rounded-[1.2rem] text-label font-black transition-all ${holidayYear === y ? 'bg-surface-card text-warning shadow-sm' : 'text-content-3 hover:text-warning hover:bg-surface-card'}`}>
+                            className={`px-4 py-1.5 rounded-2xl text-label font-black transition-all ${holidayYear === y ? 'bg-surface-card text-warning shadow-sm' : 'text-content-3 hover:text-warning hover:bg-surface-card'}`}>
                             {y}
                         </button>
                     ))}
                 </div>
                 {canEdit && (
                     <button onClick={() => setShowForm(v => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-label font-black transition-all border ${showForm ? 'bg-surface-card-hover border-divider text-content-2' : 'bg-warning-solid hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-label font-black transition-all border ${showForm ? 'bg-surface-card-hover border-divider text-content-2' : 'bg-warning-solid hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
                         {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
                         {showForm ? 'Cancelar' : 'Agregar feriado'}
                     </button>
@@ -92,13 +92,13 @@ const HolidaysPanel = ({
 
             {/* Add form */}
             {showForm && canEdit && (
-                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.5rem] p-5 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-3xl p-5 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
                     <p className="text-caption font-black text-warning uppercase tracking-widest">Nuevo Feriado</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-surface-card border border-divider rounded-[0.85rem] px-3 py-2.5 text-body-xl font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
+                                className="w-full bg-surface-card border border-divider rounded-xl px-3 py-2.5 text-body-xl font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
                         </div>
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
@@ -126,7 +126,7 @@ const HolidaysPanel = ({
                         </button>
                     </div>
                     <button onClick={onSave} disabled={hSaving || !hDate || !hName.trim()}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning-solid hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-label font-black uppercase tracking-widest rounded-[1rem] shadow-[var(--shadow-glow-chart-7)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning-solid hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-label font-black uppercase tracking-widest rounded-2xl shadow-[var(--shadow-glow-chart-7)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                         {hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
                         {hSaving ? 'Guardando...' : 'Guardar feriado'}
                     </button>
@@ -136,7 +136,7 @@ const HolidaysPanel = ({
             {/* Holiday list */}
             {byMonth.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
-                    <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
+                    <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal shadow-sm">
                         <Star size={32} className="text-warning/40" strokeWidth={1.5} />
                     </div>
                     <p className="text-body font-bold text-content-3">
@@ -166,7 +166,7 @@ const HolidaysPanel = ({
                                     return (
                                         <div key={h.id}
                                             className="group relative flex items-center overflow-hidden
-                                                bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem]
+                                                bg-surface-card backdrop-blur-md border border-border-card rounded-3xl
                                                 shadow-[var(--shadow-elevation-xs)]
                                                 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5
                                                 transition-all duration-300">
@@ -174,7 +174,7 @@ const HolidaysPanel = ({
                                             <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-warning to-chart-4' : 'bg-gradient-to-b from-chart-1 to-brand'}`} />
                                             <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
                                                 {/* Date badge */}
-                                                <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-chart-1/10 border border-chart-1/30'}`}>
+                                                <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-chart-1/10 border border-chart-1/30'}`}>
                                                     <span className={`text-micro font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-chart-1-text'}`}>{dayName}</span>
                                                     <span className={`text-title-sm font-black leading-tight ${isNat ? 'text-warning-text' : 'text-chart-1-text'}`}>{dayNum}</span>
                                                 </div>
@@ -201,7 +201,7 @@ const HolidaysPanel = ({
                                                 {/* Delete */}
                                                 {canEdit && (
                                                     <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
-                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all flex-shrink-0 disabled:opacity-50">
+                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all flex-shrink-0 disabled:opacity-50">
                                                         {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-danger" /> : <Trash2 size={14} strokeWidth={2} />}
                                                     </button>
                                                 )}
@@ -867,7 +867,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
                     {employeesInView.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5">
-                            <div className="p-6 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
+                            <div className="p-6 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal shadow-sm">
                                 <CalendarDays size={36} className="text-brand-text/30" strokeWidth={1.5} />
                             </div>
                             <div className="text-center">

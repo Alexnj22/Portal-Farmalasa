@@ -294,7 +294,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   return (
     <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" ariaLabel={`Corrección de marcaje — ${fmtDia}`}>
       {/* Glass card — propio contenedor con liquid glass */}
-      <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] shadow-[0_24px_64px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden">
+      <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal shadow-[0_24px_64px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06]">
@@ -491,11 +491,11 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
     : 'bg-surface-card border-black/[0.07] shadow-[var(--shadow-elevation-sm)]';
 
   return (
-    <div className={`rounded-[1.75rem] border p-4 transition-all duration-200 ${cardBg}`}>
+    <div className={`rounded-card border p-4 transition-all duration-200 ${cardBg}`}>
       {/* Header row */}
       <div className="flex items-start gap-3">
         {/* Date pill */}
-        <div className={`w-11 h-11 rounded-[1rem] flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-brand text-white' : isOff ? 'bg-surface-card-hover text-content-3' : 'bg-surface-card-hover text-content-2'}`}>
+        <div className={`w-11 h-11 rounded-2xl flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-brand text-white' : isOff ? 'bg-surface-card-hover text-content-3' : 'bg-surface-card-hover text-content-2'}`}>
           <span className="text-micro font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
           <span className="text-body-xl font-black leading-tight">{dayD.getUTCDate()}</span>
         </div>
@@ -542,14 +542,14 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           <div className="flex flex-col gap-1.5 shrink-0">
             <button
               onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand-text hover:border-brand/25 hover:bg-brand/[0.05] rounded-[1rem] text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand-text hover:border-brand/25 hover:bg-brand/[0.05] rounded-2xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
             >
               <Edit3 size={11} strokeWidth={2.5} /> Corregir
             </button>
             {isPendDay && onMarkReviewed && (
               <button
                 onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning-solid hover:text-white hover:border-warning rounded-[1rem] text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94]"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning-solid hover:text-white hover:border-warning rounded-2xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94]"
               >
                 <ShieldCheck size={11} strokeWidth={2.5} /> Revisado
               </button>
@@ -740,7 +740,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
     : null;
 
   return (
-    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.75rem] shadow-[var(--shadow-elevation-xs)] overflow-hidden transition-all duration-200 hover:shadow-[var(--shadow-elevation-sm)]">
+    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-card shadow-[var(--shadow-elevation-xs)] overflow-hidden transition-all duration-200 hover:shadow-[var(--shadow-elevation-sm)]">
       {/* Collapsed header row */}
       <button
         type="button"
@@ -1224,7 +1224,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   }, [branchDropOpen]);
 
   // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
-  const pillWrap    = 'flex items-center border border-border-card bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[var(--shadow-glass-sm)] hover:-translate-y-[2px] transition-all duration-300';
+  const pillWrap    = 'flex items-center border border-border-card bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] rounded-header h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[var(--shadow-glass-sm)] hover:-translate-y-[2px] transition-all duration-300';
   const pillDivider = 'h-5 w-px bg-divider mx-1';
   const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm transition-all duration-300 shrink-0';
   const pillLabelText = 'text-content';
@@ -1484,7 +1484,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {/* Empty state */}
               {employeesByBranch.size === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
-                  <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
+                  <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal shadow-sm">
                     <CalendarRange size={32} className="text-content-3" strokeWidth={1.5} />
                   </div>
                   <p className="text-body-lg font-bold text-content-3">Sin empleados para mostrar</p>

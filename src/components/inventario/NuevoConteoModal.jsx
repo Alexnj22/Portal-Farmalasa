@@ -16,7 +16,7 @@ const SCOPE_OPTIONS = [
     { value: 'MANUAL', label: 'Selección manual de productos', icon: Search },
 ];
 
-const islandClass = "bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
+const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
 const reqBadge = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>;
 
@@ -100,7 +100,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     };
 
     if (!isOpen) return null;
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card backdrop-blur-md";
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card backdrop-blur-md";
 
     return (
         <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-2xl" className="max-h-[90vh] h-fit" ariaLabel="Nuevo Conteo de Inventario">
@@ -121,7 +121,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 <div className="flex flex-col min-h-full w-full px-6 md:px-10 py-6 gap-4">
                     <div className={islandClass}>
                         <label className={fieldLabel}><span>Sucursal</span>{!branchId && reqBadge}</label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!branchId ? '!border-danger !bg-danger/10' : ''}`}>
+                        <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!branchId ? '!border-danger !bg-danger/10' : ''}`}>
                             <LiquidSelect value={branchId} onChange={setBranchId} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} disabled={isBranchScoped} />
                         </div>
 
@@ -146,7 +146,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         {scopeType === 'LABORATORIO' && (
                             <div className="mt-4">
                                 <label className={fieldLabel}><span>Laboratorio</span>{institucionMissing && reqBadge}</label>
-                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${institucionMissing ? '!border-danger !bg-danger/10' : ''}`}>
+                                <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${institucionMissing ? '!border-danger !bg-danger/10' : ''}`}>
                                     <LiquidSelect value={laboratorioId} onChange={setLaboratorioId} options={laboratorioOpts} placeholder="Seleccionar laboratorio..." icon={FlaskConical} clearable={false} />
                                 </div>
                             </div>

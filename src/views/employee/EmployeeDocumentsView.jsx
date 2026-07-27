@@ -98,7 +98,7 @@ const DocCard = ({ doc }) => {
             : null;
 
     return (
-        <div className={`group relative bg-surface-card backdrop-blur-xl border rounded-[1.75rem] p-5 transition-all duration-300 hover:-translate-y-1 shadow-[var(--shadow-elevation-xs)] ${cfg.glow} ${cfg.border} overflow-hidden`}>
+        <div className={`group relative bg-surface-card backdrop-blur-xl border rounded-card p-5 transition-all duration-300 hover:-translate-y-1 shadow-[var(--shadow-elevation-xs)] ${cfg.glow} ${cfg.border} overflow-hidden`}>
 
             {/* Accent bar izquierda */}
             <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${cfg.accent} opacity-60`} />
@@ -246,7 +246,7 @@ const EmployeeDocumentsView = () => {
 
     // ── Filter bar ────────────────────────────────────────────────────────
     const renderFilters = () => (
-        <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+        <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             {/* MODO BÚSQUEDA */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${searchOpen ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
@@ -308,7 +308,7 @@ const EmployeeDocumentsView = () => {
 
                 {/* Panel filtros avanzados */}
                 {filterOpen && (
-                    <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] p-5 shadow-[var(--shadow-elevation-xs)] animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+                    <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal p-5 shadow-[var(--shadow-elevation-xs)] animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
                         <div className="flex items-center justify-between">
                             <p className="text-caption font-black text-content-3 uppercase tracking-widest flex items-center gap-1.5">
                                 <Filter size={10} /> Filtros avanzados
@@ -375,12 +375,12 @@ const EmployeeDocumentsView = () => {
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[1,2,3,4].map(i => (
-                            <div key={i} className="skeleton rounded-[1.75rem] h-36" style={{ '--stagger-delay': `${i * 80}ms` }} />
+                            <div key={i} className="skeleton rounded-card h-36" style={{ '--stagger-delay': `${i * 80}ms` }} />
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
-                        <div className="w-20 h-20 rounded-[2rem] bg-surface-card border border-border-card flex items-center justify-center mb-4 shadow-sm">
+                        <div className="w-20 h-20 rounded-modal bg-surface-card border border-border-card flex items-center justify-center mb-4 shadow-sm">
                             <FolderOpen size={32} className="text-content-3" strokeWidth={1.5} />
                         </div>
                         <p className="text-subtitle font-black text-content-3 mb-1">

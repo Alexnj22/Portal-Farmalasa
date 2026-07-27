@@ -92,7 +92,7 @@ const PdfZoomViewer = ({ src }) => {
     return (
         <div className="flex-1 min-h-0 w-full flex flex-col gap-2">
             <div className="flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-0.5 rounded-[1rem] bg-surface-card-hover p-1">
+                <div className="flex items-center gap-0.5 rounded-2xl bg-surface-card-hover p-1">
                     <button
                         type="button"
                         onClick={zoomOut}
@@ -134,7 +134,7 @@ const PdfZoomViewer = ({ src }) => {
             </div>
             <div
                 ref={containerRef}
-                className="flex-1 min-h-0 rounded-[1.5rem] border border-divider bg-surface-card shadow-sm overflow-auto"
+                className="flex-1 min-h-0 rounded-3xl border border-divider bg-surface-card shadow-sm overflow-auto"
                 style={{ touchAction: zoom > 1 ? 'pan-x pan-y' : 'none' }}
             >
                 <div style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%`, minWidth: '100%', minHeight: '100%' }}>
@@ -237,7 +237,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
             <div className="p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-base">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-[1.25rem] bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
                             <Receipt size={24} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0">
@@ -251,7 +251,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         {document?.pdf_path && (
-                            <div className="flex rounded-[1rem] bg-surface-card-hover p-1">
+                            <div className="flex rounded-2xl bg-surface-card-hover p-1">
                                 <button
                                     type="button"
                                     onClick={() => setTab('detalle')}
@@ -274,7 +274,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 onClick={downloadAll}
                                 disabled={downloadingAll}
                                 title="Descargar PDF + JSON en un ZIP"
-                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-2xl font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
                             >
                                 <Archive size={14} strokeWidth={2} className={downloadingAll ? 'animate-pulse' : ''} />
                                 {downloadingAll ? 'Armando ZIP…' : 'Todo'}
@@ -284,7 +284,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             <button
                                 type="button"
                                 onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-2xl font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
                             >
                                 <Download size={14} strokeWidth={2} /> PDF
                             </button>
@@ -292,7 +292,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                         <button
                             type="button"
                             onClick={() => downloadStoredFile(document?.json_path, `${document?.codigo_generacion}.json`)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-[1rem] font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
                         >
                             <Download size={14} strokeWidth={2} /> JSON
                         </button>
@@ -302,7 +302,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     <p className="mt-2 text-caption font-bold text-danger">{downloadAllError}</p>
                 )}
                 {document?.invalidado && (
-                    <div className="mt-3 flex items-start gap-2.5 rounded-[1rem] border border-danger/25 bg-danger/10 px-4 py-3">
+                    <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3">
                         <AlertTriangle size={16} className="text-danger shrink-0 mt-0.5" strokeWidth={2} />
                         <div className="min-w-0">
                             <p className="text-label font-bold text-danger-text leading-snug">
@@ -337,17 +337,17 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 {tab === 'pdf' && pdfUrl ? (
                     <PdfZoomViewer src={pdfUrl} />
                 ) : loading ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-brand-text" />
                         <p className="font-bold text-label uppercase tracking-widest">Cargando detalle…</p>
                     </div>
                 ) : error ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm border-dashed">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5} />
                         <p className="font-bold text-sm">No se pudo cargar el detalle ({error}).</p>
                     </div>
                 ) : (
-                    <div className="flex-1 min-h-0 w-full overflow-y-auto rounded-[1.5rem] border border-divider bg-surface-card shadow-sm p-6">
+                    <div className="flex-1 min-h-0 w-full overflow-y-auto rounded-3xl border border-divider bg-surface-card shadow-sm p-6">
                         <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-4 mb-4 border-b border-divider text-body-sm">
                             <div><span className="text-content-3">Emisor: </span><span className="font-semibold text-content">{dte?.emisor?.nombre || document?.emisor_nombre || '—'}</span></div>
                             <div><span className="text-content-3">NIT / NRC: </span><span className="font-semibold text-content">{dte?.emisor?.nit || document?.emisor_nit || '—'} / {dte?.emisor?.nrc || document?.emisor_nrc || '—'}</span></div>

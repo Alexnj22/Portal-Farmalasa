@@ -37,12 +37,12 @@ const buildBranchOpts = (branches) => TYPE_ORDER.flatMap((type) => {
 
 // Mismas "islas" blancas con header de icono+título que usa EmployeeFormModal
 // para agrupar secciones — ver islandClass/islandHoverClass ahí.
-const islandClass = "bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
+const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
 const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-surface-card";
 
 const IslandHeader = ({ icon: Icon, title }) => (
     <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-chart-3-solid text-white rounded-[0.8rem] shadow-[var(--shadow-glow-chart-3)]"><Icon size={16} strokeWidth={2.5} /></div>
+        <div className="p-2 bg-chart-3-solid text-white rounded-xl shadow-[var(--shadow-glow-chart-3)]"><Icon size={16} strokeWidth={2.5} /></div>
         <h4 className="text-body-sm font-black uppercase tracking-widest text-chart-3-text">{title}</h4>
     </div>
 );
@@ -183,7 +183,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
     if (!isOpen) return null;
 
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card backdrop-blur-md";
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card backdrop-blur-md";
 
     return (
         <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}>
@@ -215,7 +215,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <label className={fieldLabel}>
                                     <span>Fecha de Nacimiento {age !== null && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-warning' : 'text-content-3'}`}>· {age} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                 </label>
-                                <div className={`bg-surface-card rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
+                                <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
                                     <LiquidDatePicker value={form.birth_date} onChange={(v) => set('birth_date', v)} />
                                 </div>
                             </div>
@@ -239,7 +239,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
                             <div className="md:col-span-2">
                                 <label className={fieldLabel}><span>Sucursal</span>{!form.branch_id && reqBadge}</label>
-                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!form.branch_id ? '!border-danger !bg-danger/10' : ''}`}>
+                                <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!form.branch_id ? '!border-danger !bg-danger/10' : ''}`}>
                                     <LiquidSelect value={form.branch_id} onChange={(v) => set('branch_id', v)} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} />
                                 </div>
                             </div>
@@ -275,7 +275,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                             <PortalInput label="Teléfono del Tutor" name="tutor_telefono" value={form.tutor_telefono} onChange={handleChange} icon={Phone} placeholder="0000-0000" maskType="PHONE" />
                             <div className="md:col-span-2">
                                 <label className={fieldLabel}>Supervisor Interno (opcional)</label>
-                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
                                     <LiquidSelect value={form.supervisor_employee_id} onChange={(v) => set('supervisor_employee_id', v)} options={supervisorOpts} placeholder="Empleado responsable..." icon={Users} />
                                 </div>
                             </div>
@@ -287,7 +287,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className={fieldLabel}><span>Fecha Inicio</span>{!form.fecha_inicio && reqBadge}</label>
-                                <div className={`bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!form.fecha_inicio ? '!border-danger !bg-danger/10' : ''}`}>
+                                <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!form.fecha_inicio ? '!border-danger !bg-danger/10' : ''}`}>
                                     <LiquidDatePicker value={form.fecha_inicio} onChange={(v) => set('fecha_inicio', v)} />
                                 </div>
                             </div>
@@ -296,14 +296,14 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                     <span>Fecha Fin {fechasInvalid && <span className="text-danger font-bold ml-1">— debe ser posterior</span>}</span>
                                     {!form.fecha_fin && reqBadge}
                                 </label>
-                                <div className={`bg-surface-card rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${fechasInvalid || !form.fecha_fin ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                                <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${fechasInvalid || !form.fecha_fin ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                     <LiquidDatePicker value={form.fecha_fin} onChange={(v) => set('fecha_fin', v)} highlightRangeStart={form.fecha_inicio || null} />
                                 </div>
                             </div>
                             <PortalInput label="Horas Requeridas (meta)" name="horas_requeridas" type="number" value={form.horas_requeridas} onChange={handleChange} icon={Clock} placeholder="Ej. 200" />
                             <div>
                                 <label className={fieldLabel}>Estado</label>
-                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
                                     <LiquidSelect value={form.estado} onChange={(v) => set('estado', v)} options={ESTADO_OPTIONS} clearable={false} />
                                 </div>
                             </div>
@@ -317,7 +317,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <span>Convenio Institucional (PDF/imagen)</span>
                                 {convenioMissing && reqBadge}
                             </label>
-                            <div className={`relative flex items-center gap-3 bg-surface-card rounded-[1rem] border shadow-sm h-[40px] px-3 z-base ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                            <div className={`relative flex items-center gap-3 bg-surface-card rounded-2xl border shadow-sm h-[40px] px-3 z-base ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                 <label className="flex items-center gap-1.5 text-body font-bold text-brand-text cursor-pointer">
                                     <Upload size={14} strokeWidth={2.5} />
                                     {convenioFile ? convenioFile.name : 'Adjuntar convenio...'}
@@ -338,7 +338,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 value={form.notas}
                                 onChange={(e) => set('notas', e.target.value)}
                                 placeholder="Contexto adicional..."
-                                className={`w-full h-20 resize-none bg-surface-card rounded-[1rem] border border-divider shadow-sm px-4 py-2.5 text-body-xl font-bold text-content-2 outline-none ${inputHoverClass}`}
+                                className={`w-full h-20 resize-none bg-surface-card rounded-2xl border border-divider shadow-sm px-4 py-2.5 text-body-xl font-bold text-content-2 outline-none ${inputHoverClass}`}
                             />
                         </div>
                     </div>

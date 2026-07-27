@@ -1807,7 +1807,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                     <DataCell align="right">
                                                         <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                            className={`text-white px-4 py-2 rounded-[1rem] text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                            className={`text-white px-4 py-2 rounded-2xl text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
                                                             <Check size={13} strokeWidth={2.5} /> Confirmar
                                                         </button>
                                                     </DataCell>
@@ -1916,7 +1916,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                             <DataCell align="right">
                                                                 <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                    className={`text-white px-4 py-2 rounded-[1rem] text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                                    className={`text-white px-4 py-2 rounded-2xl text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
                                                                     <Check size={13} strokeWidth={2.5} /> Confirmar
                                                                 </button>
                                                             </DataCell>
@@ -2123,7 +2123,7 @@ export default function FacturacionView() {
     }[activeTab] || 'Buscar...';
 
     const filtersContent = (
-        <div {...searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        <div {...searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
@@ -2187,7 +2187,7 @@ export default function FacturacionView() {
             filtersContent={filtersContent}
             transparentBody={true}
         >
-            <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
+            <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-3xl lg:rounded-header border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
                 <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
                     <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>

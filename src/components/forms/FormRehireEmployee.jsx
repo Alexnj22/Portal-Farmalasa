@@ -21,7 +21,7 @@ const portalProps = {
 };
 
 const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50';
-const island    = 'bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]';
+const island    = 'bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]';
 const reqBadge  = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 text-micro">Requerido</span>;
 
 const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
@@ -75,7 +75,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Nueva Fecha de Ingreso {reqBadge}
                         </label>
-                        <div className={`bg-surface-card rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-danger bg-danger/10' : 'border-divider'}`}>
+                        <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-danger bg-danger/10' : 'border-divider'}`}>
                             <LiquidDatePicker value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} placeholder="DD / MM / AAAA" />
                         </div>
                     </div>
@@ -83,7 +83,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Tipo de contrato */}
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Contrato</label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover}`}>
+                        <div className={`rounded-2xl h-[40px] ${inputHover}`}>
                             <LiquidSelect value={formData.rehire_contract_type || 'INDEFINIDO'} onChange={handleContractChange}
                                 options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalProps} />
                         </div>
@@ -94,7 +94,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Sucursal {reqBadge}
                         </label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_branch_id ? 'border border-danger bg-danger/10 rounded-[1rem]' : ''}`}>
+                        <div className={`rounded-2xl h-[40px] ${inputHover} ${!formData.rehire_branch_id ? 'border border-danger bg-danger/10 rounded-2xl' : ''}`}>
                             <LiquidSelect value={formData.rehire_branch_id || ''} onChange={v => set('rehire_branch_id', v)}
                                 options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalProps} />
                         </div>
@@ -105,7 +105,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Cargo Principal {reqBadge}
                         </label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover} ${!formData.rehire_role_id ? 'border border-danger bg-danger/10 rounded-[1rem]' : ''}`}>
+                        <div className={`rounded-2xl h-[40px] ${inputHover} ${!formData.rehire_role_id ? 'border border-danger bg-danger/10 rounded-2xl' : ''}`}>
                             <LiquidSelect value={formData.rehire_role_id || ''} onChange={v => set('rehire_role_id', v)}
                                 options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalProps} />
                         </div>
@@ -114,7 +114,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Cargo secundario */}
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
-                        <div className={`rounded-[1rem] h-[40px] ${inputHover}`}>
+                        <div className={`rounded-2xl h-[40px] ${inputHover}`}>
                             <LiquidSelect value={formData.rehire_secondary_role_id || ''} onChange={v => set('rehire_secondary_role_id', v)}
                                 options={roleOpts} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalProps} />
                         </div>
@@ -123,7 +123,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Horas semanales */}
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Semanales</label>
-                        <div className={`relative bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
+                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3"><Clock size={14} strokeWidth={2.5} /></div>
                             <input type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
                                 className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
@@ -133,7 +133,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Salario base */}
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Salario Base</label>
-                        <div className={`relative bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
+                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3 font-black text-body">$</div>
                             <input type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
                                 placeholder="0.00" className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-8 pr-4" />
@@ -146,7 +146,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <textarea value={formData.rehire_notes || ''} onChange={e => set('rehire_notes', e.target.value)}
                             rows={2}
                             placeholder="Ej. Regresa tras cierre de proyecto externo, aplica para período de prueba..."
-                            className={`w-full bg-surface-card rounded-[1rem] border border-divider shadow-sm text-body-xl font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
+                            className={`w-full bg-surface-card rounded-2xl border border-divider shadow-sm text-body-xl font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
                     </div>
 
                 </div>

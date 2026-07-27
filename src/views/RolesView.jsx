@@ -349,7 +349,7 @@ const RolesView = ({ openModal }) => {
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
 
         return (
-            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.7)] rounded-[1.5rem] p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
+            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.7)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
@@ -436,7 +436,7 @@ const RolesView = ({ openModal }) => {
     const renderFiltersContent = () => (
         <div
             {...searchContainerRef}
-            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
+            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
         >
             {isSearchExpanded ? (
                 <div
@@ -567,7 +567,7 @@ const RolesView = ({ openModal }) => {
 
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
                         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
-                            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
+                            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
                                 ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] group-hover/panel:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 }`}>
@@ -608,7 +608,7 @@ const RolesView = ({ openModal }) => {
                                             <input
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
-                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
+                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
                                             />
@@ -644,7 +644,7 @@ const RolesView = ({ openModal }) => {
                                                     type="number"
                                                     min="1"
                                                     max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-body-xl outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
                                                 />
@@ -690,7 +690,7 @@ const RolesView = ({ openModal }) => {
                                         type="button"
                                         onClick={handleSubmit}
                                         disabled={!canEdit}
-                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
+                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
                                     >
                                         {editingRoleId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : <><Plus size={16} strokeWidth={2.5} /> Crear Cargo</>}
                                     </button>
@@ -718,7 +718,7 @@ const RolesView = ({ openModal }) => {
                                     return (
                                         <div
                                             key={role.id}
-                                            className={`p-5 rounded-[2rem] flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
+                                            className={`p-5 rounded-modal flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
                                                 ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[var(--shadow-elevation-md)] animate-subtle-shake z-base' : isExternal
                                                     ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-divider shadow-sm hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1'
                                                     : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:bg-surface-card hover:-translate-y-1'
@@ -734,7 +734,7 @@ const RolesView = ({ openModal }) => {
 
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex gap-3.5 items-start min-w-0 w-full pr-2 relative">
-                                                    <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-surface-card text-brand-text border-white group-hover:bg-brand/10'}`}>
+                                                    <div className={`mt-0.5 h-10 w-10 rounded-2xl flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-surface-card text-brand-text border-white group-hover:bg-brand/10'}`}>
                                                         <Award size={18} strokeWidth={isRoot ? 2.5 : 2} />
                                                     </div>
 
@@ -798,7 +798,7 @@ const RolesView = ({ openModal }) => {
                                                 </div>
                                             </div>
 
-                                            <div className={`flex-1 rounded-[1.25rem] p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-white' : 'bg-surface-card border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] group-hover:bg-surface-card'}`}>
+                                            <div className={`flex-1 rounded-2xl p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-white' : 'bg-surface-card border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] group-hover:bg-surface-card'}`}>
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-xl bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm">
                                                         <Users size={14} strokeWidth={2.5} />
@@ -841,7 +841,7 @@ const RolesView = ({ openModal }) => {
                     <div className="animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
-                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-[3rem]'}`}
+                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}

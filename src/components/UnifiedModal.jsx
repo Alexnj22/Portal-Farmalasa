@@ -727,7 +727,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const getModalHeightClass = () => fillHeight ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
     const hidesHeader = HIDES_HEADER.has(type);
     const hidesFooter = HIDES_FOOTER.has(type);
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-sm bg-surface-card-hover";
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-sm bg-surface-card-hover";
 
     return (
         <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-modal" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
@@ -810,7 +810,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 >
                     <div className={`flex flex-col w-full ${fillHeight ? 'flex-1 min-h-0' : 'min-h-full'} ${hidesHeader ? 'p-0' : 'px-6 md:px-10 py-6'}`}>
                         {validationError && (
-                            <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-[1.25rem] flex items-center gap-3 text-danger shadow-sm shrink-0 animate-in fade-in slide-in-from-top-4">
+                            <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-2xl flex items-center gap-3 text-danger shadow-sm shrink-0 animate-in fade-in slide-in-from-top-4">
                                 <AlertCircle size={20} strokeWidth={2.5} className="shrink-0" />
                                 <p className="text-label font-bold uppercase tracking-wide leading-tight">{validationError}</p>
                             </div>

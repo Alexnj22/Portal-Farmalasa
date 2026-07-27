@@ -306,7 +306,7 @@ const FormWfmAnalytics = ({ branches }) => {
             </div>
 
             {/* GRÁFICA PRINCIPAL (GLASS CONTAINER) */}
-            <div className="bg-surface-card backdrop-blur-xl rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-glass-md)] relative min-h-[380px] flex flex-col transform-gpu hover:shadow-[var(--shadow-glass-lg)] transition-all duration-700">
+            <div className="bg-surface-card backdrop-blur-xl rounded-modal p-6 border border-border-card shadow-[var(--shadow-glass-md)] relative min-h-[380px] flex flex-col transform-gpu hover:shadow-[var(--shadow-glass-lg)] transition-all duration-700">
 
                 {/* CABECERA DE GRÁFICA Y CONTROLES (TABS PILL STYLE) */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 pb-4">

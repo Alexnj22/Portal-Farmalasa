@@ -35,7 +35,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 
   return (
     <div
-      className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
+      className={`p-6 rounded-header border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
         isEditingThis
           ? 'bg-surface-card backdrop-blur-xl border border-warning/40 shadow-[var(--shadow-elevation-sm)] animate-subtle-shake z-base'
           : ann.isCompleted
@@ -558,7 +558,7 @@ const AnnouncementsView = ({ openModal }) => {
   }, [processedAnnouncements]);
 
   const renderFiltersContent = () => (
-    <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
+    <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
         <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
@@ -607,7 +607,7 @@ const AnnouncementsView = ({ openModal }) => {
         <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
           <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar transform-gpu">
-            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
+            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-warning-solid' : 'bg-brand'}`}>
@@ -681,7 +681,7 @@ const AnnouncementsView = ({ openModal }) => {
                   {targetType === 'EMPLOYEE' && (
                     <div className="space-y-3">
                       {selectedEmployees.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 p-3 bg-surface-card rounded-[1rem] border border-border-card shadow-sm">
+                        <div className="flex flex-wrap gap-1.5 p-3 bg-surface-card rounded-2xl border border-border-card shadow-sm">
                           {selectedEmployees.map((id) => (
                             <div key={id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1.5 rounded-lg text-label font-bold border border-brand/20 hover:scale-105">
                               <span>{employeesById.get(String(id))?.name || 'Empleado'}</span>
@@ -693,7 +693,7 @@ const AnnouncementsView = ({ openModal }) => {
                       <div className="relative">
                         <SearchInput value={empSearch} onChange={setEmpSearch} placeholder="Buscar persona por nombre..." disabled={isSubmitting} />
                         {empSearch.trim() && (
-                          <div className="absolute z-content w-full mt-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.25rem] shadow-[var(--shadow-elevation-lg)] max-h-60 overflow-y-auto p-1">
+                          <div className="absolute z-content w-full mt-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-elevation-lg)] max-h-60 overflow-y-auto p-1">
                             {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-brand/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-body font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand-text" /></button>)) : <div className="p-3 text-body-sm text-content-3 font-bold text-center">Sin resultados.</div>}
                           </div>
                         )}
@@ -734,7 +734,7 @@ const AnnouncementsView = ({ openModal }) => {
                    )}
                 </div>
 
-                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] ${editingAnnId ? 'bg-warning hover:bg-warning-hover shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'}`}>
+                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] ${editingAnnId ? 'bg-warning hover:bg-warning-hover shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'}`}>
                   {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Procesando...</> : editingAnnId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : publishImmediately ? <><Send size={16} strokeWidth={2.5} /> Publicar Aviso</> : <><CalendarClock size={16} strokeWidth={2.5} /> Programar Aviso</>}
                 </button>
               </form>
@@ -748,7 +748,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <div className="relative group flex flex-col items-center text-center">
                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}></div>
                     
-                    <div className={`relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
+                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
                       {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                     </div>
                     

@@ -222,7 +222,7 @@ const EmployeeScheduleView = () => {
     return (
         <div className="px-4 pt-4 pb-6 space-y-4">
             {/* Navegación de semana */}
-            <div className="flex items-center justify-between bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.75rem] px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between bg-surface-card backdrop-blur-xl border border-border-card rounded-card px-4 py-3 shadow-sm">
                 <button
                     onClick={() => setWeekOffset(v => v - 1)}
                     className="p-2 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all active:scale-[0.97]"
@@ -246,9 +246,9 @@ const EmployeeScheduleView = () => {
             {isLoading ? (
                 <div className="space-y-2 animate-in fade-in duration-300">
                     {Array.from({ length: 7 }).map((_, i) => (
-                        <div key={i} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-md p-4">
+                        <div key={i} className="rounded-card border border-border-card bg-surface-card backdrop-blur-md p-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-[1rem] skeleton flex-shrink-0" />
+                                <div className="w-12 h-12 rounded-2xl skeleton flex-shrink-0" />
                                 <div className="flex-1 space-y-2">
                                     <div className="skeleton rounded-full h-3 w-24" />
                                     <div className="skeleton rounded-full h-5 w-32" />
@@ -262,14 +262,14 @@ const EmployeeScheduleView = () => {
                     {days.map(d => (
                         <div
                             key={d.id}
-                            className={`rounded-[1.75rem] border p-4 transition-all ${
+                            className={`rounded-card border p-4 transition-all ${
                                 d.isToday
                                     ? 'bg-brand/5 border-brand/30 shadow-[var(--shadow-ring-brand)]'
                                     : 'bg-surface-card backdrop-blur-md border-border-card'
                             }`}
                         >
                             <div className="flex items-center gap-3">
-                                <div className={`w-12 h-12 rounded-[1rem] flex flex-col items-center justify-center flex-shrink-0 ${
+                                <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 ${
                                     d.isToday ? 'bg-brand text-white' : 'bg-surface-card-hover text-content-2'
                                 }`}>
                                     <span className="text-micro font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
@@ -311,7 +311,7 @@ const EmployeeScheduleView = () => {
             )}
 
             {/* ── Mis Vacaciones ── */}
-            <div className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl p-5 space-y-3">
+            <div className="rounded-card border border-border-card bg-surface-card backdrop-blur-xl p-5 space-y-3">
                 <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                     <Palmtree size={10} /> Mis Vacaciones
                 </p>
@@ -380,7 +380,7 @@ const EmployeeScheduleView = () => {
             {/* Change request form modal */}
             {showChangeForm && changeTarget && (
                 <div className="fixed inset-0 z-sidebar flex items-end justify-center bg-black/20 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-md bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="w-full max-w-md bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center justify-between">
                             <p className="text-body-lg font-black text-content">Solicitar cambio de vacaciones</p>
                             <button onClick={() => setShowChangeForm(false)} className="p-1.5 rounded-xl hover:bg-surface-card-hover text-content-3 transition-all">

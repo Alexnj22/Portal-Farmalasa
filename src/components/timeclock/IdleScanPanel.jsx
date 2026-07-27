@@ -43,11 +43,11 @@ export default function IdleScanPanel({
     <div className="relative z-content w-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-500 pointer-events-auto">
 
       {/* 🚨 CAJA PRINCIPAL CENTRAL */}
-      <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
+      <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
 
         {/* TOP: Ícono y Títulos */}
         <div className="flex flex-col items-center text-center w-full mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
-          <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-[1.5rem] mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
+          <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
             }`}>
             {specialMode
               ? <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
@@ -79,7 +79,7 @@ export default function IdleScanPanel({
       {/* Lunch alerts banner */}
       {!specialMode && lunchAlerts.length > 0 && (
         <div className="w-full max-w-[420px] mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="bg-chart-4/10 backdrop-blur-xl border border-chart-4/25 rounded-[1.5rem] px-4 py-3 shadow-[var(--shadow-glow-chart-4)]">
+          <div className="bg-chart-4/10 backdrop-blur-xl border border-chart-4/25 rounded-3xl px-4 py-3 shadow-[var(--shadow-glow-chart-4)]">
             <div className="flex items-center gap-2 mb-2">
               <Bell size={13} className="text-chart-4-text shrink-0" strokeWidth={2.5} />
               <span className="text-caption font-black uppercase tracking-widest text-chart-4-text">

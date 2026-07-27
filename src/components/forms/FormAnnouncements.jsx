@@ -34,7 +34,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
 // 4. Componente de Avatar (Squircle con Imagen o Inicial)
 const EmployeeAvatar = ({ photoUrl, name, fallbackColor = 'bg-success' }) => {
   return (
-    <div className={`w-10 h-10 rounded-[0.8rem] flex items-center justify-center shrink-0 border border-border-card transition-all overflow-hidden ${photoUrl ? '' : fallbackColor}`}>
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-border-card transition-all overflow-hidden ${photoUrl ? '' : fallbackColor}`}>
       {photoUrl ? (
         <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
       ) : (
@@ -77,7 +77,7 @@ const FormAnnouncements = ({ data }) => {
       
       {/* HEADER DEL REPORTE */}
       <div className="mb-5 pr-8 flex items-center gap-4 shrink-0">
-        <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card text-brand-text">
+        <div className="w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card text-brand-text">
             <Eye size={22} strokeWidth={2.5} />
         </div>
         
@@ -93,7 +93,7 @@ const FormAnnouncements = ({ data }) => {
 
       {/* CONTENIDO DEL MENSAJE */}
       {(readersModal.content || readersModal.message || readersModal.body) && (
-        <div className="mb-8 shrink-0 relative overflow-hidden bg-surface-card backdrop-blur-sm rounded-[1rem] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+        <div className="mb-8 shrink-0 relative overflow-hidden bg-surface-card backdrop-blur-sm rounded-2xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand/40"></div>
             <div className="p-4 md:px-5 md:py-4">
                 {/* 🚨 SCROLL OCULTO EN EL TEXTO DEL MENSAJE */}
@@ -135,7 +135,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedConfirmed.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-white shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
+                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-2xl border border-white shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
@@ -150,7 +150,7 @@ const FormAnnouncements = ({ data }) => {
                   <PaginationControls currentPage={confirmedPage} totalPages={totalConfirmedPages} setPage={setConfirmedPage} />
                 </div>
               ) : (
-                <div className="p-5 bg-surface-card rounded-[1.25rem] border border-border-card text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+                <div className="p-5 bg-surface-card rounded-2xl border border-border-card text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
                   <p className="text-body-sm text-content-3 font-bold flex items-center justify-center gap-2">
                     Nadie ha abierto este aviso todavía <span className="text-lg">🫣</span>
                   </p>
@@ -188,7 +188,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedPending.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-[1.25rem] border border-border-card shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-surface-card group"
+                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-2xl border border-border-card shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-surface-card group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">
@@ -203,7 +203,7 @@ const FormAnnouncements = ({ data }) => {
                   <PaginationControls currentPage={pendingPage} totalPages={totalPendingPages} setPage={setPendingPage} />
                 </div>
               ) : (
-                <div className="p-5 bg-success-solid text-white rounded-[1.25rem] shadow-[var(--shadow-glow-success)] text-center flex items-center justify-center gap-3">
+                <div className="p-5 bg-success-solid text-white rounded-2xl shadow-[var(--shadow-glow-success)] text-center flex items-center justify-center gap-3">
                    <PartyPopper size={20} className="animate-[bounce_2s_infinite]" />
                   <p className="text-body-sm font-black uppercase tracking-wider drop-shadow-md">
                     ¡Todos han leído el aviso!

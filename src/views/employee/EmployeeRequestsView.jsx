@@ -64,10 +64,10 @@ const MinMaxStatusCard = memo(({ req }) => {
         ? { border: 'border-danger/40 bg-surface-card', badge: 'bg-danger/10 text-danger border-danger/30', label: 'Rechazada' }
         : { border: 'border-brand/30 bg-surface-card', badge: 'bg-warning/10 text-warning-text border-warning/30', label: 'Pendiente' };
     return (
-        <div className={`p-5 rounded-[2rem] border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[var(--shadow-elevation-sm)]`}>
+        <div className={`p-5 rounded-modal border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[var(--shadow-elevation-sm)]`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-[0.875rem] bg-chart-1/10 border border-chart-1/30 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-chart-1/10 border border-chart-1/30 flex items-center justify-center flex-shrink-0">
                         <BarChart2 size={16} strokeWidth={2} className="text-chart-1-text" />
                     </div>
                     <div>
@@ -116,11 +116,11 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
         : null;
 
     return (
-        <div className="p-5 rounded-[2rem] border-2 border-chart-5/30 bg-gradient-to-br from-chart-5/10 to-[var(--card-tint-base)] backdrop-blur-2xl flex flex-col gap-4 shadow-[0_4px_20px_rgba(6,182,212,0.1)]">
+        <div className="p-5 rounded-modal border-2 border-chart-5/30 bg-gradient-to-br from-chart-5/10 to-[var(--card-tint-base)] backdrop-blur-2xl flex flex-col gap-4 shadow-[0_4px_20px_rgba(6,182,212,0.1)]">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-[0.875rem] bg-chart-5/10 border border-chart-5/30 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-chart-5/10 border border-chart-5/30 flex items-center justify-center flex-shrink-0">
                         <RefreshCw size={16} strokeWidth={2} className="text-chart-5-text" />
                     </div>
                     <div>
@@ -202,10 +202,10 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
         'border-border-card bg-surface-card backdrop-blur-md';
 
     return (
-        <div className={`rounded-[2.5rem] border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-0.5 ${cardBg}`}>
+        <div className={`rounded-header border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-0.5 ${cardBg}`}>
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-[0.875rem] flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
                     <TypeIcon size={16} strokeWidth={1.8} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1042,7 +1042,7 @@ const EmployeeRequestsView = () => {
 
     // ── Filtros ──────────────────────────────────────────────────────────────
     const renderFiltersContent = () => (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
+        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
             <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
                 {TABS.map(tab => {
                     const isActive = statusFilter === tab.key;
@@ -1076,7 +1076,7 @@ const EmployeeRequestsView = () => {
 
                 {/* ── PANEL IZQUIERDO: Formulario ── */}
                 <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar transform-gpu">
-                    <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                    <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-brand text-white shadow-sm">
@@ -1189,7 +1189,7 @@ const EmployeeRequestsView = () => {
                             <button
                                 type="submit"
                                 disabled={isSubmitting || formDisabilityBlocked}
-                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
                             >
                                 {isSubmitting
                                     ? <><Loader2 size={16} className="animate-spin" /> Enviando...</>
@@ -1243,7 +1243,7 @@ const EmployeeRequestsView = () => {
                         {isLoading ? (
                             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="animate-stagger-child bg-surface-card border border-border-card rounded-[2.5rem] p-6 flex flex-col gap-3" style={{ '--stagger-delay': `${i * 60}ms` }}>
+                                    <div key={i} className="animate-stagger-child bg-surface-card border border-border-card rounded-header p-6 flex flex-col gap-3" style={{ '--stagger-delay': `${i * 60}ms` }}>
                                         <div className="flex items-center gap-2 pr-10">
                                             <div className="skeleton rounded-md h-6 w-24" />
                                             <div className="skeleton rounded-md h-6 w-20" />
@@ -1264,7 +1264,7 @@ const EmployeeRequestsView = () => {
                                         statusFilter === 'APPROVED' ? 'bg-success' :
                                         statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'
                                     }`} />
-                                    <div className={`relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
+                                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-brand-text' :
                                         statusFilter === 'APPROVED' ? 'text-success' :
                                         statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'

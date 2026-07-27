@@ -107,7 +107,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                         {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.join(', ')}`}
                     </span>
                     <button onClick={onSegundaLlegada} disabled={!!busy}
-                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3 text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shrink-0">
+                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shrink-0">
                         {busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}
                     </button>
                 </div>
@@ -119,7 +119,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     <Database size={13} className="text-chart-3-text" />
                     <span className="text-chart-3-text">Revisar caja del reenvío en Sistema de Ventas</span>
                     <button onClick={onOpenReenvioModal} disabled={!!busy}
-                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3 text-white hover:bg-chart-3 active:scale-[0.97] transition-all disabled:opacity-50">
+                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
                         Revisar
                     </button>
                 </div>
@@ -136,7 +136,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                         {apoyoChips}
                         {apoyoBtn}
                         <button onClick={onOpenRecibir} disabled={!!busy}
-                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3 text-white hover:bg-chart-3 active:scale-[0.97] transition-all disabled:opacity-50">
+                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
                             Confirmar
                         </button>
                     </div>

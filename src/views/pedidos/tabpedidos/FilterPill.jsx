@@ -10,7 +10,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     const hasActive   = (!isBranch && filterSuc !== '') || filterStatus !== 'all' || dateDirty;
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
 
-    const statusBtn = (key, label, activeClass = 'bg-chart-1 text-white border-chart-1') => (
+    const statusBtn = (key, label, activeClass = 'bg-chart-1-solid text-white border-chart-1') => (
         <button
             onClick={() => setFilterStatus(v => v === key ? 'all' : key)}
             className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
@@ -34,7 +34,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                             <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
                         </div>
                         {filterSuc !== '' && (
-                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0 hover:scale-110">
+                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
@@ -49,7 +49,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                     <PeriodPicker value={filterDate} onChange={setFilterDate} />
                 </div>
                 {dateDirty && (
-                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0 hover:scale-110">
+                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0 hover:scale-110">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -62,14 +62,14 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado',    'En ruta')}
                 <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
-                {statusBtn('observacion','Con observación', 'bg-warning text-white border-warning')}
-                {statusBtn('completado', 'Completados',     'bg-success text-white border-success')}
+                {statusBtn('observacion','Con observación', 'bg-warning-solid text-white border-warning')}
+                {statusBtn('completado', 'Completados',     'bg-success-solid text-white border-success')}
             </div>
 
             {hasActive && (
                 <>
                     <div className="h-5 w-px bg-divider shrink-0" />
-                    <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0">
+                    <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>

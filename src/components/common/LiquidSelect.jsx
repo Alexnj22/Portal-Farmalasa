@@ -493,7 +493,7 @@ const LiquidSelect = ({
                     className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-10 outline-none p-1 cursor-pointer flex items-center justify-center`}
                     title="Quitar selección"
                 >
-                    <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm bg-danger/10 hover:bg-danger text-danger hover:text-white">
+                    <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm bg-danger/10 hover:bg-danger-solid text-danger hover:text-white">
                         <X size={12} strokeWidth={3} className="transition-transform duration-300 hover:rotate-90" />
                     </div>
                 </button>

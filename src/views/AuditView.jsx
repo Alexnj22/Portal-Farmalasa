@@ -462,7 +462,7 @@ const filtersContent = (
                 <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-surface-card-hover hover:text-brand-text'}`}
+                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger-solid text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-surface-card-hover hover:text-brand-text'}`}
                     >
                         {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
                         <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>

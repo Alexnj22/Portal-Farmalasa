@@ -120,7 +120,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         /* TARJETA PADRE 2 (DINÁMICA) */
                         <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-[2rem] relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
                             
-                            <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-danger/30 text-danger rounded-full shadow-sm hover:bg-danger hover:text-white hover:border-danger transition-all duration-300 opacity-0 group-hover:opacity-100 z-20 active:scale-[0.97] hover:scale-110">
+                            <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-danger/30 text-danger rounded-full shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all duration-300 opacity-0 group-hover:opacity-100 z-20 active:scale-[0.97] hover:scale-110">
                                 <Trash2 size={14} strokeWidth={2.5}/>
                             </button>
                             

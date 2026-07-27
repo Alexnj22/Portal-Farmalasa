@@ -113,7 +113,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                     } else if (isStart || isEnd) {
                         btnClass += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110 cursor-pointer';
                     } else if (isAnyRangeStart || isAnyRangeEnd) {
-                        btnClass += 'bg-success text-white shadow-[0_4px_12px_rgba(18,183,106,0.4)] scale-105 cursor-pointer';
+                        btnClass += 'bg-success-solid text-white shadow-[0_4px_12px_rgba(18,183,106,0.4)] scale-105 cursor-pointer';
                     } else if (inRange) {
                         btnClass += 'text-brand-text font-black cursor-pointer hover:bg-surface-card-hover hover:shadow-sm';
                     } else if (isInAnyRange) {

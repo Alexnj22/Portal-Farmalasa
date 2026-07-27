@@ -767,7 +767,7 @@ const VacationPlanView = () => {
                                 {editingPlan && (
                                     <button
                                         onClick={handleCancelEdit}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
                                     >
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
@@ -912,7 +912,7 @@ const VacationPlanView = () => {
                                         {activeHeader?.status === 'DRAFT' && vacationPlans.filter(vp => vp.status === 'DRAFT').length > 0 && (
                                             <button
                                                 onClick={handlePreApprove}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1 hover:bg-chart-1/80 text-white text-[10px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-1)] hover:-translate-y-0.5 transition-all"
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1-solid hover:bg-chart-1/80 text-white text-[10px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-1)] hover:-translate-y-0.5 transition-all"
                                             >
                                                 <ShieldCheck size={12} strokeWidth={2.5} /> Pre-aprobar plan
                                             </button>
@@ -1048,7 +1048,7 @@ const VacationPlanView = () => {
                                                                             title="Editar"
                                                                             onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '', employee: p.employee })}
                                                                             disabled={!canEdit}
-                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-warning/10 border-warning/40 text-warning hover:bg-warning hover:text-white hover:border-warning' : 'bg-surface-card-hover border-border-card text-content-3 hover:bg-content-3 hover:text-white hover:border-content-3'}`}
+                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-warning/10 border-warning/40 text-warning hover:bg-warning-solid hover:text-white hover:border-warning' : 'bg-surface-card-hover border-border-card text-content-3 hover:bg-content-3 hover:text-white hover:border-content-3'}`}
                                                                         >
                                                                             <Edit2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -1058,7 +1058,7 @@ const VacationPlanView = () => {
                                                                             title="Confirmar"
                                                                             onClick={() => handleConfirmPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-success/10 border border-success/30 text-success hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-success/10 border border-success/30 text-success hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Check size={11} strokeWidth={3} />
                                                                         </button>
@@ -1068,7 +1068,7 @@ const VacationPlanView = () => {
                                                                             title="Cancelar"
                                                                             onClick={() => handleCancelPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 border border-danger/30 text-danger hover:bg-danger hover:text-white hover:border-danger transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-danger/10 border border-danger/30 text-danger hover:bg-danger-solid hover:text-white hover:border-danger transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Trash2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -1130,7 +1130,7 @@ const VacationPlanView = () => {
                                                             <button
                                                                 onClick={() => handleProcessRequest(req, 'APPROVED')}
                                                                 disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-success hover:bg-success-hover text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-[10px] font-black transition-all disabled:opacity-50"
                                                             >
                                                                 {isProcessing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
                                                                 Aprobar
@@ -1138,7 +1138,7 @@ const VacationPlanView = () => {
                                                             <button
                                                                 onClick={() => handleProcessRequest(req, 'REJECTED')}
                                                                 disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-danger hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-danger-solid hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
                                                             >
                                                                 <X size={11} strokeWidth={3} /> Rechazar
                                                             </button>

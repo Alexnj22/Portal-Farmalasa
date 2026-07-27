@@ -564,7 +564,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </span>
                     )}
                     {!isExpanded && badge > 0 && (
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center z-20">
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center z-20">
                             {badge > 9 ? '9+' : badge}
                         </span>
                     )}
@@ -582,7 +582,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </span>
                         )}
                         {badge > 0 && (
-                            <span className="relative z-10 min-w-[20px] h-5 px-1.5 bg-danger text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                            <span className="relative z-10 min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-[10px] font-black rounded-full flex items-center justify-center">
                                 {badge > 9 ? '9+' : badge}
                             </span>
                         )}
@@ -669,7 +669,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {label}
                             </span>
                             {!isOpen && groupBadge > 0 && (
-                                <span className="min-w-[20px] h-5 px-1.5 bg-danger text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                                <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-[10px] font-black rounded-full flex items-center justify-center">
                                     {groupBadge > 9 ? '9+' : groupBadge}
                                 </span>
                             )}
@@ -1056,7 +1056,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
                                                 <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand-text' : 'text-slate-500'} />
                                                 {badge > 0 && (
-                                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                         {badge > 9 ? '9+' : badge}
                                                     </span>
                                                 )}
@@ -1099,7 +1099,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </div>
                                     <span className="text-[13px] font-semibold whitespace-nowrap text-white pr-1">{flyout.label}</span>
                                     {flyout.badge > 0 && (
-                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                             {flyout.badge > 9 ? '9+' : flyout.badge}
                                         </span>
                                     )}
@@ -1163,7 +1163,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     <span className="text-[13px] font-medium whitespace-nowrap flex-1">{m.label}</span>
                                                     {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
                                                     {m.badge > 0 && (
-                                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                             {m.badge > 9 ? '9+' : m.badge}
                                                         </span>
                                                     )}

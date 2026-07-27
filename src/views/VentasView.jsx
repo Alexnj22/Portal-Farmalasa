@@ -166,7 +166,7 @@ function FilterControls({
                 </div>
                 {filterBranch && (
                     <button onClick={() => setFilterBranch('')} title="Quitar sucursal"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -183,7 +183,7 @@ function FilterControls({
                 </div>
                 {filterLab && (
                     <button onClick={() => setFilterLab('')} title="Quitar laboratorio"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -199,7 +199,7 @@ function FilterControls({
                 </div>
                 {dateDirty && (
                     <button onClick={() => setMonthRange(defaultRange)} title="Quitar fecha"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -237,7 +237,7 @@ function FilterControls({
                 <>
                     <div className="h-5 w-px bg-divider shrink-0" />
                     <button onClick={resetAll} title="Limpiar todos los filtros"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors duration-200 shrink-0">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -2060,7 +2060,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                 <div className="flex items-center gap-2 shrink-0 ml-2">
                                                                                                     <span className="text-[9px] text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
                                                                                                     <span className="text-[10px] font-black text-content-2">{fmt(neto)}</span>
-                                                                                                    <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-chart-3">{pct.toFixed(0)}%</span>
+                                                                                                    <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-chart-3-solid">{pct.toFixed(0)}%</span>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
@@ -2154,14 +2154,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <>
                                                                                         {docOpts.length > 1 && <span className="text-content-3">|</span>}
                                                                                         <button onClick={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}
-                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-warning text-white border-warning' : 'bg-surface-card text-warning border-warning/40 hover:border-warning'}`}>
+                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-warning-solid text-white border-warning' : 'bg-surface-card text-warning border-warning/40 hover:border-warning'}`}>
                                                                                             ⚠ precio cambió ({changedCount})
                                                                                         </button>
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
                                                                                     <button onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}
-                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-danger/10 text-danger hover:bg-danger hover:text-white border border-danger/30 transition-colors">
+                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 transition-colors">
                                                                                         ✕ limpiar
                                                                                     </button>
                                                                                 )}
@@ -2398,7 +2398,7 @@ export default function VentasView() {
                 <button type="button" onClick={() => setPrivacyMode(v => !v)}
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode
-                            ? 'bg-chart-8 text-white border-chart-8 shadow-[var(--shadow-elevation-xl)]'
+                            ? 'bg-chart-8-solid text-white border-chart-8 shadow-[var(--shadow-elevation-xl)]'
                             : 'bg-surface-card text-content-3 border-border-card hover:bg-surface-card-hover hover:shadow-md hover:text-content-2'
                     }`}>
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}

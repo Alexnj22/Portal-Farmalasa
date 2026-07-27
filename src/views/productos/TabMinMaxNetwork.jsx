@@ -221,7 +221,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                         <>
                             <div className="h-5 w-px bg-divider shrink-0" />
                             <button onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }}
-                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                 <X size={11} strokeWidth={3} />
                             </button>
                         </>
@@ -239,7 +239,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
                 <button onClick={() => { setShowAll(s => !s); setPage(1); }}
                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all ${
-                        showAll ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card border-divider text-content-3 hover:border-divider'
+                        showAll ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card border-divider text-content-3 hover:border-divider'
                     }`}>
                     {showAll ? 'Solo alertas' : 'Ver todos'}
                 </button>

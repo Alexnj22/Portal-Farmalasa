@@ -342,7 +342,7 @@ const EmployeeDocumentsView = () => {
                                     <button
                                         key={s.key}
                                         onClick={() => setFilterStatus(s.key)}
-                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                     >
                                         {s.label}
                                     </button>

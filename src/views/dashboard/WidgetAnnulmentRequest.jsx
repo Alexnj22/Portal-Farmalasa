@@ -988,8 +988,8 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                 </button>
                 <button onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
                   className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
-                    ok ? 'bg-warning/10 hover:bg-warning hover:text-white text-warning'
-                       : 'bg-danger/10 hover:bg-danger hover:text-white text-danger'
+                    ok ? 'bg-warning/10 hover:bg-warning-solid hover:text-white text-warning'
+                       : 'bg-danger/10 hover:bg-danger-solid hover:text-white text-danger'
                   }`}
                   title="Solicitar modificación">
                   <AlertCircle size={12} strokeWidth={2.5} />

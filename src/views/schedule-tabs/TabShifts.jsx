@@ -154,7 +154,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                     <Globe size={10} strokeWidth={2} /> Catálogo Global
                 </span>
                 {hours > 9 && (
-                    <span className="flex items-center gap-1 text-white bg-danger px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-danger)] animate-pulse">
+                    <span className="flex items-center gap-1 text-white bg-danger-solid px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-danger)] animate-pulse">
                         <AlertTriangle size={10} strokeWidth={2.5} /> +8H
                     </span>
                 )}
@@ -422,13 +422,13 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                     <div className="flex justify-between items-center mb-6 relative z-10">
                         <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-warning' : 'bg-brand'}`}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-warning-solid' : 'bg-brand'}`}>
                                 {editingGroup ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                             </div>
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
                         </h3>
                         {editingGroup && (
-                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                 <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                             </button>
                         )}

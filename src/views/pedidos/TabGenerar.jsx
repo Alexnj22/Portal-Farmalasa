@@ -336,7 +336,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         onClick={() => setGlobalMode(v => !v)}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
                             globalMode
-                                ? 'bg-chart-3 border-chart-3 text-white shadow-sm'
+                                ? 'bg-chart-3-solid border-chart-3 text-white shadow-sm'
                                 // `bg-surface-card` opaco + text-content-3: en dark quedaba una pastilla
                                 // blanca con el texto casi invisible encima (visto en la captura de
                                 // verificación de v2.62.4). No es del patrón sheen, pero es el mismo
@@ -426,7 +426,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {/* Ranking + urgency % badge — top-left, siempre visible */}
                                 {stat && !dashLoading && urgPct != null && urgPct > 0 && (
                                     <span className="absolute top-2 left-2 flex items-center gap-1 z-10">
-                                        <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none bg-chart-8 text-white">
+                                        <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none bg-chart-8-solid text-white">
                                             {urgRankMap[id]}
                                         </span>
                                         <span className={`min-w-[34px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none border ${urgBadgeCls}`}>
@@ -497,7 +497,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 ${
                             selected.size === 0
                                 ? 'bg-surface-card-hover text-content-3 cursor-not-allowed'
-                                : 'bg-success text-white hover:bg-success/90 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
+                                : 'bg-success-solid text-white hover:bg-success/90 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
                         }`}
                     >
                         {confirming ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}

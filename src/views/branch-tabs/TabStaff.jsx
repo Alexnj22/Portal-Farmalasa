@@ -72,7 +72,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 </div>
                 <p className="text-[14px] font-black text-content-2 leading-tight group-hover:text-danger transition-colors text-center">{missingText}</p>
                 <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger group-hover:text-white transition-all">
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger-solid group-hover:text-white transition-all">
                     <Edit3 size={10} strokeWidth={2.5} /> <span className="text-[9px] font-black uppercase tracking-widest">Asignar</span>
                 </div>
             </div>
@@ -256,7 +256,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <button
                     onClick={startHistoricalSync}
                     disabled={isSyncing}
-                    className="px-5 py-2.5 bg-brand hover:bg-chart-1 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97]"
+                    className="px-5 py-2.5 bg-brand hover:bg-chart-1-solid disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97]"
                 >
                     {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
                 </button>

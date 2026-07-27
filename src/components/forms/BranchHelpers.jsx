@@ -98,7 +98,7 @@ export const FileUploader = ({ label, file, url, onChange }) => {
             >
                 {/* Ícono Izquierdo */}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-sm ${
-                    !hasFile ? 'bg-warning/10 text-warning group-hover:scale-110 group-hover:bg-warning group-hover:text-white' : 'bg-success text-white shadow-emerald-500/30'
+                    !hasFile ? 'bg-warning/10 text-warning group-hover:scale-110 group-hover:bg-warning-solid group-hover:text-white' : 'bg-success-solid text-white shadow-emerald-500/30'
                 }`}>
                     {!hasFile ? <UploadCloud size={18} strokeWidth={2.5}/> : <CheckCircle2 size={18} strokeWidth={2.5} />}
                 </div>
@@ -120,10 +120,10 @@ export const FileUploader = ({ label, file, url, onChange }) => {
                 {/* BOTONES DE ACCIÓN (Solo si hay archivo) */}
                 {hasFile && (
                     <div className="flex items-center gap-1.5 pr-1 shrink-0">
-                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-success/30 rounded-lg text-success shadow-sm hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.97] z-20" title="Ver Documento">
+                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-success/30 rounded-lg text-success shadow-sm hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.97] z-20" title="Ver Documento">
                             <Eye size={16} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-danger/30 rounded-lg text-danger shadow-sm hover:bg-danger hover:text-white hover:border-danger transition-all active:scale-[0.97] z-20" title="Quitar Documento">
+                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-danger/30 rounded-lg text-danger shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all active:scale-[0.97] z-20" title="Quitar Documento">
                             <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>

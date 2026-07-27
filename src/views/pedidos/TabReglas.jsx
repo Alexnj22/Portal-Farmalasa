@@ -50,12 +50,12 @@ function ruleTypeLabel(rule) {
 const presStyle = (tipo) => {
     const t = (tipo || '').toUpperCase();
     if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
-        return { Icon: Box,     bg: 'bg-chart-8', text: 'text-white', iconInactive: 'text-content-3' };
+        return { Icon: Box,     bg: 'bg-chart-8-solid', text: 'text-white', iconInactive: 'text-content-3' };
     if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
-        return { Icon: Layers,  bg: 'bg-chart-3', text: 'text-white', iconInactive: 'text-chart-3-text' };
+        return { Icon: Layers,  bg: 'bg-chart-3-solid', text: 'text-white', iconInactive: 'text-chart-3-text' };
     if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
-        return { Icon: Sigma,   bg: 'bg-chart-6', text: 'text-white', iconInactive: 'text-chart-6-text' };
-    return { Icon: Package, bg: 'bg-chart-1',   text: 'text-white', iconInactive: 'text-chart-1-text' };
+        return { Icon: Sigma,   bg: 'bg-chart-6-solid', text: 'text-white', iconInactive: 'text-chart-6-text' };
+    return { Icon: Package, bg: 'bg-chart-1-solid',   text: 'text-white', iconInactive: 'text-chart-1-text' };
 };
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         onClick={() => selectLabel(label)}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             vals.dispatch_label === label
-                                                ? 'bg-chart-8 border-chart-8 text-white shadow-md'
+                                                ? 'bg-chart-8-solid border-chart-8 text-white shadow-md'
                                                 : 'bg-surface-card border-divider text-content-3 hover:border-chart-8/50 hover:text-content-2'
                                         }`}
                                     >
@@ -286,7 +286,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         onClick={() => selectMultiplo(n)}
                                         className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                             multiplo === n
-                                                ? 'bg-chart-1 border-chart-1 text-white shadow-md'
+                                                ? 'bg-chart-1-solid border-chart-1 text-white shadow-md'
                                                 : 'bg-surface-card border-border-card text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
                                         }`}
                                     >×{n}</button>
@@ -330,7 +330,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         }}
                         className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all text-[12px] font-semibold ${
                             vals.caja_especial
-                                ? 'bg-chart-6 border-chart-6 text-white shadow-md'
+                                ? 'bg-chart-6-solid border-chart-6 text-white shadow-md'
                                 : 'bg-surface-card border-border-card text-content-3 hover:border-chart-6/40 hover:text-chart-6-text'
                         }`}>
                         <Package size={13} />

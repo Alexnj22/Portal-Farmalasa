@@ -9,7 +9,7 @@ const THEME_MAP = {
   blue: { glow: 'bg-brand', border: 'border-brand/50', icon: 'text-brand-text' },
   pink: { glow: 'bg-chart-6', border: 'border-chart-6/50', icon: 'text-chart-6' },
   purple: { glow: 'bg-chart-3', border: 'border-chart-3/50', icon: 'text-chart-3-text' },
-  slate: { glow: 'bg-chart-8', border: 'border-white/10', icon: 'text-white' },
+  slate: { glow: 'bg-chart-8-solid', border: 'border-white/10', icon: 'text-white' },
 };
 
 export default function FeedbackOverlay({

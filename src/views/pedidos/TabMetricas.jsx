@@ -164,7 +164,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                         onClick={() => setRange(r.key)}
                         className={`text-[11px] px-3 py-1.5 rounded-full border font-medium transition-colors ${
                             range === r.key
-                                ? 'bg-chart-1 text-white border-chart-1'
+                                ? 'bg-chart-1-solid text-white border-chart-1'
                                 : 'bg-surface-card text-content-3 border-divider hover:border-divider hover:text-content-2'
                         }`}
                     >

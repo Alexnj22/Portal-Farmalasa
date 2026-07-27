@@ -554,7 +554,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
                 stop.entregado_at ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
               }`}>
                 <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
-                  stop.entregado_at ? 'bg-success text-white' : 'bg-chart-3/10 text-chart-3-text'
+                  stop.entregado_at ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
                 }`}>{i + 1}</span>
                 <p className="text-[12px] font-semibold text-content-2 flex-1 truncate">{stop.suc_name}</p>
                 {stop.entregado_at

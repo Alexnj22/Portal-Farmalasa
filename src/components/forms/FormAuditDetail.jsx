@@ -11,8 +11,8 @@ const FormAuditDetail = ({ data }) => {
 
     const getSeverityStyles = (severity) => {
         switch (severity) {
-            case 'CRITICAL': return { bg: 'bg-danger', icon: <ShieldAlert size={20} className="text-white" /> };
-            case 'WARNING': return { bg: 'bg-warning', icon: <AlertTriangle size={20} className="text-white" /> };
+            case 'CRITICAL': return { bg: 'bg-danger-solid', icon: <ShieldAlert size={20} className="text-white" /> };
+            case 'WARNING': return { bg: 'bg-warning-solid', icon: <AlertTriangle size={20} className="text-white" /> };
             default: return { bg: 'bg-brand', icon: <CheckCircle2 size={20} className="text-white" /> };
         }
     };

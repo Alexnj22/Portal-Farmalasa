@@ -470,7 +470,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                                 onClick={() => setSalaType(t.key)}
                                                 className={`flex-1 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 ${
                                                     salaType === t.key
-                                                        ? 'bg-chart-9 text-white border-chart-9 shadow-sm shadow-chart-9/30'
+                                                        ? 'bg-chart-9-solid text-white border-chart-9 shadow-sm shadow-chart-9/30'
                                                         : 'bg-surface-card text-content-3 border-border-card hover:border-chart-9/30 hover:text-chart-9-text'
                                                 }`}
                                             >
@@ -495,7 +495,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                     whileTap={{ scale: 0.96 }}
                                     onClick={save}
                                     disabled={saving}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-chart-9 hover:bg-chart-9/80 text-white text-xs font-bold shadow-md shadow-chart-9/30 transition-all disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-chart-9-solid hover:bg-chart-9/80 text-white text-xs font-bold shadow-md shadow-chart-9/30 transition-all disabled:opacity-50"
                                 >
                                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                     Guardar

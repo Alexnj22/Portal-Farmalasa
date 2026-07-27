@@ -132,7 +132,7 @@ const FormDispositivos = ({ formData }) => {
                                                     type="button" 
                                                     disabled={isRevoking} 
                                                     onClick={() => executeRevoke(kiosk.id, kiosk.device_name)} 
-                                                    className="w-full py-2.5 bg-danger hover:bg-danger-hover text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                                    className="w-full py-2.5 bg-danger-solid hover:bg-danger-hover text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
                                                 >
                                                     {isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}
                                                 </button>

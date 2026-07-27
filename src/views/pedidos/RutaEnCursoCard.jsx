@@ -162,7 +162,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                     done ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
                   }`}>
                     <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
-                      done ? 'bg-success text-white' : 'bg-chart-3/10 text-chart-3-text'
+                      done ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
                     }`}>{stop.orden_entrega}</span>
 
                     <div className="flex-1 min-w-0">
@@ -188,7 +188,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                       <button
                         onClick={() => handleEntregarStop(stop)}
                         disabled={busy}
-                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
+                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
                       >
                         {busy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
                         Entregué
@@ -206,7 +206,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                     <button
                       onClick={handleIniciarRuta}
                       disabled={busyRuta === 'iniciar'}
-                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                       {busyRuta === 'iniciar' ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
                       Iniciar ruta
@@ -216,7 +216,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                     <button
                       onClick={handleVueltaBase}
                       disabled={busyRuta === 'vuelta'}
-                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-8 text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                       {busyRuta === 'vuelta' ? <Loader2 size={12} className="animate-spin" /> : <Home size={12} />}
                       Vuelta en base

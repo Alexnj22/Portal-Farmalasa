@@ -65,7 +65,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                     <button
                         disabled={!canConfirm || busy}
                         onClick={() => onConfirm(modal?.requiresReason ? motivo.trim() : null)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-danger text-white font-semibold hover:bg-danger-hover text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-danger-solid text-white font-semibold hover:bg-danger-hover text-[13px] transition-colors disabled:opacity-50 shadow-sm"
                     >
                         {busy ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
                         Anular pedido

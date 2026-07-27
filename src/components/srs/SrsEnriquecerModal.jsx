@@ -414,7 +414,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <span className="flex items-center gap-1.5 text-content-3"><span className="w-2.5 h-2.5 rounded-full bg-content-3 inline-block"/> Sin resultados SRS — descarta</span>
                             </div>
                             <button onClick={handleStart}
-                                className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-chart-3 hover:bg-chart-6 transition-colors shadow-lg shadow-chart-3/20">
+                                className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-chart-3-solid hover:bg-chart-6-solid transition-colors shadow-lg shadow-chart-3/20">
                                 Iniciar escaneo
                             </button>
                         </div>
@@ -489,7 +489,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         </div>
                                         <button onClick={handleApplyAuto}
                                             disabled={applying || autoQueue.length === autoRejected.size}
-                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-black text-white bg-success hover:bg-success-hover transition-colors disabled:opacity-50">
+                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-black text-white bg-success-solid hover:bg-success-hover transition-colors disabled:opacity-50">
                                             {applying ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                                             Aplicar {autoQueue.length - autoRejected.size}
                                         </button>
@@ -588,7 +588,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 pt-1 flex-wrap">
                                             <button onClick={() => handleReviewApply(currentReview)} disabled={reviewApplying || currentReview.principios.length === 0}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black text-white bg-chart-3 hover:bg-chart-6 transition-colors disabled:opacity-50">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black text-white bg-chart-3-solid hover:bg-chart-6-solid transition-colors disabled:opacity-50">
                                                 {reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                                                 Aplicar
                                             </button>

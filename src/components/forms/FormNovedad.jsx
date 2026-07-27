@@ -615,7 +615,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     win.document.close();
                                     setTimeout(() => win.print(), 600);
                                 }}
-                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-chart-8 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97]">
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-chart-8-solid hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97]">
                                 <Printer size={14} strokeWidth={2.5} /> Imprimir Nuevo Carné
                             </button>
                         )}
@@ -700,7 +700,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 </div>
                             )}
                             {formData?.file && (
-                                <div className="absolute top-2 right-2 p-1.5 bg-danger/10 text-danger hover:bg-danger hover:text-white rounded-full transition-colors z-20" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
+                                <div className="absolute top-2 right-2 p-1.5 bg-danger/10 text-danger hover:bg-danger-solid hover:text-white rounded-full transition-colors z-20" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
                                     <XCircle size={14} strokeWidth={3}/>
                                 </div>
                             )}

@@ -605,12 +605,15 @@ Varios son duplicados exactos de tokens que ya existen — `#F79009` es `--warni
 **Decisión (2026-07-26): se agenda a D2**, donde ya se tocan los tokens y las escalas.
 Queda registrado en el baseline, así que no puede crecer sin que el gate avise.
 
-### D1 — Lo que rompe hoy · **casi cerrada** (2026-07-26)
+### D1 — Lo que rompe hoy · **CERRADA** (2026-07-26)
 
 | Criterio | Antes | Ahora |
 |---|---|---|
 | Superficies blancas opacas en oscuro | 52 | **0** ✓ |
-| Nodos de texto bajo AA | 166 | **3** (todos instancias de N2, ver abajo) |
+| Nodos de texto bajo AA | 166 | **0** ✓ |
+
+Criterio de cierre cumplido exacto sobre las mismas 29 rutas, con el mismo script
+(`docs/audits/diseno-2026-07-26/scan-contraste.mjs`).
 
 - **D1.1** — `--brand-text` con variante oscura (`#60A5FA`, el `--chart-1-text` que esos
   temas ya usaban). 503 usos migrados en 106 archivos. De 2.85:1 a 7.35:1.
@@ -664,7 +667,21 @@ sí pasa). Lo que nunca se definió es el caso *relleno sólido*: qué color de 
 seguro cuando el texto encima es blanco. `--brand` y `--chart-8` lo son por casualidad,
 no por diseño.
 
-Queda **sin tocar**, a la espera de decisión.
+**Resuelto en la misma pasada (decisión del usuario).** 12 tokens `-solid` nuevos, el
+gemelo exacto de los `--chart-N-text` que T7 creó para el problema inverso. Los valores
+salen del shade 600/700 de la **misma familia Tailwind** que ya usa el proyecto, no
+oscurecidos a ojo: el badge sigue leyéndose verde/rojo/ámbar, solo más saturado. Un
+único valor para los 4 temas — el par relleno+blanco no depende del fondo de la página.
+
+`--success-solid` #047857 (5.48:1) · `--danger-solid` #dc2626 (4.83) ·
+`--warning-solid` #b45309 (5.02) · `--chart-1-solid` #2563eb (5.17) ·
+`--chart-2-solid` #047857 · `--chart-3-solid` #7c3aed (5.70) ·
+`--chart-4-solid` #c2410c · `--chart-5-solid` #0e7490 · `--chart-6-solid` #db2777 (4.60) ·
+`--chart-7-solid` #a16207 · `--chart-8-solid` #64748b (ya pasaba, se nombra por simetría) ·
+`--chart-9-solid` #0f766e.
+
+**268 usos migrados en 84 archivos**, solo donde `text-white` aparece en el mismo
+atributo `className` que el relleno.
 
 ---
 

@@ -829,7 +829,7 @@ function TabDocumentos({
                         </div>
                         {dateDirty && (
                             <button onClick={() => setDateRange(defaultDateRange())} title="Quitar fecha"
-                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}

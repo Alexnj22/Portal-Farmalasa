@@ -237,7 +237,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     <p className="text-[12px] font-black text-content leading-tight truncate">{item.productName}</p>
                 </div>
                 <button type="button" onClick={() => removeItem(item._id)}
-                    className="w-7 h-7 shrink-0 rounded-xl bg-danger/10 text-danger border border-danger/30 hover:bg-danger hover:text-white hover:border-danger transition-all flex items-center justify-center">
+                    className="w-7 h-7 shrink-0 rounded-xl bg-danger/10 text-danger border border-danger/30 hover:bg-danger-solid hover:text-white hover:border-danger transition-all flex items-center justify-center">
                     <X size={12} strokeWidth={3} />
                 </button>
             </div>
@@ -853,7 +853,7 @@ export default function CotizacionesView() {
                                     <Edit2 size={13} strokeWidth={2.5} /> Editar
                                 </button>
                                 <button onClick={() => setConfirmAnular(cot.id)}
-                                    className="px-4 py-2.5 bg-danger/10 text-danger text-[11px] font-black uppercase tracking-widest rounded-2xl border border-danger/30 hover:bg-danger hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                    className="px-4 py-2.5 bg-danger/10 text-danger text-[11px] font-black uppercase tracking-widest rounded-2xl border border-danger/30 hover:bg-danger-solid hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                     Anular
                                 </button>
                                 <button onClick={() => handlePrint(cot, itemsData)}

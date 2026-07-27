@@ -29,10 +29,10 @@ const SUPERVISOR_DE_JEFE = {
 
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
 const OPT_COLORS = {
-    A: { on: 'bg-success text-white', off: 'bg-surface-card-hover text-content-3' },
-    B: { on: 'bg-chart-1 text-white',    off: 'bg-surface-card-hover text-content-3' },
-    C: { on: 'bg-warning text-white',   off: 'bg-surface-card-hover text-content-3' },
-    D: { on: 'bg-danger text-white',    off: 'bg-surface-card-hover text-content-3' },
+    A: { on: 'bg-success-solid text-white', off: 'bg-surface-card-hover text-content-3' },
+    B: { on: 'bg-chart-1-solid text-white',    off: 'bg-surface-card-hover text-content-3' },
+    C: { on: 'bg-warning-solid text-white',   off: 'bg-surface-card-hover text-content-3' },
+    D: { on: 'bg-danger-solid text-white',    off: 'bg-surface-card-hover text-content-3' },
 };
 // Tokenizado T7 — paleta categórica cerrada (--chart-1..9), las claves de
 // nombre de color se conservan (referenciadas por posición en otras partes

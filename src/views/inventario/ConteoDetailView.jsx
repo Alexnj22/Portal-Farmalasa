@@ -352,7 +352,7 @@ function EditLoteModal({ item, onClose, onSave }) {
                     <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
                     <LiquidDatePicker value={fecha} onChange={setFecha} />
                 </div>
-                <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-[11px] font-bold text-white bg-chart-9 rounded-xl hover:bg-chart-9/80 disabled:opacity-50 transition-all">
+                <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-[11px] font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-50 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección
                 </button>
             </div>
@@ -601,7 +601,7 @@ export default function ConteoDetailView() {
                                     </button>
                                 )}
                                 {canApproveNow && (
-                                    <button onClick={handleAprobar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-white bg-success rounded-xl hover:bg-success-hover transition-all disabled:opacity-50">
+                                    <button onClick={handleAprobar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-white bg-success-solid rounded-xl hover:bg-success-hover transition-all disabled:opacity-50">
                                         {busy ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} />} Aprobar
                                     </button>
                                 )}
@@ -636,7 +636,7 @@ export default function ConteoDetailView() {
                         {FILTRO_PILLS.map((f, idx) => (
                             <React.Fragment key={f.key}>
                                 {idx > 0 && <div className="h-5 w-px bg-divider" />}
-                                <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-[11px] font-semibold transition-all ${filtro === f.key ? 'bg-chart-9 text-white' : 'text-content-3 hover:bg-surface-card-hover'}`}>
+                                <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-[11px] font-semibold transition-all ${filtro === f.key ? 'bg-chart-9-solid text-white' : 'text-content-3 hover:bg-surface-card-hover'}`}>
                                     {f.label}
                                 </button>
                             </React.Fragment>
@@ -845,7 +845,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
                         <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
                     </div>
                 </div>
-                <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold text-white bg-chart-9 rounded-xl hover:bg-chart-9/80 disabled:opacity-40 transition-all">
+                <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-40 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo
                 </button>
             </div>

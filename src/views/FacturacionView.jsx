@@ -127,7 +127,7 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
                     />
                     <div className="flex flex-col gap-2 shrink-0">
                         <button onClick={onConfirm} disabled={saving}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-success hover:bg-success-hover text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-4 py-2 bg-success-solid hover:bg-success-hover text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
                             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                             Confirmar
                         </button>
@@ -504,7 +504,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
-                                                                        className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success hover:text-white'}`}>
+                                                                        className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                                                                         {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                     </button>
                                                                 </div>
@@ -545,7 +545,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     value={comment} onChange={e => setComment(e.target.value)} />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => { setSolvingId(null); setComment(''); }}
@@ -979,7 +979,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     {/* Solventar / cancel button */}
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
                                                                         className={`flex items-center px-2 py-1.5 transition-all ${
-                                                                            isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success hover:text-white'
+                                                                            isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'
                                                                         }`}>
                                                                         {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                     </button>
@@ -1032,7 +1032,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => { setSolvingId(null); setComment(''); }}
@@ -1317,7 +1317,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-danger' : 'text-content-3'}`}>{g.tipo_documento}</span>
                                                                 </div>
                                                                 <button onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
-                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success hover:text-white'}`}>
+                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                                                                     {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                 </button>
                                                             </div>
@@ -1353,7 +1353,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 value={comment} onChange={e => setComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <button onClick={() => handleSolveGap(g)} disabled={saving}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
                                                                 <button onClick={() => { setSolvingGap(null); setComment(''); }}
@@ -1419,7 +1419,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     {(n.campos_nulos || []).length > 2 && <span className="text-[9px] font-black text-danger">+{n.campos_nulos.length - 2}</span>}
                                                                 </div>
                                                                 <button onClick={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
-                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success hover:text-white'}`}>
+                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                                                                     {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                 </button>
                                                             </div>
@@ -1459,7 +1459,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 value={nullComment} onChange={e => setNullComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <button onClick={() => handleSolveNull(n)} disabled={nullSaving}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
                                                                 <button onClick={() => { setSolvingNull(null); setNullComment(''); }}
@@ -2175,7 +2175,7 @@ export default function FacturacionView() {
 
                 <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-chart-8 hover:opacity-90 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
+                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-chart-8-solid hover:opacity-90 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
                     <ExternalLink size={12} /> Admin Facturas
                 </a>
 

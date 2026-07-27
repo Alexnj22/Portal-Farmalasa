@@ -176,7 +176,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
                     <button type="button" onClick={handleApplyOT}
                         disabled={dError || nError || (dUsed === 0 && nUsed === 0)}
-                        className="w-full py-2 rounded-xl bg-warning text-white text-[10px] font-black uppercase tracking-widest hover:bg-warning-hover active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        className="w-full py-2 rounded-xl bg-warning-solid text-white text-[10px] font-black uppercase tracking-widest hover:bg-warning-hover active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
                         Aplicar distribución
                     </button>
                 </div>

@@ -566,7 +566,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     : 'border border-dashed border-divider bg-surface-card-hover/10 opacity-30'
                             }`}>
                             <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 shadow-sm
-                                ${isCoverageDay ? 'bg-chart-3 text-white' : 'bg-content-3 text-white'}">
+                                ${isCoverageDay ? 'bg-chart-3-solid text-white' : 'bg-content-3 text-white'}">
                                 {isCoverageDay ? <Pencil size={8} strokeWidth={2.5} /> : <Plus size={8} strokeWidth={2.5} />}
                             </div>
 
@@ -751,7 +751,7 @@ const ScheduleCalendar = memo(({
                                                     {coverageData?.criticalGaps?.length > 0 && (
                                                         <>
                                                             {coverageData.criticalGaps.map((gap, i) => (
-                                                                <span key={i} className="text-[6.5px] 2xl:text-[9px] font-black uppercase text-white bg-danger border border-danger px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
+                                                                <span key={i} className="text-[6.5px] 2xl:text-[9px] font-black uppercase text-white bg-danger-solid border border-danger px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
                                                                     {gap.time}
                                                                 </span>
                                                             ))}

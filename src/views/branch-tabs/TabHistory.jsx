@@ -362,7 +362,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.end} onChange={(v) => setDateFilter({ ...dateFilter, end: v })} placeholder="Hasta" compact /></div>
 
                                 {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
-                                    <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-danger hover:text-white transition-colors shrink-0 shadow-sm">
+                                    <button onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} className="h-8 w-8 flex items-center justify-center bg-danger/10 text-danger rounded-full ml-1 hover:bg-danger-solid hover:text-white transition-colors shrink-0 shadow-sm">
                                         <X size={12} strokeWidth={3} />
                                     </button>
                                 )}

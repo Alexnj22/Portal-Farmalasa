@@ -337,7 +337,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 )}
                 {totalBadge > 0 && (
                     <>
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center z-20 shadow-[var(--shadow-glow-danger)]">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center z-20 shadow-[var(--shadow-glow-danger)]">
                             {totalBadge > 9 ? '9+' : totalBadge}
                         </span>
                         <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-danger" />
@@ -368,7 +368,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 <div className="flex items-center gap-2">
                                     <span className={`text-[14px] font-black tracking-tight ${cx.title}`}>Notificaciones</span>
                                     {unreadNotifs.length > 0 && (
-                                        <span className="min-w-[20px] h-5 px-1.5 bg-danger text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                                        <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-[10px] font-black rounded-full flex items-center justify-center">
                                             {unreadNotifs.length > 99 ? '99+' : unreadNotifs.length}
                                         </span>
                                     )}
@@ -388,7 +388,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         confirmClear ? (
                                             <button
                                                 onClick={handleClearAll}
-                                                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl bg-danger text-white hover:bg-danger-hover transition-colors animate-in fade-in zoom-in-95 duration-150"
+                                                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover transition-colors animate-in fade-in zoom-in-95 duration-150"
                                             >
                                                 <Trash2 size={12} strokeWidth={2.5} />
                                                 ¿Borrar todo?

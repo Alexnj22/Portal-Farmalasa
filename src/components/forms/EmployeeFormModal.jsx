@@ -1738,7 +1738,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-danger/30 text-danger text-[11px] font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
                                                 {cond}
                                                 <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
-                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-danger hover:text-white hover:bg-danger transition-colors">
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-danger hover:text-white hover:bg-danger-solid transition-colors">
                                                     <X size={11} strokeWidth={2.5} />
                                                 </button>
                                             </span>
@@ -1931,7 +1931,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         return (
                                                             <button key={opt.value} type="button"
                                                                 onClick={() => setFormData(p => { const cur = (p.assigned_branch_ids || []).map(String); return { ...p, assigned_branch_ids: isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value] }; })}
-                                                                className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-chart-9 text-white border-chart-9 shadow-sm' : 'bg-surface-card text-content-3 border-divider hover:border-chart-9/50 hover:text-chart-9-text'}`}
+                                                                className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-chart-9-solid text-white border-chart-9 shadow-sm' : 'bg-surface-card text-content-3 border-divider hover:border-chart-9/50 hover:text-chart-9-text'}`}
                                                             >{opt.label}</button>
                                                         );
                                                     })}
@@ -2108,7 +2108,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className={`${islandClass} ${islandHoverClass}`}>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-chart-8 text-white rounded-[0.8rem] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]"><AtSign size={16} strokeWidth={2.5} /></div>
+                                    <div className="p-2 bg-chart-8-solid text-white rounded-[0.8rem] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]"><AtSign size={16} strokeWidth={2.5} /></div>
                                     <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Login de App Móvil</h4>
                                 </div>
                                 <PortalInput label="Usuario (Auto-generado)" name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />

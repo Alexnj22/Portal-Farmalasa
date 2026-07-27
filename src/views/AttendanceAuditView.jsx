@@ -549,7 +549,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {isPendDay && onMarkReviewed && (
               <button
                 onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning hover:text-white hover:border-warning rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94]"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning-solid hover:text-white hover:border-warning rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94]"
               >
                 <ShieldCheck size={11} strokeWidth={2.5} /> Revisado
               </button>
@@ -840,7 +840,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
             <button
               type="button"
               onClick={e => { e.stopPropagation(); onApproveAll(); }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
             >
               <ShieldCheck size={9} strokeWidth={2.5} /> Aprobar todo
             </button>
@@ -1334,7 +1334,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               <span className="text-[11px] font-black text-chart-3-text uppercase tracking-widest">
                 Turnos Extra Sin Autorizar — Revisión TH
               </span>
-              <span className="ml-auto bg-chart-3 text-white text-[9px] font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
+              <span className="ml-auto bg-chart-3-solid text-white text-[9px] font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
             </div>
             <div className="divide-y divide-chart-3/20">
               {shiftExceptions.map(req => {
@@ -1367,7 +1367,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                         <TimePicker12 value={editEnd} onChange={setEditEnd}
                           className="bg-surface-card border border-chart-3/40 rounded-xl" />
                         <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}
-                          className="bg-success hover:bg-success-hover text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
+                          className="bg-success-solid hover:bg-success-hover text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
                           {isBusy ? '…' : 'Aplicar'}
                         </button>
                         <button onClick={() => setEditingExId(null)}

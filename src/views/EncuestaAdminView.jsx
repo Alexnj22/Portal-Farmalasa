@@ -75,10 +75,10 @@ const BAR_COLORS = {
 };
 
 const OPT_COLORS = {
-    A: { on: 'bg-success text-white shadow-sm shadow-success/30', off: 'bg-success/10 text-success hover:bg-success/10' },
-    B: { on: 'bg-chart-1 text-white shadow-sm shadow-chart-1/30',       off: 'bg-chart-1/10 text-chart-1-text hover:bg-chart-1/20' },
-    C: { on: 'bg-warning text-white shadow-sm shadow-warning/30',     off: 'bg-warning/10 text-warning hover:bg-warning/10' },
-    D: { on: 'bg-danger text-white shadow-sm shadow-danger/30',       off: 'bg-danger/10 text-danger-text hover:bg-danger/20' },
+    A: { on: 'bg-success-solid text-white shadow-sm shadow-success/30', off: 'bg-success/10 text-success hover:bg-success/10' },
+    B: { on: 'bg-chart-1-solid text-white shadow-sm shadow-chart-1/30',       off: 'bg-chart-1/10 text-chart-1-text hover:bg-chart-1/20' },
+    C: { on: 'bg-warning-solid text-white shadow-sm shadow-warning/30',     off: 'bg-warning/10 text-warning hover:bg-warning/10' },
+    D: { on: 'bg-danger-solid text-white shadow-sm shadow-danger/30',       off: 'bg-danger/10 text-danger-text hover:bg-danger/20' },
 };
 
 const NUMERIC_OPTS = [
@@ -506,7 +506,7 @@ export default function EncuestaAdminView() {
 
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-[14px]">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-warning' : 'bg-brand'}`}>
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-warning-solid' : 'bg-brand'}`}>
                                         {editingSurvey ? <Edit3 size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-0.5">
@@ -515,7 +515,7 @@ export default function EncuestaAdminView() {
                                 </h3>
                                 {editingSurvey && (
                                     <button onClick={resetSurveyForm}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
                                 )}
@@ -736,7 +736,7 @@ export default function EncuestaAdminView() {
                         <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning' : 'bg-brand'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning-solid' : 'bg-brand'}`}>
                                         {editingResponse ? <Edit3 size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-1">
@@ -744,7 +744,7 @@ export default function EncuestaAdminView() {
                                     </span>
                                 </h3>
                                 <button onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}
-                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                     <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                 </button>
                             </div>
@@ -1011,7 +1011,7 @@ export default function EncuestaAdminView() {
                                             )}
                                             {canManage && (
                                             <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
-                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md'}`}
+                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning-solid hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md'}`}
                                                 title="Editar encuesta">
                                                 <Edit3 size={14} strokeWidth={2.5} />
                                             </button>
@@ -1212,7 +1212,7 @@ export default function EncuestaAdminView() {
                                                                                             {confirmDelete === row.id ? (
                                                                                                 <div className="flex items-center gap-1 justify-center">
                                                                                                     <button onClick={() => handleDeleteResponse(row)}
-                                                                                                        className="w-6 h-6 rounded-full bg-danger text-white flex items-center justify-center hover:bg-danger-hover transition-colors">
+                                                                                                        className="w-6 h-6 rounded-full bg-danger-solid text-white flex items-center justify-center hover:bg-danger-hover transition-colors">
                                                                                                         <Check size={10} strokeWidth={3} />
                                                                                                     </button>
                                                                                                     <button onClick={() => setConfirmDelete(null)}

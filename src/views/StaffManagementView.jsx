@@ -326,7 +326,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {birthdayInfo && (
                 <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.tooltip}>
                   <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-chart-6-text scale-125' : 'text-chart-6'} shrink-0`} />
-                  <span className={`text-[9px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6 px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
+                  <span className={`text-[9px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6-solid px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
                      {birthdayInfo.label}
                   </span>
                 </div>
@@ -901,7 +901,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewPracticante}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-chart-3 text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-chart-3-solid text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GraduationCap size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Practicante</span>
@@ -989,7 +989,7 @@ const StaffManagementView = ({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all shrink-0"
+                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all shrink-0"
                   title="Limpiar filtros"
                 >
                   <Trash2 size={11} strokeWidth={3} />

@@ -3,9 +3,9 @@ import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package 
 import PedidoModal from './PedidoModal';
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
-    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning text-white shadow-[var(--shadow-glow-warning)]',   idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
-    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-danger text-white shadow-[var(--shadow-glow-danger)]',    idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-danger/10 hover:text-danger-text hover:border-danger/30' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success-solid text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)]',   idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-danger-solid text-white shadow-[var(--shadow-glow-danger)]',    idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-danger/10 hover:text-danger-text hover:border-danger/30' },
 };
 
 const pageHint = (cajaMap, num) => {
@@ -146,14 +146,14 @@ export default function ReenvioLlegadaModal({
                             <button
                                 onClick={() => setElectrolitOk(true)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === true
-                                    ? 'bg-success text-white border-success shadow-sm'
+                                    ? 'bg-success-solid text-white border-success shadow-sm'
                                     : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                 ✓ Sí llegaron
                             </button>
                             <button
                                 onClick={() => setElectrolitOk(false)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === false
-                                    ? 'bg-danger text-white border-danger shadow-sm'
+                                    ? 'bg-danger-solid text-white border-danger shadow-sm'
                                     : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                 ✗ Aún faltan
                             </button>
@@ -179,11 +179,11 @@ export default function ReenvioLlegadaModal({
                                         <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{label}</span>
                                         <div className="flex items-center gap-1 ml-auto shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success-solid text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger-solid text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -238,7 +238,7 @@ export default function ReenvioLlegadaModal({
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting || !hasContent || electrolitPending}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
+                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
                         {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}
                     </button>

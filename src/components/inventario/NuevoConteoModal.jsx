@@ -135,7 +135,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                         key={opt.value}
                                         type="button"
                                         onClick={() => setScopeType(opt.value)}
-                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all ${active ? 'bg-chart-9 border-chart-9 text-white shadow-sm' : 'bg-surface-card border-divider text-content-2 hover:border-chart-9/50'}`}
+                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all ${active ? 'bg-chart-9-solid border-chart-9 text-white shadow-sm' : 'bg-surface-card border-divider text-content-2 hover:border-chart-9/50'}`}
                                     >
                                         <Icon size={14} className="shrink-0" /> {opt.label}
                                     </button>
@@ -183,7 +183,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                     type="button"
                     onClick={handleCreate}
                     disabled={saving || !isValid || !canEdit}
-                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid || !canEdit) && !saving ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-chart-9 text-white shadow-[0_8px_20px_rgba(13,148,136,0.3)] hover:bg-chart-9/90 hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid || !canEdit) && !saving ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-chart-9-solid text-white shadow-[0_8px_20px_rgba(13,148,136,0.3)] hover:bg-chart-9/90 hover:-translate-y-0.5 active:scale-[0.97]'}`}
                 >
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Generando snapshot...</> : <><Check size={16} strokeWidth={3} /> Iniciar Conteo</>}
                 </button>

@@ -455,7 +455,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 />
                                 <button
                                     onClick={() => setShowTimelineFilter(v => !v)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                 >
                                     <SlidersHorizontal size={10} strokeWidth={2.5} />
                                     Filtrar
@@ -491,7 +491,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex flex-wrap gap-1.5">
                                         <button
                                             onClick={() => setFilterType('')}
-                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8 text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                         >
                                             Todos
                                         </button>

@@ -792,7 +792,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                                 onClick={() => setEmpActiveTab(step.key)}
                                                 className="flex flex-col items-center gap-1.5 group"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success-solid border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
                                                 <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand-text' : isComplete ? 'text-success' : 'text-content-2'}`}>
@@ -913,7 +913,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     )}
                                     {(isEditingEmp || !nextStep) && (
                                         <button type="submit" form="unified-modal-form" disabled={empSaveDisabled} title={empSaveTitle}
-                                            className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
+                                            className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success-solid text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
                                             {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
                                         </button>
                                     )}

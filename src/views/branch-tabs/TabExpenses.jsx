@@ -76,7 +76,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         <p className="text-[9px] font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6 text-white border-chart-6' : 'bg-surface-card border-border-card group-hover:bg-surface-card-hover'}`}>
+                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'bg-surface-card border-border-card group-hover:bg-surface-card-hover'}`}>
                     {statusObj.label}
                 </div>
             </div>
@@ -99,7 +99,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             {isPendingReceipt ? (
                 <button
                     onClick={onUploadReceipt}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6 border border-chart-6 text-white font-black text-[10px] uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6-solid border border-chart-6 text-white font-black text-[10px] uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
                 >
                     <UploadCloud size={14} strokeWidth={2.5} /> Subir Comprobante
                 </button>

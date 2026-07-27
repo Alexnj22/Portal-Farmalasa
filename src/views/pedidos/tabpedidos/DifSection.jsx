@@ -148,7 +148,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         <button
                                             onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}
                                             disabled={isBusy || !selTipo}
-                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
+                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                         >
                                             {isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}
                                         </button>
@@ -190,7 +190,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                 <button
                                                     onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}
                                                     disabled={isBusy}
-                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-danger text-white hover:bg-danger-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-danger-solid text-white hover:bg-danger-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}
                                                 </button>
@@ -201,7 +201,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                 <button
                                                     onClick={() => onResolver(item.id, 'confirmar', null, null)}
                                                     disabled={isBusy}
-                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success-solid text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}
                                                 </button>
@@ -264,7 +264,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         <button
                                             onClick={() => onCorregirBodega?.(corrNota || null)}
                                             disabled={busyAction === 'corr_bodega'}
-                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
+                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success-solid text-white hover:bg-success-hover disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                         >
                                             {busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}
                                         </button>
@@ -286,7 +286,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                 <button
                                     onClick={() => onConfirmarCorreccion?.()}
                                     disabled={busyAction === 'confirmar_corr'}
-                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
+                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-success-solid text-white hover:bg-success-hover disabled:opacity-50 active:scale-[0.97] transition-all"
                                 >
                                     {busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar corrección recibida'}
                                 </button>

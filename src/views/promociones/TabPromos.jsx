@@ -331,7 +331,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                                 onClick={() => setFilterState(pf.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all ${
                                     filterState === pf.key
-                                        ? 'bg-chart-1 text-white shadow-sm'
+                                        ? 'bg-chart-1-solid text-white shadow-sm'
                                         : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover'
                                 }`}
                             >
@@ -379,7 +379,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                     {canEdit && !searchTerm && (
                         <button
                             onClick={() => setShowModal(true)}
-                            className="mt-3 flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold bg-chart-1 text-white rounded-xl hover:bg-brand transition-colors mx-auto"
+                            className="mt-3 flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold bg-chart-1-solid text-white rounded-xl hover:bg-brand transition-colors mx-auto"
                         >
                             <Plus size={12} /> Nueva Promoción
                         </button>

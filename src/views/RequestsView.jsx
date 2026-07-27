@@ -425,11 +425,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {req.status === 'PENDING' && (
                         <div className="flex items-center gap-2 pt-1">
                             <button onClick={() => onApprove(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success hover:bg-success-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-success)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success-solid hover:bg-success-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-success)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Check size={13} strokeWidth={2.5} /> Aprobar
                             </button>
                             <button onClick={() => onReject(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger hover:bg-danger-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-danger)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger-solid hover:bg-danger-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-danger)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <X size={13} strokeWidth={2.5} /> Rechazar
                             </button>
                         </div>

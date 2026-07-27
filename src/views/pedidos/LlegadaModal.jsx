@@ -24,9 +24,9 @@ function deriveCajas(cajaMap, items) {
 }
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
-    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning text-white shadow-[var(--shadow-glow-warning)]',   idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
-    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-danger text-white shadow-[var(--shadow-glow-danger)]',    idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-danger/10 hover:text-danger-text hover:border-danger/30' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success-solid text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)]',   idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-danger-solid text-white shadow-[var(--shadow-glow-danger)]',    idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-danger/10 hover:text-danger-text hover:border-danger/30' },
 };
 
 export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, cajasElectrolit = 0, cajasEspeciales = [], draftKey = null }) {
@@ -230,7 +230,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             <button
                                 onClick={() => setElectrolitFaltantes(0)}
                                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitFaltantes === 0
-                                    ? 'bg-success text-white border-success shadow-sm'
+                                    ? 'bg-success-solid text-white border-success shadow-sm'
                                     : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                 ✓ Todas llegaron
                             </button>
@@ -282,11 +282,11 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                         <span className="flex-1 text-[10px] text-content-2 leading-tight">{e.product_name}</span>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success-solid text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger-solid text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>

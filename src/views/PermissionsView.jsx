@@ -252,8 +252,8 @@ const PERMISSION_TYPES = [
 ];
 
 const SCOPE_OPTIONS = [
-    { value: 'ALL',    label: 'Todos',        color: 'bg-chart-3 text-white' },
-    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-chart-9 text-white' },
+    { value: 'ALL',    label: 'Todos',        color: 'bg-chart-3-solid text-white' },
+    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-chart-9-solid text-white' },
 ];
 
 // Tooltip descriptivo por tipo de permiso
@@ -858,7 +858,7 @@ const PermissionsView = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
                                                 <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-warning-text' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
-                                                {isSURol && <span className="text-[9px] font-black uppercase tracking-widest bg-warning text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
+                                                {isSURol && <span className="text-[9px] font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
                                             </div>
                                             <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-warning-text/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
@@ -939,7 +939,7 @@ const PermissionsView = () => {
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
-                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-warning text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
                                                 )}
                                             </div>
                                             <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>

@@ -186,7 +186,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     return {
         hasAlerts: true, message: alerts.length > 1 ? `${alerts.length} ALERTAS` : alerts[0].message,
         cardStyles: baseCardStyles,
-        badgeStyles: hasCritical ? 'bg-danger text-white shadow-[var(--shadow-glow-danger)] border-danger' : 'bg-warning text-white shadow-[var(--shadow-glow-warning)] border-warning',
+        badgeStyles: hasCritical ? 'bg-danger-solid text-white shadow-[var(--shadow-glow-danger)] border-danger' : 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)] border-warning',
         icon: hasCritical ? AlertTriangle : AlertCircle, list: alerts
     };
 };
@@ -436,7 +436,7 @@ const BranchCard = memo(({
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Celular</p>
                                 <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
                             </div>
-                            {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 transition-all hover:bg-success hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
+                            {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 transition-all hover:bg-success-solid hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
                         </button>
                     </div>
 

@@ -50,7 +50,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="px-8 py-3.5 bg-surface-card text-danger font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-danger hover:text-white border border-danger/30 hover:border-danger transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="px-8 py-3.5 bg-surface-card text-danger font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-danger-solid hover:text-white border border-danger/30 hover:border-danger transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-0.5 active:scale-[0.97]"
                 >
                     Entendido, Cerrar
                 </button>

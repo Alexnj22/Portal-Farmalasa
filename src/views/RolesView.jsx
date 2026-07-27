@@ -574,7 +574,7 @@ const RolesView = ({ openModal }) => {
 
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingRoleId ? 'bg-warning' : 'bg-brand'}`}>
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingRoleId ? 'bg-warning-solid' : 'bg-brand'}`}>
                                             {editingRoleId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                                         </div>
                                         <span className="font-black uppercase tracking-tight ml-1">{editingRoleId ? 'Editar Cargo' : 'Nuevo Cargo'}</span>
@@ -582,7 +582,7 @@ const RolesView = ({ openModal }) => {
                                     {editingRoleId && (
                                         <button
                                             onClick={handleCancelEdit}
-                                            className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
+                                            className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
                                         >
                                             <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                         </button>
@@ -780,7 +780,7 @@ const RolesView = ({ openModal }) => {
                                                         }}
                                                         disabled={!canEdit}
                                                         className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed ${isEditingThis
-                                                            ? 'bg-warning/10 text-warning border border-warning/40 hover:bg-warning hover:text-white'
+                                                            ? 'bg-warning/10 text-warning border border-warning/40 hover:bg-warning-solid hover:text-white'
                                                             : 'bg-surface-card border border-border-card text-warning hover:bg-warning/10 hover:text-warning'
                                                             }`}
                                                         title={isEditingThis ? "Cancelar edición" : "Editar cargo"}
@@ -814,7 +814,7 @@ const RolesView = ({ openModal }) => {
                                                 <button
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
                                                     className={`w-9 h-9 rounded-xl bg-surface-card border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
-                                                        ? 'border-warning/30 text-warning hover:bg-warning hover:text-white'
+                                                        ? 'border-warning/30 text-warning hover:bg-warning-solid hover:text-white'
                                                         : 'border-divider text-content-3 hover:bg-brand hover:text-white hover:border-brand'
                                                         }`}
                                                     title="Ver Empleados"

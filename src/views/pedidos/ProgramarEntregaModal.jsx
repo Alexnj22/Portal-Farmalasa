@@ -113,7 +113,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                     <button
                         onClick={() => value && onConfirm(new Date(value).toISOString())}
                         disabled={!value || saving}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                         <Check size={13} />
                         {saving ? 'Guardando…' : isEditing ? 'Actualizar' : 'Confirmar'}

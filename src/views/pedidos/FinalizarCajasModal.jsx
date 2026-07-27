@@ -239,8 +239,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                     <div className="flex items-center gap-3 px-3 pt-3 pb-2">
                                         <div className={`shrink-0 flex flex-col items-center justify-center px-2 py-1.5 rounded-xl min-w-[44px] transition-all ${
                                             hasAssignment
-                                                ? 'bg-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
-                                                : 'bg-warning text-white'
+                                                ? 'bg-chart-3-solid text-white shadow-[var(--shadow-glow-chart-3)]'
+                                                : 'bg-warning-solid text-white'
                                         }`}>
                                             <span className="text-[9px] font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
                                             <span className="text-[15px] font-black tabular-nums leading-tight">{idx + 1}</span>
@@ -259,7 +259,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 <button key={box} onClick={() => toggleBox(idx, box)}
                                                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
                                                         sel
-                                                            ? 'bg-chart-3 border-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
+                                                            ? 'bg-chart-3-solid border-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
                                                             : 'bg-surface-card border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10'
                                                     }`}>
                                                     Caja {box}
@@ -283,7 +283,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 {screen === 1 ? (
                     <button onClick={handleGoScreen2}
                         disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
                         {loadingPages
                             ? <Loader2 size={12} className="animate-spin" />
                             : <>Siguiente <span className="opacity-60">→</span></>
@@ -291,7 +291,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     </button>
                 ) : (
                     <button onClick={handleConfirm} disabled={submitting || !isValid}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
                         {submitting
                             ? <Loader2 size={12} className="animate-spin" />
                             : <PackageCheck size={13} />

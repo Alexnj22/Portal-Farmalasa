@@ -346,7 +346,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Header */}
                                     <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
                                         {stage === 'pausado' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-warning text-white shrink-0 shadow-sm animate-pulse">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-warning-solid text-white shrink-0 shadow-sm animate-pulse">
                                                 ⏸ Pausado
                                             </span>
                                         )}
@@ -499,24 +499,24 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
                                                     <button onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}
-                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success text-white hover:bg-success-hover active:scale-[0.97] transition-all shadow-sm">
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all shadow-sm">
                                                         <CheckCircle2 size={10} />Entregué
                                                     </button>
                                                 );
                                             })()}
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-1    text-white hover:bg-chart-1/80    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
-                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-warning   text-white hover:bg-warning-hover   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-6  text-white hover:bg-chart-6/80  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
-                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-1-solid    text-white hover:bg-chart-1/80    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
+                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-warning-solid   text-white hover:bg-warning-hover   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-6-solid  text-white hover:bg-chart-6/80  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
+                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canAnular && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white border border-danger/30 hover:border-danger active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 hover:border-danger active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Ban size={10} />Anular
                                                 </button>
                                             )}
-                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
@@ -532,7 +532,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
+                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
                                                         {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
                                                     </button>
                                                 );
@@ -678,7 +678,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3 text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Play size={9} fill="currentColor" />Iniciar
                                                 </button>
@@ -693,7 +693,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas(); loadActive();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-8 text-white hover:opacity-90 active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Home size={9} />Base
                                                 </button>
@@ -911,7 +911,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 setReenviarConfirmModal(null);
                                 handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
                             }}
-                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-danger text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                         >
                             {busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}
                         </button>

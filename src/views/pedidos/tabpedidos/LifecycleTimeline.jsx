@@ -28,7 +28,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
         <div className="group/pb relative">
             <motion.span
                 className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
-                    isActive ? 'bg-warning text-white' : 'bg-surface-card text-warning border border-warning/40'
+                    isActive ? 'bg-warning-solid text-white' : 'bg-surface-card text-warning border border-warning/40'
                 }`}
                 animate={isActive ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
                 transition={isActive ? { duration: 1.2, repeat: Infinity } : undefined}

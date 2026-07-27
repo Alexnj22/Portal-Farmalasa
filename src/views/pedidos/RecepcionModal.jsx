@@ -770,7 +770,7 @@ export default function RecepcionModal({
                         )}
                         <div className="flex justify-end">
                             <button onClick={handleFinalizar} disabled={saving}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-success text-white font-bold text-[13px] hover:bg-success-hover disabled:opacity-50 transition-colors shadow-sm">
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-success-solid text-white font-bold text-[13px] hover:bg-success-hover disabled:opacity-50 transition-colors shadow-sm">
                                 {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
                                 Finalizar recepción
                             </button>
@@ -873,7 +873,7 @@ export default function RecepcionModal({
                                                     className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-chart-9-text focus:border-chart-9'}`}
                                                 />
                                                 {eDiff && delta !== 0 && (
-                                                    <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger text-white' : 'bg-success text-white'}`}>
+                                                    <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
                                                         {delta > 0 ? '+' : ''}{delta}
                                                     </span>
                                                 )}
@@ -1165,7 +1165,7 @@ export default function RecepcionModal({
                                             className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-content-2 focus:border-chart-9'}`}
                                         />
                                         {hasDiff && (
-                                            <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger text-white' : 'bg-success text-white'}`}>
+                                            <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
                                                 {delta > 0 ? '+' : ''}{delta}
                                             </span>
                                         )}
@@ -1208,7 +1208,7 @@ export default function RecepcionModal({
                                                 onClick={() => setErrorVals(p => ({ ...p, [r.id]: (p[r.id] === t.value ? '' : t.value) }))}
                                                 className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
                                                     (errorVals[r.id] || '') === t.value
-                                                        ? 'bg-chart-4 text-white border-chart-4 shadow-sm'
+                                                        ? 'bg-chart-4-solid text-white border-chart-4 shadow-sm'
                                                         : 'bg-surface-card text-content-3 border-divider hover:border-chart-4/40 hover:text-chart-4-text'
                                                 }`}
                                             >{t.label}</button>
@@ -1233,7 +1233,7 @@ export default function RecepcionModal({
                                             className="flex-1 min-w-0 text-[16px] border border-chart-4/30 rounded-full px-3 py-1 focus:outline-none focus:border-chart-4 bg-surface-card placeholder-content-3"
                                         />
                                         <button onClick={confirmProblema}
-                                            className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-chart-4 text-white hover:bg-chart-4/80 transition-colors">
+                                            className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-chart-4-solid text-white hover:bg-chart-4/80 transition-colors">
                                             <Check size={10} /> Listo
                                         </button>
                                     </div>
@@ -1288,7 +1288,7 @@ export default function RecepcionModal({
                             Todo OK
                         </button>
                         <button onClick={handleConfirmarCaja} disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-success text-white font-semibold hover:bg-success-hover text-[13px] transition-colors disabled:opacity-50">
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-success-solid text-white font-semibold hover:bg-success-hover text-[13px] transition-colors disabled:opacity-50">
                             {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
                             {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
                         </button>

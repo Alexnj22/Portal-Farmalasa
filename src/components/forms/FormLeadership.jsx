@@ -280,7 +280,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-surface-card text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <ShieldCheck size={14}/> Permanente
                                         </button>
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning text-white shadow-[var(--shadow-glow-warning)]' : 'text-content-3 hover:bg-surface-card'}`}>
+                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <Clock size={14}/> Interinato
                                         </button>
                                     </div>

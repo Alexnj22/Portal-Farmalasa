@@ -244,7 +244,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
             <button
               onClick={submit}
               disabled={rState === 'saving'}
-              className="px-1.5 py-0.5 rounded-full bg-danger hover:bg-danger/80 text-white text-[9px] font-black transition-colors disabled:opacity-50"
+              className="px-1.5 py-0.5 rounded-full bg-danger-solid hover:bg-danger/80 text-white text-[9px] font-black transition-colors disabled:opacity-50"
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>

@@ -85,7 +85,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                         <button
                             disabled={!canConfirm || busy}
                             onClick={onConfirm}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-warning text-white font-semibold hover:bg-warning-hover text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-warning-solid text-white font-semibold hover:bg-warning-hover text-[13px] transition-colors disabled:opacity-50 shadow-sm"
                         >
                             {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
                             Confirmar pausa

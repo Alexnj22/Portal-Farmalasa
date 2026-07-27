@@ -53,7 +53,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             {ann.readIds.length === 0 && (
               <button
                 onClick={() => onEdit(ann)}
-                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md'}`}
+                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning-solid hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md'}`}
                 title="Editar aviso"
               >
                 <Edit3 size={14} strokeWidth={2.5} />
@@ -86,7 +86,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
           </span>
         )}
         {!isScheduled && ann.priority === 'URGENT' && (
-          <span className="flex items-center gap-1 text-white bg-danger px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 animate-pulse">
+          <span className="flex items-center gap-1 text-white bg-danger-solid px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 animate-pulse">
             <Flame size={12} strokeWidth={2.5} /> Urgente
           </span>
         )}
@@ -610,13 +610,13 @@ const AnnouncementsView = ({ openModal }) => {
             <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-warning' : 'bg-brand'}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-warning-solid' : 'bg-brand'}`}>
                     {editingAnnId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                   </div>
                   <span className="font-black uppercase tracking-tight ml-1">{editingAnnId ? 'Editar Aviso' : 'Nuevo Aviso'}</span>
                 </h3>
                 {editingAnnId && (
-                  <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"><X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar</button>
+                  <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"><X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar</button>
                 )}
               </div>
 

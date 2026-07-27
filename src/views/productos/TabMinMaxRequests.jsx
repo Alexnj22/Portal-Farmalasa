@@ -103,11 +103,11 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       {isPending && !rejecting && (
         <div className="flex items-center gap-2 mt-auto">
           <button onClick={() => onApprove(r)} disabled={busy}
-            className="flex-1 h-9 rounded-xl text-[12px] font-bold text-white bg-success hover:bg-success-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
+            className="flex-1 h-9 rounded-xl text-[12px] font-bold text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar
           </button>
           <button onClick={() => setRejecting(true)} disabled={busy}
-            className="h-9 px-3 rounded-xl text-[12px] font-bold text-danger bg-danger/10 hover:bg-danger hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
+            className="h-9 px-3 rounded-xl text-[12px] font-bold text-danger bg-danger/10 hover:bg-danger-solid hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
             <X size={14} /> Rechazar
           </button>
         </div>
@@ -121,7 +121,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
             className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-[16px] text-content-2 placeholder-content-3 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
           <div className="flex items-center gap-2">
             <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
-              className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-danger hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
+              className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-danger-solid hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
               {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo
             </button>
             <button onClick={() => { setRejecting(false); setNote(''); }} disabled={busy}
@@ -345,7 +345,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           </div>
           {sucFilter !== 'all' && (
             <button onClick={() => setSucFilter('all')} title="Quitar sucursal"
-              className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors shrink-0">
+              className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-colors shrink-0">
               <X size={9} strokeWidth={3} />
             </button>
           )}
@@ -353,7 +353,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
             <>
               <div className="h-5 w-px bg-divider shrink-0" />
               <button onClick={approveAll} disabled={bulkBusy}
-                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-black text-white bg-success hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
+                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-black text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
                 {bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
                 Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})
               </button>

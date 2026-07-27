@@ -56,7 +56,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
             <div className="flex flex-wrap items-center gap-2">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-content-3' : isUrgent ? 'bg-danger' : 'bg-brand'}`} />
                 {isUrgent && (
-                    <span className={`flex items-center gap-1 text-white bg-danger px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
+                    <span className={`flex items-center gap-1 text-white bg-danger-solid px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
                         <Flame size={11} strokeWidth={2.5} /> Urgente
                     </span>
                 )}
@@ -353,7 +353,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         </span>
                     </div>
                     {urgentLeft > 0 && (
-                        <span className="flex items-center gap-1.5 text-[10px] font-black text-white bg-danger px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-danger)] animate-pulse self-center">
+                        <span className="flex items-center gap-1.5 text-[10px] font-black text-white bg-danger-solid px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-danger)] animate-pulse self-center">
                             <Flame size={11} strokeWidth={2.5} /> {urgentLeft} urgente{urgentLeft !== 1 ? 's' : ''}
                         </span>
                     )}
@@ -748,7 +748,7 @@ const EmployeeAnnouncementsView = () => {
                                 className={`flex items-center gap-1 px-2.5 h-8 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap border shrink-0 ${
                                     key === 'URGENT'
                                         ? isActive
-                                            ? 'bg-danger text-white border-danger shadow-[var(--shadow-glow-danger)] scale-[1.02]'
+                                            ? 'bg-danger-solid text-white border-danger shadow-[var(--shadow-glow-danger)] scale-[1.02]'
                                             : 'bg-transparent text-danger border-danger/30 hover:bg-danger/10 hover:-translate-y-0.5'
                                         : isActive
                                         ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'

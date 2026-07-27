@@ -505,7 +505,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <Edit size={12}/> Editar
                                                 </button>
                                                 <button onClick={handleResetPassword}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-warning text-content-2 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[var(--shadow-glow-warning)]">
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-warning-solid text-content-2 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[var(--shadow-glow-warning)]">
                                                     <KeyRound size={12}/> Contraseña
                                                 </button>
                                             </div>
@@ -573,7 +573,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest">Teléfono</p>
                                                     <p className="text-[13px] font-bold text-content">{emp.emergency_contact_phone}</p>
                                                 </div>
-                                                <a href={`tel:${emp.emergency_contact_phone.replace(/\D/g,'')}`} className="p-2.5 bg-danger/10 text-danger rounded-full hover:bg-danger hover:text-white transition-colors shadow-sm">
+                                                <a href={`tel:${emp.emergency_contact_phone.replace(/\D/g,'')}`} className="p-2.5 bg-danger/10 text-danger rounded-full hover:bg-danger-solid hover:text-white transition-colors shadow-sm">
                                                     <Phone size={14} strokeWidth={2.5}/>
                                                 </a>
                                             </div>
@@ -1193,7 +1193,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     setTimeout(() => setCopiedPwd(false), 2000);
                                 }}
                                 title="Copiar"
-                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${copiedPwd ? 'bg-success text-white' : 'bg-brand text-white hover:bg-chart-1'}`}>
+                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${copiedPwd ? 'bg-success-solid text-white' : 'bg-brand text-white hover:bg-chart-1-solid'}`}>
                                 {copiedPwd ? <Check size={18} strokeWidth={2.5} /> : <Copy size={17} strokeWidth={2.2} />}
                             </button>
                         </div>
@@ -1257,7 +1257,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 setCancelReason('');
                                 setCancelingEventId(null);
                             }}
-                            className="py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white flex-1 transition-all shadow-sm border-transparent bg-danger hover:bg-danger-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                            className="py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white flex-1 transition-all shadow-sm border-transparent bg-danger-solid hover:bg-danger-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
                             Confirmar Cancelación
                         </button>
                     </div>

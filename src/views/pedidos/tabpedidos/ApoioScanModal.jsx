@@ -205,7 +205,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             </button>
                             {employee && (
                                 <button onClick={confirmApoyo} disabled={loading}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1 text-white font-semibold hover:bg-brand text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1-solid text-white font-semibold hover:bg-brand text-[13px] transition-colors disabled:opacity-50 shadow-sm"
                                 >
                                     {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
                                     Confirmar

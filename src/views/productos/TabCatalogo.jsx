@@ -1818,7 +1818,7 @@ export default function TabCatalogo({
                             <>
                                 <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
                                 <button onClick={resetFilters} title="Limpiar todos los filtros"
-                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                     <X size={11} strokeWidth={3} />
                                 </button>
                             </>
@@ -1840,7 +1840,7 @@ export default function TabCatalogo({
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar productos</p>
                     <p className="text-[11px] text-danger mb-4">{loadError}</p>
                     <button onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}
-                        className="px-5 py-2 text-[12px] font-bold text-white bg-danger hover:bg-danger-hover rounded-full transition-colors">
+                        className="px-5 py-2 text-[12px] font-bold text-white bg-danger-solid hover:bg-danger-hover rounded-full transition-colors">
                         Reintentar
                     </button>
                 </div>

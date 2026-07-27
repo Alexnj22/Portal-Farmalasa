@@ -203,7 +203,7 @@ const FormAnnouncements = ({ data }) => {
                   <PaginationControls currentPage={pendingPage} totalPages={totalPendingPages} setPage={setPendingPage} />
                 </div>
               ) : (
-                <div className="p-5 bg-success text-white rounded-[1.25rem] shadow-[var(--shadow-glow-success)] text-center flex items-center justify-center gap-3">
+                <div className="p-5 bg-success-solid text-white rounded-[1.25rem] shadow-[var(--shadow-glow-success)] text-center flex items-center justify-center gap-3">
                    <PartyPopper size={20} className="animate-[bounce_2s_infinite]" />
                   <p className="text-[12px] font-black uppercase tracking-wider drop-shadow-md">
                     ¡Todos han leído el aviso!

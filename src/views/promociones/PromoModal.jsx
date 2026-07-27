@@ -542,7 +542,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                     >
                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                                             isActive ? 'bg-surface-card border-white text-chart-1-text scale-110 shadow-lg shadow-brand/30'
-                                            : isDone  ? 'bg-success border-success/50 text-white'
+                                            : isDone  ? 'bg-success-solid border-success/50 text-white'
                                             : 'bg-surface-card border-border-card text-white/50'
                                         }`}>
                                             {isDone ? <Check size={13} /> : <StepIcon size={12} />}

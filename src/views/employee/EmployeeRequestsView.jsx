@@ -173,7 +173,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                 </button>
                 <button
                     onClick={() => onAccept(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success text-white text-[11px] font-bold uppercase tracking-widest shadow-[var(--shadow-glow-success)] hover:bg-success-hover transition-all active:scale-[0.97]"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success-solid text-white text-[11px] font-bold uppercase tracking-widest shadow-[var(--shadow-glow-success)] hover:bg-success-hover transition-all active:scale-[0.97]"
                 >
                     <Check size={12} strokeWidth={2.5} /> Aceptar
                 </button>
@@ -1091,7 +1091,7 @@ const EmployeeRequestsView = () => {
                                             <AlertTriangle size={13} className="text-danger" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-64 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-                                            <div className="bg-danger text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
+                                            <div className="bg-danger-solid text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Ya tienes asignada una incapacidad del {fmtDisabilityPeriod(disabilityHeaderAlerts.overlap)} — las fechas seleccionadas se solapan con ese período.
                                             </div>
                                         </div>
@@ -1103,7 +1103,7 @@ const EmployeeRequestsView = () => {
                                             <Info size={13} className="text-warning" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-72 z-50 pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150">
-                                            <div className="bg-warning text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
+                                            <div className="bg-warning-solid text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Desde el día 4, aplica cobertura del ISSS. El ISSS cubre el 75% de tu salario a partir del día 4. Es obligatorio presentar la boleta oficial de incapacidad del ISSS dentro de 3 días hábiles para que la empresa pueda tramitar el reembolso. Puedes adjuntarla ahora o desde tu solicitud pendiente.
                                             </div>
                                         </div>

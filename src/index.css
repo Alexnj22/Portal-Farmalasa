@@ -206,6 +206,34 @@
   --chart-8: #64748b; --chart-8-text: #334155; /* pizarra, nuevo T7 */
   --chart-9: #14b8a6; --chart-9-text: #0f766e; /* teal, agregado durante T7.1b — RequestsView.jsx necesitaba 9 categorías simultáneas reales, no 8 */
 
+  /* ── Rellenos SÓLIDOS seguros con texto blanco (N2, D1-bis 2026-07-26) ──
+     El sistema ya tenía resuelto el caso TEÑIDO (`bg-success/10` +
+     `text-success-text`, que pasa AA). Lo que nunca se definió es el caso
+     RELLENO SÓLIDO: `bg-success text-white` mide 2.62:1 y falla. Medido en
+     los 13 tokens de color: 11 fallan, y solo --brand (6.82:1) y --chart-8
+     (4.76:1) pasaban — por casualidad, no por diseño. Son 232 usos reales.
+     Como estos colores NO cambian por tema, fallaba también en los temas
+     claros: nunca fue un bug de modo oscuro.
+
+     Estos son el gemelo exacto de los --chart-N-text que T7 creó para el
+     problema inverso (texto de color sobre fondo neutro). Valores tomados
+     del shade 600/700 de la MISMA familia Tailwind que ya usa el proyecto,
+     no oscurecidos a ojo: el badge sigue leyéndose verde/rojo/ámbar, solo
+     más saturado. Un único valor para los 4 temas — el par relleno+blanco
+     no depende del fondo de la página. */
+  --success-solid: #047857; /* 5.48:1 con blanco */
+  --danger-solid:  #dc2626; /* 4.83:1 */
+  --warning-solid: #b45309; /* 5.02:1 */
+  --chart-1-solid: #2563eb; /* 5.17:1 */
+  --chart-2-solid: #047857; /* 5.48:1 */
+  --chart-3-solid: #7c3aed; /* 5.70:1 */
+  --chart-4-solid: #c2410c; /* 5.18:1 */
+  --chart-5-solid: #0e7490; /* 5.36:1 */
+  --chart-6-solid: #db2777; /* 4.60:1 */
+  --chart-7-solid: #a16207; /* 4.92:1 */
+  --chart-8-solid: #64748b; /* 4.76:1 — ya pasaba, se nombra para simetría */
+  --chart-9-solid: #0f766e; /* 5.47:1 */
+
   /* Semáforo real de riesgo de stock (7 estados, src/views/productos/tabminmax/constants.js STAT_CFGS) */
   --stock-out:         #ef4444; /* red-500 */
   --stock-below-min:   #f97316; /* orange-500 */
@@ -755,6 +783,21 @@
 
   /* Paleta dataviz / categórica (T7: también "un color por categoría" en listas) */
   --color-chart-1: var(--chart-1); --color-chart-1-text: var(--chart-1-text);
+
+  /* N2 — rellenos sólidos seguros con blanco encima */
+  --color-success-solid: var(--success-solid);
+  --color-danger-solid: var(--danger-solid);
+  --color-warning-solid: var(--warning-solid);
+  --color-chart-1-solid: var(--chart-1-solid);
+  --color-chart-2-solid: var(--chart-2-solid);
+  --color-chart-3-solid: var(--chart-3-solid);
+  --color-chart-4-solid: var(--chart-4-solid);
+  --color-chart-5-solid: var(--chart-5-solid);
+  --color-chart-6-solid: var(--chart-6-solid);
+  --color-chart-7-solid: var(--chart-7-solid);
+  --color-chart-8-solid: var(--chart-8-solid);
+  --color-chart-9-solid: var(--chart-9-solid);
+
   --color-chart-2: var(--chart-2); --color-chart-2-text: var(--chart-2-text);
   --color-chart-3: var(--chart-3); --color-chart-3-text: var(--chart-3-text);
   --color-chart-4: var(--chart-4); --color-chart-4-text: var(--chart-4-text);

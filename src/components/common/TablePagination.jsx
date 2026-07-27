@@ -85,7 +85,7 @@ function SmartPagination({ page, total, onChange }) {
                                 <motion.div
                                     layoutId="activePage"
                                     className="absolute inset-0 rounded-xl bg-brand"
-                                    style={{ boxShadow: '0 4px 14px rgba(0,82,204,0.40)' }}
+                                    style={{ boxShadow: 'var(--shadow-glow-brand)' }}
                                     transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                                 />
                             )}

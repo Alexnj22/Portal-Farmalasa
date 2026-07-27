@@ -525,14 +525,14 @@ const RolesView = ({ openModal }) => {
             <style>{`
                 .org-chart-tree-wrapper .org-tree ul { padding-top: 16px; position: relative; display: flex; justify-content: center; padding-left: 0; }
                 .org-chart-tree-wrapper .org-tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 16px 8px 0 8px; }
-                .org-chart-tree-wrapper .org-tree li::before, .org-chart-tree-wrapper .org-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 3px solid rgba(203, 213, 225, 0.5); width: 50%; height: 16px; }
-                .org-chart-tree-wrapper .org-tree li::after { right: auto; left: 50%; border-left: 3px solid rgba(203, 213, 225, 0.5); }
+                .org-chart-tree-wrapper .org-tree li::before, .org-chart-tree-wrapper .org-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 3px solid var(--divider); width: 50%; height: 16px; }
+                .org-chart-tree-wrapper .org-tree li::after { right: auto; left: 50%; border-left: 3px solid var(--divider); }
                 .org-chart-tree-wrapper .org-tree li:only-child::after, .org-chart-tree-wrapper .org-tree li:only-child::before { display: none; }
                 .org-chart-tree-wrapper .org-tree li:only-child { padding-top: 0; }
                 .org-chart-tree-wrapper .org-tree li:first-child::before, .org-chart-tree-wrapper .org-tree li:last-child::after { border: 0 none; }
-                .org-chart-tree-wrapper .org-tree li:last-child::before { border-right: 3px solid rgba(203, 213, 225, 0.5); border-radius: 0 8px 0 0; }
+                .org-chart-tree-wrapper .org-tree li:last-child::before { border-right: 3px solid var(--divider); border-radius: 0 8px 0 0; }
                 .org-chart-tree-wrapper .org-tree li:first-child::after { border-radius: 8px 0 0 0; }
-                .org-chart-tree-wrapper .org-tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 3px solid rgba(203, 213, 225, 0.5); width: 0; height: 16px; margin-left: -1px; }
+                .org-chart-tree-wrapper .org-tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 3px solid var(--divider); width: 0; height: 16px; margin-left: -1px; }
                 
                 .export-compact { padding: 12px !important; min-width: 130px !important; max-width: 150px !important; border-radius: 1.2rem !important; }
                 .export-compact .icon-container { width: 32px !important; height: 32px !important; margin-bottom: 8px !important; }

@@ -140,7 +140,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                             background: 'rgba(252,253,255,0.95)',
                             backdropFilter: 'blur(24px) saturate(180%)',
                             WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                            border: '1px solid rgba(255,255,255,0.92)',
+                            border: '1px solid var(--border-card)',
                             boxShadow: '0 12px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1)',
                         }}>
                         {dropdownBtns.map((item) => (

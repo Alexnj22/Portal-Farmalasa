@@ -297,7 +297,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             <style>{`
                 .editor-scrollbar::-webkit-scrollbar { width: 6px; }
                 .editor-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .editor-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(148, 163, 184, 0.4); border-radius: 10px; }
+                .editor-scrollbar::-webkit-scrollbar-thumb { background-color: var(--divider); border-radius: 10px; }
             `}</style>
             
             <div className="fixed inset-0 z-popover" onClick={(e) => { e.stopPropagation(); handleClose(); }}></div>

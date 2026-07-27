@@ -36,11 +36,11 @@ const GlassViewLayout = ({
 
     const floatBtn = 'w-10 h-10 rounded-2xl flex items-center justify-center';
     const floatStyle = {
-        background: 'rgba(255,255,255,0.72)',
+        background: 'var(--surface-card)',
         backdropFilter: 'blur(24px) saturate(200%)',
         WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-        border: '1px solid rgba(255,255,255,0.88)',
-        boxShadow: '0 8px 28px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.95)',
+        border: '1px solid var(--border-card)',
+        boxShadow: 'var(--shadow-glass-3)',
     };
 
     return (

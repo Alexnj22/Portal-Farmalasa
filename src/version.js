@@ -5,8 +5,48 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.65.0';
+export const APP_VERSION = '2.66.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.66.0 — D3 avanzada: el gate pasa de 6,333 a 267 hallazgos (96% menos).
+//
+// LA SOMBRA TENÍA DOS EJES. 400 sombras a mano con 269 valores distintos
+// parecían 269 decisiones de diseño; eran 5 elevaciones × N brillos. La
+// elevación ya estaba tokenizada (--shadow-elevation-*) y al agrupar los
+// literales por radio de blur caían casi exactos en esas bandas. Lo que
+// faltaba era el segundo eje: el BRILLO, el inset que hace que una superficie
+// lea como vidrio — 154 de los 400 usos eran solo inset, con 112 valores
+// distintos para la misma idea. Por eso T7.3 se había bloqueado: sin ese eje,
+// consolidar aplanaba. Con --shadow-glass-1…5 (elevación + brillo pareados),
+// --shadow-shine/-lg y --shadow-glass-dark, 242 literales migraron sin
+// pérdida. shadow-literal 412 → 165.
+//
+// EL GATE VERIFICA SUPERFICIES, EL ESCÁNER VERIFICA CONTRASTE. text-white se
+// marcaba como deuda, pero de 740 usos 434 están sobre relleno de color —el
+// contrato de N2— y el resto son íconos dentro de un padre coloreado que un
+// chequeo por línea no puede ver. Era ruido, y ruido de ese volumen esconde lo
+// que sí importa. text-* sale de la categoría: lo que se lee en la clase es la
+// SUPERFICIE; lo que termina viéndose depende del árbol y lo mide el escáner.
+// white 1,094 → 37, con las superficies bespoke siempre-oscuras (kiosco, menú
+// del sidebar, campana) excepcionadas con motivo.
+//
+// MINMAX TENÍA UN SISTEMA DE SUPERFICIES PARALELO: paneles, bordes, divisores
+// y sombras como objetos de estilo inline que no pasaban por ningún token. 37
+// literales migrados por su ROL. inline-color 118 → 60.
+//
+// D3.1 · 25 estados de carga → skeleton, con la regla: skeleton donde el
+// contenido tiene forma, spinner SOLO dentro del botón que disparó la acción,
+// ningún texto de "cargando" como señal única. Los ~104 spinners de botón se
+// quedan: un botón no cambia de forma, cambia de estado.
+// D3.2 · 21 estados vacíos → EmptyState.
+// D3.5 · 89 badges → Badge (1 → 37 imports). 46 de ellos usaban el color base
+// en vez de la variante -text: migrarlos también corrigió contraste.
+// D3.7 · NotFoundView reemplaza el <Navigate> silencioso del catch-all.
+// A12 · AiThinkingState — el tercer estado de espera, para procesos largos e
+// indeterminados donde un skeleton mentiría sobre lo que viene.
+// A13 · Límite del método: el escáner solo ve el estado POR DEFECTO de cada
+// ruta. Paneles, modales y filas expandidas nunca entraron en la medición.
+
 
 // v2.65.0 — D2 cerrada de verdad + D3.1, D3.2 y D3.7 de la auditoría de
 // diseño. Plan vivo en PLAN-DISENO-PENDIENTE.md.

@@ -580,13 +580,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     <div className="overflow-x-auto min-w-0 flex-1 pb-0.5">
                     <motion.div
                         className="flex items-center rounded-2xl overflow-hidden self-start transition-shadow duration-300 w-max"
-                        whileHover={{ boxShadow: '0 12px 40px rgba(0,82,204,0.11), inset 0 1px 0 rgba(255,255,255,0.95)' }}
+                        whileHover={{ boxShadow: 'var(--shadow-glass-4)' }}
                         style={{
-                            background: 'rgba(255,255,255,0.58)',
+                            background: 'var(--surface-input)',
                             backdropFilter: 'blur(24px)',
                             WebkitBackdropFilter: 'blur(24px)',
-                            border: '1px solid rgba(255,255,255,0.85)',
-                            boxShadow: '0 8px 32px rgba(0,82,204,0.07), inset 0 1px 0 rgba(255,255,255,0.92)',
+                            border: '1px solid var(--border-card)',
+                            boxShadow: 'var(--shadow-glass-3)',
                         }}>
                         {STAT_CFGS.filter(cfg => VISIBLE_STAT_KEYS.includes(cfg.key)).map((cfg, i) => {
                             const active = filterAlert === cfg.key;
@@ -779,11 +779,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             exit={{ opacity: 0, x: 12, scale: 0.95, transition: { duration: 0.18 } }}
                             className="flex items-center rounded-2xl overflow-hidden shrink-0"
                             style={{
-                                background: 'rgba(255,255,255,0.72)',
+                                background: 'var(--surface-card)',
                                 backdropFilter: 'blur(24px)',
                                 WebkitBackdropFilter: 'blur(24px)',
-                                border: '1px solid rgba(255,255,255,0.85)',
-                                boxShadow: '0 4px 20px rgba(0,82,204,0.07), inset 0 1px 0 rgba(255,255,255,0.92)',
+                                border: '1px solid var(--border-card)',
+                                boxShadow: 'var(--shadow-glass-2)',
                             }}>
                             {/* Dot + count */}
                             <div className="flex items-center gap-1.5 px-3 py-2 shrink-0">
@@ -854,8 +854,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             background: 'var(--brand)',
                                             backdropFilter: 'blur(20px) saturate(180%)',
                                             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                                            border: '1px solid rgba(0,52,153,0.30)',
-                                            boxShadow: '0 4px 16px rgba(0,82,204,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                                            border: '1px solid var(--border-input)',
+                                            boxShadow: 'var(--shadow-glow-brand)',
                                             color: 'white',
                                         }}>
                                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
@@ -877,8 +877,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             background: 'var(--brand)',
                                             backdropFilter: 'blur(20px) saturate(180%)',
                                             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                                            border: '1px solid rgba(0,52,153,0.30)',
-                                            boxShadow: '0 4px 16px rgba(0,82,204,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                                            border: '1px solid var(--border-input)',
+                                            boxShadow: 'var(--shadow-glow-brand)',
                                             color: 'white',
                                         }}>
                                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
@@ -897,11 +897,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {!loading && isBodega && (
                         <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl"
                              style={{
-                                 background: 'rgba(255,255,255,0.72)',
+                                 background: 'var(--surface-card)',
                                  backdropFilter: 'blur(20px)',
                                  WebkitBackdropFilter: 'blur(20px)',
-                                 border: '1px solid rgba(255,255,255,0.82)',
-                                 boxShadow: '0 2px 10px rgba(109,40,217,0.05), inset 0 1px 0 rgba(255,255,255,0.92)',
+                                 border: '1px solid var(--border-card)',
+                                 boxShadow: 'var(--shadow-glass-1)',
                              }}>
                             <Info size={10} className="text-chart-3-text shrink-0" />
                             <span className="text-caption text-content-2 whitespace-nowrap">MIN/MAX = Σ sucursales publicadas</span>
@@ -1514,7 +1514,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
                     {/* Card */}
                     <div className="relative z-base w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[var(--shadow-elevation-xl)] overflow-hidden"
-                        style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(40px) saturate(200%)' }}
+                        style={{ background: 'var(--surface-modal)', backdropFilter: 'blur(40px) saturate(200%)' }}
                         onClick={e => e.stopPropagation()}>
 
                         {/* Header */}

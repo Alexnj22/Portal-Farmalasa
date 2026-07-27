@@ -314,7 +314,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                 {multiLot ? (
                   <div
                     className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm"
-                    style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,255,255,0.72)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-card)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
                     onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                   >
                     <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-surface-card transition-colors">
@@ -331,7 +331,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                       <span className="text-caption font-black text-content-3 shrink-0 tabular-nums">{lotTotal} uds</span>
                       <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
                     </div>
-                    <div className="divide-y divide-divider" style={{ background: 'rgba(255,255,255,0.18)' }}>
+                    <div className="divide-y divide-divider" style={{ background: 'var(--surface-card)' }}>
                       {prod.lots.map((row, li) => (
                         <div key={li} className="flex items-center gap-2 px-3 py-1.5">
                           <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
@@ -344,7 +344,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                 ) : (
                   <button
                     className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl backdrop-blur-sm hover:bg-surface-card transition-colors group text-left"
-                    style={{ background: 'rgba(255,255,255,0.34)', border: '1px solid rgba(255,255,255,0.68)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
+                    style={{ background: 'var(--surface-card-hover)', border: '1px solid var(--border-card)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
                     onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                   >
                     {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}
@@ -574,8 +574,8 @@ export default function WidgetInventorySearch() {
                   <div
                     className="rounded-xl overflow-hidden backdrop-blur-sm shadow-sm"
                     style={{
-                      background: branch.isVencidos ? 'rgba(255,241,242,0.60)' : 'rgba(255,255,255,0.30)',
-                      border: branch.isVencidos ? '1px solid rgba(253,164,175,0.40)' : '1px solid var(--border-card)',
+                      background: branch.isVencidos ? 'var(--danger-soft, rgba(240,68,56,.08))' : 'var(--surface-card-hover)',
+                      border: branch.isVencidos ? '1px solid var(--danger)' : '1px solid var(--border-card)',
                     }}
                   >
                     {prod.lots.length === 1 ? (
@@ -677,7 +677,7 @@ export default function WidgetInventorySearch() {
                   <div
                     key={`${prod.descripcion}||${prod.presentacion}`}
                     className="flex items-center gap-2 px-2.5 py-2.5 rounded-xl text-left"
-                    style={{ background: 'rgba(255,241,242,0.60)', border: '1px solid rgba(253,164,175,0.40)', boxShadow: '0 2px 8px rgba(225,29,72,0.05)', animationDelay: `${pi * 25}ms` }}
+                    style={{ background: 'var(--danger-soft, rgba(240,68,56,.08))', border: '1px solid var(--danger)', boxShadow: '0 2px 8px rgba(225,29,72,0.05)', animationDelay: `${pi * 25}ms` }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-label font-bold text-content-2 truncate leading-tight">{prod.descripcion}</p>

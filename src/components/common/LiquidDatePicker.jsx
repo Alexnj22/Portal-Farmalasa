@@ -309,10 +309,10 @@ const LiquidDatePicker = ({
 
                                 let wrapperStyle = {};
                                 if (inBetween) {
-                                    wrapperStyle.backgroundColor = 'rgba(0, 82, 204, 0.20)';
+                                    wrapperStyle.backgroundColor = 'var(--state-selected-overlay, rgba(0,82,204,.08))';
                                 } else if (drawStart && drawEnd && drawStart.getTime() !== drawEnd.getTime()) {
-                                    if (isStartBoundary) wrapperStyle.background = 'linear-gradient(90deg, transparent 50%, rgba(0, 82, 204, 0.20) 50%)';
-                                    if (isEndBoundary) wrapperStyle.background = 'linear-gradient(90deg, rgba(0, 82, 204, 0.20) 50%, transparent 50%)';
+                                    if (isStartBoundary) wrapperStyle.background = 'linear-gradient(90deg, transparent 50%, var(--state-selected-overlay, rgba(0,82,204,.08)) 50%)';
+                                    if (isEndBoundary) wrapperStyle.background = 'linear-gradient(90deg, var(--state-selected-overlay, rgba(0,82,204,.08)) 50%, transparent 50%)';
                                 }
 
                                 // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Seleccionado > Rango > Asueto)

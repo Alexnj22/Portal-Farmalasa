@@ -5,7 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.84.0';
+export const APP_VERSION = '2.85.0';
+
+// v2.85.0 — PortalInput gana `labelAction`, `compact` e `inputClassName`.
+//
+// Al medir los 49 inputs que faltaban, 37 resultaron ser ESTE componente reconstruido a
+// mano: etiqueta con badge de error, contenedor con icono, input desnudo adentro. Lo
+// unico que sobraba era una accion dentro de la etiqueta (`+ Agregar` en telefono) y,
+// en las celdas de nomina y min/max, un alto de 32px en vez de 40.
+//
+// Sin esas dos ranuras, cada uno seguia escribiendo la etiqueta, el badge y el
+// contenedor por su cuenta — 37 copias de algo que ya existia.
+//
+// Migrado el campo de telefono de EmployeeFormModal como primer caso, verificado en el
+// navegador: conserva la accion, la mascara y el mensaje de error REAL (phoneErrorMsg,
+// que distingue "Incompleto" de "Debe iniciar en 2, 6 o 7"). Al migrarlo puse un mensaje
+// generico y eslint lo delato con la variable huerfana.
 
 // v2.84.0 — ListRow gana la ranura `leading` y se adopta en EncuestaView.
 //

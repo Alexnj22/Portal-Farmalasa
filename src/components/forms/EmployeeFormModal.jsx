@@ -1166,19 +1166,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
 
-                                <div>
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
-                                        <span>Teléfono {phoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{phoneErrorMsg}</span>}</span>
-                                        <Button variant="ghost" icon={Plus} onClick={addPhone}>Agregar</Button>
-                                    </label>
-                                    <div className={`relative bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] z-base border-divider ${inputHoverClass} ${phoneHasError ? '!border-danger !bg-danger/10' : ''}`}>
-                                        <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
-                                        <input type="tel" name="phone" value={formData.phone || ''}
-                                            onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
-                                            placeholder="0000-0000"
-                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                                    </div>
-                                </div>
+                                <PortalInput
+                                    label="Teléfono"
+                                    name="phone"
+                                    type="tel"
+                                    icon={Phone}
+                                    value={formData.phone || ''}
+                                    onChange={handleChange}
+                                    maskType="PHONE"
+                                    placeholder="0000-0000"
+                                    hasError={phoneHasError}
+                                    errorMessage={phoneErrorMsg}
+                                    labelAction={
+                                        <Button variant="ghost" size="xs" icon={Plus} onClick={addPhone}>Agregar</Button>
+                                    }
+                                />
 
                                 <PortalInput label="Correo Electrónico" name="email" value={formData.email} onChange={handleChange} type="email" icon={Mail} placeholder="nombre@correo.com" hasError={emailInvalid} errorMessage="Correo inválido" />
 

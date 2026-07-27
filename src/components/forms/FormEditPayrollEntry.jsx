@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
+import PortalInput from '../common/PortalInput';
 import Button from '../../components/common/Button';
 import { Info, Clock, CreditCard, CalendarOff } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
@@ -88,16 +89,19 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
         setOtApplied(true);
     };
 
+    // 2026-07-27: era `<InputLabel>` + `<input className={glassInput}>`, o sea el
+    // canónico reconstruido a mano. Ahora sale de PortalInput; los 7 campos de
+    // este formulario se benefician de una sola línea.
     const numField = (key, label) => (
-        <div key={key}>
-            <InputLabel>{label}</InputLabel>
-            <input
-                type="number" step="0.01" min="0"
-                value={formData[key] ?? entry[key] ?? 0}
-                onChange={e => setFormData(f => ({ ...f, [key]: parseFloat(e.target.value) || 0 }))}
-                className={glassInput}
-            />
-        </div>
+        <PortalInput
+            key={key}
+            name={key}
+            label={label}
+            type="number"
+            value={String(formData[key] ?? entry[key] ?? 0)}
+            onChange={e => setFormData(f => ({ ...f, [key]: parseFloat(e.target.value) || 0 }))}
+            inputClassName="tabular-nums"
+        />
     );
 
     const preview = useMemo(() =>

@@ -5,7 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.85.0';
+export const APP_VERSION = '2.86.0';
+
+// v2.86.0 — Los 7 campos numericos de nomina al canonico.
+//
+// FormEditPayrollEntry tenia su propio `InputLabel` y su propio `glassInput`, y un
+// helper `numField` que los pegaba: el canonico reconstruido a mano, en un solo archivo.
+// Ahora `numField` es una llamada a PortalInput y los 7 campos salen de ahi.
+//
+// Con esto, de los 49 inputs de texto/numero que quedaban al empezar el bloque quedan
+// 45 crudos, y los que faltan son en su mayoria file (18, con su propio patron) y
+// campos sueltos que no comparten forma.
 
 // v2.85.0 — PortalInput gana `labelAction`, `compact` e `inputClassName`.
 //

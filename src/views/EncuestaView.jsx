@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import ListRow from '../components/common/ListRow';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
@@ -879,21 +880,12 @@ export default function EncuestaView() {
                             return (
                                 <div key={bloque.id} className="rounded-2xl border border-divider bg-surface-card shadow-sm overflow-hidden">
                                     {/* Header */}
-                                    <button className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-surface-card-hover/50 transition-colors"
-                                        onClick={() => setExpandedBloque(isOpen ? null : bloque.id)}>
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-label font-black text-white ${c.bar}`}>
-                                            B{bloque.id}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="text-body font-black text-content">{bloque.nombre}</span>
-                                                <span className={`text-micro font-black px-2 py-0.5 rounded-full ${c.badge}`}>{pqs.length} preguntas</span>
-                                                {ctx && <span className={`text-micro font-black px-2 py-0.5 rounded-full ${ctx.badge}`}>→ {ctx.dirigido}</span>}
-                                                {score && <span className={`text-micro font-black ${sl.color}`}>{sl.label}</span>}
-                                            </div>
-                                            <p className="text-caption text-content-3 mt-0.5">{bloque.desc}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
+                                    <ListRow
+                                        density="lg"
+                                        onClick={() => setExpandedBloque(isOpen ? null : bloque.id)}
+                                        leading={<span className="text-label font-black text-white">B{bloque.id}</span>}
+                                        iconBoxClass={`border-transparent ${c.bar}`}
+                                        trailing={<>
                                             {score && (
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-24 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
@@ -903,8 +895,18 @@ export default function EncuestaView() {
                                                 </div>
                                             )}
                                             {isOpen ? <ChevronUp size={14} className="text-content-3" /> : <ChevronDown size={14} className="text-content-3" />}
+                                        </>}
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-body font-black text-content">{bloque.nombre}</span>
+                                                <span className={`text-micro font-black px-2 py-0.5 rounded-full ${c.badge}`}>{pqs.length} preguntas</span>
+                                                {ctx && <span className={`text-micro font-black px-2 py-0.5 rounded-full ${ctx.badge}`}>→ {ctx.dirigido}</span>}
+                                                {score && <span className={`text-micro font-black ${sl.color}`}>{sl.label}</span>}
+                                            </div>
+                                            <p className="text-caption text-content-3 mt-0.5">{bloque.desc}</p>
                                         </div>
-                                    </button>
+                                    </ListRow>
 
                                     {isOpen && (
                                         <div className="border-t border-divider">

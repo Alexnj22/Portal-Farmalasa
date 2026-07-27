@@ -5,7 +5,14 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.83.0';
+export const APP_VERSION = '2.84.0';
+
+// v2.84.0 — ListRow gana la ranura `leading` y se adopta en EncuestaView.
+//
+// Las filas de bloque de la encuesta no llevan un icono en la caja de la izquierda:
+// llevan la LETRA del bloque (B3, G). Es la misma caja, el mismo tamano y la misma
+// alineacion — lo unico que cambia es que va adentro. Exigir un icono ahi habria dejado
+// esas filas fuera del canonico por nada.
 
 // v2.83.0 — ListRow adoptado en 5 lugares.
 //

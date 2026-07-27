@@ -22,6 +22,12 @@ import React, { memo, forwardRef } from 'react';
  * Sirve como `<button>` (si recibe `onClick`), como `<a>` (si recibe `href`) o
  * como `<div>` — una fila que no hace nada no debería ser enfocable.
  *
+ * La ranura de la izquierda acepta un ícono (`icon`) **o contenido libre**
+ * (`leading`). Salió de migrar las encuestas, donde la caja no lleva un ícono
+ * sino la letra del bloque —`B3`, `G`—. Es la misma caja, el mismo tamaño y la
+ * misma alineación: lo único que cambia es qué va adentro, así que forzar un
+ * ícono ahí habría dejado esas filas fuera del canónico por nada.
+ *
  * `onDark` existe por una razón concreta y no es un capricho: las filas de los
  * flyouts del sidebar viven sobre una superficie **oscura en los cuatro temas**
  * (decisión tomada antes: un popover anclado al sidebar se queda oscuro, si no
@@ -41,6 +47,7 @@ const DENSIDAD = {
 // se perdía en silencio y el popover se anclaba mal.
 const ListRow = memo(forwardRef(({
     icon: Icono,
+    leading,
     iconClass = 'text-content-2',
     iconBoxClass,
     title,
@@ -80,11 +87,11 @@ const ListRow = memo(forwardRef(({
                 ${className}`}
             {...rest}
         >
-            {Icono && (
+            {(Icono || leading) && (
                 <span className={`${d.caja} shrink-0 rounded-btn border flex items-center justify-center
                     ${iconBoxClass ?? (onDark ? 'bg-white/10 border-white/[0.08]' : 'bg-surface-card-hover border-border-card')}
                     ${onDark ? 'text-white/70' : iconClass}`}>
-                    <Icono size={d.icono} strokeWidth={2.25} />
+                    {Icono ? <Icono size={d.icono} strokeWidth={2.25} /> : leading}
                 </span>
             )}
 

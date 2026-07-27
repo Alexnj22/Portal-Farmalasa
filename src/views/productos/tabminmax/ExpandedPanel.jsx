@@ -117,9 +117,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
     return (
         <div className="mx-3 mb-3 rounded-2xl overflow-hidden"
             style={{
-                background: 'rgba(238,243,255,0.96)',
-                border: '1px solid rgba(220,228,255,0.80)',
-                boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95)',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-card)',
+                boxShadow: 'var(--shadow-glass-3)',
             }}>
 
             {/* ── Multi-branch grid ── */}

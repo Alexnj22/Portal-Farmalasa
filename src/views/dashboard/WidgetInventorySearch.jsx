@@ -314,7 +314,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                 {multiLot ? (
                   <div
                     className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm"
-                    style={{ background: 'rgba(255,255,255,0.38)', border: '1px solid rgba(255,255,255,0.72)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid rgba(255,255,255,0.72)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
                     onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                   >
                     <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-surface-card transition-colors">
@@ -575,7 +575,7 @@ export default function WidgetInventorySearch() {
                     className="rounded-xl overflow-hidden backdrop-blur-sm shadow-sm"
                     style={{
                       background: branch.isVencidos ? 'rgba(255,241,242,0.60)' : 'rgba(255,255,255,0.30)',
-                      border: branch.isVencidos ? '1px solid rgba(253,164,175,0.40)' : '1px solid rgba(255,255,255,0.60)',
+                      border: branch.isVencidos ? '1px solid rgba(253,164,175,0.40)' : '1px solid var(--border-card)',
                     }}
                   >
                     {prod.lots.length === 1 ? (

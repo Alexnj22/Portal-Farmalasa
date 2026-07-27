@@ -73,12 +73,12 @@ export default function LabsPanel({ onClose, onChanged }) {
 
     // Glassmorphism tokens shared across elements
     const glass = {
-        panel:  { background: 'rgba(240,245,255,0.72)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.65)', boxShadow: '0 24px 64px rgba(0,30,80,0.13), inset 0 1px 0 rgba(255,255,255,0.9)' },
-        divider:{ borderColor: 'rgba(148,163,184,0.15)' },
-        search: { background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(148,163,184,0.22)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)' },
-        row:    { background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(226,232,240,0.5)' },
+        panel:  { background: 'var(--surface-modal)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-5)' },
+        divider:{ borderColor: 'var(--divider)' },
+        search: { background: 'var(--surface-input)', backdropFilter: 'blur(8px)', border: '1px solid var(--border-input)', boxShadow: 'var(--shadow-shine)' },
+        row:    { background: 'var(--surface-card)', border: '1px solid var(--divider)' },
         rowOff: { background: 'rgba(254,242,242,0.6)',  border: '1px solid rgba(252,165,165,0.4)' },
-        footer: { background: 'rgba(255,255,255,0.38)', border: '1px solid rgba(226,232,240,0.4)' },
+        footer: { background: 'var(--surface-card)', border: '1px solid var(--divider)' },
     };
 
     return (
@@ -187,7 +187,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                     <button onClick={onClose}
                         className="w-full py-2 rounded-xl text-label font-bold text-content-3 hover:text-content-2 transition-colors duration-150"
                         style={glass.footer}
-                        onMouseOver={e => Object.assign(e.currentTarget.style, { background: 'rgba(255,255,255,0.65)' })}
+                        onMouseOver={e => Object.assign(e.currentTarget.style, { background: 'var(--border-card)' })}
                         onMouseOut={e => Object.assign(e.currentTarget.style, glass.footer)}>
                         Cerrar
                     </button>

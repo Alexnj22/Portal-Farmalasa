@@ -810,11 +810,39 @@ De las 108 vistas, 59 tienen estado de carga. 36 muestran skeleton (24 lo
 heredan gratis de `DataTable`), 21 muestran solo un spinner, y 2 usan texto
 ("Buscando GPS…"). Registrado como **A11**.
 
-Aclaración: **no todas deberían tener skeleton.** Un modal que carga en 200ms
-está mejor con un spinner; un skeleton ahí solo produce un parpadeo. Donde sí
-corresponde es en tablas y listados, porque el skeleton mantiene la forma de
-la página y evita el salto al llegar los datos. Es criterio por caso, no un
-reemplazo mecánico — por eso va a D3 y no a un barrido.
+#### Decisión (2026-07-27): **skeleton en todo lo que tenga forma**
+
+El usuario pidió eliminar spinners y textos de "cargando". Separando lo que
+el conteo anterior mezclaba, el uso real de spinner es:
+
+| | | |
+|---|---|---|
+| **133** | estado de sección o vista | **→ migrar a skeleton** |
+| **104** | dentro de un botón o acción | **se quedan** |
+
+Los 133 sí: un spinner en medio de un área vacía no dice nada de lo que
+viene, mientras que el skeleton mantiene la forma de la página, elimina el
+salto al llegar los datos y acorta la espera percibida porque la estructura
+aparece de inmediato. Este portal es tablas, listas, tarjetas y widgets — la
+forma es predecible casi siempre.
+
+Los 104 **no**, y es la única excepción que se defiende: un botón que dispara
+una acción **no cambia de forma, cambia de estado**. Reemplazarlo por un
+skeleton lo hace desaparecer y deja un rectángulo gris, que lee como "se
+rompió", no como "tu acción está corriendo". Además el skeleton promete
+*contenido que va a llegar con esa forma*, y un botón no espera contenido:
+ejecuta.
+
+**Regla que queda:** skeleton donde el contenido tiene forma · spinner **solo**
+dentro del botón que disparó la acción · ningún texto de "cargando" como
+señal única.
+
+#### El parpadeo, resuelto antes de migrar
+
+Migrar los 133 sin protección empeoraría las pantallas rápidas: una vista que
+responde en 120ms produciría un flash de skeleton peor que no mostrar nada.
+`useDelayedLoading(loading, 250)` en `StateViews.jsx` retrasa la aparición —
+si la respuesta llega antes del umbral, el skeleton nunca se ve.
 
 #### La matriz de movimiento, verificada en vivo
 

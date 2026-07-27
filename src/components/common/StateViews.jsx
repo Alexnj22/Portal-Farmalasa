@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Inbox, Loader2 } from 'lucide-react';
 
 /**
@@ -21,6 +21,32 @@ import { Inbox, Loader2 } from 'lucide-react';
  * está cargando" en vez de solo parpadear, y ya respeta
  * `prefers-reduced-motion` (index.css lo congela a un fondo sólido).
  */
+
+/* ── useDelayedLoading ────────────────────────────────────────────────────
+   El skeleton solo aparece si la espera SUPERA el umbral. Sin esto, una vista
+   que responde en 120ms produce un parpadeo que se ve peor que no mostrar
+   nada — es el problema clásico de "skeleton en todo", y la razón por la que
+   migrar los 133 spinners de vista sin este guard empeoraría las pantallas
+   rápidas en vez de mejorarlas.
+
+   250ms es el umbral: por debajo el ojo lee la transición como instantánea y
+   el skeleton solo estorba; por encima la espera ya se percibe y conviene
+   mostrar la forma de lo que viene.
+
+     const mostrar = useDelayedLoading(loading);
+     if (mostrar)  return <SkeletonText lines={6} />;
+     if (loading)  return null;   // espera corta: nada, y no parpadea
+*/
+// eslint-disable-next-line react-refresh/only-export-components -- hook acoplado a estos componentes; solo afecta Fast Refresh en dev
+export function useDelayedLoading(loading, delay = 250) {
+    const [visible, setVisible] = useState(false);
+    useEffect(() => {
+        if (!loading) { setVisible(false); return; }
+        const t = setTimeout(() => setVisible(true), delay);
+        return () => clearTimeout(t);
+    }, [loading, delay]);
+    return visible;
+}
 
 /* ── Skeleton ─────────────────────────────────────────────────────────────
    Una pieza de placeholder. `w`/`h` aceptan cualquier valor CSS para poder
@@ -119,4 +145,4 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
     );
 });
 
-export default { Skeleton, SkeletonText, EmptyState, LoadingState };
+export default { Skeleton, SkeletonText, EmptyState, LoadingState, useDelayedLoading };

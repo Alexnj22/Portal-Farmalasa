@@ -841,8 +841,17 @@ señal única.
 
 Migrar los 133 sin protección empeoraría las pantallas rápidas: una vista que
 responde en 120ms produciría un flash de skeleton peor que no mostrar nada.
-`useDelayedLoading(loading, 250)` en `StateViews.jsx` retrasa la aparición —
-si la respuesta llega antes del umbral, el skeleton nunca se ve.
+
+Resuelto **en CSS**, con la clase `.skeleton-delayed` (activa por defecto en
+`<Skeleton>`): el placeholder existe en el DOM desde el primer frame —así el
+layout no salta— pero permanece invisible 250ms. Si la respuesta llega antes,
+el usuario nunca lo ve.
+
+El primer intento fue un hook `useDelayedLoading` con `useState`+`setTimeout`.
+Lo rechazó el linter del proyecto por `react-hooks/set-state-in-effect`, y la
+alternativa en CSS resultó mejor por dos motivos: no necesita estado ni
+efecto, y **no obliga a cada consumidor a decidir entre skeleton y `null`** —
+simplemente renderiza el skeleton y él se encarga.
 
 #### La matriz de movimiento, verificada en vivo
 

@@ -1276,6 +1276,19 @@ body::-webkit-scrollbar { display: none; }
 }
 
 /* Skeleton sweep */
+/* Variante con retraso: el placeholder existe en el DOM desde el principio
+   (así el layout no salta) pero permanece invisible 250ms. Si la respuesta
+   llega antes, el usuario nunca ve el skeleton y no hay parpadeo — el
+   problema clásico de "skeleton en todo".
+   Se resuelve en CSS a propósito: la versión con useState+setTimeout viola
+   la regla `react-hooks/set-state-in-effect` del proyecto, y además obligaba
+   a cada consumidor a decidir entre skeleton y null. Así solo se renderiza. */
+.skeleton-delayed {
+  opacity: 0;
+  animation: skeletonFadeIn 1ms linear 250ms forwards;
+}
+@keyframes skeletonFadeIn { to { opacity: 1; } }
+
 .skeleton {
   background: linear-gradient(90deg,
     rgba(148,163,184,0.10) 25%,

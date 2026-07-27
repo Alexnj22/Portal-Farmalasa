@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo } from 'react';
 import { Inbox, Loader2 } from 'lucide-react';
 
 /**
@@ -22,49 +22,29 @@ import { Inbox, Loader2 } from 'lucide-react';
  * `prefers-reduced-motion` (index.css lo congela a un fondo sólido).
  */
 
-/* ── useDelayedLoading ────────────────────────────────────────────────────
-   El skeleton solo aparece si la espera SUPERA el umbral. Sin esto, una vista
-   que responde en 120ms produce un parpadeo que se ve peor que no mostrar
-   nada — es el problema clásico de "skeleton en todo", y la razón por la que
-   migrar los 133 spinners de vista sin este guard empeoraría las pantallas
-   rápidas en vez de mejorarlas.
-
-   250ms es el umbral: por debajo el ojo lee la transición como instantánea y
-   el skeleton solo estorba; por encima la espera ya se percibe y conviene
-   mostrar la forma de lo que viene.
-
-     const mostrar = useDelayedLoading(loading);
-     if (mostrar)  return <SkeletonText lines={6} />;
-     if (loading)  return null;   // espera corta: nada, y no parpadea
-*/
-// eslint-disable-next-line react-refresh/only-export-components -- hook acoplado a estos componentes; solo afecta Fast Refresh en dev
-export function useDelayedLoading(loading, delay = 250) {
-    const [visible, setVisible] = useState(false);
-    useEffect(() => {
-        if (!loading) { setVisible(false); return; }
-        const t = setTimeout(() => setVisible(true), delay);
-        return () => clearTimeout(t);
-    }, [loading, delay]);
-    return visible;
-}
-
 /* ── Skeleton ─────────────────────────────────────────────────────────────
    Una pieza de placeholder. `w`/`h` aceptan cualquier valor CSS para poder
    estimar el ancho real del contenido — un skeleton que no se parece a lo
    que va a reemplazar produce un salto al cargar. */
-export const Skeleton = memo(({ w = '100%', h = 12, rounded = '0.5rem', className = '', style }) => (
+export const Skeleton = memo(({ w = '100%', h = 12, rounded = '0.5rem', delayed = true, className = '', style }) => (
     <div
-        className={`skeleton ${className}`}
+        className={`skeleton ${delayed ? 'skeleton-delayed' : ''} ${className}`}
         style={{ width: w, height: typeof h === 'number' ? `${h}px` : h, borderRadius: rounded, ...style }}
     />
 ));
 
 /* Bloque de líneas — el caso más común (una tarjeta o fila cargando). Los
-   anchos decrecen para que lea como texto y no como una barra maciza. */
-export const SkeletonText = memo(({ lines = 3, className = '' }) => (
+   anchos decrecen para que lea como texto y no como una barra maciza.
+
+   `delayed` (por defecto true) hace que el placeholder exista en el DOM desde
+   el principio, para que el layout no salte, pero no se vea hasta pasados
+   250ms. Si la respuesta llega antes, el usuario nunca ve el skeleton: es lo
+   que evita que "skeleton en todo" empeore las pantallas rápidas. Ponerlo en
+   false solo donde se sabe que la espera SIEMPRE es larga. */
+export const SkeletonText = memo(({ lines = 3, delayed = true, className = '' }) => (
     <div className={`flex flex-col gap-2 ${className}`}>
         {Array.from({ length: lines }, (_, i) => (
-            <Skeleton key={i} h={11} w={`${[92, 78, 64, 85, 70][i % 5]}%`} />
+            <Skeleton key={i} h={11} delayed={delayed} w={`${[92, 78, 64, 85, 70][i % 5]}%`} />
         ))}
     </div>
 ));
@@ -145,4 +125,4 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
     );
 });
 
-export default { Skeleton, SkeletonText, EmptyState, LoadingState, useDelayedLoading };
+export default { Skeleton, SkeletonText, EmptyState, LoadingState };

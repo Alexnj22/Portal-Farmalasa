@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "gate:design": "node scripts/design-gate.mjs"
+    "gate:design": "node scripts/design-gate.mjs",
+    "gate:doc": "node scripts/design-doc-gate.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

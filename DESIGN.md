@@ -8,10 +8,39 @@
 
 ## Cómo usar este doc
 
-1. **Empieza por §3 (Tokens)** — todo valor visual nace ahí. Si quieres cambiar un color o blur, cámbialo en `:root` de `src/index.css`, no en el componente.
-2. **Antes de crear un componente nuevo**, revisa §13–§14 (Componentes). Si uno existente puede extenderse, extiéndelo. Prohibido duplicar modales fuera de ModalShell/UnifiedModal ni selects fuera de LiquidSelect.
-3. **Toda UI nueva debe pasar §24 Anti-Patterns** antes de mergearse.
-4. **Los tokens viven en `src/index.css`**; los keyframes también en `src/index.css` (no existe `tailwind.config.js` desde la Fase T1, 2026-07-23 — ver §11); la lógica de tema en `src/context/ThemeContext.jsx`.
+1. **Antes de escribir cualquier control, mirá el índice de canónicos de abajo.**
+   Si el control existe, se usa; no se reescribe. Cuando se midió el proyecto,
+   había 940 botones, 316 chips y 3 implementaciones de switch escritas a mano
+   — casi siempre porque quien las escribió no sabía que el canónico existía.
+2. **Todo valor visual nace en §3 (Tokens).** Un color, un radio o un tamaño que
+   no salga de un token es deuda, aunque hoy se vea bien.
+3. Si el control **no** existe: se propone el canónico. No se resuelve inline
+   "por esta vez" — así es como aparecieron los 316 chips.
+4. Toda UI nueva pasa **§31 Anti-Patterns** y `npm run gate:design`.
+
+### Índice de canónicos
+
+| control | componente | §ectión |
+|---|---|---|
+| botón | `Button` | §15.2 |
+| una de N opciones | `SegmentedControl` | §15.3 |
+| encendido/apagado | `Switch` | §15.4 |
+| casilla | `Checkbox` | §15.4 |
+| acción en la barra de vista | `TabBarAction` | §15.5 |
+| aviso inline | `Notice` | §15.6 |
+| etiqueta de estado | `Badge` | §16.1 |
+| campo de formulario | `PortalInput` | §29.1 |
+| desplegable | `LiquidSelect` | §14 |
+| fecha / rango | `LiquidDatePicker` · `RangeDatePicker` | §14 |
+| barra de vista con buscador | `ViewTabBar` | §24 |
+| vacío · esqueleto · cargando | `StateViews` | §18 |
+| modal | `LiquidModal` sobre `ModalShell` | §14 |
+
+**Lo que este documento verifica de sí mismo:** `npm run gate:doc` pasa todos
+los ejemplos de código de acá por el mismo gate que el código. Se agregó en D4
+porque el documento tenía 21 menciones de radios fijos y 10 de `shadow-glow` —
+enseñaba exactamente lo que el gate prohíbe. Un documento no se desactualiza de
+golpe: se desactualiza porque nada lo revisa.
 
 ---
 
@@ -465,7 +494,7 @@ Card hover (desktop only, `@media (hover: hover)`):
 |---|---|---|
 | Primary blue | `#0052CC` | CTA buttons, active states, brand accents — **funcional**, no cambia |
 | Dark blue | `#003D99` | Button hover |
-| Violet-indigo gradient | `from-[#0052CC] to-[#6929C4]` | Icon squircles, accent elements — legado, no derivado del logo real |
+| Violet-indigo gradient | `from-brand to-brand-purple` | Icon squircles, accent elements — legado, no derivado del logo real |
 | Active nav glow (legado) | `from-violet-500/22 via-indigo-400/14 to-blue-500/8` | Pre-2026-07-23; ver reemplazo abajo |
 | Sidebar accent bar (legado) | `from-violet-300 via-indigo-400 to-blue-400` | Pre-2026-07-23; ver reemplazo abajo |
 
@@ -536,51 +565,70 @@ categoría — siempre los tokens de arriba.
 
 ---
 
-## 7. Typography
+## 7. Tipografía
 
-Font stack: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`. No web fonts loaded. Set on `html` and via Tailwind `font-sans`.
+> Reescrita el 2026-07-27 (D4). La versión anterior daba la escala en píxeles
+> arbitrarios (`text-[13px]`, `text-[11px]`…). Eso es lo que produjo **22 tamaños
+> distintos** en el código para lo que en realidad son 13 roles.
 
-### Scale
+Fuente: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`.
+Sin webfonts.
 
-| Role | Size | Weight | Example |
-|---|---|---|---|
-| View title (desktop) | 24–28px | `font-semibold` | `text-[24px] xl:text-[26px] 2xl:text-[28px] font-semibold tracking-tight` |
-| View title (mobile) | 16px | `font-bold` | `text-[16px] font-bold tracking-tight truncate` |
-| Section heading / modal title | 18–20px | `font-black` | `text-[18px] sm:text-[20px] font-black uppercase tracking-tight` |
-| Nav label | 12–13px | `font-medium` / `font-semibold` (active) | `text-[12px] xl:text-[13px]` |
-| Table cell / body | 13px | `font-medium` | `text-[13px] font-medium` |
-| Label / caption | 11–12px | `font-semibold` | `text-[11px] font-semibold` |
-| Badge / pill | 9–11px | `font-black uppercase tracking-widest` | `text-[10px] font-black uppercase tracking-widest` |
-| PIN / code | 12px | `font-black tracking-widest font-mono` | `text-[12px] font-black tracking-widest font-mono` |
-| Button label | 11–13px | `font-black uppercase tracking-widest` | `text-[11px] font-black uppercase tracking-widest` |
-| Dato numérico | Ídem su contexto (tabla/KPI/badge) | — | Siempre + `tabular-nums`. Ya es el estándar de facto (229 usos en 47 archivos, verificado 2026-07-23) — no un gap, documentar para que se mantenga al migrar a tokens en T4. |
+**El tamaño sale de un token, nunca de un `text-[Npx]`.**
 
-**Conventions:**
-- All-caps labels always use `uppercase tracking-widest font-black`.
-- Never `font-normal` in interactive UI — minimum `font-medium`.
-- Minimum contrast on glass: `text-slate-600` for labels, `text-slate-500` for secondary text.
-- **`tabular-nums` obligatorio en toda columna/celda numérica** (montos, conteos, porcentajes) — evita el "jitter" de anchos variables por dígito. Ya es la práctica real dominante, no una regla nueva.
+| token | px | para qué |
+|---|---|---|
+| `text-micro` | 9 | contadores, superíndices |
+| `text-caption` | 10 | badges, etiquetas en mayúsculas |
+| `text-label` | 11 | etiquetas de campo, chips |
+| `text-body-sm` | 12 | texto secundario, navegación |
+| `text-body` | 13 | celda de tabla, cuerpo |
+| `text-body-lg` | 14 | cuerpo destacado |
+| `text-subtitle` | 15 | subtítulos |
+| `text-body-xl` | 16 | input (mínimo en móvil, ver §32) |
+| `text-title-sm` | 18 | título de modal |
+| `text-title` | 20 | título de sección |
+| `text-title-lg` | 22 | título de vista en móvil |
+| `text-display` | 26 | título de vista |
+| `text-display-lg` | 32 | KPI, cifra destacada |
+
+En táctil, `--text-micro` y `--text-caption` suben un punto: 9px en un teléfono
+no se lee.
+
+**Convenciones**
+- Mayúsculas siempre con `uppercase tracking-widest font-black`.
+- Nunca `font-normal` en UI interactiva — mínimo `font-medium`.
+- **`tabular-nums` obligatorio** en toda columna o celda numérica: sin eso los
+  dígitos bailan al actualizarse.
+- Contraste mínimo sobre vidrio: `text-content-2` para etiquetas, `text-content-3`
+  para texto secundario. Nunca por debajo.
 
 ---
 
-## 8. Border Radius Scale
+## 8. Escala de radios
 
-Values in use across the codebase (pixel-equivalent approximate):
+> Reescrita el 2026-07-27 (D4). La versión anterior era un **inventario** de los
+> radios que existían en el código (`rounded-[0.7rem]`, `rounded-[1.2rem]`,
+> `rounded-[2.5rem]`…). Documentar el desorden lo convierte en norma: cada quien
+> elegía uno de la lista.
 
-| ~px | Value | Used on |
-|---|---|---|
-| ~11px | `rounded-[0.7rem]` | Icon inner containers (ThemeToggle) |
-| ~14px | `rounded-[0.875rem]` | Nav item buttons, small controls |
-| ~16px | `rounded-[1rem]` | Nav group headers |
-| ~19px | `rounded-[1.2rem]` | Modal icon squircles (ConfirmModal) |
-| ~20px | `rounded-[1.25rem]` | Logo container, filter pills, dropdown |
-| ~24px | `rounded-[1.5rem]` | GlassViewLayout body, buttons in login |
-| ~28px | `rounded-[1.75rem]` | Stat cards, widget cards |
-| ~32px | `rounded-[2rem]` | AlertModal, ConfirmModal |
-| ~40px | `rounded-[2.5rem]` | Sidebar, page header, UnifiedModal |
-| pill | `rounded-full` | Badges, dot indicators, ambient orbs |
+**El radio sale de un token y el token cambia por tema.** No se escribe un radio
+arbitrario.
 
-`rounded-glass`/`rounded-glassMd`/`shadow-glass`/`shadow-glassSm`/`backdrop-blur-glass` (antes en `tailwind.config.js`) se eliminaron en la Fase T1 (2026-07-23): confirmado con grep que ninguna vista los consume — código muerto, no una utilidad viva que migrar.
+| token | liquid glass | sólido | dónde |
+|---|---|---|---|
+| `--btn-radius` → `rounded-btn` | `9999px` | `0.5rem` | botones, chips, controles |
+| `--card-radius` → `rounded-card` | `1.75rem` | `0.75rem` | tarjetas, widgets |
+| `--modal-radius` → `rounded-modal` | | | modales |
+| `--header-radius` → `rounded-header` | | | cabeceras flotantes, sidebar |
+
+Que el sólido use radios más chicos **es el diseño**, no una excepción: el vidrio
+es redondo y expresivo, el sólido es recto y eficiente. Por eso ningún componente
+lleva `rounded-full` fijo — eso deja el control redondo en un tema que lo quiere
+recto.
+
+`rounded-full` solo es correcto en lo que es **geométricamente un círculo**:
+avatares, puntos de estado, orbes del fondo.
 
 ---
 
@@ -707,7 +755,7 @@ los usaba — se descartaron en vez de migrarse (código muerto).
 All primary CTA buttons include an inner `<span>` shimmer overlay:
 ```jsx
 <span className="absolute inset-0 overflow-hidden rounded-[1.5rem] pointer-events-none">
-  <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent
+  <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent
                    -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
 </span>
 ```
@@ -740,14 +788,14 @@ Current files using framer-motion:
 **Icon squircle** (standard container for view/module icons):
 ```jsx
 // Desktop
-<div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-2xl
+<div className="bg-gradient-to-tr from-brand to-brand-purple rounded-2xl
                 shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2.5
                 flex items-center justify-center">
   <Icon className="text-white" size={20} strokeWidth={1.5} />
 </div>
 
 // Mobile
-<div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl
+<div className="bg-gradient-to-tr from-brand to-brand-purple rounded-xl
                 shadow-[0_4px_12px_rgba(0,82,204,0.3)] p-2 flex-shrink-0
                 flex items-center justify-center">
   <Icon className="text-white" size={16} strokeWidth={1.5} />
@@ -1030,92 +1078,186 @@ User avatar with skeleton shimmer preloader, lazy image load, fallback to initia
 
 ---
 
-## 15. Buttons
+## 15. Controles canónicos
 
-No shared button component — patterns are inline.
+> Reescrito el 2026-07-27 (D4). La versión anterior decía *"No shared button
+> component — patterns are inline"* y mostraba hex crudos y radios fijos. Eso
+> dejó de ser cierto y era lo que hacía que la deuda volviera: cada persona que
+> leía este documento escribía otro botón a mano.
 
-### Primary CTA (blue gradient)
+**Regla base: no se escribe un control a mano.** Si lo que necesitás no está
+acá, el paso es proponer el canónico —no resolverlo inline en la vista.
+
+### 15.1 La forma la decide el TEMA, no el componente
+
+`--btn-radius` cambia por tema: **`9999px` en liquid glass, `0.5rem` en sólido**.
+Por eso `rounded-btn` ya rinde píldora en vidrio y rectángulo en sólido, y por
+eso **ningún control lleva un radio fijo**.
+
 ```jsx
-className={`relative overflow-hidden group
-  bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78
-  backdrop-blur-xl
-  border border-white/22 hover:border-white/36
-  text-white rounded-[1.5rem]
-  font-black text-[13px] uppercase tracking-widest
-  shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
-  hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
-  flex items-center justify-center gap-2
-  transition-all duration-200 active:scale-[0.97]
-  disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`}
-```
-Always include the shimmer `<span>` overlay (see §11 Shimmer sweep).
+// ❌ clava la forma y pelea con el tema sólido
+<button className="rounded-full …">
 
-### Secondary / ghost
-```
-text-slate-600 bg-white border-slate-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-sm rounded-xl
-font-black text-[11px] uppercase tracking-widest
+// ✅ la forma sale del token
+<Button>Guardar</Button>
 ```
 
-### Destructive
-```
-bg-red-500 hover:bg-red-600 shadow-[0_4px_15px_rgba(239,68,68,0.3)] text-white rounded-2xl
-font-black text-[11px] uppercase tracking-widest
+Cuando se midió, había seis radios distintos en botones (`rounded-xl` 186,
+`rounded-full` 109, `rounded-2xl` 82, `rounded-btn` 50, sin radio 48,
+`rounded-lg` 32). No eran seis decisiones: eran seis formas de ignorar el token.
+
+### 15.2 `Button`
+
+```jsx
+import Button from '@/components/common/Button';
+
+<Button onClick={guardar}>Guardar</Button>
+<Button variant="secondary" icon={X} onClick={cancelar}>Cancelar</Button>
+<Button variant="destructive" size="xs" icon={Trash2} iconOnly onClick={borrar} />
+<Button tone="success" icon={Check}>Aprobar</Button>
 ```
 
-### Nav item (inactive state)
-```
-text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px]
-hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
-active:scale-[0.99] active:translate-y-0
+| prop | valores | para qué |
+|---|---|---|
+| `variant` | `primary` · `secondary` · `ghost` · `destructive` | **jerarquía** |
+| `tone` | `success` · `warning` · `chart-1…9` | **categoría**, no jerarquía. Excluyente con `variant`. |
+| `size` | `xs` · `sm` · `md` · `lg` | sale de `--control-h`, con piso de 44px en táctil |
+| `icon` · `iconOnly` · `loading` · `disabled` | | |
+
+`variant` y `tone` son ejes distintos a propósito: *primary* dice **cuán
+importante es**, *success* dice **de qué se trata**. Mezclarlos en un solo eje
+fue el error que se corrigió al medir los 115 botones coloreados.
+
+### 15.3 `SegmentedControl` — una de N opciones
+
+Si el estilo depende de `X === valor`, **no es un botón con estado**: es este
+control. Se midieron 123 botones escritos así.
+
+```jsx
+<SegmentedControl
+    value={modo} onChange={setModo} label="Modo"
+    options={[
+        { value: 'mes', label: 'Por mes' },
+        { value: 'dia', label: 'Por días' },
+    ]}
+/>
 ```
 
-All interactive elements: `transition-all duration-200` or `transition-[specific,props] duration-150/200`.
+Cada opción acepta `tone` propio cuando el color lleva información (ej. el
+alcance de permisos, donde el color separa "Todos" de "Mi Sucursal").
+Semántica: `role="radiogroup"`, para que un lector anuncie "2 de 3".
+
+**Cuándo NO**: muchas opciones o vienen de datos → `LiquidSelect`. Navegación
+entre secciones → los `tabs` de `ViewTabBar`. Cada opción hace algo distinto →
+son botones sueltos.
+
+### 15.4 `Switch` y `Checkbox`
+
+```jsx
+<Switch checked={activo} onChange={setActivo} label="Notificaciones" />
+<Checkbox checked={ok} onChange={setOk} label="Acepto" />
+<Checkbox indeterminate={parcial} checked={todos} onChange={marcarTodos} label="Todos" />
+```
+
+**Sin `onChange` son indicadores, no controles**: renderizan un `<span>` en vez
+de un control enfocable. Es para los que viven dentro de una fila que ya es
+clickeable, donde un segundo control sería otra parada de tabulación hacia la
+misma acción.
+
+`Checkbox` reemplaza a `<input type="checkbox">` **siempre**: la casilla nativa
+se pinta con el color del sistema operativo e ignora los cuatro temas. Es la
+misma regla que ya existía para `<select>`.
+
+### 15.5 `TabBarAction` — acciones dentro de `ViewTabBar`
+
+```jsx
+<ViewTabBar … trailingActions={
+    <TabBarAction icon={UserPlus} variant="primary" onClick={crear}>Nuevo</TabBarAction>
+} />
+```
+
+Una sola primaria por barra; el resto `quiet`, con el color reducido al ícono.
+Sin halo: `shadow-glow-*` se dibuja igual sobre fondo claro que oscuro, así que
+en los temas sólidos no se ve luminoso sino sucio.
+
+En táctil las acciones **no van en línea** — `ViewTabBar` las guarda tras un
+botón y las abre en una hoja inferior. Sin eso, a 390px quedaban controles fuera
+de la pantalla.
+
+### 15.6 `Notice` — aviso inline
+
+```jsx
+<Notice variant="warning" icon={Search}>
+    Resultados similares — no hubo coincidencias exactas
+</Notice>
+```
+
+El del medio entre `AlertModal` (interrumpe) y los banners de página. Dice algo
+*acá*, junto a lo que se habla. `role="status"`, no `alert`: informar no es
+interrumpir.
 
 ---
 
-## 16. Badges & Notification Indicators
+## 16. Badges, avisos e indicadores
 
-### Notification count badge
+> Reescrita el 2026-07-27 (D4). La versión anterior enseñaba `bg-red-500`,
+> `bg-emerald-500/10`, `#0052CC` y `text-[10px]` — colores de Tailwind y
+> tamaños a mano que **ignoran los cuatro temas**. Era el ejemplo más directo de
+> cómo el documento generaba deuda.
+
+Al medirlos aparecieron **316 "chips"** escritos a mano, y no eran una sola cosa:
+
+| | | |
+|---|---|---|
+| 249 | 78% | chip inline corto → `Badge` |
+| 58 | 18% | aviso con ícono → `Notice` (§15.6) |
+| 9 | 2% | contador pegado a un ícono → se queda inline, es geometría |
+
+### 16.1 `Badge` — etiqueta de estado
+
 ```jsx
-<span className="min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[10px] font-black
-                 rounded-full flex items-center justify-center">
-  {count > 9 ? '9+' : count}
+import Badge from '@/components/common/Badge';
+
+<Badge variant="success">Activo</Badge>
+<Badge variant="danger" tone="solid">Vencido</Badge>
+<Badge variant="warning" size="sm">Por vencer</Badge>
+```
+
+`variant` es semántico (`success` · `warning` · `danger` · `info` · `neutral` y
+la paleta de gráficos), `tone` elige teñido o relleno. Los colores salen de los
+tokens, así que responden a los cuatro temas.
+
+**Nunca** `bg-red-500`, `bg-emerald-500/10` ni un hex. El color de un badge dice
+*qué significa*, y eso vive en el token semántico.
+
+### 16.2 Contador sobre un ícono
+
+El único caso que se escribe inline, porque es **posición**, no estilo: el
+contador vive pegado a la esquina de su ícono.
+
+```jsx
+<span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
+    bg-danger-solid text-white text-micro font-black
+    rounded-full flex items-center justify-center border-2 border-surface-card">
+  {n > 9 ? '9+' : n}
 </span>
 ```
 
-### Alert dot (pulsing)
+El `border-2 border-surface-card` no es decorativo: recorta el contador del
+fondo que tenga detrás. Por eso va del color de la superficie, **no blanco fijo**
+—en oscuro un borde blanco dibuja un halo—.
+
+### 16.3 Punto de estado en vivo
+
 ```jsx
 <span className="relative flex h-2 w-2">
-  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
+  <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
 </span>
 ```
 
-### Live indicator (on view icon, larger)
-```jsx
-<span className="absolute -top-1 -right-1 flex h-3 w-3">
-  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white" />
-</span>
-```
-
-### "Próximamente" badge (nav items)
-```
-text-[9px] font-black uppercase tracking-wider text-amber-600/70
-bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full
-```
-
-### Semantic status badge
-```jsx
-// Success
-"px-2.5 py-0.5 bg-emerald-500/10 text-emerald-700 border border-emerald-500/25 rounded-full text-[10px] font-bold"
-// Warning
-"px-2.5 py-0.5 bg-amber-500/10 text-amber-700 border border-amber-500/25 rounded-full text-[10px] font-bold"
-// Error
-"px-2.5 py-0.5 bg-red-500/10 text-red-700 border border-red-500/25 rounded-full text-[10px] font-bold"
-// Info / brand
-"px-2.5 py-0.5 bg-[#0052CC]/10 text-[#0052CC] border border-[#0052CC]/25 rounded-full text-[10px] font-bold"
-```
+`animate-ping` es decorativo: el tema sólido lo apaga solo, y también
+`prefers-reduced-motion`.
 
 ---
 
@@ -1125,7 +1267,7 @@ All view-level filters live in a pill container, never as loose controls scatter
 
 **Standard pill anatomy:**
 ```
-rounded-2xl bg-white/80 border border-slate-200/70
+rounded-card bg-surface-card border border-border-card
 ```
 Dividers between filter controls: `h-5 w-px bg-slate-100`.
 
@@ -1135,7 +1277,7 @@ Dividers between filter controls: `h-5 w-px bg-slate-100`.
   <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
     {/* stat cards */}
   </div>
-  <div className="rounded-2xl bg-white/80 border border-slate-200/70 ... shrink-0">
+  <div className="rounded-card bg-surface-card border border-border-card ... shrink-0">
     {/* branch select, period picker, toggles, individual clear buttons */}
   </div>
 </div>
@@ -1167,48 +1309,71 @@ alcance de esta corrección puntual.
 
 ---
 
-## 18. Empty States
+## 18. Estados de vista — `StateViews`
 
-Required on every view or tab that can have zero data. Standard Glassmorphism pattern:
+> Reescrito el 2026-07-27 (D4). La versión anterior describía el patrón con
+> clases sueltas (`w-16 h-16 rounded-[1.5rem] bg-white/50 …`) y por eso se
+> reescribió a mano en cada vista. **Existe un componente desde hace tiempo y
+> este documento no lo mencionaba** — así es como se acumuló la deuda.
 
+Todo vive en `src/components/common/StateViews.jsx`.
+
+### 18.1 `EmptyState` — obligatorio donde puede haber cero datos
+
+```jsx
+import { EmptyState } from '@/components/common/StateViews';
+
+<EmptyState
+    icon={FolderOpen}
+    title="Sin documentos aún"
+    subtitle="Aquí aparecerán tus constancias y boletas."
+    action={<Button icon={Plus} onClick={crear}>Subir el primero</Button>}
+/>
 ```
-glass squircle icon + bold title + sub-title
+
+| prop | para qué |
+|---|---|
+| `icon` · `title` · `subtitle` | el contenido |
+| `action` | **la salida**. Sin esto es una pantalla muerta: el usuario ve que no hay nada y no sabe qué hacer. |
+| `compact` | dentro de un panel o una tarjeta, no a página completa |
+| `iconClass` · `glowClass` | color semántico cuando el vacío tiene un matiz (aviso, error) |
+
+Distinguir **"no hay nada todavía"** de **"tu filtro no encontró nada"**: son
+mensajes distintos y la salida también (crear el primero vs. limpiar el filtro).
+
+`DataTable` tiene su propia prop `empty` para el vacío dentro de la tabla.
+
+### 18.2 `Skeleton` y `SkeletonText` — nunca un spinner de sección
+
+```jsx
+import { Skeleton, SkeletonText } from '@/components/common/StateViews';
+
+<Skeleton w={48} h={48} rounded="1rem" />
+<SkeletonText lines={2} />
 ```
 
-**Glass squircle:**
-```
-w-16 h-16 rounded-[1.5rem] bg-white/50 border border-white/80
-shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.9)]
-flex items-center justify-center mb-6
-```
-Icon inside: `size={32}` Lucide icon in semantic color.
+**El spinner solo va dentro de un botón** mientras una acción está en curso
+(`<Loader2 className="animate-spin" />`, y `Button` ya lo hace con `loading`).
+Para una sección que está cargando va el esqueleto, que muestra la *forma* de lo
+que viene en vez de un girito sin información.
 
-**Title:** `font-black text-slate-700 text-[20px] uppercase tracking-tight mb-2`
-**Subtitle:** `text-slate-500 text-[13px] font-medium leading-relaxed text-center`
+`delayed` (activo por defecto) espera 250 ms antes de aparecer: sin eso, una
+carga rápida produce un parpadeo peor que no mostrar nada.
 
-Optional action button below subtitle.
+`DataTable` acepta `loading` + `skeletonRows`.
 
-DataTable provides `empty` prop: `{ icon: LucideIcon, message: string }` — renders inline in table body.
+### 18.3 `LoadingState` y `AiThinkingState`
+
+`LoadingState` cubre las tres escalas —`route`, `content`, `inline`— para cuando
+todavía no se sabe la forma del contenido. `AiThinkingState` es el estado propio
+de las vistas con resumen generado.
 
 ---
 
 ## 19. Loading & Skeleton States
 
-**Skeleton shimmer:** CSS class `.skeleton` defined in `src/index.css`. Applied to placeholder `div` with estimated dimensions. Used in stat cards, table rows.
-
-```jsx
-// Stat card skeleton
-<div className="w-6 h-6 rounded-lg skeleton shrink-0" />
-<div className="h-3 skeleton" style={{ width: estimatedWidth * 0.45 }} />
-```
-
-**Inline spinner (action buttons):**
-```jsx
-<Loader2 size={16} strokeWidth={2.5} className="animate-spin shrink-0" />
-```
-Use only inside buttons during async processing. Never center a full-page spinner.
-
-DataTable: `loading` prop + `skeletonRows` prop renders shimmer rows in table body.
+Fusionado en **§18.2**. Se mantiene el número para no romper referencias
+externas.
 
 ---
 
@@ -1389,7 +1554,7 @@ Regla corta: si el buscador es un control que se puede mostrar/ocultar sin rompe
 **Uso mínimo:**
 ```jsx
 <div className="flex items-center justify-end gap-1.5 shrink-0">
-  <SearchInput expandable accentColor="#F79009" value={search} onChange={setSearch} placeholder="Buscar producto..." />
+  <SearchInput expandable accentColor="var(--warning)" value={search} onChange={setSearch} placeholder="Buscar producto..." />
   {/* filtros después, si los hay — quedan a la derecha del buscador */}
 </div>
 ```
@@ -1430,7 +1595,7 @@ const { results, isFuzzy } = !searchTerm.trim()
 ```jsx
 {isFuzzy && searchTerm && (
     <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl
-                    bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    bg-warning/10 border border-warning/30 text-label text-warning font-semibold">
         <Search size={12} strokeWidth={2.5} className="shrink-0" />
         Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
     </div>
@@ -1739,42 +1904,55 @@ Fallback uses only existing CSS tokens — respects active theme (transparent ba
 
 ## 29. Forms & Validation
 
-### Input patterns
+### 29.1 Inputs — `PortalInput`
 
-Two distinct input styles exist in the codebase depending on context:
+> Reescrito el 2026-07-27 (D4). La versión anterior documentaba **dos estilos de
+> input que compiten** (glass y solid) con hex crudos, `text-[13px]` y su propio
+> aro de foco. Los dos estaban a mano, y el aro propio era una de las 171
+> reescrituras del foco que se borraron ese día.
 
-**Glass input** — used inside `LiquidModal` / glass card contexts:
 ```jsx
-// Reference: src/components/forms/BranchHelpers.jsx:155
-className="w-full py-3.5
-  bg-white/50 border border-white/60 rounded-[1.25rem]
-  text-[13px] font-bold text-slate-700 placeholder-slate-400
-  outline-none transition-all duration-300
-  shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]
-  focus:bg-white focus:border-[#0052CC]/30
-  focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)]"
+import PortalInput from '@/components/common/PortalInput';
+
+<PortalInput
+    name="dui" label="DUI" icon={CreditCard}
+    value={form.dui} onChange={handle}
+    required maskType="dui"
+/>
 ```
 
-**Solid input** — used in standalone forms or white-background contexts:
+Trae etiqueta en mayúsculas, badge de **Requerido**, borde de error, máscara e
+íconos. Todo formulario nuevo lo reusa.
+
+**El aro de foco NO se escribe.** Existe una sola regla en `index.css` sobre
+`button/input/select/textarea/a/[role=button]/[tabindex]:focus-visible`. Cuando
+se midió, había 171 aros a mano en 47 archivos, cada uno de otro color — y el
+canónico estaba en `rgba(0,82,204,.55)` sin variante por tema, que da **1.63:1
+sobre el navy oscuro** contra el 3:1 que pide WCAG 1.4.11. Escribir el propio
+tapaba el problema en vez de arreglarlo.
+
 ```jsx
-// Reference: src/components/forms/FormSetPassword.jsx:78
-className="w-full h-[44px] pl-10 pr-4
-  bg-white border border-slate-200/80 rounded-[1rem]
-  text-[13px] font-bold text-slate-700 outline-none
-  transition-all hover:border-[#0052CC]/30
-  focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+// ❌ reinventa el aro, y además lo apaga
+className="… outline-none focus:ring-4 focus:ring-brand/10"
+
+// ✅ no se escribe nada: el canónico lo pinta
 ```
 
-Both patterns:
-- Minimum height 44px (solid) / `py-3.5` ≈ 44px (glass)
-- `font-bold text-[13px]` on value text
-- `placeholder-slate-400` on placeholder
-- `outline-none` with custom focus ring
+`focus:outline-none` está **prohibido**: apaga el aro canónico y deja el campo
+sin foco visible (WCAG 2.4.7).
 
-### Disabled state
+### 29.2 Casillas y opciones
 
-Buttons: `disabled:bg-slate-300 disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`
-Inputs: `disabled:bg-slate-50 disabled:opacity-50`
+`<input type="checkbox">` **nunca** — usar `Checkbox` (§15.4). La casilla nativa
+se pinta con el color del sistema operativo e ignora los cuatro temas.
+
+Para elegir una de pocas opciones, `SegmentedControl` (§15.3); para muchas o
+cuando vienen de datos, `LiquidSelect`.
+
+### 29.3 Estado deshabilitado
+
+Sale del componente (`disabled` en `Button`, `PortalInput`, `Checkbox`). No se
+escriben clases `disabled:` a mano.
 
 ### Validation error standard — REVISADO 2026-07-25
 
@@ -1807,7 +1985,7 @@ Solo se muestra cuando el campo es requerido y está vacío (`isMissing && !hasE
 
 **(b) Inline field error** — appears below the field, shown when a field-level rule fails:
 ```jsx
-<p className="text-[11px] font-black text-danger mt-1">
+<p className="text-label font-black text-danger mt-1">
   {fieldError}
 </p>
 ```
@@ -1822,7 +2000,7 @@ Must be paired with `aria-invalid="true"` on the input and `aria-describedby` po
   border border-danger/30 shadow-[var(--shadow-glow-danger)]
   animate-in fade-in slide-in-from-top-2">
   <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
-  <span className="text-[12px] font-bold leading-relaxed">{globalError}</span>
+  <span className="text-body-sm font-bold leading-relaxed">{globalError}</span>
 </div>
 ```
 

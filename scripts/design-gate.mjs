@@ -218,6 +218,13 @@ const EXCEPTIONS = {
 const hasException = (file, category) => (EXCEPTIONS[file] || []).includes(category);
 
 function listFiles() {
+  // `--file X` limita el escaneo a un archivo suelto. Lo usa
+  // `design-doc-gate.mjs` para pasar los ejemplos de DESIGN.md por el mismo
+  // gate que el código: un documento que enseña lo que el gate prohíbe es peor
+  // que no tener documento.
+  const iFile = process.argv.indexOf('--file');
+  if (iFile !== -1 && process.argv[iFile + 1]) return [process.argv[iFile + 1]];
+
   const out = execSync(
     `find ${ROOTS.join(' ')} -type f \\( -name '*.jsx' -o -name '*.js' \\)`,
     { cwd: process.cwd() }

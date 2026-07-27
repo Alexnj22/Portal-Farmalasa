@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -199,10 +200,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-24 gap-2 text-content-3">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm">Cargando política de vencimiento…</span>
-            </div>
+            <div className="py-24"><SkeletonText lines={5} /></div>
         );
     }
 

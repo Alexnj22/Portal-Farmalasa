@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { SkeletonText } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
 import {
@@ -965,10 +966,7 @@ export default function EncuestaAdminView() {
                     <div className="space-y-5 pt-4 px-3 md:px-4">
 
                         {loadingSurveys ? (
-                            <div className="flex items-center justify-center h-40 gap-2 text-content-3">
-                                <Loader2 size={18} className="animate-spin" />
-                                <span className="text-body-sm font-semibold">Cargando…</span>
-                            </div>
+                            <div className="h-40 py-4"><SkeletonText lines={5} /></div>
                         ) : surveys.length === 0 ? (
                             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                                 <div className="relative group flex flex-col items-center text-center">
@@ -1134,10 +1132,7 @@ export default function EncuestaAdminView() {
 
                                             {/* Responses */}
                                             {loadingDetail ? (
-                                                <div className="flex items-center justify-center h-32 gap-2 text-content-3">
-                                                    <Loader2 size={16} className="animate-spin" />
-                                                    <span className="text-body-sm font-semibold">Cargando…</span>
-                                                </div>
+                                                <div className="h-32 py-3"><SkeletonText lines={4} /></div>
                                             ) : respuestas.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center min-h-[180px] text-center">
                                                     <ClipboardList size={32} strokeWidth={1.5} className="text-content-3 mb-3" />

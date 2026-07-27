@@ -672,7 +672,7 @@ export default function ConteoDetailView() {
                             <React.Fragment key={key}>
                                 <ProductGroupRow product={product} index={i} expanded={isExpanded} onToggle={() => toggleExpand(product)} />
                                 {isExpanded && loadingExpand[key] && (
-                                    <tr><td colSpan={COLUMNS.length} className="py-4 text-center"><Loader2 size={16} className="animate-spin text-content-3 inline" /></td></tr>
+                                    <tr><td colSpan={COLUMNS.length} className="py-4 px-6"><SkeletonText lines={3} /></td></tr>
                                 )}
                                 {isExpanded && lines && lines.map((item, j) => (
                                     <ItemRow

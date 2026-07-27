@@ -1,4 +1,5 @@
 import React from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Loader2, ChevronDown, ChevronRight, CheckCircle2,
@@ -184,10 +185,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-20 gap-2 text-content-3">
-                <Loader2 size={20} className="animate-spin" />
-                <span className="text-body-lg">Cargando pedidos…</span>
-            </div>
+            <div className="py-20"><SkeletonText lines={5} /></div>
         );
     }
 

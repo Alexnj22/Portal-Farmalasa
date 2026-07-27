@@ -778,9 +778,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     <td colSpan={8}
                                         className="px-5 py-4 bg-gradient-to-br from-chart-1/10 via-surface-card to-surface-card-hover">
                                         {loadingItems && !cachedItems ? (
-                                            <div className="flex items-center gap-2 text-label py-1 text-content-3">
-                                                <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando productos...
-                                            </div>
+                                            <div className="flex items-center gap-2 text-label py-1 text-content-3 w-full"><SkeletonText lines={2} /></div>
                                         ) : noData ? (
                                             <div className="flex items-center gap-2 text-label py-1 text-content-3">
                                                 <Info size={12} className="shrink-0 text-content-3" />
@@ -1994,9 +1992,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
-                                                    <div className="flex items-center gap-2 text-body-sm text-content-3 py-3">
-                                                        <Loader2 size={14} className="animate-spin" /> Cargando detalle...
-                                                    </div>
+                                                    <div className="flex items-center gap-2 text-body-sm text-content-3 py-3 w-full"><SkeletonText lines={2} /></div>
                                                 ) : (
                                                     <div className="space-y-4">
                                                         {/* Presentaciones breakdown */}

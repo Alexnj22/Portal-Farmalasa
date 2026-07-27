@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { SkeletonText } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import {
     BarChart2, Users, Star, MessageSquare, ChevronDown, ChevronUp,
@@ -1480,7 +1481,7 @@ export default function EncuestaView() {
                                     </div>
                                 ) : (
                                     <div className="px-5 py-4">
-                                        <p className="text-label text-content-3 italic">Cargando resumen guardado…</p>
+                                        <SkeletonText lines={2} />
                                     </div>
                                 )}
                             </div>

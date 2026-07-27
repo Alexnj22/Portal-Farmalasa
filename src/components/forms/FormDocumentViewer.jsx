@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Skeleton } from '../common/StateViews';
 import { Download, FileText, Loader2 } from 'lucide-react';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 
@@ -44,9 +45,8 @@ const FormDocumentViewer = ({ formData }) => {
             </div>
             <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden min-h-0">
                 {resolving ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm">
-                        <Loader2 size={32} className="animate-spin mb-3 text-brand-text" />
-                        <p className="font-bold text-label uppercase tracking-widest">Generando acceso seguro...</p>
+                    <div className="flex-1 min-h-0 w-full bg-surface-card rounded-3xl border border-divider shadow-sm p-6">
+                        <Skeleton h="100%" rounded="1rem" />
                     </div>
                 ) : url ? (
                     <div className="flex-1 min-h-0 w-full rounded-3xl border border-divider bg-surface-card shadow-sm overflow-hidden flex flex-col">

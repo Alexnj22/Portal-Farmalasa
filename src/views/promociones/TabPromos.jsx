@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import {
     Tag, Plus, ChevronDown, ChevronUp, Loader2, Package,
     Calendar, Building2, Play, Pause, Lock, Trash2,
@@ -363,10 +364,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
             {/* Loading */}
             {loading && (
-                <div className="flex items-center justify-center py-16 text-content-3">
-                    <Loader2 size={20} className="animate-spin mr-2" />
-                    <span className="text-body-sm">Cargando promociones...</span>
-                </div>
+                <div className="py-16"><SkeletonText lines={5} /></div>
             )}
 
             {/* Empty */}

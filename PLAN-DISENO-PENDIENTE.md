@@ -67,6 +67,48 @@ defecto), así que la migración es mecánica contra la regla.
 
 **Cierre:** 0 spinners como estado de sección; los 104 de botón intactos.
 
+#### ✓ CERRADA (2026-07-27)
+
+**25 estados de carga migrados en 24 archivos.** Al clasificarlos uno por uno
+apareció que el conteo inicial de "133 spinners de vista" mezclaba cosas
+distintas. El desglose real:
+
+| | | |
+|---|---|---|
+| 12 | bloque centrado con solo un spinner | → `SkeletonText` |
+| 6 | bloque "spinner + texto de cargando" | → `SkeletonText` |
+| 6 | bloques con forma propia (tabla, visor, grilla) | → skeleton con **su** forma |
+| 4 | inline "spinner + Cargando…" | → `SkeletonText` de 2 líneas |
+| ~104 | dentro de un botón o acción | **intactos**, es el patrón correcto |
+| ~8 | micro-indicadores de guardado junto a un elemento | **intactos**, misma razón |
+| ~7 | dentro de los propios canónicos | **intactos**, son la implementación |
+
+#### A12 · El tercer estado de espera
+
+Al revisar los "anillos de IA" resultó que no eran spinners de carga sino un
+**tercer estado** que el sistema nunca nombró:
+
+| situación | señal |
+|---|---|
+| contenido con forma conocida | **skeleton** |
+| acción disparada por un click | **spinner en el botón** |
+| **proceso largo e indeterminado** | **`AiThinkingState`** |
+
+Una generación de IA no tiene forma predecible —puede devolver dos párrafos o
+quince, una tabla o una lista— así que un skeleton mentiría sobre lo que viene.
+Y tarda segundos, no milisegundos: el usuario necesita ver que algo sigue
+trabajando, no un placeholder inmóvil.
+
+Estaba copiado a mano en 7 archivos con tamaños, colores y duraciones
+distintas. Ahora es `AiThinkingState` (en `StateViews.jsx`), con los anillos
+sobre `--chart-3`/`--chart-5` en vez de los morados crudos de cada copia, y
+`steps` para rotar mensajes —en una espera larga un texto fijo se lee como
+colgado. Adoptado en `FormAiSchedulerPreview`, `BranchesView`, `TabStaff` y
+`TabHistory`.
+
+**No se tocaron** los anillos decorativos (ícono de cabecera, efecto hover):
+no son estados de espera.
+
 ### D3.2 — `EmptyState` en las 32 vistas que lo copian
 
 **Cierre:** 0 implementaciones locales del patrón; `DESIGN.md` §18 deja de ser

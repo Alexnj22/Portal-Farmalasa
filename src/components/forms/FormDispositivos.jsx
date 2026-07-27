@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { SkeletonText } from '../common/StateViews';
 import { Laptop, AlertCircle, Loader2, Unplug, PowerOff, Activity } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
@@ -80,10 +81,7 @@ const FormDispositivos = ({ formData }) => {
             {/* CONTENEDOR DE LISTA ÚNICA */}
             <div className="relative min-h-[150px]">
                 {loading ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-content-3">
-                        <Loader2 size={28} className="animate-spin mb-3 opacity-50 text-brand-text" />
-                        <p className="text-caption font-black uppercase tracking-widest">Sincronizando...</p>
-                    </div>
+                    <div className="absolute inset-0 p-2"><SkeletonText lines={4} /></div>
                 ) : (
                     <div className="space-y-3">
                         {activeKiosks.length > 0 ? (

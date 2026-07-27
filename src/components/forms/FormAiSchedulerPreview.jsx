@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { AiThinkingState } from '../common/StateViews';
 import { Loader2, Sparkles, AlertTriangle, Save, X, Utensils, Baby, Users } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -196,19 +197,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
     // =========================================================================
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in duration-500">
-                <div className="relative w-24 h-24 flex items-center justify-center mb-8">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 rounded-full animate-spin [animation-duration:3s] blur-xl opacity-30"></div>
-                    <div className="absolute inset-2 bg-gradient-to-bl from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:1.5s] blur-md opacity-50"></div>
-                    <div className="relative w-16 h-16 bg-surface-card rounded-full flex items-center justify-center border border-chart-3/30 shadow-inner z-base">
-                        <Sparkles size={28} strokeWidth={2.5} className="text-chart-3-text animate-pulse scale-110" />
-                    </div>
-                </div>
-                <h3 className="text-xl md:text-2xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent uppercase tracking-tight mb-2">Gemini Pensando</h3>
-                <div className="h-6 flex items-center justify-center overflow-hidden mb-6">
-                    <p key={phraseIndex} className="text-label font-bold text-content-3 uppercase tracking-widest animate-in slide-in-from-bottom-4 fade-in duration-300 ease-out">{AI_LOADING_PHRASES[phraseIndex]}</p>
-                </div>
-            </div>
+            <AiThinkingState title="Gemini Pensando" steps={AI_LOADING_PHRASES[phraseIndex]} />
         );
     }
 

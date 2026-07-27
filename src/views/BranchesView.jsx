@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
+import { AiThinkingState } from '../components/common/StateViews';
 import { useNavigate } from "react-router-dom";
 import {
     Building2, MapPin, Phone, Smartphone, Clock, Edit3, Trash2, Plus,
@@ -286,16 +287,7 @@ const BranchCard = memo(({
                 {/* Contenido del Overlay */}
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-hide relative z-base">
                     {isGeneratingAi ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-                            <div className="relative w-16 h-16 flex items-center justify-center mb-5">
-                                <div className="absolute inset-0 border-2 border-chart-3/30 rounded-full animate-ping [animation-duration:2s]"></div>
-                                <div className="absolute inset-1 border-t-2 border-b-2 border-chart-3 rounded-full animate-spin [animation-duration:1.5s]"></div>
-                                <div className="absolute inset-3 border-l-2 border-r-2 border-chart-5 rounded-full animate-spin [animation-duration:2.5s] direction-reverse"></div>
-                                <Sparkles size={18} className="text-chart-3-text" />
-                            </div>
-                            <p className="text-body-sm font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent animate-pulse uppercase tracking-widest">Analizando Telemetría</p>
-                            <p className="text-caption font-bold text-chart-3-text mt-1 opacity-70">Ejecutando modelo neuronal</p>
-                        </div>
+                        <AiThinkingState size="sm" title="Analizando Telemetría" steps="Ejecutando modelo neuronal" className="absolute inset-0" />
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                             {aiSummaryData?.split('\n').map((paragraph, index) => (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import LiquidModal from '../../components/common/LiquidModal';
 import {
     Tag, X, Check, Loader2, ChevronRight, ChevronLeft,
@@ -294,9 +295,7 @@ function AddProductInline({ onAdd }) {
                 <div>
                     <label className={lbl}>Presentación *</label>
                     {loadingPresent ? (
-                        <div className="flex items-center gap-2 text-label text-content-3 py-2">
-                            <Loader2 size={12} className="animate-spin" /> Cargando presentaciones...
-                        </div>
+                        <div className="flex items-center gap-2 text-label text-content-3 py-2 w-full"><SkeletonText lines={2} /></div>
                     ) : (
                         <div className="flex gap-2 flex-wrap">
                             {presentOptions.map(opt => (

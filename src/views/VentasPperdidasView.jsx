@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SkeletonText } from '../components/common/StateViews';
 import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart, Download } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
@@ -152,9 +153,7 @@ export default function VentasPperdidasView() {
 
                 {/* Records */}
                 {loading ? (
-                    <div className="flex justify-center py-14">
-                        <div className="w-5 h-5 border-2 border-divider border-t-brand rounded-full animate-spin" />
-                    </div>
+                    <div className="py-8"><SkeletonText lines={6} /></div>
                 ) : rows.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 py-16">
                         <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border border-divider flex items-center justify-center">

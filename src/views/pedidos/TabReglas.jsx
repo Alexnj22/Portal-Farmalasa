@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
 import { normSearch } from '../../utils/searchUtils';
 import {
@@ -199,9 +200,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     <span className="normal-case tracking-normal font-medium text-content-3"> · se aplica automáticamente</span>
                 </p>
                 {loadingPres ? (
-                    <div className="flex items-center gap-2 text-label text-content-3">
-                        <Loader2 size={12} className="animate-spin" /> Cargando presentaciones…
-                    </div>
+                    <div className="flex items-center gap-2 text-label text-content-3 w-full"><SkeletonText lines={2} /></div>
                 ) : dedupedPres.length === 0 ? (
                     <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text">
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
@@ -165,10 +166,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-16 gap-2 text-content-3">
-                <Loader2 size={20} className="animate-spin" />
-                <span className="text-body-lg">Cargando pedidos activos…</span>
-            </div>
+            <div className="py-16"><SkeletonText lines={5} /></div>
         );
     }
 

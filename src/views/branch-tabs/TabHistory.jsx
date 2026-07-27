@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { AiThinkingState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -409,14 +410,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             {isGeneratingAi ? (
                                 /* SKELETON DE CARGA NEURONAL */
                                 <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-base">
-                                    <div className="flex flex-col items-center justify-center mb-8">
-                                        <div className="relative w-12 h-12 flex items-center justify-center mb-3">
-                                            <div className="absolute inset-0 border-2 border-chart-3/30 rounded-full animate-ping [animation-duration:2s]"></div>
-                                            <div className="absolute inset-1 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
-                                            <div className="absolute inset-3 border-l-2 border-r-2 border-cyan-400 rounded-full animate-spin [animation-duration:2.5s] direction-reverse"></div>
-                                        </div>
-                                        <p className="text-caption font-black text-chart-3-text uppercase tracking-widest animate-pulse">Sintetizando Historial...</p>
-                                    </div>
+                                    <AiThinkingState size="sm" title="Sintetizando Historial" className="mb-2" />
                                     <div className="space-y-4">
                                         <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
                                         <div className="h-3 bg-indigo-200/50 rounded-full w-full mb-2"></div>

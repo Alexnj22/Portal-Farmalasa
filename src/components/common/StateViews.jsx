@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Inbox, Loader2 } from 'lucide-react';
+import { Inbox, Loader2, Sparkles } from 'lucide-react';
 
 /**
  * StateViews — los tres estados que toda vista con datos necesita.
@@ -125,4 +125,48 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
     );
 });
 
-export default { Skeleton, SkeletonText, EmptyState, LoadingState };
+/* ── AiThinking ───────────────────────────────────────────────────────────
+   El TERCER estado de espera, distinto de los otros dos (A12, 2026-07-27).
+
+     contenido con forma conocida  → skeleton
+     acción disparada por el click → spinner dentro del botón
+     proceso largo e indeterminado → esto
+
+   Una generación de IA no tiene forma predecible —puede devolver dos párrafos
+   o quince, una tabla o una lista— así que un skeleton mentiría sobre lo que
+   viene. Y tarda segundos, no milisegundos: el usuario necesita ver que algo
+   sigue trabajando, no un placeholder inmóvil.
+
+   El patrón estaba copiado a mano en 7 archivos (17 instancias) con tamaños,
+   colores y duraciones distintas en cada uno. Los anillos usan --chart-3 y
+   --chart-5, no los morados crudos que traía cada copia.
+
+   `steps` rota mensajes: en una espera larga, un texto fijo se lee como
+   colgado. */
+export const AiThinkingState = memo(({
+    title = 'Procesando',
+    steps,
+    size = 'md',
+    className = '',
+}) => {
+    const box = size === 'sm' ? 'w-16 h-16' : 'w-24 h-24';
+    const icon = size === 'sm' ? 18 : 28;
+    return (
+        <div className={`flex flex-col items-center justify-center text-center
+            animate-in fade-in duration-500 ${size === 'sm' ? 'py-10' : 'py-20'} px-6 ${className}`}>
+            <div className={`relative ${box} flex items-center justify-center mb-6`}>
+                <div className="absolute inset-0 border-2 border-chart-3/30 rounded-full animate-ping [animation-duration:2s]" />
+                <div className="absolute inset-1 border-t-2 border-b-2 border-chart-3 rounded-full animate-spin [animation-duration:1.5s]" />
+                <div className="absolute inset-3 border-l-2 border-r-2 border-chart-5 rounded-full animate-spin [animation-duration:2.5s]" />
+                <Sparkles size={icon} strokeWidth={2.5} className="text-chart-3-text relative z-base" />
+            </div>
+            <h3 className={`font-black uppercase tracking-widest text-chart-3-text
+                ${size === 'sm' ? 'text-body-sm' : 'text-title-sm'}`}>{title}</h3>
+            {steps && (
+                <p className="text-caption font-bold text-content-3 mt-1.5 opacity-80">{steps}</p>
+            )}
+        </div>
+    );
+});
+
+export default { Skeleton, SkeletonText, EmptyState, LoadingState, AiThinkingState };

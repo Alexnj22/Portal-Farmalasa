@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SkeletonText } from '../components/common/StateViews';
 import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -78,7 +79,7 @@ function ItemsExpand({ receiptId }) {
     }, [receiptId]);
 
     if (loading) return (
-        <div className="px-6 py-4 text-label text-content-3 animate-pulse">Cargando ítems…</div>
+        <div className="px-6 py-4"><SkeletonText lines={3} /></div>
     );
     if (!items?.length) return (
         <div className="px-6 py-4 text-label text-content-3">Sin ítems registrados.</div>

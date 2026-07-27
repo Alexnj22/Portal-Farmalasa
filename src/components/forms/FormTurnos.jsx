@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { SkeletonText } from '../common/StateViews';
 import {
     BookOpen, Building2, Trash2, ListTodo, Plus, Pencil, Check, X,
     Save, Package, ListFilter, AlertTriangle, Eye, EyeOff, Loader2
@@ -344,9 +345,10 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-hide pb-8 relative">
                     {allShifts === null ? (
-                         <div className="h-full flex flex-col items-center justify-center text-content-3 gap-3 opacity-60">
-                             <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-brand-text" />
-                             <p className="text-caption font-black uppercase tracking-widest text-center">Conectando a Supabase...</p>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             {Array.from({ length: 4 }, (_, i) => (
+                                 <div key={i} data-surface="card" className="p-4"><SkeletonText lines={3} /></div>
+                             ))}
                          </div>
                     ) : visibleShifts.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

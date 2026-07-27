@@ -77,7 +77,7 @@ const FormLeadership = ({ formData, setFormData }) => {
         <div className="flex flex-col md:flex-row h-[70vh] min-h-[550px] w-auto overflow-hidden -mx-6 md:-mx-10 -my-6 bg-surface-card-hover/20"> 
             
             {/* ====== PANEL IZQUIERDO: BUSCADOR ====== */}
-            <div className="w-full md:w-[38%] flex flex-col border-r border-border-card bg-surface-card backdrop-blur-xl relative z-content shadow-[2px_0_20px_rgba(0,0,0,0.02)]">
+            <div className="w-full md:w-[38%] flex flex-col border-r border-border-card bg-surface-card backdrop-blur-xl relative z-content shadow-[var(--shadow-sticky-r)]">
                 
                 <div className="p-4 border-b border-border-card bg-surface-card sticky top-0 z-tabs">
                     <div className="relative">

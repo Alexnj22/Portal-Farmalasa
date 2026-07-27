@@ -763,7 +763,7 @@ const RequestsView = () => {
 
             {actionModal && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
+                    <div className="absolute inset-0 bg-scrim backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
                     <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-header shadow-[var(--shadow-elevation-lg)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className={`w-14 h-14 rounded-card flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
                             {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
@@ -805,7 +805,7 @@ const RequestsView = () => {
 
             {createModalOpen && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isCreatingReq && setCreateModalOpen(false)} />
+                    <div className="absolute inset-0 bg-scrim backdrop-blur-md" onClick={() => !isCreatingReq && setCreateModalOpen(false)} />
                     <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-header shadow-[var(--shadow-elevation-lg)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center gap-3 mb-1">
                             <div className="w-11 h-11 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">

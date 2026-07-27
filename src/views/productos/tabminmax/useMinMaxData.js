@@ -949,7 +949,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
 
-    const glass = 'rounded-2xl border border-white/60 backdrop-blur-sm';
+    const glass = 'rounded-2xl border border-border-card backdrop-blur-sm';
     const glassStyle = { background: 'rgba(255,255,255,0.38)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' };
 
     // ── Bodega: editar celda (consolidado — antes `_openBodegaEdit`, definida

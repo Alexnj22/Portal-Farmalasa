@@ -288,7 +288,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
                             return (
                                 <tr key={emp.id} className="hover:bg-surface-card-hover transition-colors group/row">
-                                    <td className="p-3 border-r border-divider bg-surface-card sticky left-0 z-base shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                                    <td className="p-3 border-r border-divider bg-surface-card sticky left-0 z-base shadow-[var(--shadow-sticky-r)]">
                                         <p className="text-body-sm font-black text-content truncate">{emp.name}</p>
                                         <p className="text-micro font-bold text-content-3 uppercase truncate">{emp.role}</p>
                                     </td>

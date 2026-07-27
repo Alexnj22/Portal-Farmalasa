@@ -1491,7 +1491,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {toast && createPortal(
                 <div className={`fixed bottom-6 right-6 z-toast flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-body font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-danger' : 'bg-brand'}`}>
                     {currentEmployee?.photo_url
-                        ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/40" />
+                        ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-[var(--border-card)]" />
                         : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>
                     {toast.action && (
@@ -1511,7 +1511,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {historyRow && createPortal(
                 <div className="fixed inset-0 z-tooltip flex items-center justify-center p-4" onClick={() => setHistoryRow(null)}>
                     {/* Overlay */}
-                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-scrim backdrop-blur-sm" />
                     {/* Card */}
                     <div className="relative z-base w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[var(--shadow-elevation-xl)] overflow-hidden"
                         style={{ background: 'var(--surface-modal)', backdropFilter: 'blur(40px) saturate(200%)' }}

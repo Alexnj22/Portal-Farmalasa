@@ -159,7 +159,7 @@ function PhotoThumb({ url, onZoom }) {
       className="relative w-8 h-8 rounded-lg overflow-hidden border border-divider bg-surface-card-hover shrink-0 group"
     >
       <img src={url} alt="" className="w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <div className="absolute inset-0 bg-scrim opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
         <ZoomIn size={10} className="text-white" strokeWidth={2.5} />
       </div>
     </button>
@@ -170,7 +170,7 @@ function Lightbox({ url, onClose }) {
   if (!url) return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-toast bg-black/75 backdrop-blur-sm flex items-center justify-center p-8"
+      className="fixed inset-0 z-toast bg-scrim backdrop-blur-sm flex items-center justify-center p-8"
       onClick={onClose}
     >
       <img
@@ -522,7 +522,7 @@ export default function WidgetInventorySearch() {
               className="relative w-11 h-11 rounded-xl overflow-hidden border border-divider bg-surface-card-hover shrink-0 group"
             >
               <img src={drillProduct.fotoUrl} alt="" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="absolute inset-0 bg-scrim opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <ZoomIn size={12} className="text-white" strokeWidth={2.5} />
               </div>
             </button>

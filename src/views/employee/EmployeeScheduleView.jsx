@@ -379,7 +379,7 @@ const EmployeeScheduleView = () => {
 
             {/* Change request form modal */}
             {showChangeForm && changeTarget && (
-                <div className="fixed inset-0 z-sidebar flex items-end justify-center bg-black/20 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-sidebar flex items-end justify-center bg-scrim backdrop-blur-sm p-4">
                     <div className="w-full max-w-md bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center justify-between">
                             <p className="text-body-lg font-black text-content">Solicitar cambio de vacaciones</p>

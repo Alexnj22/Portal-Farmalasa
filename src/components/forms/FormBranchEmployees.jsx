@@ -161,7 +161,7 @@ const hasInjections = legal.injections === true;
                                 </div>
                                 
                                 {/* 🚨 Panel Deslizante Liquid Glass */}
-                                <div className="absolute inset-0 bg-surface-card backdrop-blur-xl border-t border-border-card p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+                                <div className="absolute inset-0 bg-surface-card backdrop-blur-xl border-t border-border-card p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[var(--shadow-sticky-t)]">
                                     <div className="flex justify-between items-center mb-2 border-b border-divider pb-2">
                                         <span className="text-content font-black text-body-sm truncate">{emp.name}</span>
                                         <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center shadow-md">

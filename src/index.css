@@ -384,6 +384,13 @@
   --shadow-glow-danger:  0 4px 15px rgba(240,68,56,.35);
   --shadow-ring-brand:   0 0 0 4px rgba(0,82,204,.15);
 
+  /* Sombras DIRECCIONALES — la única familia que la escala de elevación no
+     cubre, porque su gracia es el sentido: una columna fija proyecta hacia la
+     derecha, una barra inferior hacia arriba. Eran 5 valores sueltos. */
+  --shadow-sticky-r: 2px 0 16px rgba(0,0,0,.03);
+  --shadow-sticky-t: 0 -6px 26px rgba(0,0,0,.06);
+  --shadow-sticky-b: 0 6px 26px rgba(0,0,0,.06);
+
   /* ── ESCALA DE GLOW (2026-07-27) ────────────────────────────────────────
      Mismo hallazgo que las sombras de vidrio, en otra familia. 143 de las 158
      sombras literales que quedaban eran GLOWS de color, y parecían 131

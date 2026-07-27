@@ -686,13 +686,13 @@ function PhotoLightbox({ src, onClose }) {
             style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: 'rgba(0,0,0,0.65)' }}
             onClick={onClose}>
             <div
-                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-xl)] ring-1 ring-white/20"
+                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-xl)] ring-1 ring-[var(--border-card)]"
                 style={{ animation: 'lightbox-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}
                 onClick={e => e.stopPropagation()}>
                 <img src={src} alt="" className="block max-w-[90vw] max-h-[90vh] object-contain" />
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 w-9 h-9 rounded-btn bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors border border-border-card">
+                    className="absolute top-3 right-3 w-9 h-9 rounded-btn bg-scrim backdrop-blur-sm flex items-center justify-center text-white hover:bg-scrim transition-colors border border-border-card">
                     <X size={16} strokeWidth={2.5} />
                 </button>
             </div>
@@ -1173,7 +1173,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 {localFoto ? (
                                     <>
                                         <img src={localFoto} alt="" className="w-full h-full object-contain bg-surface-card p-2" />
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 group-hover:bg-black/45 transition-all">
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-transparent group-hover:bg-scrim transition-all">
                                             {photoLoading
                                                 ? <Loader2 size={22} className="text-white animate-spin" />
                                                 : <>

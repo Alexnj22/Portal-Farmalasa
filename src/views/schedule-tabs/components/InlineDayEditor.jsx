@@ -408,7 +408,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             
                             <div 
                                 onClick={() => setHasLunch(!hasLunch)}
-                                className="flex items-center justify-between bg-white/[0.4] border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
@@ -428,7 +428,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div 
                                 onClick={() => setHasLactation(!hasLactation)}
-                                className="flex items-center justify-between bg-white/[0.4] border border-chart-6/20 p-3 rounded-2xl hover:border-chart-6/40 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-surface-card-hover border border-chart-6/20 p-3 rounded-2xl hover:border-chart-6/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 

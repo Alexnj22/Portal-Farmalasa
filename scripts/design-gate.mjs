@@ -151,6 +151,28 @@ const EXCEPTIONS = {
   // Mismo criterio que la excepción 'native' de LiquidSelect por ser el
   // canónico del <select>.
   'src/components/common/Badge.jsx': ['white'],
+  // ── Perillas de switch (revisadas una por una, 2026-07-27) ─────────────
+  // `bg-white` en un círculo pequeño ABSOLUTAMENTE POSICIONADO dentro de un
+  // riel: es una perilla de switch, y una perilla es blanca sobre su riel en
+  // los cuatro temas —igual que en iOS—, sea el riel claro u oscuro. No es
+  // deuda de superficie: es la pieza que indica el estado del control.
+  'src/components/forms/BranchHelpers.jsx': ['white'],
+  'src/components/forms/FormPlanificador.jsx': ['white'],
+  'src/components/forms/FormAddCustomDocument.jsx': ['white'],
+  'src/views/AnnouncementsView.jsx': ['white'],
+  'src/views/PermissionsView.jsx': ['white'],
+  'src/views/BranchDetailView.jsx': ['white'],
+  'src/views/employee/EmployeeProfileView.jsx': ['white'],
+  'src/views/productos/tabminmax/LabsPanel.jsx': ['white'],
+  // Barridos especulares (`via-white/[0.08-0.25]`) sobre botones brand: el
+  // fondo es azul en los 4 temas, así que el destello blanco es correcto —
+  // ya se decidió en el barrido de v2.62.4. Y los dos `bg-white` que quedan
+  // son puntos de un timeline/paso sobre una línea de color.
+  'src/components/common/ErrorBoundary.jsx': ['white', 'z-index'],
+  'src/views/RequestsView.jsx': ['white'],
+  'src/views/EncuestaView.jsx': ['white'],
+  'src/components/forms/FormNursingRegents.jsx': ['white'],
+  'src/views/productos/TabMinMax.jsx': ['white', 'z-index'],
   // ── Superficies siempre-oscuras, agregadas al cerrar D3.8 (2026-07-27) ──
   // Mismo criterio que IdleScanPanel: los paneles del kiosco y los popovers
   // anclados al sidebar NO siguen el tema activo — son oscuros en los cuatro.
@@ -174,8 +196,6 @@ const EXCEPTIONS = {
   'src/views/StaffManagementView.jsx': ['color', 'z-index'],
   'src/components/common/LiquidWeekPicker.jsx': ['z-index'],
   'src/components/common/PhotoEditorModal.jsx': ['color', 'z-index'],
-  'src/components/common/ErrorBoundary.jsx': ['z-index'],
-  'src/views/productos/TabMinMax.jsx': ['z-index'],
   'src/views/productos/tabminmax/RowActions.jsx': ['z-index'],
   'src/views/pedidos/RecepcionModal.jsx': ['z-index'],
   'src/views/pedidos/RutaMapModal.jsx': ['color', 'z-index'],

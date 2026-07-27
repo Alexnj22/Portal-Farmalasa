@@ -1043,7 +1043,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {hasSelfOnly && (
                         <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-card px-2 py-2 border
-                                bg-white/95 border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
+                                bg-white/95 border-white/60 shadow-[var(--shadow-sticky-t)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {
                                     const pathSeg = path.replace(/^\//, '').split('/')[0];
                                     const isActive = activeId === pathSeg;

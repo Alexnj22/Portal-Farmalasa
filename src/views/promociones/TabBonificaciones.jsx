@@ -64,7 +64,7 @@ function PayModal({ bonif, onClose, onPaid }) {
     };
 
     return (
-        <div className="fixed inset-0 z-sidebar flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div className="fixed inset-0 z-sidebar flex items-center justify-center bg-scrim backdrop-blur-sm">
             <div className="bg-surface-card border border-divider rounded-2xl shadow-xl p-5 w-80 max-w-full">
                 <p className="text-body font-bold text-content-2 mb-1">Registrar pago</p>
                 <p className="text-label text-content-3 mb-4">

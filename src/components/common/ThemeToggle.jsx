@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ListRow from './ListRow';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Moon, Sun, Layers, Monitor, ChevronDown } from 'lucide-react';
@@ -191,26 +192,22 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
 
   return (
     <>
-      <button
+      <ListRow
         ref={triggerRef}
+        onDark
+        density="sm"
+        icon={StyleIcon}
+        title={styleLabel}
+        subtitle={modeLabel}
+        active={isOpen}
         onClick={handleTrigger}
         aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-          border transition-colors duration-150 text-left ${className}
-          ${isOpen
-            ? 'bg-white/10 border-white/15'
-            : 'bg-white/5 border-white/8 hover:bg-white/10 hover:border-white/15'}`}
-      >
-        <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 bg-white/10">
-          <StyleIcon size={14} strokeWidth={2} className="text-white/70" />
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <p className="text-label font-bold text-white/80 leading-none">{styleLabel}</p>
-          <p className="text-micro text-white/40 mt-0.5 leading-none">{modeLabel}</p>
-        </div>
-        <ChevronDown size={13} strokeWidth={2.5}
-          className={`text-white/35 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+        className={className}
+        trailing={
+          <ChevronDown size={13} strokeWidth={2.5}
+            className={`text-white/35 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        }
+      />
       {createPortal(<AnimatePresence>{isOpen ? popoverContent : null}</AnimatePresence>, document.body)}
     </>
   );

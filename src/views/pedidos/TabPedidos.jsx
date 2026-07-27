@@ -1,4 +1,5 @@
 import React from 'react';
+import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';

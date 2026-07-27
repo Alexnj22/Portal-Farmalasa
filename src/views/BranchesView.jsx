@@ -4,7 +4,7 @@ import Button from '../components/common/Button';
 import LiquidSelect from '../components/common/LiquidSelect';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { AiThinkingState } from '../components/common/StateViews';
+import { AiThinkingState, Skeleton, SkeletonText } from '../components/common/StateViews';
 import { useNavigate } from "react-router-dom";
 import {
     Building2, MapPin, Phone, Smartphone, Clock, Edit3, Trash2, Plus,

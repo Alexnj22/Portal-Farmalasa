@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
+import SegmentedControl from '../common/SegmentedControl';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { fetchBranchHourlySalesOrdered } from '../../data/schedules';
 import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePointerClick, TrendingUp, Sparkles, Building2 } from 'lucide-react';

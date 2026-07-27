@@ -188,6 +188,12 @@ const EXCEPTIONS = {
   'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['color', 'white'],
   'src/components/timeclock/EarlyExitForm.jsx': ['color', 'white'],
   'src/components/common/SidebarSettingsMenu.jsx': ['color', 'white'],
+  // ListRow lleva la paleta `onDark` para las filas de los flyouts del sidebar,
+  // que se quedan oscuras en los 4 temas (si no, cuelga un panel claro de un
+  // panel oscuro). Antes esa paleta estaba escrita a mano en cada archivo; que
+  // viva en el canónico es mejor, pero el blanco sigue siendo literal a
+  // propósito y por eso la excepción se mueve acá.
+  'src/components/common/ListRow.jsx': ['white'],
   'src/components/common/NotificationBell.jsx': ['white'],
   'src/views/productos/TabCatalogo.jsx': ['hex'],
   'src/views/productos/tabminmax/constants.js': ['hex'],
@@ -574,6 +580,30 @@ function scanFile(path) {
         findings.push({ line: i + 1, label: `color literal ${m[1]}() fuera de token`, category: 'inline-color', text: line.trim().slice(0, 120) });
       }
     });
+  }
+
+  // ── Componente usado sin importar ────────────────────────────────────
+  // Categoría agregada el 2026-07-27 después de que TRES vistas se fueran
+  // comiteadas y pusheadas con un <SegmentedControl> sin su import. Vite
+  // compila igual —no resuelve identificadores de JSX en build— así que el
+  // error solo aparece al abrir la vista, como pantalla de ErrorBoundary.
+  // Fue un bug del migrador, pero la lección es del gate: si el build no lo
+  // ve, tiene que verlo alguien más.
+  {
+    const CANONICOS = ['SegmentedControl','ListRow','Notice','Badge','Button','Switch',
+      'Checkbox','TabBarAction','ViewTabBar','EmptyState','Skeleton','SkeletonText',
+      'PortalInput','LiquidSelect','LiquidDatePicker','RangeDatePicker'];
+    const imports = lines.filter(l => /^\s*import\b/.test(l)).join('\n');
+    for (const comp of CANONICOS) {
+      const uso = new RegExp(`<${comp}[\\s/>]`);
+      if (!uso.test(text)) continue;
+      const importado = new RegExp(`\\b${comp}\\b`).test(imports);
+      const definido = new RegExp(`^(?:export\\s+)?(?:const|function)\\s+${comp}\\b`, 'm').test(text);
+      if (importado || definido) continue;
+      const i = lines.findIndex(l => uso.test(l));
+      findings.push({ line: i + 1, label: `<${comp}> usado sin importar — el build NO lo detecta`,
+        category: 'import', text: (lines[i] || '').trim().slice(0, 120) });
+    }
   }
 
   if (!hasException(path, 'inert')) {

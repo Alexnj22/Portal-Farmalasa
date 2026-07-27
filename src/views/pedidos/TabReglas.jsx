@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';

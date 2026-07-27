@@ -55,18 +55,29 @@ const SegmentedControl = memo(({
     tone = 'brand',
     disabled = false,
     label,
+    // `block`: las opciones se estiran y se apilan en grilla, en vez de ir en un
+    // riel compacto. Se agregó al revisar los pendientes (2026-07-27): había 8
+    // "tarjetas de elección" que dejé fuera diciendo que eran otro control, y
+    // al mirarlas de nuevo eran ESTO con otra disposición. La diferencia era el
+    // layout, no el concepto — y confundir una cosa con la otra es lo que hace
+    // que se escriban controles nuevos sin necesidad.
+    layout = 'inline',
+    columns = 2,
     className = '',
 }) => {
     const s = SIZE[size] || SIZE.md;
+    const enBloque = layout === 'block';
 
     return (
         // `radiogroup` y no una fila de botones sueltos: es la semántica real
         // —una sola opción activa— y es lo que un lector de pantalla necesita
         // para anunciar "2 de 3" en vez de leer tres botones sin relación.
         <div role="radiogroup" aria-label={label}
-            className={`inline-flex items-center rounded-btn border border-border-card
-                bg-surface-card-hover shadow-sm shrink-0 ${s.riel} ${className}
-                ${disabled ? 'opacity-45 pointer-events-none' : ''}`}>
+            className={`${enBloque
+                    ? `grid gap-2 ${columns === 3 ? 'grid-cols-3' : 'grid-cols-2'}`
+                    : `inline-flex items-center rounded-btn border border-border-card
+                       bg-surface-card-hover shadow-sm shrink-0 ${s.riel}`}
+                ${className} ${disabled ? 'opacity-45 pointer-events-none' : ''}`}>
             {options.map(op => {
                 const activa = op.value === value;
                 const Icono = op.icon;
@@ -79,13 +90,15 @@ const SegmentedControl = memo(({
                         disabled={disabled || op.disabled}
                         onClick={() => !disabled && !op.disabled && onChange?.(op.value)}
                         className={`inline-flex items-center justify-center gap-1.5 rounded-btn
-                            font-black uppercase tracking-widest whitespace-nowrap
-                            transition-[background-color,color] duration-200
+                            font-black uppercase tracking-widest
+                            transition-[background-color,color,border-color] duration-200
                             disabled:opacity-40 disabled:cursor-not-allowed
-                            ${s.op}
+                            ${enBloque ? 'w-full h-11 px-3 text-caption border' : `whitespace-nowrap ${s.op}`}
                             ${activa
                                 ? (ACTIVO[op.tone || tone] || ACTIVO.brand) + ' shadow-sm'
-                                : 'text-content-3 hover:text-content-2'}`}>
+                                    + (enBloque ? ' border-transparent' : '')
+                                : 'text-content-3 hover:text-content-2'
+                                    + (enBloque ? ' bg-surface-card border-border-card hover:border-brand/40' : '')}`}>
                         {Icono && <Icono size={s.icono} strokeWidth={2.5} />}
                         {op.label}
                     </button>

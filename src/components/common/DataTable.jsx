@@ -24,6 +24,7 @@
  */
 
 import React, { createContext, useContext } from 'react';
+import Badge from './Badge';
 import { ArrowUp, ArrowDown, ChevronsUpDown, Inbox } from 'lucide-react';
 import Button from './Button';
 

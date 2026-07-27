@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
+import SegmentedControl from '../components/common/SegmentedControl';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -579,10 +580,20 @@ const AnnouncementsView = ({ openModal }) => {
               <form onSubmit={handlePublish} className="space-y-5 relative z-base">
                 <div>
                   <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-surface-card border-brand/30 text-brand-text shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
-                    <button type="button" onClick={() => setPriority('URGENT')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'URGENT' ? 'bg-danger/10 border-danger/40 text-danger shadow-[var(--shadow-glow-danger)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Flame size={14} className={priority === 'URGENT' ? 'animate-pulse' : ''} /> Urgente</button>
-                  </div>
+                  {/* 2026-07-27: eran dos <button> con `priority === X ? activo :
+                      inactivo`, que es exactamente un SegmentedControl. Los había
+                      dejado fuera creyendo que eran otro control por ir a dos
+                      columnas — pero eso es layout, no concepto. */}
+                  <SegmentedControl
+                    layout="block"
+                    label="Nivel de prioridad"
+                    value={priority}
+                    onChange={setPriority}
+                    options={[
+                      { value: 'NORMAL', label: 'Normal',  icon: Megaphone },
+                      { value: 'URGENT', label: 'Urgente', icon: Flame, tone: 'danger' },
+                    ]}
+                  />
                 </div>
 
                 <div>

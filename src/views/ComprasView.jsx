@@ -115,7 +115,7 @@ function ItemsExpand({ receiptId }) {
                                     <td className="px-3 py-2 text-right font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</td>
                                     <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
                                         {lote
-                                            ? <span className="bg-chart-3/10 text-chart-3-text text-caption font-bold px-2 py-0.5 rounded-full">{lote}</span>
+                                            ? <Badge variant="chart-3" uppercase={false}>{lote}</Badge>
                                             : <span className="text-content-3">—</span>
                                         }
                                     </td>
@@ -169,7 +169,7 @@ function TabFacturas({
     const estadoBadge = (estado) => {
         if (!estado || estado === 'VIGENTE')
             return <Badge variant="success" uppercase={false}>Vigente</Badge>;
-        return <span className="text-caption font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">{estado}</span>;
+        return <Badge variant="danger" uppercase={false}>{estado}</Badge>;
     };
 
     return (

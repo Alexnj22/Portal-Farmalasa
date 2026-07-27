@@ -90,12 +90,7 @@ function VencimientoBadge({ status }) {
 // (no c/u a su ritmo) y el costo es una sola propiedad opacity por GPU.
 function LiveBadge() {
     return (
-        <span
-            className="inline-flex items-center gap-1 text-micro font-black uppercase tracking-wide text-success-text bg-success/10 border border-success/40 px-1.5 py-0.5 rounded-full animate-pulse shrink-0"
-            title="En vivo — se actualiza hasta que se cuente"
-        >
-            <Radio size={9} strokeWidth={3} /> Vivo
-        </span>
+        <Badge title="En vivo — se actualiza hasta que se cuente" variant="success" size="sm" icon={Radio}>Vivo</Badge>
     );
 }
 
@@ -241,7 +236,7 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
             </DataCell>
             <DataCell hideBelow="lg"><span className="text-label text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
             <DataCell align="center" hideBelow="md">
-                <span className="text-caption font-bold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
+                <Badge uppercase={false}>{product.item_count} lote{product.item_count === 1 ? '' : 's'}</Badge>
             </DataCell>
             <DataCell hideBelow="md" />
             <DataCell align="center" hideBelow="lg">

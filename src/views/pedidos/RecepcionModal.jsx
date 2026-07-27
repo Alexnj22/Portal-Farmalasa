@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -748,7 +749,7 @@ export default function RecepcionModal({
                 {/* Extras section on cajas screen */}
                 <div className="flex-none border-t border-divider px-4 py-3">
                     <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
-                        {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}</Button>
+                        {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}</Button>
                 </div>
 
                 {allAccessibleDone && (
@@ -831,9 +832,7 @@ export default function RecepcionModal({
                                     <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-danger/10' : eDiff ? 'bg-warning/10' : 'bg-surface-card hover:bg-surface-card-hover/50'}`}>
                                         <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                             <div className="min-w-0">
-                                                <span className="inline-flex items-center gap-0.5 text-micro font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text mb-0.5">
-                                                    <Plus size={8} /> Extra
-                                                </span>
+                                                <Badge variant="info" size="sm" icon={Plus}>Extra</Badge>
                                                 <p className={`text-body-sm font-semibold leading-snug ${eBothZero ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
                                                 {eBothZero && <p className="text-caption text-danger font-medium">Al menos uno &gt; 0</p>}
                                             </div>
@@ -1102,9 +1101,7 @@ export default function RecepcionModal({
                                     <span className="text-body-sm text-content-2 font-semibold leading-snug">
                                         {r.products?.nombre}
                                         {!hasCajaMap && r.caja_especial && (
-                                            <span className="ml-1.5 inline-flex items-center gap-0.5 text-micro font-bold text-chart-3-text bg-chart-3/10 border border-chart-3/30 rounded-full px-1.5 py-0.5">
-                                                <Star size={8} />Especial
-                                            </span>
+                                            <Badge variant="chart-3" size="sm" icon={Star} uppercase={false}>Especial</Badge>
                                         )}
                                     </span>
                                     <span className="text-body-sm font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
@@ -1209,7 +1206,7 @@ export default function RecepcionModal({
             {/* Extras — navigate to dedicated screen */}
             <div className="flex-none border-t border-divider px-5 py-3">
                 <Button variant="ghost" icon={PackagePlus} onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}>¿Llegó un producto extra?
-                    {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}</Button>
+                    {extras.length > 0 && <Badge variant="info" uppercase={false}>{extras.length}</Badge>}</Button>
             </div>
 
             {/* Responsables */}

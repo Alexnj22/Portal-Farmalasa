@@ -515,9 +515,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <TriangleAlert size={15} className="text-danger" />
                 <span className="font-semibold text-content-2 text-body-lg">Productos sin stock en Bodega</span>
                 {sinBodega.length > 0 && (
-                    <span className="text-label px-2 py-0.5 rounded-full bg-danger/10 text-danger border border-danger/30 font-semibold">
-                        {sinBodega.length.toLocaleString()} productos
-                    </span>
+                    <Badge variant="danger" uppercase={false}>{sinBodega.length.toLocaleString()} productos</Badge>
                 )}
                 {searchTerm && (
                     <span className="ml-auto text-label text-content-3">"{searchTerm}"</span>

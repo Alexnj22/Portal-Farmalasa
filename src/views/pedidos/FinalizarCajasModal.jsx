@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
@@ -207,9 +208,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                         <span className="text-caption font-semibold text-content-2 uppercase tracking-wide mr-1">Cajas:</span>
                         {boxes.map(b => (
-                            <span key={b} className="text-caption font-bold px-2 py-0.5 rounded-lg bg-chart-3/10 text-chart-3-text border border-chart-3/30">
-                                C{b}
-                            </span>
+                            <Badge key={b} variant="chart-3" uppercase={false}>C{b}</Badge>
                         ))}
                         <span className="ml-auto text-caption text-content-3">{totalPages} pág.</span>
                     </div>

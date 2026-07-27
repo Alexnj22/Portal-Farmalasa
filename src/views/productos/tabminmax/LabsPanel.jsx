@@ -1,5 +1,6 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState, useEffect, useRef } from 'react';
+import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import Switch from '../../../components/common/Switch';
 import { SkeletonText } from '../../../components/common/StateViews';
@@ -99,9 +100,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                         <FlaskConical size={14} className="text-brand-text" />
                         <span className="text-body-sm font-black text-content">Visibilidad de laboratorios</span>
                         {hiddenCount > 0 && (
-                            <span className="text-micro font-black text-brand-text bg-chart-1/10 border border-chart-1/30 px-1.5 py-0.5 rounded-full leading-none">
-                                {hiddenCount} oculto{hiddenCount !== 1 ? 's' : ''}
-                            </span>
+                            <Badge variant="chart-1" size="sm" uppercase={false}>{hiddenCount} oculto{hiddenCount !== 1 ? 's' : ''}</Badge>
                         )}
                     </div>
                     <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />

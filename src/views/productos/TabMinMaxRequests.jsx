@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { Loader2, Check, X, Clock, Package, ArrowRight, Inbox, CheckCheck, TrendingUp, Building2 } from 'lucide-react';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -63,13 +64,9 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       <div className="min-w-0">
         <p className="text-body font-bold text-content leading-tight truncate">{r.product_name || `Producto ${r.erp_product_id}`}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-caption font-bold text-content-3 bg-surface-card-hover/70 px-2 py-0.5 rounded-full">
-            <Building2 size={10} /> {ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}
-          </span>
+          <Badge icon={Building2} uppercase={false}>{ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}</Badge>
           {r.current_sales_6m != null && (
-            <span className="inline-flex items-center gap-1 text-caption font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
-              <TrendingUp size={10} /> {Number(r.current_sales_6m).toLocaleString()} und · 6m
-            </span>
+            <Badge variant="success" icon={TrendingUp} uppercase={false}>{Number(r.current_sales_6m).toLocaleString()} und · 6m</Badge>
           )}
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Badge from '../../components/common/Badge';
 import { ChevronDown, Check } from "lucide-react";
 
 const BranchChips = ({
@@ -192,9 +193,7 @@ const BranchChips = ({
                   <span className="truncate">{it.label}</span>
 
                   {counts && (
-                    <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-caption font-bold flex-shrink-0">
-                      {count}
-                    </span>
+                    <Badge uppercase={false}>{count}</Badge>
                   )}
                 </button>
               );
@@ -249,9 +248,7 @@ const BranchChips = ({
                               {it.label}
                             </span>
                             {counts && (
-                              <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-caption font-bold flex-shrink-0 text-content-3">
-                                {count}
-                              </span>
+                              <Badge uppercase={false}>{count}</Badge>
                             )}
                           </div>
 

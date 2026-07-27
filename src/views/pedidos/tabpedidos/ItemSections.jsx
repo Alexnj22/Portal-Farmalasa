@@ -36,15 +36,13 @@ function renderPresentacion(row) {
     const factor = row.dispatch_factor || row.factor || 1;
     const TIPO_LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
     if (!tipo) {
-        if (factor > 1) return <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">×{factor} unid</span>;
+        if (factor > 1) return <Badge uppercase={false}>×{factor} unid</Badge>;
         return <span className="text-content-3 text-label">Unidad</span>;
     }
     const label      = TIPO_LABELS[tipo] ?? tipo;
     const showFactor = factor > 1 && ['caja','blister','solo_cajas'].includes(tipo);
     return (
-        <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
-            {label}{showFactor ? ` ×${factor}` : ''}{['multiplo','multiplo_unidades'].includes(tipo) ? ` ×${factor}` : ''}
-        </span>
+        <Badge uppercase={false}>{label}{showFactor ? ` ×${factor}` : ''}{['multiplo','multiplo_unidades'].includes(tipo) ? ` ×${factor}` : ''}</Badge>
     );
 }
 // Para la sección "Revisar regla": muestra la unidad de stock (lo que pidió la sucursal),
@@ -54,9 +52,7 @@ function renderPresStock(row) {
     const dispFactor = row.dispatch_factor || factor;
     if (factor === dispFactor || !row.dispatch_tipo) return renderPresentacion(row);
     return (
-        <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
-            {factor <= 1 ? 'Unidad' : `×${factor} unid`}
-        </span>
+        <Badge uppercase={false}>{factor <= 1 ? 'Unidad' : `×${factor} unid`}</Badge>
     );
 }
 
@@ -156,9 +152,7 @@ function fmtRegla(row) {
     const multiplo   = Number(row.dispatch_multiplo ?? 1);
     const showFactor = presFactor > 1 && tipoKey !== 'solo_cajas';
     return (
-        <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 whitespace-nowrap">
-            {base}{showFactor ? ` ×${presFactor}` : ''} | ×{multiplo}
-        </span>
+        <Badge variant="danger" uppercase={false}>{base}{showFactor ? ` ×${presFactor}` : ''} | ×{multiplo}</Badge>
     );
 }
 

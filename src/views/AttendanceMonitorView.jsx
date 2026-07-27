@@ -1,5 +1,6 @@
 // src/views/AttendanceMonitorView.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import { EmptyState } from '../components/common/StateViews';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -350,35 +351,25 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const getStatusBadge = (status, isLate, lateText) => {
     if (isLate && status !== "FINISHED") {
       return (
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-danger/10 text-danger-text rounded-xl text-caption font-bold uppercase tracking-widest border border-danger/30">
-          <AlertTriangle size={14} /> {lateText}
-        </div>
+        <Badge variant="danger" icon={AlertTriangle}>{lateText}</Badge>
       );
     }
     switch (status) {
       case "WORKING":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success-text rounded-xl text-caption font-bold uppercase tracking-widest border border-success/30">
-            <CheckCircle size={14} /> En Turno
-          </div>
+          <Badge variant="success" icon={CheckCircle}>En Turno</Badge>
         );
       case "EXTRA_WORKING":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-3/10 text-chart-3-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-3/30">
-            <PlusCircle size={14} /> Turno Extra
-          </div>
+          <Badge variant="chart-3" icon={PlusCircle}>Turno Extra</Badge>
         );
       case "LUNCH":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-4/10 text-chart-4-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-4/30">
-            <Utensils size={14} /> Almorzando
-          </div>
+          <Badge variant="chart-4" icon={Utensils}>Almorzando</Badge>
         );
       case "LACTATION":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-6/10 text-chart-6-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-6/20">
-            <Baby size={14} /> Lactancia
-          </div>
+          <Badge variant="chart-6" icon={Baby}>Lactancia</Badge>
         );
       case "FINISHED":
         return (
@@ -388,15 +379,11 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "EARLY_EXIT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-brand/10 text-brand-text rounded-xl text-caption font-bold uppercase tracking-widest border border-brand/20">
-            <DoorOpen size={14} /> Permiso / Retiro
-          </div>
+          <Badge variant="info" icon={DoorOpen}>Permiso / Retiro</Badge>
         );
       case "BUSINESS_OUT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-7/10 text-chart-7-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-7/20">
-            <MapPin size={14} /> Gestión Externa
-          </div>
+          <Badge variant="chart-7" icon={MapPin}>Gestión Externa</Badge>
         );
       case "OFF_DAY":
         return (

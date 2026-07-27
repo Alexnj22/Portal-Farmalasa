@@ -638,9 +638,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-micro font-black uppercase tracking-widest border shadow-sm ${evTheme.bg} ${evTheme.text} ${evTheme.border}`}>
                                                                     {evTheme.label}
                                                                 </span>
-                                                                <span className="text-caption font-black uppercase tracking-widest text-content-2 bg-surface-card-hover/50 px-2 py-1 rounded-md">
-                                                                    {formatDate(ev.date)}
-                                                                </span>
+                                                                <Badge>{formatDate(ev.date)}</Badge>
                                                             </div>
                                                             
                                                             <p className="text-body text-content-2 leading-relaxed font-semibold mb-1">
@@ -651,7 +649,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 <div className="mt-3 flex flex-wrap gap-1.5">
                                                                     <span className="text-micro font-black uppercase text-content-3 w-full mb-0.5">Días de Ausencia Autorizada:</span>
                                                                     {ev.metadata.permissionDates.map((d, i) => (
-                                                                        <span key={i} className="px-2 py-1 bg-chart-1/10 text-chart-1-text border border-chart-1/30 rounded-lg text-caption font-black tracking-widest">{formatDate(d)}</span>
+                                                                        <Badge key={i} variant="chart-1" uppercase={false}>{formatDate(d)}</Badge>
                                                                     ))}
                                                                 </div>
                                                             )}
@@ -667,9 +665,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     {ev.metadata?.status === 'CANCELLED' ? (
                                                                         <Badge variant="danger" size="sm">CANCELADO</Badge>
                                                                     ) : ev.metadata?.status === 'SUPERSEDED' ? (
-                                                                        <span className="px-2 py-1 bg-surface-card-hover text-content-3 rounded-full text-micro font-black uppercase tracking-widest">
-                                                                            EDITADO
-                                                                        </span>
+                                                                        <Badge size="sm">EDITADO</Badge>
                                                                     ) : ev.documentId ? (
                                                                         <button className="flex items-center gap-1.5 text-brand-text bg-chart-1/10 hover:bg-chart-1/10 px-3 py-1.5 rounded-lg font-black text-micro uppercase tracking-widest transition-colors shadow-sm">
                                                                             <FileText size={12} strokeWidth={2.5}/> Ver Respaldo Legal
@@ -967,7 +963,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Depósito de Planilla</p>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-body-lg font-bold text-content-2">{emp.bank_name || 'No configurado'}</span>
-                                                            <span className="px-3 py-1 bg-surface-card-hover text-content-2 rounded-lg text-label font-black tracking-wider border border-divider">CTA: {emp.account_number || '---'}</span>
+                                                            <Badge uppercase={false}>CTA: {emp.account_number || '---'}</Badge>
                                                         </div>
                                                     </div>
                                                 </div>

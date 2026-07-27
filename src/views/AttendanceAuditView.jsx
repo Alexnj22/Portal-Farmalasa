@@ -501,30 +501,26 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
             <span className="text-body-sm font-black text-content">{DAY_NAMES_FULL[dow]}</span>
-            {isToday && <span className="text-micro font-black uppercase tracking-widest bg-brand text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
+            {isToday && <Badge variant="info" tone="solid" size="sm">Hoy</Badge>}
             {isOff && (
               isNoSchedule
-                ? <span className="text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-dashed border-divider px-2 py-0.5 rounded-full">Sin turno</span>
-                : <span className="text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-divider px-2 py-0.5 rounded-full">Libre</span>
+                ? <Badge size="sm">Sin turno</Badge>
+                : <Badge size="sm">Libre</Badge>
             )}
             {isFuture && !isOff && <span className="text-micro font-black uppercase tracking-widest text-content-2 px-1">Próximo</span>}
             {!isOff && !isFuture && inconsistencies.length > 0 && !ts?.absence_type && (
-              <span className="text-micro font-black uppercase tracking-widest bg-danger/10 text-danger border border-danger/30 px-2 py-0.5 rounded-full">
-                {inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}
-              </span>
+              <Badge variant="danger" size="sm">{inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}</Badge>
             )}
             {isAutoDay  && <Badge variant="chart-3" size="sm">Auto-marcado</Badge>}
             {isPendDay  && <Badge variant="warning" size="sm">Pend. TH</Badge>}
-            {isEditedDay && <span className="text-micro font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} strokeWidth={3}/> Editado</span>}
+            {isEditedDay && <Badge variant="success" size="sm" icon={Check}>Editado</Badge>}
             {crossBranchName && (
-              <span className="text-micro font-black uppercase tracking-widest bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <ArrowRightLeft size={8} strokeWidth={2.5} /> Apoyo {crossBranchName}
-              </span>
+              <Badge variant="chart-1" size="sm" icon={ArrowRightLeft}>Apoyo {crossBranchName}</Badge>
             )}
-            {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-micro font-black uppercase tracking-widest bg-success/10 text-success-text border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
+            {ts?.is_absent && ts?.absence_type === 'VACATION'   && <Badge variant="success" size="sm" icon={Palmtree}>Vacación</Badge>}
             {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <Badge variant="danger" size="sm">Incapacidad</Badge>}
             {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <Badge variant="chart-2" size="sm">Permiso</Badge>}
-            {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-3 border border-divider px-2 py-0.5 rounded-full">Ausente</span>}
+            {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <Badge size="sm">Ausente</Badge>}
           </div>
           {!isOff && shift && (
             <p className="text-caption font-bold text-content-3">
@@ -759,24 +755,16 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {alerts.inconsistencies > 0 && (
-                <span className="flex items-center gap-0.5 text-micro font-black bg-danger/10 text-danger border border-danger/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <AlertTriangle size={7} strokeWidth={3} /> {alerts.inconsistencies} faltante{alerts.inconsistencies > 1 ? 's' : ''}
-                </span>
+                <Badge variant="danger" size="sm" icon={AlertTriangle} uppercase={false}>{alerts.inconsistencies} faltante{alerts.inconsistencies > 1 ? 's' : ''}</Badge>
               )}
               {alerts.autoPunched > 0 && (
-                <span className="flex items-center gap-0.5 text-micro font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <Bot size={7} strokeWidth={2.5} /> {alerts.autoPunched} auto
-                </span>
+                <Badge variant="chart-3" size="sm" icon={Bot} uppercase={false}>{alerts.autoPunched} auto</Badge>
               )}
               {alerts.pendingReview > 0 && (
-                <span className="flex items-center gap-0.5 text-micro font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <ShieldAlert size={7} strokeWidth={2.5} /> {alerts.pendingReview} pend.
-                </span>
+                <Badge variant="warning" size="sm" icon={ShieldAlert} uppercase={false}>{alerts.pendingReview} pend.</Badge>
               )}
               {hasCrossBranch && (
-                <span className="flex items-center gap-0.5 text-micro font-black bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo
-                </span>
+                <Badge variant="chart-1" size="sm" icon={ArrowRightLeft} uppercase={false}>Apoyo</Badge>
               )}
             </div>
           )}
@@ -1298,7 +1286,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               <span className="text-label font-black text-chart-3-text uppercase tracking-widest">
                 Turnos Extra Sin Autorizar — Revisión TH
               </span>
-              <span className="ml-auto bg-chart-3-solid text-white text-micro font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
+              <Badge variant="chart-3" tone="solid" size="sm" uppercase={false}>{shiftExceptions.length}</Badge>
             </div>
             <div className="divide-y divide-chart-3/20">
               {shiftExceptions.map(req => {

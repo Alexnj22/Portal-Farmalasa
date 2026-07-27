@@ -49,9 +49,7 @@ function ExpiryCell({ fecha }) {
     const info = expiryInfo(fecha);
     if (!info) return null;
     if (info.expired) return (
-        <span className="inline-flex items-center gap-1 text-caption font-bold text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full whitespace-nowrap">
-            <AlertTriangle size={9} /> {fecha}
-        </span>
+        <Badge variant="danger" icon={AlertTriangle} uppercase={false}>{fecha}</Badge>
     );
     if (info.days <= 30) return (
         <span className="inline-flex items-center gap-1 text-caption font-semibold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full whitespace-nowrap">
@@ -60,9 +58,7 @@ function ExpiryCell({ fecha }) {
     );
     if (info.days <= 90)  return <span className="text-xs font-semibold text-warning whitespace-nowrap">{fecha}</span>;
     if (info.days <= 180) return (
-        <span className="inline-flex items-center gap-1 text-caption font-semibold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-2 py-0.5 rounded-full whitespace-nowrap">
-            <Calendar size={9} /> {fecha}
-        </span>
+        <Badge variant="chart-4" icon={Calendar} uppercase={false}>{fecha}</Badge>
     );
     return <span className="text-xs text-content-3 whitespace-nowrap">{fecha}</span>;
 }
@@ -484,9 +480,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                         {pres.length > 0 ? (
                                             <div className="flex flex-wrap gap-1">
                                                 {pres.map(p => (
-                                                    <span key={p} className="text-caption font-bold text-content-3 bg-surface-card-hover/80 border border-divider px-2 py-0.5 rounded-full">
-                                                        {p}
-                                                    </span>
+                                                    <Badge key={p} uppercase={false}>{p}</Badge>
                                                 ))}
                                             </div>
                                         ) : <span className="text-content-3 text-xs">—</span>}

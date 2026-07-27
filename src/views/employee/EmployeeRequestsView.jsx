@@ -1115,7 +1115,7 @@ const EmployeeRequestsView = () => {
                                             >
                                                 <Icon size={16} strokeWidth={2} />
                                                 <span className="flex-1 text-left text-label font-black uppercase tracking-widest">{sel?.label}</span>
-                                                <span className="text-micro font-bold text-content-2 uppercase tracking-widest border border-divider rounded-full px-2 py-0.5 bg-surface-card">Cambiar</span>
+                                                <Badge size="sm">Cambiar</Badge>
                                             </button>
                                         );
                                     })()

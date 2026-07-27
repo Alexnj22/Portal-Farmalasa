@@ -846,7 +846,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell align="center" hideBelow="md">
                                             {row.in_minmax ? (
                                                 <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30"><CheckCircle2 size={9} />Con Min/Max</span>
+                                                    <Badge variant="success" icon={CheckCircle2} uppercase={false}>Con Min/Max</Badge>
                                                     {(row.min_qty != null || row.max_qty != null) && (
                                                         <span className="text-micro font-mono text-content-3 tabular-nums">
                                                             <span className="text-chart-4-text font-bold">{Number(row.min_qty ?? 0).toLocaleString()}</span>
@@ -856,7 +856,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     )}
                                                 </div>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30"><CircleDashed size={9} />Sin Min/Max</span>
+                                                <Badge variant="danger" icon={CircleDashed} uppercase={false}>Sin Min/Max</Badge>
                                             )}
                                         </DataCell>
                                         <DataCell hideBelow="md">
@@ -870,7 +870,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell>
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 {soldIn.length === 0
-                                                    ? <span className="text-caption font-semibold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                    ? <Badge uppercase={false}>Sin historial</Badge>
                                                     : soldIn.map(s => (
                                                         <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
                                                             className={`inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-surface-card-hover text-content-2 border-divider'}`}>

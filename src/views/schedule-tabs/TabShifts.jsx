@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
@@ -139,18 +140,12 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="flex flex-wrap items-center gap-1 pr-16 relative z-base">
-                <span className="flex items-center gap-1 text-content-3 bg-surface-card-hover px-2 py-1 rounded-md text-micro font-bold uppercase tracking-widest border border-divider">
-                    <Globe size={10} strokeWidth={2} /> Catálogo Global
-                </span>
+                <Badge size="sm" icon={Globe}>Catálogo Global</Badge>
                 {hours > 9 && (
-                    <span className="flex items-center gap-1 text-white bg-danger-solid px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest shadow-[var(--shadow-glow-danger)] animate-pulse">
-                        <AlertTriangle size={10} strokeWidth={2.5} /> +8H
-                    </span>
+                    <Badge variant="danger" tone="solid" size="sm" icon={AlertTriangle}>+8H</Badge>
                 )}
                 {isArchived && (
-                    <span className="text-micro font-bold text-content-3 bg-surface-card border border-border-card px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest">
-                        <Archive size={10} strokeWidth={2.5} /> Archivo
-                    </span>
+                    <Badge size="sm" icon={Archive}>Archivo</Badge>
                 )}
             </div>
 

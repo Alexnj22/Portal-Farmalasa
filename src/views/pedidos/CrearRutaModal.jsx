@@ -656,9 +656,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                                     <Badge variant="chart-5" uppercase={false}>💧 {electrolit} Electrolit</Badge>
                                   )}
                                   {especiales > 0 && (
-                                    <span className="text-caption font-bold px-1.5 py-0.5 rounded-lg bg-warning/10 text-warning-text">
-                                      ⭐ {especiales} especial{especiales !== 1 ? 'es' : ''}
-                                    </span>
+                                    <Badge variant="warning" uppercase={false}>⭐ {especiales} especial{especiales !== 1 ? 'es' : ''}</Badge>
                                   )}
                                 </div>
                               )}

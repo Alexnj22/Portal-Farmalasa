@@ -842,12 +842,7 @@ function TabDocumentos({
                                     {dteTypeLabel(row.tipo_dte)}
                                 </span>
                                 {row.invalidado && (
-                                    <span
-                                        title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''} — no ampara deducciones (Art. 119-E CT)`}
-                                        className="flex items-center gap-1 text-micro font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full whitespace-nowrap"
-                                    >
-                                        <XCircle size={10} /> Invalidado
-                                    </span>
+                                    <Badge title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''} — no ampara deducciones (Art. 119-E CT)`} variant="danger" size="sm" icon={XCircle} uppercase={false}>Invalidado</Badge>
                                 )}
                                 {/* Mismo patrón que "Ver original" (NC/ND) — a pedido del usuario,
                                     caso Jamilu: poder ver el PDF que justificó la anulación sin
@@ -1037,17 +1032,11 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                             {row.kind === 'orphan_pdf' ? (
                                 <Badge variant="chart-1" uppercase={false}>PDF sin JSON</Badge>
                             ) : row.kind === 'invalidacion_pendiente' ? (
-                                <span className="text-caption font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
-                                    Invalidación pendiente
-                                </span>
+                                <Badge title={row.reason} variant="chart-4" uppercase={false}>Invalidación pendiente</Badge>
                             ) : row.kind === 'orphan_zip' ? (
-                                <span className="text-caption font-bold text-chart-3-text bg-chart-3/10 border border-chart-3/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
-                                    ZIP sin abrir
-                                </span>
+                                <Badge title={row.reason} variant="chart-3" uppercase={false}>ZIP sin abrir</Badge>
                             ) : (
-                                <span className="text-caption font-bold text-warning-text bg-warning/10 border border-warning/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
-                                    JSON inválido
-                                </span>
+                                <Badge title={row.reason} variant="warning" uppercase={false}>JSON inválido</Badge>
                             )}
                         </DataCell>
                         <DataCell hideBelow="md">

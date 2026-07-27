@@ -839,7 +839,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {isExpanded && (
                                     <>
                                         <span className="text-body-sm xl:text-body font-medium flex-1 whitespace-nowrap">Buscar</span>
-                                        <span className="text-micro font-bold px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-white/40 whitespace-nowrap">{SHORTCUT_LABEL}</span>
+                                        <Badge size="sm" uppercase={false}>{SHORTCUT_LABEL}</Badge>
                                     </>
                                 )}
                             </button>

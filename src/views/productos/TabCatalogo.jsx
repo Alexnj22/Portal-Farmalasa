@@ -1860,12 +1860,10 @@ export default function TabCatalogo({
                                                     <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
                                                     {mInfo && <span className={`inline-flex items-center gap-0.5 text-micro font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
                                                     {specLoss && [...specLoss].map(k => (
-                                                        <span key={k} className="inline-flex items-center gap-0.5 text-micro font-bold bg-chart-4/10 text-chart-4-text border border-chart-4/30 px-1.5 py-0.5 rounded-full shrink-0">
-                                                            <TrendingDown size={7} /> Pérd. {specialLossLabel(k)}
-                                                        </span>
+                                                        <Badge key={k} variant="chart-4" size="sm" icon={TrendingDown} uppercase={false}>Pérd. {specialLossLabel(k)}</Badge>
                                                     ))}
-                                                    {hasChanges && <span className="inline-flex items-center gap-0.5 text-micro font-bold bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
-                                                    {!p.devolutivo && <span title="No devolutivo — no se puede devolver al proveedor" className="inline-flex items-center gap-0.5 text-micro font-black bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><Ban size={7} /> ND</span>}
+                                                    {hasChanges && <Badge variant="warning" size="sm" icon={AlertTriangle} uppercase={false}>cambios</Badge>}
+                                                    {!p.devolutivo && <Badge title="No devolutivo — no se puede devolver al proveedor" variant="warning" size="sm" icon={Ban} uppercase={false}>ND</Badge>}
                                                 </div>
                                                 {p.principio_activo && <p className="text-caption flex items-center gap-1 mt-0.5 text-chart-3-text/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                             </div>
@@ -1874,7 +1872,7 @@ export default function TabCatalogo({
                                     <DataCell hideBelow="md"><span className={`text-label ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span></DataCell>
                                     <DataCell hideBelow="lg">
                                         <div className="flex flex-wrap gap-1">
-                                            {p.tipo_medicamento && <span className="text-micro font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-chart-1/10 text-chart-1-text border-chart-1/30">{p.tipo_medicamento}</span>}
+                                            {p.tipo_medicamento && <Badge variant="chart-1" size="sm" uppercase={false}>{p.tipo_medicamento}</Badge>}
                                             {p.es_antibiotico   && <Badge variant="danger" size="sm" uppercase={false}>Bajo Receta</Badge>}
                                             {p.requiere_receta  && <Badge variant="danger" size="sm" uppercase={false}>Receta</Badge>}
                                             {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-label text-content-3">—</span>}

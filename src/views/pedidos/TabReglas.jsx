@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -668,27 +669,19 @@ export default function TabReglas({ searchTerm = '' }) {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="font-medium text-content-2 text-body">{prod.nombre}</span>
                                         {isNew && (
-                                            <span className="inline-flex items-center gap-0.5 text-micro px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-bold uppercase tracking-wide flex-shrink-0">
-                                                <Sparkles size={8} /> Nuevo
-                                            </span>
+                                            <Badge variant="success" size="sm" icon={Sparkles}>Nuevo</Badge>
                                         )}
                                         {prod.es_antibiotico && (
-                                            <span className="inline-flex items-center gap-0.5 text-micro px-1.5 py-0.5 rounded-full bg-chart-6/10 text-chart-6-text border border-chart-6/30 font-bold uppercase tracking-wide flex-shrink-0">
-                                                <FlaskConical size={8} /> Bajo receta
-                                            </span>
+                                            <Badge variant="chart-6" size="sm" icon={FlaskConical}>Bajo receta</Badge>
                                         )}
                                     </div>
                                 </DataCell>
 
                                 <DataCell align="center">
                                     {hasRule ? (
-                                        <span className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-medium">
-                                            <Check size={9} /> Con regla
-                                        </span>
+                                        <Badge variant="success" icon={Check} uppercase={false}>Con regla</Badge>
                                     ) : (
-                                        <span className="text-caption px-2 py-0.5 rounded-full bg-surface-card-hover text-content-3 border border-divider font-medium">
-                                            Sin regla
-                                        </span>
+                                        <Badge uppercase={false}>Sin regla</Badge>
                                     )}
                                 </DataCell>
 

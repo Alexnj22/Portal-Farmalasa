@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -162,9 +163,7 @@ const DocCard = ({ doc }) => {
                                 </span>
                             ))}
                             {doc.meta.permissionDates.length > 5 && (
-                                <span className="px-2 py-0.5 rounded-lg text-micro font-black bg-surface-card-hover text-content-3 border border-divider">
-                                    +{doc.meta.permissionDates.length - 5} más
-                                </span>
+                                <Badge size="sm" uppercase={false}>+{doc.meta.permissionDates.length - 5} más</Badge>
                             )}
                         </div>
                     )}

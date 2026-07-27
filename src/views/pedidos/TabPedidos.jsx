@@ -344,9 +344,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Header */}
                                     <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
                                         {stage === 'pausado' && (
-                                            <span className="inline-flex items-center gap-1 text-caption font-black px-2 py-0.5 rounded-full bg-warning-solid text-white shrink-0 shadow-sm animate-pulse">
-                                                ⏸ Pausado
-                                            </span>
+                                            <Badge variant="warning" tone="solid" uppercase={false}>⏸ Pausado</Badge>
                                         )}
                                         <span className="text-body font-black text-content tabular-nums shrink-0">
                                             {row.codigo ?? `#${row.numero}`}
@@ -363,23 +361,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Stats pills */}
                                     {cardStats[cardKey] && (
                                         <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
-                                            <span className="text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
-                                                {cardStats[cardKey].enviados} enviados
-                                            </span>
+                                            <Badge uppercase={false}>{cardStats[cardKey].enviados} enviados</Badge>
                                             {(cardStats[cardKey].agotamiento ?? 0) > 0 && (
-                                                <span className="text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
-                                                    {cardStats[cardKey].agotamiento} stock insuf.
-                                                </span>
+                                                <Badge uppercase={false}>{cardStats[cardKey].agotamiento} stock insuf.</Badge>
                                             )}
                                             {cardStats[cardKey].sinStock > 0 && (
-                                                <span className="text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
-                                                    {cardStats[cardKey].sinStock} sin stock
-                                                </span>
+                                                <Badge uppercase={false}>{cardStats[cardKey].sinStock} sin stock</Badge>
                                             )}
                                             {cardStats[cardKey].porRegla > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
-                                                    <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
-                                                </span>
+                                                <Badge icon={AlertTriangle} uppercase={false}>{cardStats[cardKey].porRegla} por regla</Badge>
                                             )}
                                         </div>
                                     )}
@@ -415,45 +405,27 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Actions + status strip */}
                                     <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
                                         {row.total_cajas > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-label font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
-                                                <Box size={10} className="text-content-3 shrink-0" />
-                                                {row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}
-                                            </span>
+                                            <Badge icon={Box} uppercase={false}>{row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}</Badge>
                                         )}
                                         {(row.cajas_electrolit ?? 0) > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-label font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
-                                                <Inbox size={10} className="text-content-3 shrink-0" />
-                                                {row.cajas_electrolit} Electrolit
-                                            </span>
+                                            <Badge icon={Inbox} uppercase={false}>{row.cajas_electrolit} Electrolit</Badge>
                                         )}
                                         {row.electrolit_ok === false && (
-                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
-                                                <Zap size={8} className="shrink-0" />
-                                                {(row.electrolit_faltantes ?? 0) > 0
+                                            <Badge icon={Zap} uppercase={false}>{(row.electrolit_faltantes ?? 0) > 0
                                                     ? `${row.electrolit_faltantes} Electrolit faltante${row.electrolit_faltantes > 1 ? 's' : ''}`
-                                                    : 'Electrolit faltante'}
-                                            </span>
+                                                    : 'Electrolit faltante'}</Badge>
                                         )}
                                         {(row.cajas_especiales ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-label font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
-                                                <Star size={10} className="text-content-3 shrink-0" />
-                                                {row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}
-                                            </span>
+                                            <Badge icon={Star} uppercase={false}>{row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}</Badge>
                                         )}
                                         {(row.cajas_danadas ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-warning/10 text-warning-text border border-warning/30 shrink-0">
-                                                <AlertTriangle size={8} /> Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
-                                            </span>
+                                            <Badge variant="warning" icon={AlertTriangle} uppercase={false}>Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}</Badge>
                                         )}
                                         {(row.falta_cajas ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 shrink-0">
-                                                <Package size={8} /> Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
-                                            </span>
+                                            <Badge variant="danger" icon={Package} uppercase={false}>Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}</Badge>
                                         )}
                                         {row.pedido_status === 'parcial' && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && row.pedido_status !== 'completado' && (
-                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
-                                                <ClipboardList size={8} /> Difs. pendientes
-                                            </span>
+                                            <Badge icon={ClipboardList} uppercase={false}>Difs. pendientes</Badge>
                                         )}
                                         {elapsedPrep  && <span className="text-caption text-content-2 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (
@@ -631,9 +603,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <div className="flex items-center gap-2">
                                                 <span className={`text-body font-black ${isCompletada ? 'text-content-2' : 'text-chart-3-text'}`}>Ruta #{ruta.numero}</span>
                                                 {isCompletada
-                                                    ? <span className="text-micro font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">
-                                                        ✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}
-                                                      </span>
+                                                    ? <Badge variant="success" size="sm" uppercase={false}>✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}</Badge>
                                                     : dl && <Badge variant="success" size="sm" uppercase={false}>🟢 En vivo</Badge>
                                                 }
                                             </div>

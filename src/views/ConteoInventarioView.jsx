@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
 import TabBarAction from '../components/common/TabBarAction';
 import { useNavigate } from 'react-router-dom';
@@ -93,9 +94,7 @@ export default function ConteoInventarioView() {
                             <DataCell align="center" hideBelow="md"><span className="text-label tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span></DataCell>
                             <DataCell align="center">
                                 {c.total_diferencias > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-caption font-bold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
-                                        <AlertTriangle size={10} /> {c.total_diferencias}
-                                    </span>
+                                    <Badge variant="warning" icon={AlertTriangle} uppercase={false}>{c.total_diferencias}</Badge>
                                 ) : c.total_diferencias === 0 ? (
                                     <span className="text-caption font-bold text-success">Sin diferencias</span>
                                 ) : <span className="text-content-3">—</span>}

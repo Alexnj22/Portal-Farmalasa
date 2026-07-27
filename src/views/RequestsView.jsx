@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
+import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -238,9 +239,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             <p className="text-caption font-black uppercase tracking-widest text-chart-2-text mb-2">Días de Permiso</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {meta.permissionDates.map(d => (
-                                    <span key={d} className="text-caption font-bold text-chart-2-text bg-chart-2/10 border border-chart-2/30 px-2 py-0.5 rounded-full">
-                                        {new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}
-                                    </span>
+                                    <Badge key={d} variant="chart-2" uppercase={false}>{new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}</Badge>
                                 ))}
                             </div>
                         </div>

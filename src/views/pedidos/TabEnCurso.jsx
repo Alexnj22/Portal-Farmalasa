@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
@@ -227,16 +228,10 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                 {PEDIDO_STATUS_LABEL[pedido.status] ?? pedido.status}
                             </span>
                             {anyPaused && (
-                                <span className="flex items-center gap-1 text-caption font-semibold text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
-                                    <Pause size={10} />
-                                    Pausado
-                                </span>
+                                <Badge variant="warning" icon={Pause} uppercase={false}>Pausado</Badge>
                             )}
                             {allReady && pedido.status === 'confirmado' && (
-                                <span className="flex items-center gap-1 text-caption font-semibold text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full">
-                                    <Play size={10} />
-                                    Listo para enviar
-                                </span>
+                                <Badge variant="chart-3" icon={Play} uppercase={false}>Listo para enviar</Badge>
                             )}
                             <span className="ml-auto text-caption text-content-3">
                                 {fmtRelative(pedido.enviado_at ?? pedido.created_at)}

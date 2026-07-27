@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import { SkeletonText } from '../components/common/StateViews';
 import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart, Download } from 'lucide-react';
@@ -246,10 +247,7 @@ export default function VentasPperdidasView() {
                                             <Button tone="success" icon={CheckCircle2} disabled={processing === r.id} onClick={() => markProcessed(r.id)}>{processing === r.id ? '...' : 'Listo'}</Button>
                                         )}
                                         {activeTab === 'procesado' && (
-                                            <span className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-success/10 border border-success/30 text-success text-micro font-black self-start mt-0.5">
-                                                <CheckCircle2 size={9} strokeWidth={2.5} />
-                                                Listo
-                                            </span>
+                                            <Badge variant="success" size="sm" icon={CheckCircle2} uppercase={false}>Listo</Badge>
                                         )}
                                     </div>
                                 </div>

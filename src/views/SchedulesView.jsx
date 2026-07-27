@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
+import Badge from '../components/common/Badge';
 import SegmentedControl from '../components/common/SegmentedControl';
 import { EmptyState } from '../components/common/StateViews';
 import Button from '../components/common/Button';
@@ -156,9 +157,7 @@ const HolidaysPanel = ({
                                     <span className="text-body-xl font-black text-content-2 tracking-tight">{month}</span>
                                 </div>
                                 <div className="h-px flex-1 bg-gradient-to-r from-warning/20 to-transparent" />
-                                <span className="text-micro font-black text-warning bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-full shrink-0">
-                                    {items.length} {items.length === 1 ? 'feriado' : 'feriados'}
-                                </span>
+                                <Badge variant="warning" size="sm" uppercase={false}>{items.length} {items.length === 1 ? 'feriado' : 'feriados'}</Badge>
                             </div>
                             <div className="space-y-2.5">
                                 {items.sort((a,b) => a.holiday_date.localeCompare(b.holiday_date)).map(h => {
@@ -186,18 +185,12 @@ const HolidaysPanel = ({
                                                     <p className="text-body font-black text-content truncate">{h.name}</p>
                                                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                                         {isNat ? (
-                                                            <span className="flex items-center gap-1 text-micro font-black text-warning-text bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">
-                                                                <Globe size={8} strokeWidth={2} /> Nacional
-                                                            </span>
+                                                            <Badge variant="warning" size="sm" icon={Globe} uppercase={false}>Nacional</Badge>
                                                         ) : (
-                                                            <span className="flex items-center gap-1 text-micro font-black text-chart-1-text bg-chart-1/10 border border-chart-1/30 px-1.5 py-0.5 rounded-full">
-                                                                <MapPin size={8} strokeWidth={2} /> Municipal{h.municipality ? ` · ${h.municipality}` : ''}
-                                                            </span>
+                                                            <Badge variant="chart-1" size="sm" icon={MapPin} uppercase={false}>Municipal{h.municipality ? ` · ${h.municipality}` : ''}</Badge>
                                                         )}
                                                         {h.is_recurring && (
-                                                            <span className="flex items-center gap-1 text-micro font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
-                                                                <RefreshCw size={8} strokeWidth={2} /> Recurrente
-                                                            </span>
+                                                            <Badge variant="success" size="sm" icon={RefreshCw} uppercase={false}>Recurrente</Badge>
                                                         )}
                                                     </div>
                                                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Badge from '../components/common/Badge';
 import { RadioTower, CheckCircle2, AlertCircle, Clock, Globe2 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -111,13 +112,9 @@ const SyncHealthView = () => {
                                 </DataCell>
                                 <DataCell>
                                     {row.success ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-micro font-black uppercase tracking-widest bg-success/10 text-success border border-success/30">
-                                            <CheckCircle2 size={10} /> OK
-                                        </span>
+                                        <Badge variant="success" size="sm" icon={CheckCircle2}>OK</Badge>
                                     ) : (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-micro font-black uppercase tracking-widest bg-danger/10 text-danger border border-danger/30">
-                                            <AlertCircle size={10} /> Falló
-                                        </span>
+                                        <Badge variant="danger" size="sm" icon={AlertCircle}>Falló</Badge>
                                     )}
                                 </DataCell>
                                 <DataCell hideBelow="md" className="text-caption text-content-3 max-w-[320px] truncate" title={row.error_msg || ''}>

@@ -27,10 +27,10 @@ import { useAuth } from '../context/AuthContext';
 const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit, isEditingThis, canEdit = false }) => {
   const renderBadge = () => {
     switch (ann.badgeType) {
-      case 'GLOBAL': return <span className="flex items-center gap-1.5 text-brand-text bg-brand/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-brand/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
-      case 'BRANCH': return <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-success/30"><Building2 size={12} strokeWidth={2} /> {ann.badgeText}</span>;
-      case 'ROLE': return <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-chart-3/30"><Users size={12} strokeWidth={2} /> {ann.badgeText}</span>;
-      case 'EMPLOYEE': return <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-chart-4/30"><User size={12} strokeWidth={2} /> {ann.badgeText}</span>;
+      case 'GLOBAL': return <Badge variant="info" icon={Globe}>{ann.badgeText}</Badge>;
+      case 'BRANCH': return <Badge variant="success" icon={Building2}>{ann.badgeText}</Badge>;
+      case 'ROLE': return <Badge variant="chart-3" icon={Users}>{ann.badgeText}</Badge>;
+      case 'EMPLOYEE': return <Badge variant="chart-4" icon={User}>{ann.badgeText}</Badge>;
       default: return null;
     }
   };
@@ -73,25 +73,17 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 
       <div className="flex flex-wrap items-center gap-3">
         {isScheduled && (
-          <span className="flex items-center gap-1 text-chart-3-text bg-chart-3/10 px-3 py-1 rounded-md text-caption font-black uppercase tracking-widest shadow-sm shadow-indigo-500/20 border border-chart-3/30">
-            <Timer size={12} strokeWidth={2.5} className="animate-pulse" /> Programado
-          </span>
+          <Badge variant="chart-3" icon={Timer}>Programado</Badge>
         )}
         {!isScheduled && ann.priority === 'URGENT' && (
-          <span className="flex items-center gap-1 text-white bg-danger-solid px-3 py-1 rounded-md text-caption font-black uppercase tracking-widest shadow-sm shadow-red-500/30 animate-pulse">
-            <Flame size={12} strokeWidth={2.5} /> Urgente
-          </span>
+          <Badge variant="danger" tone="solid" icon={Flame}>Urgente</Badge>
         )}
 
         {renderBadge()}
 
-        <span className="text-caption font-bold text-content-3 tracking-widest bg-surface-card border border-border-card px-2 py-1 rounded-md">
-          #{String(ann.id).slice(-5).toUpperCase()}
-        </span>
+        <Badge uppercase={false}>#{String(ann.id).slice(-5).toUpperCase()}</Badge>
         {ann.isCompleted && (
-          <span className="text-caption font-bold text-content-3 bg-surface-card border border-border-card px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest">
-            <Archive size={10} strokeWidth={2.5} /> Archivado
-          </span>
+          <Badge icon={Archive}>Archivado</Badge>
         )}
       </div>
 

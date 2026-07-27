@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Badge from '../components/common/Badge';
 import SegmentedControl from '../components/common/SegmentedControl';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -819,7 +820,7 @@ const PermissionsView = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
                                                 <p className={`text-body-sm font-black leading-tight truncate ${isActive ? (isSURol ? 'text-warning-text' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
-                                                {isSURol && <span className="text-micro font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
+                                                {isSURol && <Badge variant="warning" tone="solid" size="sm">SU</Badge>}
                                             </div>
                                             <p className={`text-caption font-medium mt-0.5 ${isActive ? (isSURol ? 'text-warning-text/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
@@ -895,7 +896,7 @@ const PermissionsView = () => {
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
-                                                    <span className="text-micro font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
+                                                    <Badge variant="warning" tone="solid" size="sm">SU</Badge>
                                                 )}
                                             </div>
                                             <p className={`text-micro font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>

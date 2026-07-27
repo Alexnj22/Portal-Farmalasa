@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -498,9 +499,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             )}
             {/* Recálculos conductor */}
             {isConductor && recalcCount > 0 && (
-              <span className="flex items-center gap-1 text-micro font-bold px-2 py-1 rounded-lg bg-chart-3/10 border border-chart-3/30 text-chart-3-text">
-                <RefreshCw size={8} /> {recalcCount} recálculo{recalcCount !== 1 ? 's' : ''}
-              </span>
+              <Badge variant="chart-3" size="sm" icon={RefreshCw} uppercase={false}>{recalcCount} recálculo{recalcCount !== 1 ? 's' : ''}</Badge>
             )}
             <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
           </div>

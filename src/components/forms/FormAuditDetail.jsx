@@ -1,4 +1,5 @@
 import React from 'react';
+import Badge from '../../components/common/Badge';
 import { 
     User, Activity, MonitorSmartphone, CalendarClock, 
     ShieldAlert, CheckCircle2, AlertTriangle, Code2
@@ -91,9 +92,7 @@ const FormAuditDetail = ({ data }) => {
                         <div className="min-w-0 pt-0.5">
                             <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Contexto de Origen</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-caption font-black text-brand-text bg-surface-card border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
-                                    {data.source}
-                                </span>
+                                <Badge>{data.source}</Badge>
                                 {data.device_name && <span className="text-body font-bold text-content-2 truncate">{data.device_name}</span>}
                             </div>
                         </div>

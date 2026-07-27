@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
@@ -227,9 +228,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
           {activo ? 'ACTIVO' : 'INACTIVO'}
         </span>
         {rState === 'done' ? (
-          <span className="shrink-0 flex items-center gap-1 text-micro font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
-            <CheckCircle2 size={8} strokeWidth={2.5} />OK
-          </span>
+          <Badge variant="success" size="sm" icon={CheckCircle2} uppercase={false}>OK</Badge>
         ) : formOpen ? (
           <div className="shrink-0 flex items-center gap-1">
             <input

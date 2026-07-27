@@ -384,9 +384,7 @@ const RolesView = ({ openModal }) => {
                 )}
 
                 {isExporting && (
-                    <span className="text-micro font-bold text-content-2 uppercase tracking-widest bg-surface-card px-2 py-1 rounded-md">
-                        {roleEmps.length} Empleados
-                    </span>
+                    <Badge size="sm">{roleEmps.length} Empleados</Badge>
                 )}
             </div>
         );
@@ -680,23 +678,17 @@ const RolesView = ({ openModal }) => {
                                                                 <Badge variant="info" size="sm" className="flex-shrink-0">Raíz</Badge>
                                                             )}
                                                             {isExternal && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-divider text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">
-                                                                    Staff
-                                                                </span>
+                                                                <Badge size="sm">Staff</Badge>
                                                             )}
                                                         </div>
 
                                                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                                             {!isRoot && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-surface-card backdrop-blur-sm text-content-3 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-border-card shadow-sm truncate transition-colors" title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`}>
-                                                                    <CornerDownRight size={10} className="shrink-0 mt-[1px]" /> Rep: {getSuperiorName(role.parent_role_id)}
-                                                                </div>
+                                                                <Badge title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`} size="sm" icon={CornerDownRight}>Rep: {getSuperiorName(role.parent_role_id)}</Badge>
                                                             )}
 
                                                             {hasDualReporting && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-border-card shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
-                                                                    <GitMerge size={10} className="shrink-0 mt-[1px]" /> Mat: {getSuperiorName(role.secondary_parent_role_id)}
-                                                                </div>
+                                                                <Badge title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`} variant="chart-3" size="sm" icon={GitMerge}>Mat: {getSuperiorName(role.secondary_parent_role_id)}</Badge>
                                                             )}
                                                         </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Badge from '../../components/common/Badge';
 import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 
@@ -124,9 +125,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     <div>
                         <h3 className="text-xl font-black text-success-text tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
                         <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 bg-surface-card rounded-md text-micro font-black text-success-text uppercase tracking-widest border border-success/30">
-                                Sede: {formData.name}
-                            </span>
+                            <Badge size="sm">Sede: {formData.name}</Badge>
                             {currentPaidThrough && (
                                 <span className="text-caption font-bold text-success/80 uppercase tracking-widest">
                                     Último: {currentPaidThrough}

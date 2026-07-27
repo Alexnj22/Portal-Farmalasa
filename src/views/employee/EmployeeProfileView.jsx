@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -433,9 +434,7 @@ const EmployeeProfileView = ({ openModal }) => {
                         <div className="flex items-center justify-between mb-3">
                             <SectionLabel icon={Clock} label="Historial de Eventos" />
                             <div className="flex items-center gap-2 -mt-3">
-                                <span className="text-caption font-black text-content-3 bg-surface-card-hover/80 border border-divider px-2.5 py-1 rounded-full">
-                                    {visibleTimeline.length}/{timeline.length}
-                                </span>
+                                <Badge uppercase={false}>{visibleTimeline.length}/{timeline.length}</Badge>
                                 {/* Buscador expandible — Tipo 2b (widget inline con filtro al lado), ver DESIGN.md §24 */}
                                 <SearchInput
                                     expandable
@@ -534,7 +533,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 {meta.permissionDates?.length > 0 && (
                                                     <div className="mt-2 flex flex-wrap gap-1.5">
                                                         {meta.permissionDates.map((d, i) => (
-                                                            <span key={i} className="px-2 py-0.5 bg-warning/10 text-warning border border-warning/30 rounded-lg text-caption font-black">{formatDate(d)}</span>
+                                                            <Badge key={i} variant="warning" uppercase={false}>{formatDate(d)}</Badge>
                                                         ))}
                                                     </div>
                                                 )}

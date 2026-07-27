@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import { SkeletonText, EmptyState} from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
@@ -1021,13 +1022,9 @@ export default function EncuestaAdminView() {
                                                                             'text-warning bg-warning/10 border-warning/30'
                                             }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
                                             {s.anonima && (
-                                                <span className="flex items-center gap-1 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-caption font-black uppercase tracking-widest border border-chart-3/30">
-                                                    <EyeOff size={10} strokeWidth={2.5} /> Anónima
-                                                </span>
+                                                <Badge variant="chart-3" icon={EyeOff}>Anónima</Badge>
                                             )}
-                                            <span className="text-caption font-bold text-content-3 tracking-widest bg-surface-card border border-border-card px-2 py-1 rounded-md">
-                                                {s.año}
-                                            </span>
+                                            <Badge uppercase={false}>{s.año}</Badge>
                                         </div>
 
                                         {/* Title */}
@@ -1217,7 +1214,7 @@ export default function EncuestaAdminView() {
                                                                                                                                 <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-micro font-black text-content-3">{p.numero}</span>
                                                                                                                                 <p className="flex-1 text-label text-content-2 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {ans
-                                                                                                                                    ? <span className="shrink-0 text-caption font-black px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2">{optLabel || ans}</span>
+                                                                                                                                    ? <Badge uppercase={false}>{optLabel || ans}</Badge>
                                                                                                                                     : <span className="shrink-0 text-caption text-content-3">—</span>}
                                                                                                                             </div>
                                                                                                                         );

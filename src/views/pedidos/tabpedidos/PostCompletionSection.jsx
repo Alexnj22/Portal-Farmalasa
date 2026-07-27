@@ -1,5 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { useRef, useEffect } from 'react';
+import Badge from '../../../components/common/Badge';
 import { UserCircle2, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const LLEGADA_TIPO_INFO = {
@@ -46,24 +47,16 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                     </span>
                 )}
                 {hasCajasDanadas && (
-                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
-                        ⚠ Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}
-                    </span>
+                    <Badge variant="warning" uppercase={false}>⚠ Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}</Badge>
                 )}
                 {reenvios.length > 0 && (
-                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-chart-3/10 border-chart-3/30 text-chart-3-text">
-                        <Truck size={9} />{reenvios.length} reenvío{reenvios.length > 1 ? 's' : ''}
-                    </span>
+                    <Badge variant="chart-3" icon={Truck} uppercase={false}>{reenvios.length} reenvío{reenvios.length > 1 ? 's' : ''}</Badge>
                 )}
                 {difResueltas > 0 && (
-                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-success/10 border-success/30 text-success-text">
-                        <CheckCircle2 size={9} />{difResueltas} dif. resuelta{difResueltas > 1 ? 's' : ''}
-                    </span>
+                    <Badge variant="success" icon={CheckCircle2} uppercase={false}>{difResueltas} dif. resuelta{difResueltas > 1 ? 's' : ''}</Badge>
                 )}
                 {difPendientes > 0 && (
-                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
-                        <AlertCircle size={9} />{difPendientes} dif. pendiente{difPendientes > 1 ? 's' : ''}
-                    </span>
+                    <Badge variant="warning" icon={AlertCircle} uppercase={false}>{difPendientes} dif. pendiente{difPendientes > 1 ? 's' : ''}</Badge>
                 )}
             </div>
         </div>

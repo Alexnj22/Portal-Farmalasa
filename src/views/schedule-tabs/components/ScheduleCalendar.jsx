@@ -749,9 +749,7 @@ const ScheduleCalendar = memo(({
                                                     {coverageData?.criticalGaps?.length > 0 && (
                                                         <>
                                                             {coverageData.criticalGaps.map((gap, i) => (
-                                                                <span key={i} className="text-[6.5px] 2xl:text-micro font-black uppercase text-white bg-danger-solid border border-danger px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
-                                                                    {gap.time}
-                                                                </span>
+                                                                <Badge key={i} variant="danger" tone="solid" size="sm">{gap.time}</Badge>
                                                             ))}
                                                         </>
                                                     )}

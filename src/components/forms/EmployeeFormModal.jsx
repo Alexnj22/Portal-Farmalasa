@@ -238,9 +238,7 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
     <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
         <label className="text-caption font-black uppercase tracking-widest text-content-2 ml-1 mb-1.5 flex items-center justify-between">
             <span>{label}</span>
-            <span className="text-micro font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                <Lock size={8} strokeWidth={3} /> Acción RRHH
-            </span>
+            <Badge size="sm" icon={Lock} uppercase={false}>Acción RRHH</Badge>
         </label>
         <div className="flex items-center gap-2 w-full h-[40px] px-3 bg-surface-card-hover/60 border border-divider rounded-2xl cursor-not-allowed opacity-70">
             <Lock size={12} className="text-content-3 shrink-0" />

@@ -831,9 +831,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                                                     {antibioticIds.has(it.erp_product_id) && <Badge variant="danger" size="sm">Receta Médica</Badge>}
-                                                                                    {it.presentacion && <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
+                                                                                    {it.presentacion && <Badge size="sm" uppercase={false}>{it.presentacion}</Badge>}
                                                                                     {it.lote && <Badge variant="chart-3" size="sm" uppercase={false}>L:{it.lote}</Badge>}
-                                                                                    {it.fecha_vencimiento && <span className="text-micro font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}
+                                                                                    {it.fecha_vencimiento && <Badge size="sm" uppercase={false}>Vence {it.fecha_vencimiento}</Badge>}
                                                                                 </div>
                                                                             )}
                                                                         </td>
@@ -1873,7 +1873,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         </p>
                                                     )}
                                                     {r.neto === 0 && (
-                                                        <span className="text-micro font-semibold text-content-3 bg-surface-card-hover px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
+                                                        <Badge size="sm" uppercase={false}>Sin ventas en período</Badge>
                                                     )}
                                                     {r.neto > 0 && (
                                                     <div className="mt-1.5 h-1 rounded-full bg-surface-card-hover">
@@ -2047,7 +2047,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                 <div className="flex items-center gap-2 shrink-0 ml-2">
                                                                                                     <span className="text-micro text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
                                                                                                     <span className="text-caption font-black text-content-2">{fmt(neto)}</span>
-                                                                                                    <span className="text-micro font-black text-white px-1.5 py-0.5 rounded-full bg-chart-3-solid">{pct.toFixed(0)}%</span>
+                                                                                                    <Badge variant="chart-3" tone="solid" size="sm" uppercase={false}>{pct.toFixed(0)}%</Badge>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
@@ -2220,12 +2220,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             <td className="px-3 py-2 text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 {line.lote
-                                                                                                    ? <span className="text-micro font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text">{line.lote}</span>
+                                                                                                    ? <Badge variant="chart-3" size="sm" uppercase={false}>{line.lote}</Badge>
                                                                                                     : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap hidden lg:table-cell">
                                                                                                 {line.fecha_vencimiento
-                                                                                                    ? <span className="text-micro font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-9/10 text-chart-9-text">{line.fecha_vencimiento}</span>
+                                                                                                    ? <Badge variant="chart-9" size="sm" uppercase={false}>{line.fecha_vencimiento}</Badge>
                                                                                                     : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-right whitespace-nowrap">

@@ -1,6 +1,7 @@
 // src/components/common/RangeDatePicker.jsx
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
@@ -584,9 +585,7 @@ const RangeDatePicker = ({
                                 : placeholder}
                         </span>
                         {startDate && endDate && (
-                            <span className="shrink-0 text-caption font-black text-brand-text bg-brand/10 px-2 py-0.5 rounded-full">
-                                {Math.round((new Date(endDate + 'T12:00:00') - new Date(startDate + 'T12:00:00')) / 86400000) + 1}d
-                            </span>
+                            <Badge variant="info" uppercase={false}>{Math.round((new Date(endDate + 'T12:00:00') - new Date(startDate + 'T12:00:00')) / 86400000) + 1}d</Badge>
                         )}
                     </div>
                 )}

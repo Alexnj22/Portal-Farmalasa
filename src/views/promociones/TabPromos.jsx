@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import {
@@ -171,10 +172,10 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-label font-semibold text-content-2 truncate">{pp.products?.nombre}</span>
                                         {pp.presentaciones?.tipo && (
-                                            <span className="text-caption font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentaciones.tipo}</span>
+                                            <Badge uppercase={false}>{pp.presentaciones.tipo}</Badge>
                                         )}
                                         {pp.factor_descripcion && (
-                                            <span className="text-caption text-chart-3-text font-medium bg-chart-3/10 px-1.5 py-0.5 rounded-md">{pp.factor_descripcion}</span>
+                                            <Badge variant="chart-3" uppercase={false}>{pp.factor_descripcion}</Badge>
                                         )}
                                     </div>
                                     {/* Bonos */}

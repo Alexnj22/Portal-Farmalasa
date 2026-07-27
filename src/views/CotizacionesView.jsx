@@ -235,7 +235,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
         <div className="bg-surface-card backdrop-blur-sm border border-border-card rounded-2xl p-4 shadow-sm space-y-3">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-micro font-black text-content-3 bg-surface-card-hover rounded-lg px-2 py-1 shrink-0">#{idx + 1}</span>
+                    <Badge size="sm" uppercase={false}>#{idx + 1}</Badge>
                     <p className="text-body-sm font-black text-content leading-tight truncate">{item.productName}</p>
                 </div>
                 <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => removeItem(item._id)} />
@@ -754,12 +754,10 @@ export default function CotizacionesView() {
                             </div>
                             <h3 className="text-body-sm font-black uppercase tracking-widest text-content-2">
                                 Productos
-                                {items.length > 0 && <span className="ml-2 text-caption font-black text-success bg-success/10 px-2 py-0.5 rounded-full border border-success/30">{items.length}</span>}
+                                {items.length > 0 && <Badge variant="success" uppercase={false}>{items.length}</Badge>}
                             </h3>
                             {isCCFMode && (
-                                <span className="flex items-center gap-1 text-micro font-black text-chart-1-text bg-chart-1/10 border border-chart-1/30 px-2.5 py-1 rounded-full">
-                                    <Info size={10} strokeWidth={3} /> Desglose CCF por línea
-                                </span>
+                                <Badge variant="chart-1" size="sm" icon={Info} uppercase={false}>Desglose CCF por línea</Badge>
                             )}
                         </div>
                         <div className="w-full sm:w-[320px]">

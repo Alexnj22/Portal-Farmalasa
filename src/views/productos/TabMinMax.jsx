@@ -996,18 +996,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-body font-medium text-content truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <Badge variant="chart-3" size="sm" uppercase={false} className="shrink-0">MANUAL</Badge>}
-                                                    {hasDraft && !isBodega && <span className="shrink-0 text-micro font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {hasDraft && !isBodega && <Badge size="sm" uppercase={false}>BORRADOR</Badge>}
                                                     {hasDraft && isBodega && <Badge variant="warning" size="sm" uppercase={false} className="shrink-0">SUC. PEND.</Badge>}
-                                                    {dispatchRisk && <span className="shrink-0 text-micro font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así">RIESGO REGLA</span>}
+                                                    {dispatchRisk && <Badge title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así" variant="danger" size="sm" uppercase={false}>RIESGO REGLA</Badge>}
                                                     {isBodega && (
                                                         (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||
                                                         (!hasDraft && Number(row.pub_min ?? 0) === 0 && Number(row.pub_max ?? 0) === 0 && row.has_manual)
-                                                    ) && <span className="shrink-0 text-micro font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="Retirado de MIN·MAX en todas las salas">SIN SALAS</span>}
+                                                    ) && <Badge title="Retirado de MIN·MAX en todas las salas" variant="danger" size="sm" uppercase={false}>SIN SALAS</Badge>}
                                                     {limitedData && (
-                                                        <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
-                                                            className="shrink-0 text-micro font-black text-chart-7-text bg-chart-7/10 border border-chart-7/20 px-1.5 py-0.5 rounded-full cursor-help">
-                                                            {row.draft_data_days}d DATOS
-                                                        </span>
+                                                        <Badge title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`} variant="chart-7" size="sm" uppercase={false}>{row.draft_data_days}d DATOS</Badge>
                                                     )}
                                                 </div>
                                                 {/* Stock actual inline */}

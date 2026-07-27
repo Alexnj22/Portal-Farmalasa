@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
+import Badge from '../../components/common/Badge';
 import { Search, User, MapPin, Briefcase, ArrowRightLeft, TrendingUp, Clock, ShieldCheck, CheckCircle2, FileText, AlertCircle, UserMinus, Award, Phone, CalendarDays } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -151,7 +152,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="flex-1">
                                     <h3 className="text-lg font-black text-content leading-tight">{selectedEmp.name}</h3>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="bg-chart-1/10 text-brand-text border border-chart-1/30 px-2 py-0.5 rounded-full text-micro font-black uppercase tracking-widest">{selectedEmp.role || 'Sin Rol'}</span>
+                                        <Badge variant="chart-1" size="sm">{selectedEmp.role || 'Sin Rol'}</Badge>
                                         <span className="text-caption font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
                                     </div>
                                 </div>

@@ -457,9 +457,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       </DataCell>
 
       <DataCell className="max-w-[200px]">
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
-          <GraduationCap size={10} strokeWidth={2.5} /> Horas Sociales
-        </span>
+        <Badge variant="chart-3" size="sm" icon={GraduationCap}>Horas Sociales</Badge>
       </DataCell>
 
       <DataCell>

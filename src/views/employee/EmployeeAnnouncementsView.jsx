@@ -1,4 +1,5 @@
 import React, { useMemo, useState, memo, useRef, useCallback, useEffect } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, ChevronLeft, ChevronRight, RefreshCw, Palmtree, FileText, DollarSign, FileCheck, Stethoscope, CalendarDays, ArrowLeftRight, Sparkles, ChevronsRight, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -33,12 +34,12 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const meta = ann.metadata || null;
 
     const badgeEl = ann.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-brand-text bg-brand/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-brand/20"><Globe size={11} strokeWidth={2} /> Global</span>
+        ? <Badge variant="info" icon={Globe}>Global</Badge>
         : ann.targetType === 'BRANCH'
-        ? <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-success/30"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
+        ? <Badge variant="success" icon={Building2}>Sucursal</Badge>
         : ann.targetType === 'ROLE'
-        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-chart-3/30"><User size={11} strokeWidth={2} /> Cargo</span>
-        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-md text-caption font-bold uppercase tracking-widest border border-chart-4/30"><User size={11} strokeWidth={2} /> Personal</span>;
+        ? <Badge variant="chart-3" icon={User}>Cargo</Badge>
+        : <Badge variant="chart-4" icon={User}>Personal</Badge>;
 
     return (
         <div
@@ -62,9 +63,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     </span>
                 )}
                 {wasReadBefore && (
-                    <span className="flex items-center gap-1 text-warning-text bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-md text-caption font-black uppercase tracking-widest">
-                        <Pencil size={10} strokeWidth={2.5} /> Actualización
-                    </span>
+                    <Badge variant="warning" icon={Pencil}>Actualización</Badge>
                 )}
                 {badgeEl}
             </div>
@@ -129,9 +128,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {meta.requestType === 'PERMIT' && meta.permissionDates?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                             {meta.permissionDates.map(d => (
-                                <span key={d} className="text-caption font-bold px-2 py-0.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text">
-                                    {fmtDate(d)}
-                                </span>
+                                <Badge key={d} variant="chart-3" uppercase={false}>{fmtDate(d)}</Badge>
                             ))}
                         </div>
                     )}
@@ -181,9 +178,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     )}
                 </p>
                 {isRead && (
-                    <span className="flex items-center gap-1 text-caption font-bold text-success bg-success/10 border border-success/30 px-2 py-0.5 rounded-md">
-                        <CheckCircle2 size={10} strokeWidth={2.5} /> Leído
-                    </span>
+                    <Badge variant="success" icon={CheckCircle2} uppercase={false}>Leído</Badge>
                 )}
             </div>
         </div>
@@ -320,12 +315,12 @@ const UnreadStack = memo(({ list, onRead }) => {
     })();
 
     const badgeEl = current.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-brand-text bg-brand/10 px-2.5 py-1 rounded-lg text-caption font-bold uppercase tracking-widest border border-brand/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
+        ? <Badge variant="info" icon={Globe}>Global</Badge>
         : current.targetType === 'BRANCH'
-        ? <span className="flex items-center gap-1.5 text-success-text bg-success/10 px-2.5 py-1 rounded-lg text-caption font-bold uppercase tracking-widest border border-success/30"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
+        ? <Badge variant="success" icon={Building2}>Sucursal</Badge>
         : current.targetType === 'ROLE'
-        ? <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-lg text-caption font-bold uppercase tracking-widest border border-chart-3/30"><User size={10} strokeWidth={2.5}/> Cargo</span>
-        : <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-lg text-caption font-bold uppercase tracking-widest border border-chart-4/30"><User size={10} strokeWidth={2.5}/> Personal</span>;
+        ? <Badge variant="chart-3" icon={User}>Cargo</Badge>
+        : <Badge variant="chart-4" icon={User}>Personal</Badge>;
 
     return (
         <div className="flex flex-col items-center w-full">
@@ -505,7 +500,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     {meta.requestType === 'PERMIT' && meta.permissionDates?.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5">
                                             {meta.permissionDates.map(d => (
-                                                <span key={d} className="text-caption font-bold px-2.5 py-0.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text">{fmtDate(d)}</span>
+                                                <Badge key={d} variant="chart-3" uppercase={false}>{fmtDate(d)}</Badge>
                                             ))}
                                         </div>
                                     )}

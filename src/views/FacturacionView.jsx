@@ -566,7 +566,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                         }
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <span className="text-caption font-bold bg-success/10 text-success-text px-2 py-0.5 rounded-md">{inv?.tipo_documento}</span>
+                                                <Badge variant="success" uppercase={false}>{inv?.tipo_documento}</Badge>
                                                 {inv?.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{inv.erp_invoice_id}</span>}
                                                 <span className="font-mono text-label text-content-3">{inv?.correlativo}</span>
                                                 <span className="text-label text-content-3">{getBranch(inv?.branch_id)}</span>
@@ -1450,7 +1450,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                         }
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <span className="text-caption font-bold bg-success/10 text-success-text px-2 py-0.5 rounded-md">{r.tipo_documento}</span>
+                                                <Badge variant="success" uppercase={false}>{r.tipo_documento}</Badge>
                                                 <span className="text-body font-bold text-content-2">{getBranch(r.branch_id)}</span>
                                                 <span className="font-mono text-label text-content-3">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
                                             </div>
@@ -1718,9 +1718,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                         <h3 className="text-white font-black text-subtitle uppercase tracking-widest">
                                             {TIPO_PAGO_LABELS[tipo] || tipo}
                                         </h3>
-                                        <span className="bg-surface-card text-white text-label font-black px-2.5 py-0.5 rounded-full">
-                                            {tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}
-                                        </span>
+                                        <Badge uppercase={false}>{tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}</Badge>
                                     </div>
                                     <div className="text-right">
                                         <div className="text-white/60 text-micro font-bold uppercase tracking-widest">Total pendiente</div>
@@ -1747,7 +1745,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             <React.Fragment key={r.id}>
                                                 <DataRow index={ri}>
                                                     <DataCell>
-                                                        <span className="inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border bg-surface-card-hover text-content-3 border-divider">{r.tipo_documento}</span>
+                                                        <Badge size="sm">{r.tipo_documento}</Badge>
                                                         <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
                                                     </DataCell>
                                                     <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
@@ -1819,9 +1817,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                 <h3 className="text-white font-black text-subtitle uppercase tracking-widest">
                                                     {TIPO_PAGO_LABELS[tipo] || tipo}
                                                 </h3>
-                                                <span className="bg-surface-card text-white text-label font-black px-2.5 py-0.5 rounded-full">
-                                                    {tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}
-                                                </span>
+                                                <Badge uppercase={false}>{tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}</Badge>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-white/60 text-micro font-bold uppercase tracking-widest">Total pendiente</div>
@@ -1847,7 +1843,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     <React.Fragment key={r.id}>
                                                         <DataRow index={ri}>
                                                             <DataCell>
-                                                                <span className="inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border bg-surface-card-hover text-content-3 border-divider">{r.tipo_documento}</span>
+                                                                <Badge size="sm">{r.tipo_documento}</Badge>
                                                                 <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
                                                             </DataCell>
                                                             <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>

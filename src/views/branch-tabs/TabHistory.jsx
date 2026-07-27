@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import RangeDatePicker from '../../components/common/RangeDatePicker';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -554,7 +555,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 mb-3 md:mb-0 z-content ${isLeftDesktop ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'}`}>
                                                                                         <div className="inline-flex items-center gap-2">
                                                                                             <span className="text-body-lg font-black text-content-2 drop-shadow-sm">{dateStr}</span>
-                                                                                            {timeStr !== '12:00 a. m.' && <span className="text-caption font-bold text-content-3 bg-surface-card backdrop-blur-sm px-2.5 py-1 rounded-full border border-white shadow-[var(--shadow-elevation-sm)]">{timeStr}</span>}
+                                                                                            {timeStr !== '12:00 a. m.' && <Badge uppercase={false}>{timeStr}</Badge>}
                                                                                         </div>
                                                                                     </div>
 

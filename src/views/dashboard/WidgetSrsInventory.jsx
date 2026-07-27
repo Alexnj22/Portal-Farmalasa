@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import { Loader2, FlaskConical, Building2, Pill, CheckCircle2, Package } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -113,9 +114,7 @@ export default function WidgetSrsInventory() {
                 </p>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasStock && (
-                    <span className="flex items-center gap-1 text-micro font-black px-2 py-0.5 rounded-full bg-success/10 text-success-text">
-                      <CheckCircle2 size={9} strokeWidth={3} /> En stock
-                    </span>
+                    <Badge variant="success" size="sm" icon={CheckCircle2} uppercase={false}>En stock</Badge>
                   )}
                   <span className={`text-micro font-black px-2 py-0.5 rounded-full ${
                     activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'

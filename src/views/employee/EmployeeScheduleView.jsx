@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { ChevronLeft, ChevronRight, Coffee, Palmtree, Calendar, ArrowRight, Loader2, MessageSquare, Check, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -291,9 +292,7 @@ const EmployeeScheduleView = () => {
                                     )}
                                 </div>
                                 {d.isToday && (
-                                    <span className="flex-shrink-0 text-micro font-black uppercase tracking-widest bg-brand text-white px-2 py-0.5 rounded-full animate-pulse">
-                                        Hoy
-                                    </span>
+                                    <Badge variant="info" tone="solid" size="sm">Hoy</Badge>
                                 )}
                             </div>
                         </div>

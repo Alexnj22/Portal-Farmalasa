@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -420,18 +421,12 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
                 {proveedor.notas && <p className="text-caption text-content-3 truncate mt-0.5">{proveedor.notas}</p>}
             </div>
             {proveedor.vineta != null && (
-                <span className="text-micro font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full shrink-0" title="Viñeta">
-                    v{proveedor.vineta}
-                </span>
+                <Badge title="Viñeta" variant="chart-3" size="sm" uppercase={false}>v{proveedor.vineta}</Badge>
             )}
             {proveedor.devolutivo ? (
-                <span className="text-micro font-black uppercase text-success-text bg-success/10 border border-success/30 px-2 py-0.5 rounded-full shrink-0">
-                    Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}
-                </span>
+                <Badge variant="success" size="sm">Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}</Badge>
             ) : (
-                <span className="text-micro font-black uppercase text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full shrink-0">
-                    No devolutivo
-                </span>
+                <Badge size="sm">No devolutivo</Badge>
             )}
             {canEdit && (
                 <div className="flex items-center gap-1 shrink-0">

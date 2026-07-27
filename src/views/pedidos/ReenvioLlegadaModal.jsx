@@ -211,22 +211,16 @@ export default function ReenvioLlegadaModal({
                 {hayProblemas && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
-                                ⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}
-                            </span>
+                            <Badge variant="warning" uppercase={false}>⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}</Badge>
                         )}
                         {cajasFaltantes.length > 0 && (
-                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
-                                ✗ Aún falta{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')} — se solicitará otro reenvío
-                            </span>
+                            <Badge variant="danger" uppercase={false}>✗ Aún falta{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')} — se solicitará otro reenvío</Badge>
                         )}
                         {electrolitOk === false && (
                             <Badge variant="warning" uppercase={false}>⚡ Electrolit aún pendiente</Badge>
                         )}
                         {espFaltantes.length > 0 && (
-                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
-                                ✗ Esp. aún falta{espFaltantes.length > 1 ? 'n' : ''}: {espFaltantes.join(', ')}
-                            </span>
+                            <Badge variant="danger" uppercase={false}>✗ Esp. aún falta{espFaltantes.length > 1 ? 'n' : ''}: {espFaltantes.join(', ')}</Badge>
                         )}
                     </div>
                 )}

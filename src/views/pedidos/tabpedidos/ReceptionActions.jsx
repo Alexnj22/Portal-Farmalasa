@@ -1,5 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { UserCircle2, PackageCheck, AlertTriangle, PackageX, Truck, Database, UserPlus, Loader2 } from 'lucide-react';
+import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 
 // Mismas etiquetas que LLEGADA_TIPO_INFO en PostCompletionSection.jsx (solo
@@ -81,14 +82,10 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {llegadaOk && (hasDanadaPendiente || (hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos)) && (
                 <div className="flex flex-wrap gap-1.5">
                     {hasDanadaPendiente && cajasDanadas.map(n => (
-                        <span key={`d${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/30 text-caption font-semibold text-warning-text">
-                            <AlertTriangle size={9} />#{n} dañada
-                        </span>
+                        <Badge key={`d${n}`} variant="warning" icon={AlertTriangle} uppercase={false}>#{n} dañada</Badge>
                     ))}
                     {hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos && faltaCajas.map(n => (
-                        <span key={`f${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-danger/10 border border-danger/30 text-caption font-semibold text-danger-text">
-                            <PackageX size={9} />#{n} no llegó
-                        </span>
+                        <Badge key={`f${n}`} variant="danger" icon={PackageX} uppercase={false}>#{n} no llegó</Badge>
                     ))}
                 </div>
             )}

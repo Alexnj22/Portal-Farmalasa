@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
 import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw } from 'lucide-react';
@@ -346,19 +347,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 {(hayProblemas || cajasExtra > 0) && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
-                                ⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}
-                            </span>
+                            <Badge variant="warning" uppercase={false}>⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}</Badge>
                         )}
                         {cajasFaltantes.length > 0 && (
-                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
-                                ✗ No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}
-                            </span>
+                            <Badge variant="danger" uppercase={false}>✗ No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}</Badge>
                         )}
                         {cajasExtra > 0 && (
-                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-chart-7/10 text-chart-7-text border border-chart-7/20">
-                                + {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}
-                            </span>
+                            <Badge variant="chart-7" uppercase={false}>+ {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}</Badge>
                         )}
                     </div>
                 )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -136,7 +137,7 @@ function ProductRow({ pp, onRemove }) {
                 <div className="flex items-center gap-1.5 flex-wrap">
                     {pp.laboratorio && <span className="text-caption text-content-3">{pp.laboratorio}</span>}
                     {pp.presentacion_tipo && (
-                        <span className="text-caption font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentacion_tipo}</span>
+                        <Badge uppercase={false}>{pp.presentacion_tipo}</Badge>
                     )}
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">

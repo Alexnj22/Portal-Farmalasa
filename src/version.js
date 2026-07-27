@@ -5,7 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.67.0';
+export const APP_VERSION = '2.67.1';
+
+// v2.67.1 — fix(a11y): se tabulaba dentro de lo invisible (A17). Salió de verificar
+// v2.67.0: la sonda del aro de foco aterrizaba una y otra vez en un input que no podía
+// mostrar. Era el buscador colapsado del header — y al medirlo no eran dos sitios sino
+// 26 regiones en 14 archivos.
+//
+// `opacity-0 pointer-events-none` esconde del ojo y del mouse pero NO del teclado.
+// Quien navega tabulando entraba en menús cerrados, buscadores colapsados y paneles de
+// IA apagados, y el foco desaparecía de la pantalla (WCAG 2.4.3 y 2.4.7). Medido en
+// /proveedores: 26 paradas invisibles en 60 tabulaciones -> 0. Verificado tambien en
+// /solicitudes, /facturacion y /permisos.
+//
+// Se usa `inert` y no `tabIndex={-1}` porque hay que sacar TODOS los controles de la
+// region (input + limpiar + cerrar + los tabs del otro lado), y de paso los oculta a
+// los lectores de pantalla. SearchInput queda como estaba: ya lo resolvia con
+// tabIndex={open ? 0 : -1}.
+//
+// De fondo el conteo dice otra cosa: el "modo busqueda" esta COPIADO vista por vista
+// en vez de salir de ViewTabBar — 8 de las 14 apariciones son la misma barra
+// reescrita. Ese es el trabajo de D3; este bug es una de sus consecuencias.
+//
+// Gate: categoria `inert` nueva, en 0 y bloqueante, probada contra violacion falsa.
 
 // v2.67.0 — feat(design): barrido y aros estandarizados. El usuario preguntó por qué
 // algunos botones tenían barrido especular y otros no, y por qué había tantas variantes

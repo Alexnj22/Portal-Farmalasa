@@ -602,8 +602,69 @@ Alcance: los 32 hex que quedan en el baseline, concentrados en
 Varios son duplicados exactos de tokens que ya existen — `#F79009` es `--warning`,
 `#12B76A` es `--success`, `#0052CC` es `--brand`, `#64748b` es `--chart-8`.
 
-Queda registrado en el baseline y **sin tocar**, a la espera de decidir si entra ahora,
-si se agenda para D2 (donde ya se tocan los tokens) o si se descarta.
+**Decisión (2026-07-26): se agenda a D2**, donde ya se tocan los tokens y las escalas.
+Queda registrado en el baseline, así que no puede crecer sin que el gate avise.
+
+### D1 — Lo que rompe hoy · **casi cerrada** (2026-07-26)
+
+| Criterio | Antes | Ahora |
+|---|---|---|
+| Superficies blancas opacas en oscuro | 52 | **0** ✓ |
+| Nodos de texto bajo AA | 166 | **3** (todos instancias de N2, ver abajo) |
+
+- **D1.1** — `--brand-text` con variante oscura (`#60A5FA`, el `--chart-1-text` que esos
+  temas ya usaban). 503 usos migrados en 106 archivos. De 2.85:1 a 7.35:1.
+- **D1.2** — 543 `bg-white` migrados, clasificados por rol: 108 hover, 299 con borde,
+  114 superficie suelta, 14 pills activas a `--surface-tab-active`. **18 perillas de
+  switch sin tocar** — una perilla redonda absolutamente posicionada es blanca sobre su
+  riel en los 4 temas, igual que en iOS. La última superficie blanca vivía en un `style`
+  inline (`TabMinMax.jsx`), invisible para un gate que lee clases.
+- **D1.3** — 270 usos bajo el piso legible subidos a 9px.
+- **D1.4 / D1.5** — `RouteLoadingFallback` tokenizado; bootstrap de tema inline en
+  `index.html`, verificado bloqueando el bundle JS.
+
+#### Corrección al propio escáner
+
+El primer conteo post-D1 daba 39 nodos bajo AA, 29 de ellos el banner de construcción
+con un supuesto **1.1:1**. Era un falso positivo del escáner: las franjas del banner son
+un `repeating-linear-gradient` (`backgroundImage`, sin `backgroundColor`), así que el
+walk de ancestros lo atravesaba y medía su texto oscuro contra el fondo oscuro de la
+página. Contra sus franjas reales mide **8.28:1 y 10.62:1** — de lo más legible del
+portal. El escáner ahora devuelve "indeterminado" al toparse con un `backgroundImage` en
+lugar de inventar un número.
+
+#### Hallazgo nuevo — **N2 · texto blanco sobre los colores sólidos, pendiente de decisión**
+
+Los 3 nodos que quedan no son residuos de D1: son instancias de un patrón sistémico que
+la auditoría original no había aislado. **El texto blanco sobre los rellenos sólidos de
+color falla AA casi en todos**, y como esos colores no cambian por tema, **falla también
+en los temas claros** — no es un bug de modo oscuro.
+
+| Fondo | Contraste con blanco | Usos con `text-white` |
+|---|---|---|
+| `bg-warning` `#F79009` | 2.35:1 ✗ | 31 |
+| `bg-chart-7` `#eab308` | 1.92:1 ✗ | — |
+| `bg-chart-5` `#06b6d4` | 2.43:1 ✗ | — |
+| `bg-chart-9` `#14b8a6` | 2.49:1 ✗ | 9 |
+| `bg-chart-2` `#10b981` | 2.54:1 ✗ | — |
+| `bg-success` `#12B76A` | 2.62:1 ✗ | 56 |
+| `bg-chart-4` `#f97316` | 2.80:1 ✗ | 2 |
+| `bg-chart-6` `#ec4899` | 3.53:1 ✗ | 7 |
+| `bg-chart-1` `#3b82f6` | 3.68:1 ✗ | 14 |
+| `bg-danger` `#F04438` | 3.76:1 ✗ | 84 |
+| `bg-chart-3` `#8b5cf6` | 4.23:1 ✗ | 29 |
+| `bg-chart-8` `#64748b` | 4.76:1 ✓ | 18 |
+| `bg-brand` `#0052CC` | 6.82:1 ✓ | — |
+
+**232 usos que fallan.** El escáner solo vio 3 porque el resto vive en estados que no se
+renderizan por defecto: modales cerrados, filtros sin tocar, badges condicionales.
+
+El sistema ya tiene resuelto el caso *teñido* (`bg-success/10` + `text-success-text`, que
+sí pasa). Lo que nunca se definió es el caso *relleno sólido*: qué color de fondo es
+seguro cuando el texto encima es blanco. `--brand` y `--chart-8` lo son por casualidad,
+no por diseño.
+
+Queda **sin tocar**, a la espera de decisión.
 
 ---
 

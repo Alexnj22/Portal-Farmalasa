@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef, memo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
+import ViewTabBar from '../components/common/ViewTabBar';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import {
@@ -16,7 +17,6 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import SearchInput from '../components/common/SearchInput';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 
 
 // ============================================================================
@@ -211,11 +211,9 @@ const AnnouncementsView = ({ openModal }) => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [isSearchMode, setIsSearchMode] = useState(false);
   const [announcementSearch, setAnnouncementSearch] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-  const searchInputRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -257,12 +255,6 @@ const AnnouncementsView = ({ openModal }) => {
 
   // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
   // cierra Y limpia; click afuera cierra SOLO si está vacío.
-  const { containerProps: searchContainerRef } = useSearchToggle({
-    active: isSearchMode,
-    value: announcementSearch,
-    onClear: () => setAnnouncementSearch(''),
-    onClose: () => setIsSearchMode(false),
-  });
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -559,43 +551,21 @@ const AnnouncementsView = ({ openModal }) => {
       return processedAnnouncements.filter(a => !a.isCompleted && a.scheduledFor && new Date(a.scheduledFor) > now).length;
   }, [processedAnnouncements]);
 
+  // D3.9 (2026-07-27): barra reescrita a mano → canónico. El contador de
+  // programados viaja en el label del tab, que es donde el canónico lo espera.
   const renderFiltersContent = () => (
-    <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
-      <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-        <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
- <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
-        {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-content-3 hover:text-danger transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => { setIsSearchMode(false); setAnnouncementSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
-      </div>
-
-      <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3"}`}>
-        <div className="flex items-center min-w-0 gap-1 md:gap-2">
-          
-          <button onClick={() => setListTab('ACTIVE')} className={`px-4 md:px-6 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'ACTIVE' ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
-            Activos
-          </button>
-          
-          <button onClick={() => setListTab('SCHEDULED')} className={`relative px-4 md:px-5 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'SCHEDULED' ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30 shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-chart-3/10 hover:text-chart-3-text hover:-translate-y-0.5 hover:shadow-md hover:border-chart-3/30'}`}>
-            <span className="flex items-center gap-1.5"><CalendarClock size={14} /> Programados</span>
-            {scheduledCount > 0 && (
-                <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center text-micro font-black text-white rounded-full shadow-sm border-2 border-border-card transition-all ${listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}>
-                    {scheduledCount}
-                </span>
-            )}
-          </button>
-          
-          <button onClick={() => setListTab('ARCHIVED')} className={`px-4 md:px-6 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'ARCHIVED' ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
-            Archivo
-          </button>
-
-        </div>
-        <div className="w-px h-6 md:h-8 bg-divider mx-1 md:mx-2 shrink-0"></div>
-        <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar avisos">
-          <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-          {announcementSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>}
-        </button>
-      </div>
-    </div>
+    <ViewTabBar
+      tabs={[
+        { key: 'ACTIVE',    label: 'Activos' },
+        { key: 'SCHEDULED', label: scheduledCount > 0 ? `Programados · ${scheduledCount}` : 'Programados', icon: CalendarClock },
+        { key: 'ARCHIVED',  label: 'Archivo' },
+      ]}
+      activeTab={listTab}
+      onTabChange={setListTab}
+      searchValue={announcementSearch}
+      onSearchChange={setAnnouncementSearch}
+      placeholder="Buscar en avisos, sucursales o roles..."
+    />
   );
 
   return (

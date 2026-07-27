@@ -343,7 +343,24 @@ es donde aparecen los componentes que faltan.
 
 
 
-## D3.9 — Consolidar la barra de vista (9 restantes)
+## D3.9 — Consolidar la barra de vista · ✓ CERRADA (v2.70.0)
+
+**13 de 13 migradas. 0 barras escritas a mano.** 28 vistas usan el canónico.
+
+Lo que se corrigió sobre la marcha:
+- Mi clasificación en 3 grupos estaba mal en dos casos: `AnnouncementsView` y
+  `RequestsView` figuraban con "tercer estado" porque conté `inert` de filas
+  expandibles que no tenían nada que ver con la barra. Eran swap directo.
+- El tercer estado real —`AuditView` y `BranchesView`— resultó ser **un dropdown
+  escrito a mano**: una píldora que se expandía en línea a 5 opciones,
+  colapsando el resto de la barra. Con 5 opciones eso es un `LiquidSelect`, que
+  es lo que la regla del proyecto manda y lo que ya usaban Facturación y
+  Monitor. Al cambiarlo el tercer estado desapareció solo: `ViewTabBar` nunca
+  necesitó modelarlo.
+- `TabHistory` no usaba las dos mitades colapsables sino renderizado condicional
+  (`isSearchOpen ? A : B`), por eso su forma no calzaba con las otras doce.
+
+## D3.9 — histórico (plan original de las 9 restantes)
 
 **Hecho (4/13)**: `EmployeeDocumentsView`, `StaffManagementView`,
 `ConteoInventarioView`, `ConteoDetailView` — ~190 líneas menos.

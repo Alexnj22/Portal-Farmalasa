@@ -1,4 +1,6 @@
-import React, { useState, useEffect, memo, useRef, useMemo } from 'react';
+import React, { useState, useEffect, memo, useMemo } from 'react';
+import TabBarAction from '../components/common/TabBarAction';
+import ViewTabBar from '../components/common/ViewTabBar';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -13,7 +15,6 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
@@ -471,13 +472,11 @@ const RequestsView = () => {
     , [employees]);
 
     const [statusFilter,      setStatusFilter]      = useState('PENDING');
-    const [isSearchMode,      setIsSearchMode]      = useState(false);
     const [rawSearch,         setRawSearch]         = useState('');
     const [collapsedSections, setCollapsedSections] = useState(new Set());
     const [actionModal,       setActionModal]       = useState(null);
     const [actionNote,        setActionNote]        = useState('');
     const [isActioning,       setIsActioning]       = useState(false);
-    const searchInputRef = useRef(null);
 
     // ── Crear solicitud a nombre de un empleado (RRHH) ──────────────────────
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -532,19 +531,9 @@ const RequestsView = () => {
         return () => window.removeEventListener('requests-updated', handler);
     }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests]);
 
-    useEffect(() => {
-        if (isSearchMode && searchInputRef.current)
-            setTimeout(() => searchInputRef.current?.focus(), 100);
-    }, [isSearchMode]);
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchMode,
-        value: rawSearch,
-        onClear: () => setRawSearch(''),
-        onClose: () => setIsSearchMode(false),
-    });
 
     const pendingCount = requests.filter(r => {
         const myId = String(user?.id);
@@ -607,70 +596,26 @@ const RequestsView = () => {
         { key: 'ALL',      label: 'Todas'       },
     ];
 
+    // D3.9 (2026-07-27): barra reescrita a mano → canónico. El botón de crear
+    // pasa a TabBarAction (variante primaria) y pierde el gradiente + halo que
+    // tenía escritos a mano; el contador de pendientes viaja en el label del tab.
     const filtersContent = (
-        <div className="flex items-center gap-2 md:gap-3">
-            {canCreate && (
-                <button onClick={() => openCreateModal()}
-                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-brand/72 to-brand-hover/78 backdrop-blur-xl border border-border-card hover:border-border-card text-white rounded-full font-black text-caption uppercase tracking-widest shadow-[var(--shadow-glass-2)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-200 active:scale-[0.97] shrink-0">
-                    <span className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
-                        <span className="sweep" aria-hidden="true" />
-                    </span>
-                    <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Nueva Solicitud</span>
-                </button>
+        <ViewTabBar
+            tabs={STATUS_TABS.map(t => ({
+                key: t.key,
+                label: t.key === 'PENDING' && pendingCount > 0 ? `${t.label} · ${pendingCount}` : t.label,
+            }))}
+            activeTab={statusFilter}
+            onTabChange={setStatusFilter}
+            searchValue={rawSearch}
+            onSearchChange={setRawSearch}
+            placeholder="Buscar empleado..."
+            trailingActions={canCreate && (
+                <TabBarAction icon={Plus} variant="primary" onClick={() => openCreateModal()}>
+                    Nueva Solicitud
+                </TabBarAction>
             )}
-        <div {...searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
-
-            {/* Pending dot — outside the overflow-hidden area via outline trick */}
-            {pendingCount > 0 && !isSearchMode && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 z-sidebar pointer-events-none">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-60" />
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-danger border-2 border-surface-card items-center justify-center">
-                        <span className="text-micro font-black text-white leading-none">{pendingCount > 9 ? '9+' : pendingCount}</span>
-                    </span>
-                </span>
-            )}
-
-            {/* Search mode */}
-            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
-                ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
- className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3"
-                    value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
-                {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-                <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
-                    className="w-11 h-11 rounded-full hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
-                    <ChevronRight size={18} strokeWidth={2.5} />
-                </button>
-            </div>
-
-            {/* Normal mode */}
-            <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
-                ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[800px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
-                {STATUS_TABS.map(tab => (
-                    <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
-                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
-                            statusFilter === tab.key
-                                ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
-                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
-                        }`}>
-                        {tab.label}
-                        {tab.key === 'PENDING' && pendingCount > 0 && (
-                            <span className={`ml-1.5 text-micro font-black px-1.5 py-0.5 rounded-full ${statusFilter === 'PENDING' ? 'bg-surface-card-hover text-content-2' : 'bg-danger/10 text-danger'}`}>
-                                {pendingCount}
-                            </span>
-                        )}
-                    </button>
-                ))}
-                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-                <button onClick={() => setIsSearchMode(true)}
-                    className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
-                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}
-                </button>
-            </div>
-        </div>
-        </div>
+        />
     );
 
     return (

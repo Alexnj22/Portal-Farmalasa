@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import TabBarAction from '../components/common/TabBarAction';
+import ViewTabBar from '../components/common/ViewTabBar';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import {
     Clock, ShieldCheck, Search, Globe,
@@ -12,7 +14,6 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { smartFilter } from '../utils/searchUtils';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -126,7 +127,6 @@ const AuditView = ({ openModal }) => {
         return map;
     }, [employees]);
 
-    const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearchTerm, setRawSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -138,31 +138,22 @@ const AuditView = ({ openModal }) => {
     const [itemsPerPage, setItemsPerPage] = useState(15);
     const [isLive, setIsLive] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const [isActionPickerOpen, setIsActionPickerOpen] = useState(false);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchMode,
-        value: rawSearchTerm,
-        onClear: () => setRawSearchTerm(''),
-        onClose: () => setIsSearchMode(false),
-    });
 
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
-                // Cerramos cualquier popover activo en la píldora (el buscador ya
-                // lo maneja useSearchToggle arriba)
-                if (isActionPickerOpen) setIsActionPickerOpen(false);
+                // El buscador lo cierra ViewTabBar; acá solo queda el datepicker.
                 if (isDatePickerOpen) setIsDatePickerOpen(false);
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isActionPickerOpen, isDatePickerOpen]);
+    }, [isDatePickerOpen]);
 
     useEffect(() => {
         // 🚨 FIX: Disparamos el fetch SIEMPRE al montar la vista para asegurar datos frescos de Supabase, ignorando la caché local.
@@ -279,173 +270,44 @@ const AuditView = ({ openModal }) => {
 
     const hasActiveFilters = debouncedSearchTerm !== '' || startDate !== '' || endDate !== '' || actionFilter !== 'ALL';
 
+// D3.9 (2026-07-27): barra reescrita a mano → canónico.
+// El "selector de acciones" era una píldora que se expandía EN LÍNEA en una fila
+// de 5 opciones, colapsando el resto de la barra: un tercer estado propio, y un
+// dropdown escrito a mano — justo lo que la regla del proyecto prohíbe
+// (feedback_liquid_select: nunca un dropdown nuevo). Con 5 opciones eso es un
+// LiquidSelect, que es lo que ya usan Facturación y Monitor en su barra. Al
+// cambiarlo desaparece el tercer estado y la vista queda como las otras doce.
 const filtersContent = (
-        <div
-            {...searchContainerRef}
-            // 🚨 CONTENEDOR DINÁMICO: "w-max" abraza el contenido y "max-w-full" evita que se rompa en móviles.
-            className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}
-        >
-            {/* =========================================================
-                ESTADO 1: MODO BÚSQUEDA (Animación Reparada)
-                ========================================================= */}
-            <div inert={!(isSearchMode) ? true : undefined}
-                className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
-                transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
-                ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"
-                    }`}
-            >
-                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                <input
-                    type="text"
-                    placeholder="Buscar usuario, equipo, acción..."
- className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3"
-                    value={rawSearchTerm}
-                    onChange={(e) => setRawSearchTerm(e.target.value)}
-                    ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100) }}
-                />
-                {rawSearchTerm && (
-                    <button
-                        onClick={() => setRawSearchTerm("")}
-                        className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
-                    >
-                        <X size={16} strokeWidth={2.5} />
-                    </button>
+    <ViewTabBar
+        searchValue={rawSearchTerm}
+        onSearchChange={setRawSearchTerm}
+        placeholder="Buscar por usuario, acción o detalle..."
+        trailingActions={
+            <>
+                <div className="w-[150px] md:w-[180px] shrink-0">
+                    <LiquidSelect
+                        value={actionFilter}
+                        onChange={setActionFilter}
+                        options={ACTION_OPTIONS}
+                        icon={ListFilter}
+                        placeholder="Acciones"
+                        compact bare clearable={false}
+                    />
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                    <LiquidDatePicker compact shortcuts value={startDate} onChange={setStartDate}
+                        placeholder="Inicio" onOpenChange={setIsDatePickerOpen} />
+                    <span className="text-content-3 font-bold mx-0.5">-</span>
+                    <LiquidDatePicker compact shortcuts value={endDate} onChange={setEndDate}
+                        placeholder="Fin" onOpenChange={setIsDatePickerOpen} />
+                </div>
+                {hasActiveFilters && (
+                    <TabBarAction icon={Trash2} tone="danger" onClick={clearFilters} label="Limpiar todos los filtros" />
                 )}
-                <button
-                    onClick={() => { setIsSearchMode(false); setRawSearchTerm(""); }}
-                    className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
-                    title="Cerrar Búsqueda"
-                >
-                    <ChevronRight size={18} strokeWidth={2.5} />
-                </button>
-            </div>
-
-            {/* =========================================================
-                ESTADO 2: MODO NORMAL (Píldoras y Fechas)
-                ========================================================= */}
-            <div inert={isSearchMode ? true : undefined}
-                className={`flex items-center h-full shrink-0 transform-gpu overflow-visible
-                transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
-                ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-3"
-                    }`}
-            >
-                <div className="flex items-center min-w-0 flex-1">
-                    {/* ESTADO COLAPSADO DE ACCIONES */}
-                    <div inert={isActionPickerOpen ? true : undefined} className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isActionPickerOpen ? "max-w-0 opacity-0 pointer-events-none gap-0 pr-0" : "max-w-[400px] opacity-100 gap-2 md:gap-3 pr-2 md:pr-3"}`}>
-                        <button
-                            type="button"
-                            onClick={() => setIsActionPickerOpen(true)}
-                            className={`px-3 md:px-5 h-9 rounded-full flex items-center gap-2 md:gap-3 transition-all duration-300 group whitespace-nowrap border shrink-0 ${actionFilter !== "ALL"
-                                ? "bg-surface-card text-content border-border-card shadow-md"
-                                : "bg-transparent text-content-2 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
-                                }`}
-                            title="Cambiar tipo de acción"
-                        >
-                            <ListFilter
-                                size={16}
-                                className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${actionFilter !== 'ALL' ? 'text-brand-text' : 'group-hover:scale-110'}`}
-                            />
-                            <span className="text-label md:text-body-sm font-bold uppercase tracking-wider">
-                                {ACTION_OPTIONS.find((o) => o.value === actionFilter)?.label || "Acciones"}
-                            </span>
-                        </button>
-                    </div>
-
-                    {/* ESTADO EXPANDIDO DE ACCIONES */}
-                    <div inert={!(isActionPickerOpen) ? true : undefined} className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isActionPickerOpen ? "max-w-[800px] opacity-100 ml-1 pr-1 gap-2" : "max-w-0 opacity-0 pointer-events-none m-0 p-0 gap-0"}`}>
-                        {ACTION_OPTIONS.map((opt) => {
-                            const isActive = actionFilter === opt.value;
-                            return (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => {
-                                        setActionFilter(opt.value);
-                                        setIsActionPickerOpen(false);
-                                    }}
-                                    className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive
-                                        ? "bg-surface-card text-content border-border-card shadow-md scale-[1.02]"
-                                        : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
-                                        }`}
-                                >
-                                    {opt.label}
-                                </button>
-                            );
-                        })}
-
-                        <button
-                            type="button"
-                            onClick={() => setIsActionPickerOpen(false)}
-                            className="w-9 h-9 rounded-full bg-surface-card border border-border-card hover:bg-danger/10 hover:border-danger/30 hover:text-danger text-content-3 flex items-center justify-center transition-all duration-300 hover:shadow-md shrink-0 ml-1 hover:-translate-y-0.5"
-                            title="Cerrar"
-                        >
-                            <X size={14} strokeWidth={2.5} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* FILTROS DERECHA (Fechas, Basurero Global y Botón de Búsqueda) */}
-                <div inert={isActionPickerOpen ? true : undefined}
-                    className={`flex items-center shrink-0 border-l transform-gpu overflow-visible
-                    transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-divider
-                    ${isActionPickerOpen
-                            ? "max-w-0 opacity-0 scale-95 pointer-events-none ml-0 pl-0 border-transparent m-0"
-                            : "max-w-[600px] opacity-100 scale-100 ml-3 md:ml-4 pl-3 md:pl-4 gap-2 md:gap-4"
-                        }`}
-                >
-                    <div className={`flex items-center gap-1 shrink-0 px-2 py-1 rounded-2xl transition-all duration-300 group relative z-base border w-auto ${startDate || endDate || isDatePickerOpen
-                        ? 'bg-surface-card border-border-card shadow-md'
-                        : 'bg-transparent border-transparent hover:shadow-md hover:bg-surface-card-hover hover:border-border-card hover:-translate-y-0.5'
-                        }`}>
-                        
-                        {/* 🚨 Aquí cambiamos a "Inicio" */}
-                        <LiquidDatePicker compact shortcuts
-                            value={startDate}
-                            onChange={setStartDate}
-                            placeholder="Inicio"
-                            onOpenChange={setIsDatePickerOpen}
-                        />
-
-                        <span className="text-content-3 font-bold group-hover:text-content-3 transition-colors mx-1">-</span>
-
-                        {/* 🚨 Aquí cambiamos a "Fin" */}
-                        <LiquidDatePicker compact shortcuts
-                            value={endDate}
-                            onChange={setEndDate}
-                            placeholder="Fin"
-                            onOpenChange={setIsDatePickerOpen}
-                        />
-                    </div>
-
-                    {/* BOTÓN LIMPIAR TODO */}
-                    {hasActiveFilters && (
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                clearFilters();
-                            }}
-                            className="w-11 h-11 rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300"
-                            title="Limpiar todos los filtros"
-                        >
-                            <Trash2 size={15} strokeWidth={2.5} />
-                        </button>
-                    )}
-
-                    <button
-                        onClick={() => setIsSearchMode(true)}
-                        className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-                        title="Buscar por texto"
-                    >
-                        <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                        {rawSearchTerm && (
-                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full"></span>
-                        )}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+            </>
+        }
+    />
+);
     return (
         <GlassViewLayout
             icon={ShieldCheck}

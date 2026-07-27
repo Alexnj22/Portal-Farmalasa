@@ -5,7 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.69.0';
+export const APP_VERSION = '2.70.0';
+
+// v2.70.0 — refactor(design): D3.9 CERRADA. 13 de 13 barras al canonico.
+//
+// 0 barras de busqueda escritas a mano. 28 vistas usan ViewTabBar. Netas del bloque:
+// 316 lineas agregadas contra 628 borradas en src/views.
+//
+// Ultimas cuatro: AnnouncementsView, RequestsView, AuditView y BranchesView.
+//
+// Mi clasificacion en 3 grupos estaba mal en dos casos: Announcements y Requests
+// figuraban con "tercer estado" porque converti inert de filas expandibles que no
+// tenian nada que ver con la barra. Eran swap directo.
+//
+// El tercer estado REAL —Audit y Branches— resulto ser un dropdown escrito a mano: una
+// pildora que se expandia en linea a 5 opciones, colapsando el resto de la barra. Con 5
+// opciones eso es un LiquidSelect, que es lo que la regla del proyecto manda
+// (feedback_liquid_select: nunca un dropdown nuevo) y lo que ya usaban Facturacion y
+// Monitor. Al cambiarlo el tercer estado desaparecio solo: ViewTabBar nunca necesito
+// modelarlo. Es el mismo hallazgo de toda la semana — lo que parecia un caso especial
+// era un canonico ignorado.
+//
+// Cambio de UX visible en esas dos: el filtro pasa de expandirse en linea a abrir un
+// dropdown. Es el comportamiento que ya tenian las otras vistas con filtro.
 
 // v2.69.0 — feat(fechas): los dos selectores mejorados + BUG REAL de produccion.
 //

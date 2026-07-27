@@ -201,7 +201,7 @@ const HolidaysPanel = ({
                                                 {/* Delete */}
                                                 {canEdit && (
                                                     <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
-                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all flex-shrink-0 disabled:opacity-50">
+                                                        className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-content-3 hover:text-danger hover:bg-danger/10 transition-all flex-shrink-0 disabled:opacity-50">
                                                         {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-danger" /> : <Trash2 size={14} strokeWidth={2} />}
                                                     </button>
                                                 )}
@@ -731,7 +731,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
             {/* Week navigator — hover-reveal arrows */}
             <div className="group/week flex items-center overflow-visible cursor-default relative z-base">
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
+                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 focus-within:opacity-100 group-hover/week:ml-1 transition-all duration-500">
                     <button onClick={() => changeWeek(-7)}
                         className="w-7 h-7 rounded-full flex items-center justify-center text-content-2 hover:bg-surface-card active:scale-[0.97] transition-all shadow-sm">
                         <ChevronLeft size={15} strokeWidth={2.5} />
@@ -745,7 +745,7 @@ const SchedulesView = ({ openModal, setView }) => {
                         {formatWeekRange(startDate)}
                     </span>
                 </div>
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500">
+                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 focus-within:opacity-100 group-hover/week:mr-1 transition-all duration-500">
                     <button onClick={() => changeWeek(7)}
                         className="w-7 h-7 rounded-full flex items-center justify-center text-content-2 hover:bg-surface-card active:scale-[0.97] transition-all shadow-sm">
                         <ArrowRight size={15} strokeWidth={2.5} />

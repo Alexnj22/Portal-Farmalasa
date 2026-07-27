@@ -527,7 +527,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }}
                                                             title="Borrar"
                                                             aria-label="Borrar notificación"
-                                                            className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg transition-all opacity-60 lg:opacity-0 lg:group-hover:opacity-100 ${cx.iconBtn} hover:!text-danger`}
+                                                            className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg transition-all opacity-60 lg:opacity-0 lg:group-hover:opacity-100 focus-within:opacity-100 ${cx.iconBtn} hover:!text-danger`}
                                                         >
                                                             <X size={13} strokeWidth={2.5} />
                                                         </button>

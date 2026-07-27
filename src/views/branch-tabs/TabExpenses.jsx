@@ -64,7 +64,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             className={`group relative backdrop-blur-md rounded-modal p-5 transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:-translate-y-1 hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
             style={{ animationDelay: `${delay}ms`, willChange: 'transform, opacity' }}
         >
-            <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
             <div className="flex justify-between items-start mb-4 relative z-base">
                 <div className="flex items-center gap-3">
@@ -378,7 +378,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         
                         {/* Tarjeta de Variación Mensual */}
                         <div className="group bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
                             <div className="flex items-center gap-2 mb-3 relative z-base">
                                 <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
                                 <h5 className="text-caption font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>

@@ -1017,7 +1017,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <div className="relative w-11 h-11">
                                     <button onClick={() => navigate('/profile')} type="button" aria-label="Mi Perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-white">
-                                        <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                                     </button>
                                     {myBirthday && (

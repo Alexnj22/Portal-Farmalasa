@@ -1037,7 +1037,7 @@ const VacationPlanView = () => {
                                                             </td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
                                                             <td className="py-3">
-                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity duration-200">
+                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <button
                                                                             title="Editar"

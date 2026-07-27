@@ -1177,8 +1177,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                             {photoLoading
                                                 ? <Loader2 size={22} className="text-white animate-spin" />
                                                 : <>
-                                                    <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    <span className="text-caption font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Ver foto</span>
+                                                    <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
+                                                    <span className="text-caption font-bold text-white opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">Ver foto</span>
                                                 </>}
                                         </div>
                                     </>

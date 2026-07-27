@@ -420,7 +420,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         `}>
 
                             {!conf && !isReadOnly && !apoyoBranch && (
-                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-sidebar hover:bg-chart-1">
+                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-all z-sidebar hover:bg-chart-1">
                                     <Pencil size={8} strokeWidth={2.5} />
                                 </div>
                             )}
@@ -564,7 +564,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     ? 'bg-surface-card border border-divider opacity-40'
                                     : 'border border-dashed border-divider bg-surface-card-hover/10 opacity-30'
                             }`}>
-                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-sidebar shadow-sm
+                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-all z-sidebar shadow-sm
                                 ${isCoverageDay ? 'bg-chart-3-solid text-white' : 'bg-content-3 text-white'}">
                                 {isCoverageDay ? <Pencil size={8} strokeWidth={2.5} /> : <Plus size={8} strokeWidth={2.5} />}
                             </div>

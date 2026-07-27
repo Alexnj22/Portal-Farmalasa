@@ -1114,7 +1114,7 @@ const DashboardView = ({ openModal }) => {
             toque a ~44px sin agrandar la píldora visible (v2.47.4). */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
+          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 focus-within:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
         >
           <div className="bg-surface-card border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
@@ -1128,7 +1128,7 @@ const DashboardView = ({ openModal }) => {
         {!dndActive && (
           <div
             data-resize-panel
-            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
+            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'}`}
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
@@ -1296,7 +1296,7 @@ const DashboardView = ({ openModal }) => {
                   if (!chartData?.length) return <EmptyState compact icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
-                      <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
+                      <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
                         <p className="font-black text-micro uppercase tracking-widest text-content-2 mb-1 border-b border-border-card pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>

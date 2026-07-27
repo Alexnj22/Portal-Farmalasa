@@ -365,7 +365,10 @@ const RING_ALPHA_RE = /(?<![:\w-])ring-1\s+ring-(?:brand|success|warning|danger|
 // Se excluyen los reveals de hover, que son decorativos y no contienen foco.
 // Acepta comillas simples Y dobles: la primera versión solo miraba simples y
 // se le escaparon 13 regiones (las barras de búsqueda copiadas usan dobles).
-const INERT_RE = /\$\{\s*[^?{}]+?\s*\?\s*(['"])[^'"]*\1\s*:\s*(['"])[^'"]*\2\s*\}/g;
+// Sin exigir `${…}`: el ternario también aparece dentro de arrays que se unen
+// con .join(" ") (AttendanceMonitorView). Cuarta forma del mismo patrón — cada
+// una apareció verificando en el navegador, ninguna leyendo el código.
+const INERT_RE = /\?\s*(['"])[^'"]*\1\s*:\s*(['"])[^'"]*\2/g;
 const HIDDEN_BRANCH = /(['"])([^'"]*)\1/g;
 
 const SHADOW_LITERAL_RE = /shadow-\[(?!var\(--)[^\]]+\]/g;
@@ -583,11 +586,15 @@ function scanFile(path) {
         // max-w-0, max-h-0 y scale-0. Los tres idiomas aparecieron uno tras
         // otro al verificar; el gate cubre los cinco.
         const oculta = branches.filter(b => b.includes('opacity-0')
-          && /\b(pointer-events-none|h-0|w-0|max-w-0|max-h-0|scale-0)\b/.test(b));
+          && /\b(pointer-events-none|h-0|w-0|max-w-0|max-h-0|scale-0)\b/.test(b)
+          && !/group-hover(\/[\w-]+)?:opacity-100/.test(b));  // eso es un reveal, no un colapso
         if (oculta.length !== 1) continue;
-        // ¿la etiqueta que lo contiene ya declara inert?
-        const back = lines.slice(Math.max(0, i - 4), i + 2).join('\n');
-        if (/\binert=/.test(back)) continue;
+        // ¿ya está resuelto? Vale `inert` en la etiqueta contenedora, y vale
+        // también `tabIndex={cond ? 0 : -1}` sobre el propio control — que es
+        // como lo hace SearchInput y es igual de correcto para un elemento
+        // único. Se mira la etiqueta completa, no solo la línea.
+        const back = lines.slice(Math.max(0, i - 6), i + 2).join('\n');
+        if (/\binert=/.test(back) || /tabIndex=\{[^}]*-1/.test(back)) continue;
         findings.push({ line: i + 1, label: 'región colapsada sin `inert` — se tabula dentro de lo invisible (WCAG 2.4.3)', category: 'inert', text: line.trim().slice(0, 120) });
       }
     });

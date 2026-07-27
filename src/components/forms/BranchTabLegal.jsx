@@ -178,7 +178,7 @@ const BranchTabLegal = ({
                         <h4 className="text-body font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                             <Syringe size={18} strokeWidth={2.5} /> Área Inyectables
                         </h4>
-                        <Switch on={legal.injections || false} onToggle={() => updateNestedSetting('legal', 'injections', !legal.injections)} />
+                        <Switch label="Aplica inyecciones" on={legal.injections || false} onToggle={() => updateNestedSetting('legal', 'injections', !legal.injections)} />
                     </div>
                     {legal.injections ? (
                         <div className="flex flex-col flex-1 gap-4">
@@ -233,7 +233,7 @@ const BranchTabLegal = ({
                     <h4 className="text-body font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                         <FileWarning size={18} strokeWidth={2.5} /> Libros Controlados
                     </h4>
-                    <Switch on={legal.controlledBooks || false} onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />
+                    <Switch label="Libros controlados" on={legal.controlledBooks || false} onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />
                 </div>
                 {legal.controlledBooks ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">

@@ -72,7 +72,7 @@ function getRoleOrder(role) {
 const NocturnalLegalInfo = () => (
   <div className="relative group inline-flex items-center">
     <Info size={10} className="text-chart-3-text cursor-help" strokeWidth={2} />
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-caption leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-sidebar">
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-caption leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 pointer-events-none z-sidebar">
       <p className="font-black text-chart-3-text mb-1.5">Art. 168 — Código de Trabajo SV</p>
       <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
       <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-chart-3-text font-bold">+25% recargo</span> sobre tarifa diurna</p>

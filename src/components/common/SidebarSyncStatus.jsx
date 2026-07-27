@@ -86,7 +86,7 @@ export default function SidebarSyncStatus() {
                 return (
                   <div key={b.erp_sucursal_id} className="relative group/sdot">
                     <div className={`w-[5px] h-[5px] rounded-full ${dotClass(m, !b.success)}`} />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 bg-slate-900 border border-white/10 text-white text-caption font-bold px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/sdot:opacity-100 transition-opacity pointer-events-none z-flyout shadow-xl">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 bg-slate-900 border border-white/10 text-white text-caption font-bold px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/sdot:opacity-100 focus-within:opacity-100 transition-opacity pointer-events-none z-flyout shadow-xl">
                       Suc. {b.erp_sucursal_id} · {Math.round(m)}min
                       {!b.success && <><br /><span className="text-danger font-medium">{b.error_msg}</span></>}
                     </div>

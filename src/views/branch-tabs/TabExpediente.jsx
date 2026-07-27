@@ -99,7 +99,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                             </button>
 
                             {/* 🔮 EL TOOLTIP HOLOGRÁFICO */}
-                            <div className="absolute left-0 top-full mt-3 opacity-0 pointer-events-none group-hover/ai:opacity-100 group-hover/ai:pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] w-[280px] translate-y-3 group-hover/ai:translate-y-0 z-modal">
+                            <div className="absolute left-0 top-full mt-3 opacity-0 pointer-events-none group-hover/ai:opacity-100 focus-within:opacity-100 group-hover/ai:pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] w-[280px] translate-y-3 group-hover/ai:translate-y-0 z-modal">
 
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>

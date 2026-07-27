@@ -249,7 +249,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                         {/* Efecto hover background */}
                         {!paymentData.receiptFile && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-brand/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-brand/5 to-transparent opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500"></div>
                         )}
                     </div>
                 </div>

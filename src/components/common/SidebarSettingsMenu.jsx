@@ -28,7 +28,7 @@ function CodeCard({ label, value, copied, onCopy }) {
       </div>
       <div className="relative h-4 flex items-center justify-center w-full">
         <span className={`absolute text-body-sm font-black tracking-widest font-mono text-white transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
-        <Copy size={12} className={`absolute text-white/50 transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 group-hover/code:scale-100'}`} />
+        <Copy size={12} className={`absolute text-white/50 transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 focus-within:opacity-100 group-hover/code:scale-100'}`} />
         <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
       </div>
     </button>

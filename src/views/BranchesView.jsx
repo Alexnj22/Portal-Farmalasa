@@ -349,7 +349,7 @@ const BranchCard = memo(({
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all cursor-help border ${alertStatus.badgeStyles}`}>
                             <alertStatus.icon size={14} strokeWidth={2.5} />
                         </div>
-                        <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-border-card z-sidebar">
+                        <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/badge:opacity-100 focus-within:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-border-card z-sidebar">
                             <p className="text-micro text-content-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-card pb-1.5 flex items-center justify-between">
                                 Problemas Detectados <span className="bg-danger/20 text-danger px-1.5 py-0.5 rounded text-micro">{alertStatus.list.length}</span>
                             </p>
@@ -377,7 +377,7 @@ const BranchCard = memo(({
                                 <h3 className="text-title-sm font-bold text-content leading-tight group-hover/header:text-brand-text transition-colors duration-300 line-clamp-2">{branch.name}</h3>
                                 <div className="relative group/status flex items-center justify-center p-1.5 cursor-help shrink-0">
                                     {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[var(--shadow-glow-warning-md)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[var(--shadow-glow-chart-2-md)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 bg-slate-800/90 backdrop-blur-xl text-white text-micro font-black uppercase tracking-widest rounded-lg shadow-xl opacity-0 invisible group-hover/status:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-sidebar pointer-events-none border border-border-card">
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 bg-slate-800/90 backdrop-blur-xl text-white text-micro font-black uppercase tracking-widest rounded-lg shadow-xl opacity-0 invisible group-hover/status:opacity-100 focus-within:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-sidebar pointer-events-none border border-border-card">
                                         {isInactive ? 'Inactiva' : currentStatus.status === 'OPEN' ? 'Abierta Ahora' : 'Cerrada Ahora'}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-800/90"></div>
                                     </div>
@@ -428,7 +428,7 @@ const BranchCard = memo(({
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Celular</p>
                                 <p className="text-body-sm font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
                             </div>
-                            {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 transition-all hover:bg-success-solid hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
+                            {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-all hover:bg-success-solid hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
                         </button>
                     </div>
 

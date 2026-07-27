@@ -40,7 +40,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         </button>
                     )}
                 </div>
-                <Switch on={open} onToggle={() => setDay(day.id, open ? { isOpen: false } : { isOpen: true, start: "", end: "" })} />
+                <Switch label={`${day.name}: ${open ? "abierta" : "cerrada"}`} on={open} onToggle={() => setDay(day.id, open ? { isOpen: false } : { isOpen: true, start: "", end: "" })} />
             </div>
             
             {open ? (

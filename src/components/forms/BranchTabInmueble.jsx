@@ -53,7 +53,7 @@ const BranchTabInmueble = ({
 
                     <div className="flex items-center gap-4 bg-surface-card backdrop-blur-md border border-border-card shadow-sm px-5 py-2.5 rounded-2xl transition-[box-shadow,background-color] duration-300 hover:shadow-md">
                         <span className={`text-caption font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
-                        <Switch on={isRented} onToggle={() => {
+                        <Switch label="Local alquilado" on={isRented} onToggle={() => {
                             const nextState = isRented ? "OWNED" : "RENTED";
                             setFormData(prev => ({
                                 ...prev,
@@ -233,7 +233,7 @@ const BranchTabInmueble = ({
                             <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                                 <Trash2 size={16} strokeWidth={2.5} /> Desechos Bioinfecciosos
                             </h4>
-                            <Switch 
+                            <Switch label="Desechos bioinfecciosos"
                                 on={isWasteManagementActive} 
                                 disabled={hasInjections} 
                                 onToggle={() => {

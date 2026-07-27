@@ -498,7 +498,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <button
             onClick={() => onDelete(p)}
             disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger border border-border-card hover:border-danger/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger border border-border-card hover:border-danger/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Eliminar practicante"
           >
             <Trash2 size={14} strokeWidth={2.5} />

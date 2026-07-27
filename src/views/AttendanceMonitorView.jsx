@@ -590,7 +590,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden"
     >
       {/* Buscador activo */}
-      <div
+      <div inert={!(searchOpen) ? true : undefined}
         className={[
           "flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left",
           searchOpen ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0",
@@ -624,7 +624,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       </div>
 
       {/* Controles inactivos: filtro de sucursal + botón de buscar */}
-      <div
+      <div inert={searchOpen ? true : undefined}
         className={[
           "flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right",
           searchOpen ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[520px] opacity-100 pl-2 pr-2 gap-3",

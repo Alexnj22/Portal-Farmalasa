@@ -466,7 +466,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
                                 </div>
                             </div>
-                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
+                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 focus-within:opacity-100 group-hover/wfm:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
                                 {wfmApplied ? (
                                     <>
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3 border-b border-slate-700/50 pb-1">Desglose de Horas Hombre (WFM)</p>
@@ -518,7 +518,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className={`h-full transition-all duration-1000 ease-out ${scoreTheme}`} style={{ width: `${complianceScore}%` }}></div>
                             </div>
                         </div>
-                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
+                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-2xl shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 focus-within:opacity-100 group-hover/health:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1">Auditoría Regulatoria</p>
                             {complianceIssues.length > 0 ? (
                                 <ul className="space-y-2">

@@ -1089,7 +1089,7 @@ const EmployeeRequestsView = () => {
                                         <div className="w-7 h-7 rounded-full bg-danger/10 border border-danger/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
                                             <AlertTriangle size={13} className="text-danger" strokeWidth={2.5} />
                                         </div>
-                                        <div className="absolute right-0 top-full mt-1.5 w-64 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+                                        <div className="absolute right-0 top-full mt-1.5 w-64 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
                                             <div className="bg-danger-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Ya tienes asignada una incapacidad del {fmtDisabilityPeriod(disabilityHeaderAlerts.overlap)} — las fechas seleccionadas se solapan con ese período.
                                             </div>
@@ -1101,7 +1101,7 @@ const EmployeeRequestsView = () => {
                                         <div className="w-7 h-7 rounded-full bg-warning/10 border border-warning/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
                                             <Info size={13} className="text-warning" strokeWidth={2.5} />
                                         </div>
-                                        <div className="absolute right-0 top-full mt-1.5 w-72 z-sidebar pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150">
+                                        <div className="absolute right-0 top-full mt-1.5 w-72 z-sidebar pointer-events-none opacity-0 group-hover/tip2:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
                                             <div className="bg-warning-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Desde el día 4, aplica cobertura del ISSS. El ISSS cubre el 75% de tu salario a partir del día 4. Es obligatorio presentar la boleta oficial de incapacidad del ISSS dentro de 3 días hábiles para que la empresa pueda tramitar el reembolso. Puedes adjuntarla ahora o desde tu solicitud pendiente.
                                             </div>

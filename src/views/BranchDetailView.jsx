@@ -364,7 +364,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-sidebar bg-surface-card"
                             title="Volver a Sucursales"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
+                            <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 focus-within:opacity-100 transition-opacity duration-300"></div>
                             <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand-text transition-colors relative z-base" />
                         </button>
 

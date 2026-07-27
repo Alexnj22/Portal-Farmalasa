@@ -495,7 +495,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                     </button>
                                                                 </div>
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                         <div>
                                                                             <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
@@ -974,7 +974,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
 
                                                                 {/* Tooltip */}
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none
-                                                                    opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100
+                                                                    opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100
                                                                     transition-all duration-150 ease-out w-[210px]">
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3">
                                                                         <div className="space-y-2">
@@ -1308,7 +1308,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                 </button>
                                                             </div>
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     <div>
                                                                         <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
@@ -1410,7 +1410,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                 </button>
                                                             </div>
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     {n.correlativo && <div>
                                                                         <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>

@@ -128,7 +128,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                 </div>
             )}
 
-            <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
+            <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100 focus-within:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-surface-card backdrop-blur-md border border-white text-brand-text/60 hover:bg-surface-card-hover hover:text-brand-text transition-all duration-300 shadow-[var(--shadow-elevation-sm)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">

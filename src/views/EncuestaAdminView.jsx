@@ -1176,7 +1176,7 @@ export default function EncuestaAdminView() {
                                                                                                 <span className="text-body-sm font-black text-content">{nombre}</span>
                                                                                                 {isRowExp
                                                                                                     ? <ChevronUp size={10} className="text-brand-text ml-1 shrink-0" strokeWidth={2.5} />
-                                                                                                    : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity" strokeWidth={2.5} />}
+                                                                                                    : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity" strokeWidth={2.5} />}
                                                                                             </button>
                                                                                         </td>
                                                                                         <td className="py-2.5 px-2 text-center">
@@ -1212,7 +1212,7 @@ export default function EncuestaAdminView() {
                                                                                                     </button>
                                                                                                 </div>
                                                                                             ) : canManage ? (
-                                                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-center">
+                                                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity justify-center">
                                                                                                     <button onClick={() => openResponseForm(row)}
                                                                                                         className="p-1.5 rounded-full bg-surface-card text-warning border border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
                                                                                                         <Edit3 size={11} strokeWidth={2.5} />

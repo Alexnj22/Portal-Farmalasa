@@ -5,7 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.67.2';
+export const APP_VERSION = '2.67.3';
+
+// v2.67.3 — fix(a11y): barrido completo de 25 rutas con la cuenta QA (acceso total).
+//
+// La cuenta QA YA tenia acceso completo — can_view y can_edit en los 92 module_key de
+// role_permissions. El unico 404 anterior fue error mio: navegue a /permisos en vez de
+// /permissions. Se agrego el unico modulo que le faltaba del catalogo (metas), que
+// ademas no lo tenia ningun rol.
+//
+// Con acceso a todo aparecieron TRES formas mas del patron de A17 que las pasadas
+// anteriores no veian, y ninguna se encontro leyendo codigo — las tres salieron
+// tabulando en el navegador:
+//   4a  ternario dentro de un array unido con .join(" ")  → AttendanceMonitorView
+//   5a  reveal con scale-[0.95] en vez de scale-0          → DashboardView
+//   +   45 reveals mas con group-hover/NOMBRE:opacity-100  (la variante con nombre de
+//       grupo, que el regex anterior no cubria)
+// El detector del gate ya no exige `${…}`: cualquier ternario con ramas entre comillas
+// cuenta. Y aprendio a reconocer `tabIndex={cond ? 0 : -1}` como solucion valida, que
+// es como lo resuelve SearchInput — antes lo marcaba como pendiente.
+//
+// RESULTADO: 25 rutas barridas, 0 paradas de foco invisibles en todas.
+//
+// Switch verificado en vivo: Permisos (163 switches, los 6 colores del riel resuelven
+// bien — chart-1 azul en Ver, chart-3 violeta en Gestionar, success en Aprobar, brand
+// en secciones, warning en Super Usuario) y Avisos (encendido/apagado real).
+//
+// Los 5 switches de sucursal (BranchHelpers) no se pudieron abrir en la UI: el form con
+// las pestanas Horarios/Inmueble/Legal no se alcanza desde /branches ni desde el detalle
+// con esta cuenta. Verificados por codigo: los 5 call sites pasan on/onToggle/disabled,
+// que es exactamente lo que acepta el alias. Al revisarlos aparecio que NINGUNO pasaba
+// un nombre accesible — el switch quedaba sin aria-label. Corregido en los 5.
 
 // v2.67.2 — feat(design): Switch canonico adoptado + A17 ampliado + A18 nuevo.
 //

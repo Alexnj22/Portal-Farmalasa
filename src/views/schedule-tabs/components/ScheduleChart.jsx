@@ -46,7 +46,7 @@ const ScheduleChart = ({
                             Días
                         </button>
                     </div>
-                    <div className="opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200">
+                    <div className="opacity-0 group-hover/chart:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                         <button onClick={() => openModal && openModal('viewWfmAnalytics')}
                             className="w-6 h-6 rounded-full bg-surface-card backdrop-blur-md text-brand-text border border-chart-1/30 shadow-md flex items-center justify-center hover:bg-chart-1/10 hover:scale-105 active:scale-[0.97] transition-all"
                             title="Expandir Análisis">
@@ -84,7 +84,7 @@ const ScheduleChart = ({
                             className={`flex-1 flex flex-col justify-end items-center group/bar h-full relative overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
 
                             {/* Tooltip */}
-                            <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-xl shadow-xl opacity-0 group-hover/bar:opacity-100 transition-all duration-150 pointer-events-none w-max z-modal translate-y-1 group-hover/bar:-translate-y-0 border border-border-card">
+                            <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-xl shadow-xl opacity-0 group-hover/bar:opacity-100 focus-within:opacity-100 transition-all duration-150 pointer-events-none w-max z-modal translate-y-1 group-hover/bar:-translate-y-0 border border-border-card">
                                 <p className="font-black text-[7.5px] uppercase tracking-widest text-content-2">{item.label}</p>
                                 <p className="text-caption font-bold flex items-center gap-1 mt-0.5">
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />

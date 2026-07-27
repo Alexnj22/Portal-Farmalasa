@@ -151,11 +151,17 @@ const EXCEPTIONS = {
   // Mismo criterio que la excepción 'native' de LiquidSelect por ser el
   // canónico del <select>.
   'src/components/common/Badge.jsx': ['white'],
+  'src/components/common/Switch.jsx': ['white'], // ES el canónico de la perilla
   // ── Perillas de switch (revisadas una por una, 2026-07-27) ─────────────
   // `bg-white` en un círculo pequeño ABSOLUTAMENTE POSICIONADO dentro de un
   // riel: es una perilla de switch, y una perilla es blanca sobre su riel en
   // los cuatro temas —igual que en iOS—, sea el riel claro u oscuro. No es
   // deuda de superficie: es la pieza que indica el estado del control.
+  //
+  // OJO: el blanco es correcto, pero al revisarlos apareció que TODO LO DEMÁS
+  // había drifteado — 18 switches a mano con 8 tamaños, 6 sombras y 8 offsets
+  // distintos. Por eso existe ahora components/common/Switch.jsx. Estas
+  // excepciones cubren los que faltan migrar (A14), no son permanentes.
   'src/components/forms/BranchHelpers.jsx': ['white'],
   'src/components/forms/FormPlanificador.jsx': ['white'],
   'src/components/forms/FormAddCustomDocument.jsx': ['white'],

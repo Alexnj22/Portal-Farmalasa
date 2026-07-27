@@ -228,6 +228,26 @@ por `gate:design`. Si el doc prescribe algo prohibido, falla.
 
 ---
 
+## Revisión de los "casos únicos" (2026-07-27)
+
+A pedido del usuario se revisó si lo excepcionado era **necesario** o eran
+decisiones sueltas que después driftearon. El método: ver si cada grupo es
+**consistente entre sí** (patrón real) o si cada instancia difiere (drift).
+
+| grupo | veredicto |
+|---|---|
+| **Perillas de switch** (18) | El `bg-white` **sí** es necesario y es consistente en las 18 — una perilla es blanca sobre su riel en los 4 temas. **Pero todo lo demás drifteó**: 8 tamaños, 6 sombras, 8 offsets. No era una decisión, era la ausencia de un componente. → **`Switch.jsx` creado**, 3 tamaños. **A14**: migrar los 18. |
+| **Barridos especulares** (8) | **Patrón real**: 6 de 8 comparten `w-[55%]`, `translate-x-[220%]`, `duration-700`, y solo varía el alpha según el fondo, que es correcto. Copiado 8 veces. → **utilidad `sweep`** con `--sweep-alpha`. **A15**: migrar los 8; los 2 de `TabMinMax` usan otra anatomía y hay que decidir si convergen. |
+| **Sombras direccionales** (4) | **Necesarias**, y el sentido importa: columna fija → derecha, panel lateral → derecha, overlay que sube → arriba, barra inferior → arriba. Pero eran **4, no 5**: `--shadow-sticky-b` quedó sin uso y **se borró** — un token que nadie consume es la misma escala muerta que este plan vino a arreglar. |
+| **Aros y superficies sueltas** (4) | Contextos distintos y reales (visor de foto, avatar, gradiente de tarjeta). Migrados a `border-card` / `card-tint-base`. |
+
+**Conclusión del método:** de cuatro grupos "excepcionados", **dos escondían un
+componente faltante**. La excepción era correcta a nivel de color pero tapaba
+que nadie había nombrado el control. Revisar excepciones no es burocracia:
+es donde aparecen los componentes que faltan.
+
+---
+
 ## Aceptados, no se tocan
 
 | # | Motivo |

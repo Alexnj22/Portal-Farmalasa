@@ -386,10 +386,13 @@
 
   /* Sombras DIRECCIONALES — la única familia que la escala de elevación no
      cubre, porque su gracia es el sentido: una columna fija proyecta hacia la
-     derecha, una barra inferior hacia arriba. Eran 5 valores sueltos. */
+     derecha, una barra inferior hacia arriba. Son 4 usos reales, cada uno con
+     su sentido: columna fija de tabla, panel lateral, overlay que sube y barra
+     inferior móvil. Se definió también un `-b` y quedó SIN USO — se borró:
+     un token que nadie consume es lo mismo que la escala muerta que este plan
+     vino a arreglar. */
   --shadow-sticky-r: 2px 0 16px rgba(0,0,0,.03);
   --shadow-sticky-t: 0 -6px 26px rgba(0,0,0,.06);
-  --shadow-sticky-b: 0 6px 26px rgba(0,0,0,.06);
 
   /* ── ESCALA DE GLOW (2026-07-27) ────────────────────────────────────────
      Mismo hallazgo que las sombras de vidrio, en otra familia. 143 de las 158
@@ -1141,6 +1144,20 @@
    ConfirmModal) — nada se renombra todavía, quedan listas para que T3/T4
    las adopten vista por vista.
    ═══════════════════════════════════════════════════════════════ */
+
+/* Barrido especular sobre botón de color (A15, 2026-07-27). Estaba copiado
+   8 veces: 6 idénticas (w-55%, translate-x 220%, 700ms) y 2 que se fueron por
+   su lado. El destello es blanco a propósito —el fondo del botón es de color
+   en los 4 temas— y su intensidad la fija --sweep-alpha, que cada host puede
+   ajustar según cuán oscuro sea su fondo. */
+@utility sweep {
+  position: absolute; inset-block: 0; left: 0; width: 55%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,var(--sweep-alpha, .16)), transparent);
+  transform: translateX(-100%);
+  transition: transform 700ms cubic-bezier(.25,.46,.45,.94);
+}
+.group:hover > .sweep, .group:hover .sweep { transform: translateX(220%); }
 
 @utility z-ambient         { z-index: 1;     }
 @utility z-base            { z-index: 10;    }

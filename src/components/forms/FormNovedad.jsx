@@ -2,26 +2,25 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import Checkbox from '../common/Checkbox';
 import {
-    Paperclip, GitPullRequest, MapPin, Briefcase,
+    GitPullRequest, MapPin, Briefcase,
     CalendarClock, FileText, AlertTriangle, DollarSign,
     CalendarDays, XCircle, CheckCircle, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus, Printer, AlertCircle
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
-import AlertModal from '../common/AlertModal';
 import { EVENT_TYPES } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNowTick } from '../../hooks/useNowTick';
+import FileField from '../common/FileField';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
     const { holidays = [], employees = [], roles = [] } = useStaffStore();
     const [permPickerKey, setPermPickerKey] = useState(0);
     const [codeConflict, setCodeConflict] = useState(null);
-    const [fileAlert, setFileAlert] = useState('');
     const now = useNowTick();
 
     const type = formData?.type;
@@ -686,48 +685,22 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         </div>
                     </div>
 
-                    <div>
-                        <label className={labelClasses}>Soporte Digital {isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}</label>
-                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-3xl cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-success bg-success/10' : 'border-divider bg-surface-card hover:bg-surface-card hover:border-brand/50'}`}>
-                            {formData?.file ? (
-                                <div className="flex flex-col items-center gap-1 text-success animate-in zoom-in-95">
-                                    <div className="p-2 bg-success/10 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>
-                                    <p className="text-label font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center gap-2 text-content-3 group-hover:text-brand-text transition-colors">
-                                    <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
-                                    <div className="text-center">
-                                        <p className="text-body-sm font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>
-                                        <p className="text-micro font-black uppercase tracking-widest opacity-60">PDF, JPG o PNG</p>
-                                    </div>
-                                </div>
-                            )}
-                            {formData?.file && (
-                                <div className="absolute top-2 right-2 p-1.5 bg-danger/10 text-danger hover:bg-danger-solid hover:text-white rounded-full transition-colors z-content" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
-                                    <XCircle size={14} strokeWidth={3}/>
-                                </div>
-                            )}
-                            <input type="file" className="hidden" accept=".pdf,image/jpeg,image/png,image/webp" onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (!f) return;
-                                const ALLOWED = ['application/pdf','image/jpeg','image/png','image/webp'];
-                                if (!ALLOWED.includes(f.type)) { setFileAlert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
-                                if (f.size > 10 * 1024 * 1024) { setFileAlert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
-                                setFormData(prev => ({ ...prev, file: f }));
-                            }} />
-                        </label>
-                    </div>
+                    {/* Canónico `FileField` (2c, 2026-07-27). El límite de 10 MB
+                        y los tipos permitidos eran validaciones a mano acá; ahora
+                        son props, y el aviso de error se muestra en la fila en vez
+                        de abrir un modal encima del formulario. */}
+                    <FileField
+                        label={`Soporte Digital ${isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}`}
+                        accept=".pdf,image/jpeg,image/png,image/webp"
+                        maxSizeMB={10}
+                        emptyState={isDisability || isTermination ? 'pending' : 'neutral'}
+                        file={formData?.file}
+                        onChange={f => setFormData(prev => ({ ...prev, file: f }))}
+                        hint={`Adjuntá ${isDisability ? 'la boleta médica' : isTermination ? 'el finiquito' : 'el respaldo'} — PDF, JPG o PNG`}
+                    />
                 </>
             )}
 
-            <AlertModal
-                isOpen={!!fileAlert}
-                onClose={() => setFileAlert('')}
-                type="error"
-                title="Archivo Inválido"
-                message={fileAlert}
-            />
         </div>
     );
 };

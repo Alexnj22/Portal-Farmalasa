@@ -250,6 +250,27 @@
   --input-radius:  0.75rem;
   --badge-radius:  9999px;
 
+  /* Tooltip — decisión 1a (2026-07-27). El tooltip es OSCURO EN LOS CUATRO
+     TEMAS, a propósito: no es una superficie de la pantalla, es una nota
+     flotando encima, y esa distancia visual es la que hace que se lea de un
+     vistazo. Lo que sí cambia por tema es la FORMA y el MATERIAL, igual que
+     en los botones: acá glass —translúcido, con blur y sheen— y redondeado;
+     en Solid opaco y rectangular.
+     Reemplaza los cuatro grises crudos que había a mano (slate-900/800/950,
+     que ignoraban el tema por completo) por el navy del portal. */
+  --tooltip-bg:      rgba(13,20,48,0.86);
+  --tooltip-border:  rgba(255,255,255,0.14);
+  --tooltip-text:    rgba(255,255,255,0.95);
+  /* Texto secundario DENTRO del tooltip. Existe porque el tooltip es oscuro
+     siempre: los tokens normales (`text-content-2/3`) siguen el tema, así que
+     en tema claro pintaban gris oscuro sobre fondo oscuro. Ese bug ya estaba
+     en los tooltips escritos a mano —`NocturnalLegalInfo` usaba
+     `text-content-3` sobre `bg-slate-900`— y era ilegible. */
+  --tooltip-text-2:  rgba(255,255,255,0.68);
+  --tooltip-radius:  1rem;
+  --tooltip-backdrop: blur(20px) saturate(180%);
+  --tooltip-shadow:  0 12px 32px rgba(9,14,34,0.34), inset 0 1px 0 rgba(255,255,255,0.12);
+
   --backdrop-card:   blur(44px) saturate(200%);
   --backdrop-header: blur(32px) saturate(280%);
   --backdrop-modal:  blur(48px) saturate(160%);
@@ -524,6 +545,15 @@
   --surface-modal:      rgba(12,17,43,0.90);
   --surface-input:      rgba(13,20,48,0.55);
   --surface-dropdown:   rgba(10,15,38,0.88);
+
+  /* Tooltip — sigue siendo oscuro (1a), pero acá el fondo de página ya es
+     navy casi negro: si el tooltip usara el mismo valor que en claro,
+     desaparecería contra la página. Se LEVANTA a un navy más alto y se
+     sube el borde. Es la contrapartida que anoté al decidir 1a: en tema
+     oscuro la separación no la da el color, la dan el borde y la sombra. */
+  --tooltip-bg:      rgba(40,53,99,0.90);
+  --tooltip-border:  rgba(255,255,255,0.20);
+  --tooltip-shadow:  0 14px 36px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14);
   --surface-tab-track:  rgba(13,20,48,0.50);
   --header-mobile:        rgba(10,15,38,0.98);
   --header-mobile-border: rgba(255,255,255,0.08);
@@ -683,6 +713,17 @@
      redondos en Solid pese a que el resto de la geometría ya era tensa. */
   --badge-radius:  0.375rem; /* 6px */
 
+  /* Tooltip — oscuro igual (1a), pero material sólido: opaco, sin blur,
+     rectangular. Misma regla que el botón, donde el tema es dueño de la
+     forma. Sin sheen: en Solid el brillo interior no existe en ninguna
+     superficie, y ponerlo solo acá sería el mismo error que los 54
+     `rounded-full` fijos peleando contra su propio tema. */
+  --tooltip-bg:      #16203D;
+  --tooltip-border:  rgba(255,255,255,0.10);
+  --tooltip-radius:  0.5rem;
+  --tooltip-backdrop: none;
+  --tooltip-shadow:  0 6px 18px rgba(2,6,23,0.30);
+
   --backdrop-card:   none;
   --backdrop-header: none;
   --backdrop-modal:  none;
@@ -770,6 +811,15 @@
   --btn-radius:    0.5rem;
   --input-radius:  0.5rem;
   --badge-radius:  0.375rem; /* 6px — ver nota en [data-theme="solid"] */
+
+  /* Tooltip — opaco y rectangular como en Solid claro, pero levantado un
+     escalón sobre la tarjeta (#1e293b) por el mismo motivo que en Liquid
+     oscuro: dos oscuros iguales no se separan. */
+  --tooltip-bg:      #33415C;
+  --tooltip-border:  rgba(255,255,255,0.14);
+  --tooltip-radius:  0.5rem;
+  --tooltip-backdrop: none;
+  --tooltip-shadow:  0 8px 22px rgba(0,0,0,0.45);
 
   --backdrop-card:   none;
   --backdrop-header: none;
@@ -1017,7 +1067,16 @@
    (confirmado en el bloque @media print de arriba). Declarar ambas a mano
    causó que el minificador colisionara y descartara la estándar, dejando
    SOLO -webkit-backdrop-filter en el build — bug real detectado con
-   Playwright (computed style seguía en blur(40px) pese a la regla). */
+   Playwright (computed style seguía en blur(40px) pese a la regla).
+
+   2026-07-27: la misma trampa estaba en las SEIS superficies
+   (`[data-surface=card|dropdown|modal|input|tab-track]` y la nueva de
+   tooltip), que declaraban las dos a mano. En el build salían solo con
+   prefijo `-webkit-`, así que Chrome y Safari mostraban el blur y **Firefox
+   no mostraba ninguno**: el glassmorphism entero se perdía ahí. Nadie lo
+   notó porque el portal se usa en Chrome y Safari. Encontrado al medir el
+   backdrop del tooltip nuevo, que salía `none`. Quitadas las 7 líneas
+   `-webkit-` escritas a mano; el prefijo lo pone el compilador. */
 [data-theme="solid"] [class*="bg-surface-"][class*="backdrop-blur"],
 [data-theme="solid-dark"] [class*="bg-surface-"][class*="backdrop-blur"] {
   backdrop-filter: none !important;
@@ -1101,6 +1160,8 @@
   --color-surface-modal:      var(--surface-modal);
   --color-surface-input:      var(--surface-input);
   --color-surface-dropdown:   var(--surface-dropdown);
+  --color-content-tooltip:    var(--tooltip-text);
+  --color-content-tooltip-2:  var(--tooltip-text-2);
   --color-surface-tab-track:  var(--surface-tab-track);
   --color-surface-tab-active: var(--surface-tab-active);
 
@@ -1252,7 +1313,6 @@
   box-shadow: var(--card-shadow);
   border-radius: var(--card-radius);
   backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
   transition: transform var(--dur-base) var(--ease-spring),
               box-shadow var(--dur-base) var(--ease-spring);
 }
@@ -1269,7 +1329,6 @@
   box-shadow: var(--header-shadow);
   border-radius: var(--header-radius);
   backdrop-filter: var(--backdrop-header);
-  -webkit-backdrop-filter: var(--backdrop-header);
   transition: transform 300ms cubic-bezier(0.23,1,0.32,1),
               box-shadow 300ms cubic-bezier(0.23,1,0.32,1);
 }
@@ -1286,7 +1345,6 @@
   box-shadow: var(--modal-shadow);
   border-radius: var(--modal-radius);
   backdrop-filter: var(--backdrop-modal);
-  -webkit-backdrop-filter: var(--backdrop-modal);
 }
 
 [data-surface="dropdown"] {
@@ -1295,7 +1353,19 @@
   box-shadow: var(--modal-shadow);
   border-radius: var(--card-radius);
   backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
+}
+
+/* El tooltip es la única superficie que NO cambia de claridad con el tema
+   —siempre oscura— pero sí de forma y material. Por eso vive acá y no se
+   arma con las clases de `dropdown`: son dos superficies distintas, y
+   confundirlas es lo que llevó a que 30 tooltips se escribieran a mano. */
+[data-surface="tooltip"] {
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  border: 1px solid var(--tooltip-border);
+  box-shadow: var(--tooltip-shadow);
+  border-radius: var(--tooltip-radius);
+  backdrop-filter: var(--tooltip-backdrop);
 }
 
 [data-surface="input"] {
@@ -1304,7 +1374,6 @@
   box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
   border-radius: var(--input-radius);
   backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
 }
 
 [data-surface="tab-track"] {
@@ -1312,7 +1381,6 @@
   border: 1px solid var(--border-tab);
   border-radius: var(--tab-track-radius);
   backdrop-filter: var(--tab-track-backdrop);
-  -webkit-backdrop-filter: var(--tab-track-backdrop);
 }
 
 

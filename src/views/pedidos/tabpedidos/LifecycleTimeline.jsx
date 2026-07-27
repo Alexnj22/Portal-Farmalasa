@@ -37,17 +37,17 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
             </motion.span>
             {pause && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-bell-desktop hidden group-hover/pb:block pointer-events-none">
-                    <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
+                    <div data-surface="tooltip" className="px-2.5 py-2 flex flex-col gap-0.5 min-w-max">
                         <div className="text-micro font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
-                        <div className="text-micro text-content-3">
-                            Pausó: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span>
-                            {empName(pause.pausado_por) && <span className="text-content-3"> · {empName(pause.pausado_por)}</span>}
+                        <div className="text-micro text-content-tooltip-2">
+                            Pausó: <span className="text-content-tooltip font-semibold">{fmtHM(pause.pausado_at) || '—'}</span>
+                            {empName(pause.pausado_por) && <span className="text-content-tooltip-2"> · {empName(pause.pausado_por)}</span>}
                         </div>
-                        <div className="text-micro text-content-3">
+                        <div className="text-micro text-content-tooltip-2">
                             Reanudó:{' '}
                             {pause.reanudado_at
                                 ? <>
-                                    <span className="text-white font-semibold">{fmtHM(pause.reanudado_at)}</span>
+                                    <span className="text-content-tooltip font-semibold">{fmtHM(pause.reanudado_at)}</span>
                                     {empName(pause.reanudado_por) && <span className="text-content-3"> · {empName(pause.reanudado_por)}</span>}
                                   </>
                                 : <span className="text-warning font-semibold">En curso</span>}

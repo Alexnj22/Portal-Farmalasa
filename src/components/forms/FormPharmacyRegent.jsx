@@ -4,6 +4,7 @@ import { UploadCloud, Users, ShieldCheck, AlertCircle, Award } from 'lucide-reac
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
+import FileField from '../common/FileField';
 
 const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
@@ -112,58 +113,30 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         </div>
                     </div>
 
-                    {/* UPLOAD CREDENCIAL (CAJA COMPACTA H-[50px]) */}
+                    {/* Credencial — canónico `FileField` (2c, 2026-07-27).
+                        `density="sm"` reemplaza el `h-[50px]` fijo que tenía. */}
                     <div className="flex flex-col justify-end">
-                        <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block">
-                            Credencial JVQF (PDF/IMG)
-                        </label>
-                        <div className={`relative group border border-dashed rounded-2xl h-[50px] px-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer overflow-hidden ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-surface-card-hover hover:border-brand/50'}`}>
-                            <input 
-                                type="file" 
-                                accept="application/pdf,image/*" 
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base" 
-                                onChange={(e) => updateLegalField('regentCredentialFile', e.target.files?.[0] || null)} 
-                            />
-                            
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-surface-card text-brand-text border border-chart-1/30' : 'bg-surface-card text-content-3 border border-divider group-hover:text-brand-text group-hover:border-chart-1/30'}`}>
-                                 {legalData.regentCredentialFile || legalData.regentCredentialUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16} strokeWidth={2} />}
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                                <p className={`text-label font-black tracking-tight truncate ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'text-brand-text' : 'text-content-2'}`}>
-                                    {legalData.regentCredentialFile ? legalData.regentCredentialFile.name : legalData.regentCredentialUrl ? "Credencial guardada" : "Subir documento..."}
-                                </p>
-                            </div>
-                        </div>
+                        <FileField
+                            label="Credencial JVQF (PDF/IMG)"
+                            accept="application/pdf,image/*"
+                            density="sm"
+                            file={legalData.regentCredentialFile}
+                            url={legalData.regentCredentialUrl}
+                            onChange={f => updateLegalField('regentCredentialFile', f)}
+                        />
                     </div>
                 </div>
 
-                {/* FILA 3: UPLOAD INSCRIPCIÓN (OCUPA TODO EL ANCHO PARA DESTACAR) */}
+                {/* Inscripción de Regencia — canónico `FileField` (2c). */}
                 <div className="pt-4 border-t border-divider mt-4">
-                    <label className="text-caption font-black text-chart-3-text/80 uppercase tracking-widest ml-1 mb-2 block">
-                        Inscripción de Regencia (PDF)
-                    </label>
-                    <div className={`relative group border-2 border-dashed rounded-3xl p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-divider hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
-                        <input 
-                            type="file" 
-                            accept=".pdf,image/*" 
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base" 
-                            onChange={(e) => updateLegalField('regentInscriptionFile', e.target.files?.[0] || null)} 
-                        />
-                        
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-surface-card text-chart-3-text border border-chart-3/30' : 'bg-surface-card text-content-3 border border-divider group-hover:text-chart-3-text group-hover:border-chart-3/30'}`}>
-                             {legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                            <p className={`text-body-sm font-black tracking-tight truncate ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'text-chart-3-text' : 'text-content-2'}`}>
-                                {legalData.regentInscriptionFile ? legalData.regentInscriptionFile.name : legalData.regentInscriptionUrl ? "Inscripción guardada" : "Toca para subir documento"}
-                            </p>
-                            <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
-                                {legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'Reemplazar archivo' : 'Solo formato PDF'}
-                            </p>
-                        </div>
-                    </div>
+                    <FileField
+                        label="Inscripción de Regencia (PDF)"
+                        accept=".pdf,image/*"
+                        file={legalData.regentInscriptionFile}
+                        url={legalData.regentInscriptionUrl}
+                        onChange={f => updateLegalField('regentInscriptionFile', f)}
+                        hint="Solo formato PDF"
+                    />
                 </div>
 
             </div>

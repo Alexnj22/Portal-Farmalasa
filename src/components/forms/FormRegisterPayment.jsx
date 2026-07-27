@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Badge from '../../components/common/Badge';
 import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
+import FileField from '../common/FileField';
 
 const SERVICE_LABELS = {
     rent: 'Arrendamiento',
@@ -107,11 +108,6 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
     }, []);
 
     // Manejador para el archivo
-    const handleFileChange = (e) => {
-        const file = e.target.files?.[0] || null;
-        handleUpdate('receiptFile', file);
-    };
-
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
 
@@ -203,54 +199,15 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     />
                 </div>
 
-                {/* UPLOAD FILE (ÁREA DE ARRASTRE MEJORADA) */}
+                {/* Comprobante — canónico `FileField` (2c, 2026-07-27). */}
                 <div className="pt-2">
-                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex items-center gap-1.5">
-                        <UploadCloud size={12} className="text-brand-text" /> Comprobante / Recibo (Foto o PDF)
-                    </label>
-
-                    <div className={`relative group border-2 border-dashed rounded-3xl p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
-                            ? 'bg-success/10 border-success/50 hover:bg-success/10'
-                            : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'
-                        }`}>
-                        <input
-                            type="file"
-                            accept="application/pdf,image/*"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base"
-                            onChange={handleFileChange}
-                        />
-
-                        {paymentData.receiptFile ? (
-                            <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-300">
-                                <div className="w-12 h-12 bg-surface-card rounded-2xl flex items-center justify-center shadow-sm text-success mb-1 border border-success/30">
-                                    <CheckCircle size={24} strokeWidth={2} />
-                                </div>
-                                <p className="text-body font-black text-success-text tracking-tight max-w-[200px] truncate">
-                                    {paymentData.receiptFile.name}
-                                </p>
-                                <p className="text-caption font-bold text-success/70 uppercase tracking-widest">
-                                    Archivo adjuntado correctamente
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-2 transition-transform duration-300 group-hover:-translate-y-1">
-                                <div className="w-12 h-12 bg-surface-card rounded-2xl flex items-center justify-center shadow-sm text-brand-text mb-1 group-hover:shadow-md transition-all">
-                                    <UploadCloud size={24} strokeWidth={1.5} />
-                                </div>
-                                <p className="text-body font-black text-content-2 tracking-tight">
-                                    Toca para subir o arrastra aquí
-                                </p>
-                                <p className="text-caption font-bold text-content-2 uppercase tracking-widest">
-                                    Si no lo subes hoy, quedará como PENDIENTE
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Efecto hover background */}
-                        {!paymentData.receiptFile && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-brand/5 to-transparent opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500"></div>
-                        )}
-                    </div>
+                    <FileField
+                        label="Comprobante / Recibo (Foto o PDF)"
+                        accept="application/pdf,image/*"
+                        file={paymentData.receiptFile}
+                        onChange={f => handleUpdate('receiptFile', f)}
+                        hint="Si no lo subís hoy, el pago queda como PENDIENTE"
+                    />
                 </div>
 
             </div>

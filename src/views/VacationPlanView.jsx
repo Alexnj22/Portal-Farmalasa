@@ -245,12 +245,12 @@ const GanttChart = ({ plans, year }) => {
                                                     style={{ left: `${pct(p.start_date)}%`, width: `${widthPct(p.start_date, p.end_date)}%` }}
                                                 >
                                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-sidebar pointer-events-none">
-                                                        <div className="bg-slate-900/90 backdrop-blur text-white text-micro font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
-                                                            <span className="block font-black text-micro uppercase tracking-widest text-content-2 mb-0.5">{meta.label}</span>
+                                                        <div data-surface="tooltip" className="text-micro font-bold px-3 py-2 whitespace-nowrap text-center">
+                                                            <span className="block font-black text-micro uppercase tracking-widest text-content-tooltip-2 mb-0.5">{meta.label}</span>
                                                             <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
-                                                            <span className="ml-2 text-content-3">· {p.days}d</span>
+                                                            <span className="ml-2 text-content-tooltip-2">· {p.days}d</span>
                                                         </div>
-                                                        <div className="w-2 h-2 bg-slate-900/90 rotate-45 -mt-1" />
+                                                        <div className="w-2 h-2 rotate-45 -mt-1" style={{ background: 'var(--tooltip-bg)' }} />
                                                     </div>
                                                 </div>
                                             );
@@ -980,10 +980,10 @@ const VacationPlanView = () => {
                                                                     {p.metadata?.original_start_date && (
                                                                         <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-micro font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
-                                                                            <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-micro font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-sidebar pointer-events-none">
-                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-micro mb-0.5">Fecha original</span>
+                                                                            <span data-surface="tooltip" className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 text-micro font-bold px-3 py-2 whitespace-nowrap z-sidebar pointer-events-none">
+                                                                                <span className="text-content-tooltip-2 font-black uppercase tracking-widest text-micro mb-0.5">Fecha original</span>
                                                                                 <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
-                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-micro mt-1 mb-0.5">Fecha actual</span>
+                                                                                <span className="text-content-tooltip-2 font-black uppercase tracking-widest text-micro mt-1 mb-0.5">Fecha actual</span>
                                                                                 <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)} · {p.days}d</span>
                                                                             </span>
                                                                         </span>

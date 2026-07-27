@@ -5,6 +5,7 @@ import { Plus, Trash2, UploadCloud, ShieldCheck, Users, Award, Receipt, CheckCir
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
+import FileField from '../common/FileField';
 
 const FormNursingRegents = ({ formData, setFormData }) => {
     const employees = useStaff(state => state.employees);
@@ -83,27 +84,15 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     </div>
                 </div>
 
-                {/* UPLOAD FILE */}
-                <div>
-                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
-                        Permiso Físico (PDF/IMG)
-                    </label>
-                    <div className={`relative group border-2 border-dashed rounded-3xl p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'}`}>
-                        <input type="file" accept="application/pdf,image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base" onChange={(e) => updateLegalField('nursingServicePermitFile', e.target.files?.[0] || null)} />
-                        
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-surface-card text-brand-text border border-chart-1/30' : 'bg-surface-card text-content-3 group-hover:text-brand-text'}`}>
-                             {legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className={`text-body-sm font-black tracking-tight truncate ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'text-brand-text' : 'text-content-2'}`}>
-                                {legalData.nursingServicePermitFile ? legalData.nursingServicePermitFile.name : legalData.nursingServicePermitUrl ? "Archivo adjunto guardado" : "Toca para subir documento"}
-                            </p>
-                            <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
-                                {legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'Reemplazar archivo' : 'PDF, JPG o PNG (Máx 5MB)'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                {/* Permiso Físico — canónico `FileField` (2c, 2026-07-27). */}
+                <FileField
+                    label="Permiso Físico (PDF/IMG)"
+                    accept="application/pdf,image/*"
+                    maxSizeMB={5}
+                    file={legalData.nursingServicePermitFile}
+                    url={legalData.nursingServicePermitUrl}
+                    onChange={f => updateLegalField('nursingServicePermitFile', f)}
+                />
             </div>
 
             {/* 📝 ARREGLO DE ENFERMEROS (CONTENEDOR GLOBAL) */}
@@ -140,33 +129,23 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-divider pt-5">
-                                    {/* Upload Carnet */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-micro font-black text-content-3 uppercase tracking-widest ml-1 block">Carné JVQE (PDF/IMG)</label>
-                                        <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.carneFile || nurse.carneUrl ? 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/40'}`}>
-                                            <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-base" onChange={(e) => updateNurse(index, 'carneFile', e.target.files?.[0] || null)} />
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.carneFile || nurse.carneUrl ? 'bg-surface-card text-brand-text shadow-sm border-chart-1/30' : 'bg-surface-card text-content-3 border-divider group-hover/btn:text-brand-text'}`}>
-                                                {nurse.carneFile || nurse.carneUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
-                                            </div>
-                                            <p className="text-caption font-black text-content-2 truncate transition-colors group-hover/btn:text-brand-text">
-                                                {nurse.carneFile ? nurse.carneFile.name : nurse.carneUrl ? "Archivo guardado" : "Subir carné..."}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Upload Licencia */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-micro font-black text-content-3 uppercase tracking-widest ml-1 block">Licencia Regencia (PDF)</label>
-                                        <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/40'}`}>
-                                            <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-base" onChange={(e) => updateNurse(index, 'licenciaFile', e.target.files?.[0] || null)} />
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-surface-card text-brand-text shadow-sm border-chart-1/30' : 'bg-surface-card text-content-3 border-divider group-hover/btn:text-brand-text'}`}>
-                                                {nurse.licenciaFile || nurse.licenciaUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
-                                            </div>
-                                            <p className="text-caption font-black text-content-2 truncate transition-colors group-hover/btn:text-brand-text">
-                                                {nurse.licenciaFile ? nurse.licenciaFile.name : nurse.licenciaUrl ? "Archivo guardado" : "Subir licencia..."}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    <FileField
+                                        label="Carné JVQE (PDF/IMG)"
+                                        accept=".pdf,image/*"
+                                        density="sm"
+                                        file={nurse.carneFile}
+                                        url={nurse.carneUrl}
+                                        onChange={f => updateNurse(nurse.id, 'carneFile', f)}
+                                    />
+
+                                    <FileField
+                                        label="Licencia Regencia (PDF)"
+                                        accept=".pdf,image/*"
+                                        density="sm"
+                                        file={nurse.licenciaFile}
+                                        url={nurse.licenciaUrl}
+                                        onChange={f => updateNurse(nurse.id, 'licenciaFile', f)}
+                                    />
                                 </div>
 
                                 {/* ZONA DE ANUALIDAD */}
@@ -177,18 +156,16 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         
-                                        {/* Upload Anualidad */}
                                         <div className="flex flex-col justify-end">
-                                            <label className="text-micro font-black text-warning/80 uppercase tracking-widest ml-1 mb-1 block">Recibo de Pago</label>
-                                            <div className={`relative group/btn h-[46px] border border-dashed rounded-xl px-2.5 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-2 cursor-pointer ${nurse.anualidadFile || nurse.anualidadUrl ? 'bg-warning/10 border-warning/40 hover:bg-warning/10' : 'bg-surface-card border-warning/30 hover:bg-surface-card-hover hover:border-warning'}`}>
-                                                <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-base" onChange={(e) => updateNurse(index, 'anualidadFile', e.target.files?.[0] || null)} />
-                                                <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border transition-transform duration-300 group-hover/btn:scale-105 ${nurse.anualidadFile || nurse.anualidadUrl ? 'bg-surface-card text-warning shadow-sm border-warning/30' : 'bg-surface-card text-warning border-warning/30 group-hover/btn:text-warning'}`}>
-                                                    {nurse.anualidadFile || nurse.anualidadUrl ? <CheckCircle2 size={14} strokeWidth={2.5}/> : <UploadCloud size={14}/>}
-                                                </div>
-                                                <p className="text-caption font-black text-warning-text truncate transition-colors group-hover/btn:text-warning-text">
-                                                    {nurse.anualidadFile ? nurse.anualidadFile.name : nurse.anualidadUrl ? "Recibo guardado" : "Subir recibo PDF..."}
-                                                </p>
-                                            </div>
+                                            <FileField
+                                                label="Recibo de Pago"
+                                                accept=".pdf,image/*"
+                                                density="sm"
+                                                emptyState="pending"
+                                                file={nurse.anualidadFile}
+                                                url={nurse.anualidadUrl}
+                                                onChange={f => updateNurse(nurse.id, 'anualidadFile', f)}
+                                            />
                                         </div>
 
                                         {/* Fecha Anualidad */}

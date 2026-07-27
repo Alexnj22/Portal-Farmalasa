@@ -239,9 +239,9 @@ const FormWfmAnalytics = ({ branches }) => {
             }
 
             return (
-                <div className="bg-slate-800/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-[var(--shadow-glass-lg)] border border-slate-700/60 w-max z-modal animate-in fade-in duration-300 transform-gpu">
-                    <p className="font-black text-caption uppercase tracking-widest text-content-2 mb-1 leading-none">{branchName}</p>
-                    <p className="font-extrabold text-body-sm uppercase tracking-tight text-white mb-2 pb-1.5 border-b border-slate-700">{activeView === 'DAYS' ? 'Día' : 'Hora'}: {data.displayLabel}</p>
+                <div data-surface="tooltip" className="p-3.5 w-max z-modal animate-in fade-in duration-300 transform-gpu">
+                    <p className="font-black text-caption uppercase tracking-widest text-content-tooltip-2 mb-1 leading-none">{branchName}</p>
+                    <p className="font-extrabold text-body-sm uppercase tracking-tight text-content-tooltip mb-2 pb-1.5 border-b border-white/15">{activeView === 'DAYS' ? 'Día' : 'Hora'}: {data.displayLabel}</p>
                     
                     <div className="flex flex-col gap-2 mb-2">
                         <p className="text-body font-bold flex items-center gap-2.5">

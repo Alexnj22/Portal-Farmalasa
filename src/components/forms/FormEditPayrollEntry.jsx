@@ -1,9 +1,10 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import PortalInput from '../common/PortalInput';
 import Button from '../../components/common/Button';
-import { Info, Clock, CreditCard, CalendarOff } from 'lucide-react';
+import { Clock, CreditCard, CalendarOff } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
 import { fetchOvertimeBankRows } from '../../data/payroll';
+import NocturnalLegalInfo from '../common/NocturnalLegalInfo';
 
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -14,19 +15,6 @@ const InputLabel = ({ children }) => (
 
 const glassInput = "w-full h-10 px-3 bg-surface-card border border-divider hover:border-brand/40 focus:border-brand/50 rounded-2xl text-body-xl font-bold text-content transition-all duration-300 placeholder-content-3 placeholder:font-normal";
 
-const NocturnalLegalInfo = () => (
-    <div className="relative group inline-flex items-center ml-1.5">
-        <Info size={11} className="text-chart-3-text cursor-help" strokeWidth={2} />
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-caption leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 pointer-events-none z-sidebar">
-            <p className="font-black text-chart-3 mb-1.5">Art. 168 — Código de Trabajo SV</p>
-            <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
-            <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-chart-3 font-bold">+25% recargo</span> sobre tarifa diurna</p>
-            <p className="text-content-3">• Hrs. extra nocturnas: <span className="text-chart-3 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
-            <p className="text-content-3">• Jornada noct. máx: 7h/día, 39h/sem</p>
-            <p className="text-content-3">• Si &gt;4h son nocturnas → turno nocturno</p>
-        </div>
-    </div>
-);
 
 const EMPTY_OBJ = {};
 

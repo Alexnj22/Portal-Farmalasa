@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, Upload, FileText, Loader2 } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
@@ -20,6 +20,7 @@ import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } fr
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
+import FileField from '../common/FileField';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -722,9 +723,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return { ...prev, employee_documents: list };
     });
 
-    const handleDocFileChange = async (category, e) => {
-        const file = e.target.files[0];
-        e.target.value = '';
+    const handleDocFile = async (category, file) => {
         if (!file) return;
         updateDoc(category, { file_name: file.name, url: null });
         setAnalyzingDocs(prev => ({ ...prev, [category]: true }));
@@ -778,23 +777,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const expiryBadge = getExpiryBadge(doc.expiry_date);
         return (
             <>
-                {isAnalyzing ? (
-                    <div className="flex items-center gap-2 bg-surface-card rounded-xl border border-brand/30 h-[40px] px-3">
-                        <Loader2 size={14} className="text-brand-text shrink-0 animate-spin" />
-                        <span className="text-body-sm font-bold text-brand-text truncate flex-1">Subiendo y analizando con IA…</span>
-                    </div>
-                ) : hasFile ? (
-                    <div className="flex items-center gap-2 bg-surface-card rounded-xl border border-divider h-[40px] px-3">
-                        <FileText size={14} className="text-brand-text shrink-0" />
-                        <span className="text-body-sm font-bold text-content-2 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
-                        <Button variant="ghost" icon={X} title="Quitar" iconOnly onClick={() => removeDocFile(category)} />
-                    </div>
-                ) : (
-                    <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-divider text-content-3 hover:border-brand/40 hover:text-brand-text cursor-pointer transition-colors">
-                        <Upload size={14} /> <span className="text-label font-bold">Subir archivo</span>
-                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFileChange(category, e)} />
-                    </label>
-                )}
+                {/* Canónico `FileField` (2c, 2026-07-27). `busy` conserva el
+                    "Subiendo y analizando con IA…" que este modal ya mostraba:
+                    la subida dispara `analyze-document` y puede tardar varios
+                    segundos, así que la fila tiene que decirlo. */}
+                <FileField
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    density="sm"
+                    busy={isAnalyzing}
+                    busyLabel="Subiendo y analizando con IA…"
+                    url={doc.url}
+                    name={doc.file_name}
+                    onChange={f => f ? handleDocFile(category, f) : removeDocFile(category)}
+                />
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
                         <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">

@@ -823,8 +823,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             )}
                                                             {/* Tooltip */}
                                                             {hasEvents && tooltipLines.length > 0 && (
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-white rounded-xl shadow-xl z-tooltip min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 focus-within:opacity-100 transition-opacity duration-200 text-left">
-                                                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1.5">{ds}</p>
+                                                                <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 z-tooltip min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 focus-within:opacity-100 transition-opacity duration-200 text-left">
+                                                                    <p className="text-micro font-black uppercase tracking-widest text-content-tooltip-2 mb-1.5">{ds}</p>
                                                                     {tooltipLines.map((item, li) => (
                                                                         <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-white/10' : ''}>
                                                                             <div className="flex items-center justify-between gap-3">

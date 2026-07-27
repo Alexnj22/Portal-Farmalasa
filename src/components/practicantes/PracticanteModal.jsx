@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import Badge from '../common/Badge';
-import { GraduationCap, X, Check, Loader2, Upload, FileCheck, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
+import { GraduationCap, X, Check, Loader2, Upload, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -13,9 +13,9 @@ import { fetchInstitucionCatalogValues } from '../../data/practicantes';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
-import { openStoredFile } from '../../utils/storageFiles';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
+import FileField from '../common/FileField';
 
 const ESTADO_OPTIONS = [
     { value: 'ACTIVO', label: 'Activo' },
@@ -317,16 +317,14 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <span>Convenio Institucional (PDF/imagen)</span>
                                 {convenioMissing && reqBadge}
                             </label>
-                            <div className={`relative flex items-center gap-3 bg-surface-card rounded-2xl border shadow-sm h-[40px] px-3 z-base ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                <label className="flex items-center gap-1.5 text-body font-bold text-brand-text cursor-pointer">
-                                    <Upload size={14} strokeWidth={2.5} />
-                                    {convenioFile ? convenioFile.name : 'Adjuntar convenio...'}
-                                    <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => setConvenioFile(e.target.files?.[0] || null)} />
-                                </label>
-                                {practicante?.convenio_url && !convenioFile && (
-                                    <Button variant="ghost" icon={FileCheck} onClick={() => openStoredFile(practicante.convenio_url)}>Ver actual</Button>
-                                )}
-                            </div>
+                            <FileField
+                                accept="application/pdf,image/*"
+                                density="sm"
+                                emptyState={convenioMissing ? 'missing' : 'neutral'}
+                                file={convenioFile}
+                                url={convenioFile ? null : practicante?.convenio_url}
+                                onChange={setConvenioFile}
+                            />
                             <p className="text-micro text-content-3 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
                         </div>
 

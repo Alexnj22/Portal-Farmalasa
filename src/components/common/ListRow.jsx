@@ -55,6 +55,14 @@ const ListRow = memo(forwardRef(({
     trailing,
     density = 'md',
     active = false,
+    // `selected` NO es lo mismo que `active`, y confundirlos era el problema
+    // real de las 9 "tarjetas seleccionables" (decisión 3b, 2026-07-27).
+    // `active` es *dónde estoy* —la fila del menú que corresponde a la ruta
+    // actual—; `selected` es *qué elegí*. Con solo el borde se veían igual.
+    // Por eso `selected` tiñe con el color de marca y además la fila debería
+    // llevar un `Checkbox` en `trailing`: la casilla es lo que dice "esto se
+    // elige", sin ambigüedad. No hace falta un componente aparte para eso.
+    selected = false,
     disabled = false,
     onClick,
     href,
@@ -73,16 +81,19 @@ const ListRow = memo(forwardRef(({
             {...(Tag === 'button' ? { type: 'button', onClick, disabled } : {})}
             {...(Tag === 'a' ? { href } : {})}
             {...(active && interactiva ? { 'aria-current': 'true' } : {})}
+            {...(selected && interactiva ? { 'aria-pressed': true } : {})}
             className={`w-full flex items-center text-left rounded-btn border
                 transition-[background-color,border-color,color] duration-200
                 ${d.fila}
                 ${onDark
-                    ? (active
+                    ? (active || selected
                         ? 'bg-white/10 border-white/15 text-white/90'
                         : `bg-white/5 border-white/[0.08] text-white/80 ${interactiva ? 'hover:bg-white/10 hover:border-white/15' : ''}`)
-                    : (active
-                        ? 'bg-surface-tab-active border-border-card text-content'
-                        : `border-transparent text-content-2 ${interactiva ? 'hover:bg-surface-card-hover' : ''}`)}
+                    : (selected
+                        ? 'bg-brand/8 border-brand/45 text-content'
+                        : active
+                            ? 'bg-surface-tab-active border-border-card text-content'
+                            : `border-transparent text-content-2 ${interactiva ? 'hover:bg-surface-card-hover' : ''}`)}
                 ${disabled ? 'opacity-45 cursor-not-allowed' : (interactiva ? 'cursor-pointer' : '')}
                 ${className}`}
             {...rest}

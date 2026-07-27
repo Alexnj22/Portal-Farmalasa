@@ -20,6 +20,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
+import FileField from '../components/common/FileField';
 import {
     fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, updateInvoiceReceivedMh,
     fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
@@ -1490,7 +1491,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     const [confirmNotes, setConfirmNotes] = useState('');
     const [confirmFile, setConfirmFile] = useState(null);
     const [confirmSaving, setConfirmSaving] = useState(false);
-    const fileInputRef = useRef(null);
 
     // Pending pagination: { [tipo]: page }
     const [pendingPages, setPendingPages] = useState({});
@@ -1540,7 +1540,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         setLoading(false);
     }, [filterBranch, selectedMonth]);
 
-    useEffect(() => { loadData(); }, [loadData]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+    useEffect(() => { loadData(); }, [loadData]);
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
@@ -1563,7 +1563,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     }, [pendingFiltered]);
 
     // Reset pending pages when data changes
-    useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar datos/búsqueda
+    useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]);
 
     const CONFIRMED_SORT_ACCESSORS = useMemo(() => ({
         correlativo:   r => r.invoice?.correlativo,
@@ -1583,7 +1583,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         return cSortFn(list, CONFIRMED_SORT_ACCESSORS);
     }, [confirmed, filterConfirmedTipo, filterConfirmedBranch, cSortFn, CONFIRMED_SORT_ACCESSORS]);
 
-    useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
+    useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]);
 
     const confirmedTotalPages = Math.ceil(confirmedFiltered.length / PAGE_SIZE);
     const confirmedPageRows = confirmedFiltered.slice((confirmedPage - 1) * PAGE_SIZE, confirmedPage * PAGE_SIZE);
@@ -1597,6 +1597,13 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         let proofUrl = null;
         if (confirmFile) {
             const ext = confirmFile.name.split('.').pop();
+            // `handleConfirm` es un manejador de evento, no render: `Date.now()`
+            // solo desambigua el nombre del archivo que se sube. La regla aparece
+            // recién ahora porque hasta este commit el análisis de este archivo se
+            // degradaba por un `ref` usado dentro de handlers (el gotcha del React
+            // Compiler ya documentado); al migrar a `FileField` ese ref desapareció
+            // y el linter pasa a ver el archivo entero.
+            // eslint-disable-next-line react-hooks/purity
             const path = `invoices/${invoiceId}/${Date.now()}.${ext}`;
             const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, confirmFile);
             if (!upErr) {
@@ -1627,7 +1634,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         });
 
         setConfirmingId(null); setConfirmNotes(''); setConfirmFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
         setConfirmSaving(false);
     };
 
@@ -1753,7 +1759,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
                                                     <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                     <DataCell align="right">
-                                                        <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>Confirmar</Button>
+                                                        <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>
                                                     </DataCell>
                                                 </DataRow>
                                                 {isConfirming && (
@@ -1767,16 +1773,13 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
                                                                         value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
                                                                     />
-                                                                    <label className="flex items-center gap-2 cursor-pointer text-body-sm font-semibold text-content-3 hover:text-content-2 transition-colors">
-                                                                        <Paperclip size={14} />
-                                                                        {confirmFile ? (
-                                                                            <span className="text-content-2 font-bold">{confirmFile.name}</span>
-                                                                        ) : (
-                                                                            <span>Adjuntar comprobante (imagen o PDF)</span>
-                                                                        )}
-                                                                        <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
-                                                                            onChange={e => setConfirmFile(e.target.files?.[0] || null)} />
-                                                                    </label>
+                                                                    <FileField
+                                                                        accept="image/*,application/pdf"
+                                                                        density="sm"
+                                                                        file={confirmFile}
+                                                                        onChange={setConfirmFile}
+                                                                        hint="Comprobante del pago — imagen o PDF"
+                                                                    />
                                                                 </div>
                                                                 <div className="flex flex-col gap-2 shrink-0">
                                                                     <Button variant="ghost" disabled={confirmSaving} className={theme.btn} onClick={() => handleConfirm(r.id)}>{confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar</Button>
@@ -1851,7 +1854,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
                                                             <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                             <DataCell align="right">
-                                                                <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>Confirmar</Button>
+                                                                <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>
                                                             </DataCell>
                                                         </DataRow>
                                                         {isConfirming && (
@@ -1865,12 +1868,13 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                                 placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
                                                                                 value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
                                                                             />
-                                                                            <label className="flex items-center gap-2 cursor-pointer text-body-sm font-semibold text-content-3 hover:text-content-2 transition-colors">
-                                                                                <Paperclip size={14} />
-                                                                                {confirmFile ? <span className="text-content-2 font-bold">{confirmFile.name}</span> : <span>Adjuntar documento de crédito</span>}
-                                                                                <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
-                                                                                    onChange={e => setConfirmFile(e.target.files?.[0] || null)} />
-                                                                            </label>
+                                                                            <FileField
+                                                                                accept="image/*,application/pdf"
+                                                                                density="sm"
+                                                                                file={confirmFile}
+                                                                                onChange={setConfirmFile}
+                                                                                hint="Documento del crédito — imagen o PDF"
+                                                                            />
                                                                         </div>
                                                                         <div className="flex flex-col gap-2 shrink-0">
                                                                             <Button variant="ghost" disabled={confirmSaving} className={theme.btn} onClick={() => handleConfirm(r.id)}>{confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar</Button>

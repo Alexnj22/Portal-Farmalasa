@@ -1,36 +1,87 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useId, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 /**
- * LiquidTooltip — hover tooltip with liquid glass styling.
+ * LiquidTooltip — nota flotante sobre un elemento.
  *
- * Props:
- *   content  — JSX or string shown inside the tooltip
- *   side     — 'top' (default) | 'bottom'
- *   children — the trigger element
- *   className — extra classes on the wrapper span
+ * Canónico desde siempre, adoptado casi nunca: al medirlo (2026-07-27) había
+ * **30 tooltips escritos a mano** contra 2 archivos usando este. Y los 30 no
+ * coincidían entre sí — cuatro fondos oscuros distintos (`slate-900`,
+ * `slate-800`, `slate-950`, y algunos sin fondo explícito), cuatro anchos
+ * distintos, tres lados. Otra vez el patrón de la semana: el canónico existía,
+ * nadie lo sabía, y cada quien resolvió lo mismo a su manera.
+ *
+ * **Decisión 1a (2026-07-27): el tooltip es oscuro en los cuatro temas.** No es
+ * una superficie de la pantalla, es una nota flotando encima, y esa distancia
+ * visual es lo que deja leerla de un vistazo. Antes seguía el tema
+ * (`data-surface="dropdown"`), que lo hacía coherente pero indistinguible de un
+ * popover.
+ *
+ * Lo que sí cambia por tema es la forma y el material, igual que en `Button`:
+ * en Liquid Glass es redondeado, translúcido y con blur; en Solid es
+ * rectangular y opaco. Eso NO se elige por prop — vive en `--tooltip-*` y lo
+ * decide el tema (ver `index.css`, `[data-surface="tooltip"]`). Un `rounded-full`
+ * fijo acá sería el mismo error que ya cometimos con 54 botones.
+ *
+ * Accesibilidad: se muestra también con el foco del teclado, no solo con el
+ * mouse. Un tooltip que solo aparece al pasar el puntero es invisible para
+ * quien navega con Tab y para cualquier dispositivo táctil.
  */
-export default function LiquidTooltip({ children, content, side = 'top', className = '' }) {
+
+export default function LiquidTooltip({
+    children,
+    content,
+    side = 'top',
+    // `rich` es para el contenido que ya venía en bloque (VentasView,
+    // TabSinVenta pasan JSX con varias líneas). El default es la nota de una
+    // línea, que era el 80% de los 30 escritos a mano — y a esos el relleno
+    // viejo (px-5 py-3.5) les quedaba enorme.
+    variant = 'text',
+    className = '',
+}) {
     const [pos, setPos] = useState(null);
     const ref = useRef(null);
+    const id = useId();
 
     const show = useCallback(() => {
         if (!ref.current || !content) return;
         const r = ref.current.getBoundingClientRect();
-        const rawCx = r.left + r.width / 2;
-        // Clamp so the tooltip (est. max ~360px wide) never clips either viewport edge
-        const halfEst = 180;
-        const cx = Math.min(Math.max(rawCx, halfEst + 8), window.innerWidth - halfEst - 8);
-        setPos({ cx, top: r.top, bottom: r.bottom });
-    }, [content]);
+        const medio = variant === 'rich' ? 180 : 140;
+        const cx = Math.min(Math.max(r.left + r.width / 2, medio + 8), window.innerWidth - medio - 8);
+        const cy = Math.min(Math.max(r.top + r.height / 2, 28), window.innerHeight - 28);
+        setPos({ cx, cy, top: r.top, bottom: r.bottom, left: r.left, right: r.right });
+    }, [content, variant]);
 
     const hide = useCallback(() => setPos(null), []);
 
-    const tooltipStyle = pos
-        ? side === 'bottom'
-            ? { left: pos.cx, top: pos.bottom + 8, transform: 'translateX(-50%)' }
-            : { left: pos.cx, top: pos.top - 8, transform: 'translate(-50%, -100%)' }
-        : {};
+    // Escape cierra, y el scroll también: la posición se calcula una sola vez
+    // al abrir, así que si la página se mueve el tooltip queda flotando lejos
+    // de su disparador. Cerrarlo es más honesto que dejarlo desalineado.
+    useEffect(() => {
+        if (!pos) return;
+        const alTeclear = e => { if (e.key === 'Escape') hide(); };
+        window.addEventListener('keydown', alTeclear);
+        window.addEventListener('scroll', hide, true);
+        return () => {
+            window.removeEventListener('keydown', alTeclear);
+            window.removeEventListener('scroll', hide, true);
+        };
+    }, [pos, hide]);
+
+    const estilo = !pos ? {} : {
+        top:    { left: pos.cx,   top: pos.top - 8,     transform: 'translate(-50%, -100%)' },
+        bottom: { left: pos.cx,   top: pos.bottom + 8,  transform: 'translateX(-50%)' },
+        left:   { left: pos.left - 8, top: pos.cy,      transform: 'translate(-100%, -50%)' },
+        right:  { left: pos.right + 8, top: pos.cy,     transform: 'translateY(-50%)' },
+    }[side];
+
+    // La flecha va del lado contrario al que se abre el tooltip.
+    const anclaFlecha = {
+        top:    'left-1/2 -translate-x-1/2 top-full -mt-1.5',
+        bottom: 'left-1/2 -translate-x-1/2 bottom-full -mb-1.5',
+        left:   'top-1/2 -translate-y-1/2 left-full -ml-1.5',
+        right:  'top-1/2 -translate-y-1/2 right-full -mr-1.5',
+    }[side];
 
     return (
         <>
@@ -38,38 +89,38 @@ export default function LiquidTooltip({ children, content, side = 'top', classNa
                 ref={ref}
                 onMouseEnter={show}
                 onMouseLeave={hide}
+                onFocus={show}
+                onBlur={hide}
+                aria-describedby={pos && content ? id : undefined}
                 className={`inline-block ${className}`}
             >
                 {children}
             </span>
 
             {pos && content && createPortal(
-                <div
-                    className="fixed z-toast pointer-events-none"
-                    style={tooltipStyle}
-                >
-                    {/* Arrow — top tooltip: arrow below; bottom tooltip: arrow above */}
-                    {side === 'top' && (
-                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-5 h-2.5 overflow-hidden">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3
-                                bg-surface-dropdown rotate-45 -translate-y-1/2
-                                border-r border-b border-border-card
-                                shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
-                        </div>
-                    )}
+                <div id={id} role="tooltip"
+                    className="fixed z-toast pointer-events-none animate-in fade-in zoom-in-95 duration-150 ease-out"
+                    style={estilo}>
 
-                    <div data-surface="dropdown" className="px-5 py-3.5 w-max max-w-[360px] text-content animate-in fade-in zoom-in-95 duration-150 ease-out">
+                    <div data-surface="tooltip"
+                        className={`w-max font-semibold leading-snug
+                            ${variant === 'rich'
+                                ? 'px-4 py-3 max-w-[360px] text-body-sm'
+                                : 'px-3 py-2 max-w-[280px] text-label'}`}>
                         {content}
                     </div>
 
-                    {side === 'bottom' && (
-                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-5 h-2.5 overflow-hidden rotate-180">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3
-                                bg-surface-dropdown rotate-45 -translate-y-1/2
-                                border-r border-b border-border-card
-                                shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
-                        </div>
-                    )}
+                    {/* Cuadrado rotado, no un borde: es lo único que da la punta
+                        sin recortar la sombra del cuerpo. Toma los mismos tokens,
+                        así que cambia de color con el tema sin saber cuál es. */}
+                    <span aria-hidden="true"
+                        className={`absolute w-3 h-3 rotate-45 ${anclaFlecha}`}
+                        style={{
+                            background: 'var(--tooltip-bg)',
+                            borderRight: '1px solid var(--tooltip-border)',
+                            borderBottom: '1px solid var(--tooltip-border)',
+                            borderRadius: '2px',
+                        }} />
                 </div>,
                 document.body
             )}

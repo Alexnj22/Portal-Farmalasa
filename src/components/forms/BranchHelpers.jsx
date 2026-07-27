@@ -1,8 +1,6 @@
 import CanonSwitch from '../common/Switch';
-import Button from '../../components/common/Button';
-import React, { useRef, useState, useEffect } from 'react';
-import { UploadCloud, CheckCircle2, Eye, X } from 'lucide-react';
-import { openStoredFile } from '../../utils/storageFiles';
+import React, { useState, useEffect } from 'react';
+import FileField from '../common/FileField';
 
 // eslint-disable-next-line react-refresh/only-export-components -- este archivo ya mezcla constantes/helpers con un componente (LazyInput); solo afecta Fast Refresh en dev
 export const EL_SALVADOR_GEO = {
@@ -62,67 +60,25 @@ export const Switch = ({ on, onToggle, disabled, label }) => (
 // ============================================================================
 // ☁️ UPLOADER LIQUIDGLASS (Diseño de Botón Elevado)
 // ============================================================================
-export const FileUploader = ({ label, file, url, onChange }) => {
-    const fileInputRef = useRef(null);
-    const hasFile = !!file || !!url;
-
-    const handleView = (e) => {
-        e.preventDefault(); e.stopPropagation();
-        if (file) window.open(URL.createObjectURL(file), '_blank');
-        else if (url) openStoredFile(url);
-    };
-
-    const handleClear = (e) => {
-        e.preventDefault(); e.stopPropagation();
-        onChange(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-    };
-
-    return (
-        <div className="mt-2 w-full">
-            {label && <label className="text-caption font-black uppercase tracking-[0.15em] text-content-3 ml-1 mb-1.5 block">{label}</label>}
-            
-            <div className={`relative flex items-center gap-3 rounded-2xl p-2 transition-all duration-300 border transform-gpu ${
-                !hasFile 
-                    ? 'bg-warning/10 backdrop-blur-sm border-warning/30 shadow-[var(--shadow-shine-lg)] hover:bg-warning/10 hover:border-warning/40 hover:shadow-md cursor-pointer group' 
-                    : 'bg-success/10 backdrop-blur-sm border-success/30 shadow-[var(--shadow-shine-lg)] hover:shadow-md'
-            }`}
-            onClick={() => !hasFile && fileInputRef.current?.click()}
-            >
-                {/* Ícono Izquierdo */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-sm ${
-                    !hasFile ? 'bg-warning/10 text-warning group-hover:scale-110 group-hover:bg-warning-solid group-hover:text-white' : 'bg-success-solid text-white shadow-emerald-500/30'
-                }`}>
-                    {!hasFile ? <UploadCloud size={18} strokeWidth={2.5}/> : <CheckCircle2 size={18} strokeWidth={2.5} />}
-                </div>
-                
-                {/* Textos */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    {file ? (
-                        <><p className="text-body-sm text-success-text font-bold truncate leading-none mb-1">{file.name}</p>
-                        <p className="text-micro text-success/70 font-black uppercase tracking-widest leading-none">Archivo Listo</p></>
-                    ) : url ? (
-                        <><p className="text-body-sm text-success-text font-bold truncate leading-none mb-1">Documento Guardado</p>
-                        <p className="text-micro text-success/70 font-black uppercase tracking-widest leading-none">En el sistema</p></>
-                    ) : (
-                        <><p className="text-label text-warning-text font-bold leading-none mb-1">Documento Pendiente</p>
-                        <p className="text-micro text-warning/80 font-black uppercase tracking-widest leading-none">Tocar para adjuntar</p></>
-                    )}
-                </div>
-
-                {/* BOTONES DE ACCIÓN (Solo si hay archivo) */}
-                {hasFile && (
-                    <div className="flex items-center gap-1.5 pr-1 shrink-0">
-                        <Button tone="success" size="sm" icon={Eye} title="Ver Documento" iconOnly onClick={handleView} />
-                        <Button variant="destructive" size="sm" icon={X} title="Quitar Documento" iconOnly onClick={handleClear} />
-                    </div>
-                )}
-                
-                <input type="file" ref={fileInputRef} accept="application/pdf,image/*" className="hidden" onChange={(e) => onChange(e.target.files?.[0] || null)} />
-            </div>
-        </div>
-    );
-};
+export const FileUploader = ({ label, file, url, onChange }) => (
+    // Envoltorio delgado sobre el canónico `FileField` (decisión 2c,
+    // 2026-07-27). Se conserva el nombre porque lo consumen 9 sitios y
+    // renombrarlos no aporta nada; lo que cambia es que ahora es UNA fila con
+    // arrastre, y no la novena variante de "subir un archivo".
+    //
+    // `emptyState="pending"` mantiene el naranja del estado vacío: acá un
+    // documento faltante es un requisito legal sin cumplir, no un campo
+    // opcional en blanco.
+    <FileField
+        label={label}
+        file={file}
+        url={url}
+        onChange={onChange}
+        accept="application/pdf,image/*"
+        emptyState="pending"
+        className="mt-2"
+    />
+);
 
 // ============================================================================
 // ⌨️ LAZY INPUT LIQUIDGLASS (Reacciona al Focus como los modales)

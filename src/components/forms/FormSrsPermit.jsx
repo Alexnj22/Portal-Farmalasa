@@ -1,5 +1,5 @@
 import React from 'react';
-import { UploadCloud } from 'lucide-react';
+import FileField from '../common/FileField';
 
 const FormSrsPermit = ({ formData, setFormData }) => {
     const legalData = formData?.settings?.legal || {};
@@ -29,31 +29,14 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 />
             </div>
             
-            <div>
-                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">
-                    Documento de Permiso Escaneado (PDF/IMG)
-                </label>
-                <div className="flex items-center gap-3 cursor-pointer relative rounded-2xl border border-divider bg-surface-card px-4 py-3.5 hover:bg-surface-card-hover hover:border-brand/30 transition-colors group">
-                    <div className="p-2 bg-success/10 rounded-lg group-hover:bg-success/10 transition-colors text-success">
-                        <UploadCloud size={18} strokeWidth={2} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        {legalData.srsPermitFile ? (
-                            <p className="text-body text-success-text font-bold truncate">{legalData.srsPermitFile.name}</p>
-                        ) : legalData.srsPermitUrl ? (
-                            <p className="text-body text-content-2 font-bold truncate">Reemplazar archivo actual...</p>
-                        ) : (
-                            <p className="text-body text-content-3 font-semibold">Clic para subir documento...</p>
-                        )}
-                    </div>
-                    <input 
-                        type="file" 
-                        accept="application/pdf,image/*" 
-                        className="absolute inset-0 opacity-0 cursor-pointer" 
-                        onChange={(e) => updateLegalField('srsPermitFile', e.target.files?.[0] || null)} 
-                    />
-                </div>
-            </div>
+            <FileField
+                label="Documento de Permiso Escaneado (PDF/IMG)"
+                accept="application/pdf,image/*"
+                file={legalData.srsPermitFile}
+                url={legalData.srsPermitUrl}
+                onChange={f => updateLegalField('srsPermitFile', f)}
+                hint="PDF o imagen — soltalo acá o hacé clic"
+            />
         </div>
     );
 };

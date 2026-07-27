@@ -78,8 +78,8 @@ const ScheduleChart = ({
                             className={`flex-1 flex flex-col justify-end items-center group/bar h-full relative overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
 
                             {/* Tooltip */}
-                            <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-xl shadow-xl opacity-0 group-hover/bar:opacity-100 focus-within:opacity-100 transition-all duration-150 pointer-events-none w-max z-modal translate-y-1 group-hover/bar:-translate-y-0 border border-border-card">
-                                <p className="font-black text-[7.5px] uppercase tracking-widest text-content-2">{item.label}</p>
+                            <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2 py-1.5 opacity-0 group-hover/bar:opacity-100 focus-within:opacity-100 transition-all duration-150 pointer-events-none w-max z-modal translate-y-1 group-hover/bar:-translate-y-0">
+                                <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2">{item.label}</p>
                                 <p className="text-caption font-bold flex items-center gap-1 mt-0.5">
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
                                     {item.avg} Tx

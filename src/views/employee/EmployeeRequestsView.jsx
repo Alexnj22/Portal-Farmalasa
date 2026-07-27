@@ -21,6 +21,7 @@ import {
     fetchOwnMinMaxChangeRequests, fetchEmployeeNamesByIds, fetchEmployeeEventsByTypes,
 } from '../../data/employeeSelfService';
 import { updateApprovalRequest } from '../../data/requests';
+import FileField from '../../components/common/FileField';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -287,32 +288,30 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                 {meta.docName || 'Ver certificado adjunto'}
                             </a>
                         )}
+                        {/* Canónico `FileField` (2c, 2026-07-27). `busy` conserva el
+                            "Subiendo…": acá el archivo se sube apenas se elige, y sin
+                            esa señal la fila se queda muda varios segundos. */}
                         {req.status === 'PENDING' && uploadFileToStorage && (
-                            <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-divider opacity-60' : 'border-warning/30 hover:border-warning hover:bg-warning/10'}`}>
-                                {uploadingDoc
-                                    ? <Loader2 size={13} className="text-warning animate-spin flex-shrink-0" />
-                                    : <Upload size={13} className="text-warning flex-shrink-0" strokeWidth={2} />
-                                }
-                                <span className="text-label font-bold text-warning-text">
-                                    {uploadingDoc ? 'Subiendo...' : meta.docUrl ? 'Reemplazar documento' : 'Adjuntar certificado / boleta ISSS'}
-                                </span>
-                                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" disabled={uploadingDoc}
-                                    onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file || !uploadFileToStorage) return;
-                                        setUploadingDoc(true);
-                                        const url = await uploadFileToStorage(file, 'documents', 'disability');
-                                        if (url) {
-                                            const newMeta = { ...meta, docUrl: url, docName: file.name };
-                                            await updateApprovalRequest(req.id, { metadata: newMeta });
-                                            setMeta(newMeta);
-                                            useToastStore.getState().showToast('Documento actualizado', 'El certificado fue reemplazado correctamente.', 'success');
-                                        }
-                                        setUploadingDoc(false);
-                                        e.target.value = '';
-                                    }}
-                                />
-                            </label>
+                            <FileField
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                density="sm"
+                                emptyState="pending"
+                                busy={uploadingDoc}
+                                url={meta.docUrl}
+                                name={meta.docName}
+                                onChange={async (file) => {
+                                    if (!file || !uploadFileToStorage) return;
+                                    setUploadingDoc(true);
+                                    const url = await uploadFileToStorage(file, 'documents', 'disability');
+                                    if (url) {
+                                        const newMeta = { ...meta, docUrl: url, docName: file.name };
+                                        await updateApprovalRequest(req.id, { metadata: newMeta });
+                                        setMeta(newMeta);
+                                        useToastStore.getState().showToast('Documento actualizado', 'El certificado fue reemplazado correctamente.');
+                                    }
+                                    setUploadingDoc(false);
+                                }}
+                            />
                         )}
                     </div>
                 )}
@@ -984,24 +983,12 @@ const EmployeeRequestsView = () => {
                                 : <span>Certificado Médico <span className="text-content-3 ml-1 normal-case font-medium">(opcional)</span></span>
                             }
                         </label>
-                        <label className="flex items-center gap-3 px-4 py-3 bg-surface-card border-2 border-dashed border-danger/30 hover:border-danger hover:bg-danger/10 rounded-2xl cursor-pointer transition-all duration-200 group">
-                            <div className="w-8 h-8 rounded-xl bg-danger/10 flex items-center justify-center flex-shrink-0 group-hover:bg-danger/20 transition-colors">
-                                {disabilityFile ? <FileImage size={16} className="text-danger" /> : <Upload size={16} className="text-danger" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                {disabilityFile
-                                    ? <><p className="text-body-sm font-bold text-content-2 truncate">{disabilityFile.name}</p>
-                                       <p className="text-caption text-content-3">{(disabilityFile.size / 1024).toFixed(0)} KB</p></>
-                                    : <><p className="text-body-sm font-medium text-content-3">Adjuntar boleta o certificado</p>
-                                       <p className="text-caption text-content-3">PDF, JPG, PNG — también puedes adjuntarlo después</p></>
-                                }
-                            </div>
-                            {disabilityFile && (
-                                <Button variant="destructive" icon={X} iconOnly onClick={e => { e.preventDefault(); setDisabilityFile(null); }} />
-                            )}
-                            <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={e => setDisabilityFile(e.target.files?.[0] || null)} />
-                        </label>
+                        <FileField
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            file={disabilityFile}
+                            onChange={setDisabilityFile}
+                            hint="PDF, JPG o PNG — también podés adjuntarlo después"
+                        />
                     </div>
 
                     <div className="px-4 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">

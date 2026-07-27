@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Switch from '../common/Switch';
-import { FilePlus, Tag, UploadCloud, CheckCircle2 } from 'lucide-react';
+import { FilePlus, Tag } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
+import FileField from '../common/FileField';
 
 const CATEGORIES = [
     { value: 'Permisos y Licencias', label: 'Permisos y Licencias' },
@@ -110,51 +111,18 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                 />
             </div>
 
-            {/* 3. Zona de Carga (PDF / Imagen) */}
-            <div>
-                <label className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
-                    <UploadCloud size={12} className="text-brand-text"/> {isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
-                </label>
-                <div className="relative">
-                    <input
-                        type="file"
-                        accept=".pdf,image/*"
-                        onChange={(e) => updateField('file', e.target.files[0])}
-                        className="hidden"
-                        id="file-upload-custom"
-                    />
-                    <label 
-                        htmlFor="file-upload-custom"
-                        className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
-                            data.file || data.url
-                            ? 'border-success bg-success/10 hover:bg-success/10' 
-                            : isEditing && !data.url
-                                ? 'border-danger/40 bg-danger/10 hover:bg-danger/10 hover:border-danger' // Alerta roja si falta subir en edición
-                                : 'border-divider bg-surface-card backdrop-blur-md hover:bg-surface-card-hover hover:border-brand/50'
-                        }`}
-                    >
-                        {data.file ? (
-                            <div className="flex flex-col items-center text-success">
-                                <CheckCircle2 size={24} strokeWidth={2.5} className="mb-2" />
-                                <span className="text-body-sm font-black truncate max-w-[200px]">{data.file.name}</span>
-                                <span className="text-micro font-bold mt-1 text-success/70 uppercase tracking-widest">Archivo Listo para Subir</span>
-                            </div>
-                        ) : data.url ? (
-                            <div className="flex flex-col items-center text-success">
-                                <CheckCircle2 size={24} strokeWidth={2.5} className="mb-2" />
-                                <span className="text-body-sm font-black truncate max-w-[200px]">Archivo Subido al Servidor</span>
-                                <span className="text-micro font-bold mt-1 text-success/70 uppercase tracking-widest">Click para reemplazar</span>
-                            </div>
-                        ) : (
-                            <div className={`flex flex-col items-center ${isEditing ? 'text-danger' : 'text-content-3'}`}>
-                                <UploadCloud size={24} strokeWidth={1.5} className="mb-2" />
-                                <span className="text-body-sm font-black">{isEditing ? 'Falta Documento - Sube el PDF' : 'Subir PDF o Imagen'}</span>
-                                <span className={`text-micro font-bold mt-1 uppercase tracking-widest ${isEditing ? 'text-danger' : 'text-content-2'}`}>Click para explorar</span>
-                            </div>
-                        )}
-                    </label>
-                </div>
-            </div>
+            {/* 3. Zona de Carga (PDF / Imagen) — canónico `FileField` (2c).
+                `missing` conserva el rojo que este formulario ya usaba: editando
+                un registro que existe pero no tiene archivo, falta algo, y eso
+                no es lo mismo que un adjunto opcional en blanco. */}
+            <FileField
+                label={isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
+                accept=".pdf,image/*"
+                file={data.file}
+                url={data.url}
+                onChange={f => updateField('file', f)}
+                emptyState={isEditing && !data.url ? 'missing' : 'neutral'}
+            />
 
             {/* 4. Control de Fechas */}
             <div className="pt-4 border-t border-divider space-y-6">

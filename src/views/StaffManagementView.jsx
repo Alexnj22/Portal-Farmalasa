@@ -148,19 +148,19 @@ const PendingBadge = ({ emp }) => {
       {pos && createPortal(
         <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
           className="animate-in fade-in duration-150 min-w-[190px]">
-          <div className="bg-slate-800/95 backdrop-blur-sm text-white rounded-2xl shadow-xl border border-border-card px-3 py-2.5">
+          <div data-surface="tooltip" className="px-3 py-2.5">
             <p className="text-micro font-black uppercase tracking-widest text-warning mb-1.5">Información pendiente</p>
             <ul className="space-y-1">
               {items.map((item, i) => (
                 <li key={i} className="flex items-baseline gap-1.5 text-label whitespace-nowrap">
                   <span className="w-1 h-1 rounded-full bg-warning shrink-0 self-center" />
                   <span className="font-bold">{item.label}</span>
-                  <span className="text-content-3 font-medium">— {item.hint}</span>
+                  <span className="text-content-tooltip-2 font-medium">— {item.hint}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="w-2 h-2 bg-slate-800/95 rotate-45 mx-auto -mt-1 border-r border-b border-border-card" />
+          <div className="w-2 h-2 rotate-45 mx-auto -mt-1" style={{ background: 'var(--tooltip-bg)', borderRight: '1px solid var(--tooltip-border)', borderBottom: '1px solid var(--tooltip-border)' }} />
         </div>,
         document.body
       )}

@@ -2,7 +2,7 @@
   "_comment": "Ratchet del gate de diseño. El gate falla si una categoría SUBE respecto a estos números. Cada fase del plan (AUDITORIA-DISENO-2026-07-26.md) baja los suyos; al llegar a 0 la categoría queda bloqueante. Regenerar solo al BAJAR deuda: npm run gate:design -- --update-baseline",
   "updated": "2026-07-27",
   "categories": {
-    "shadow-literal": 30,
+    "shadow-literal": 28,
     "inline-color": 58,
     "motion": 5
   }

@@ -5,7 +5,43 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.87.0';
+export const APP_VERSION = '2.88.0';
+
+// v2.88.0 — Las tres decisiones de diseno pendientes, resueltas y aplicadas.
+//
+// 1a — El tooltip es OSCURO en los cuatro temas. No es una superficie de la pantalla,
+// es una nota flotando encima, y esa distancia visual es lo que deja leerla de un
+// vistazo. Lo que si cambia por tema es la forma y el material, igual que en Button:
+// redondeado y con blur en Liquid Glass, rectangular y opaco en Solid. Vive en los
+// tokens `--tooltip-*` y en `[data-surface="tooltip"]`, no en props.
+// Habia 30 tooltips a mano contra 2 archivos usando el canonico `LiquidTooltip`, con
+// cuatro fondos distintos (slate-900/800/950) que ignoraban el tema. Migrados 15
+// superficies reales; el resto eran paneles y dropdowns, no tooltips.
+// De paso: varios pintaban su texto interno con `text-content-3`, que sigue el tema,
+// sobre un fondo oscuro que no lo sigue — en tema claro era gris sobre gris. Ahora
+// existe `content-tooltip-2` para eso.
+//
+// 2c — `FileField`: adjuntar un archivo es una FILA, no una caja punteada. En estos
+// formularios el archivo casi siempre YA esta, y lo que mas se hace es verlo o
+// reemplazarlo. Se arrastra igual: la fila se ilumina cuando lo que viene son
+// archivos y se queda quieta si es texto o un link (se leen los TIPOS del
+// dataTransfer, que el navegador si expone durante el arrastre).
+// De 21 inputs de archivo quedan 3: el canonico y los 2 selectores de FOTO
+// (avatar y foto de producto, que abre el recortador) — esos son otro control.
+//
+// 3b — Tarjeta seleccionable = `ListRow` + `Checkbox`, sin componente nuevo.
+// `ListRow` gana `selected`, distinto de `active`: `active` es donde estoy,
+// `selected` es que eligi. Con solo el borde se veian igual.
+//
+// Encontrado al migrar, y corregido:
+//   · `NocturnalLegalInfo` estaba DUPLICADO literal en dos archivos.
+//   · FormPharmacovigilance decia "Max 5MB" y el codigo rechazaba a los 10 MB.
+//     El aviso ahora se deriva de `maxSizeMB`, no puede volver a divergir.
+//   · Varios formularios parchaban `input.value = ''` desde afuera con un ref para
+//     poder reelegir el mismo archivo. `FileField` lo hace solo.
+//   · Al sacar ese ref de FacturacionView el linter dejo de analizar el archivo en
+//     modo degradado (el gotcha conocido del React Compiler con refs en handlers) y
+//     aparecieron 4 avisos latentes. Resueltos.
 
 // v2.87.0 — ListRow en el widget de MinMax: la ranura `leading` con una IMAGEN.
 //

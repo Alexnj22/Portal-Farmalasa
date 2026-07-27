@@ -28,6 +28,9 @@
 | casilla | `Checkbox` | §15.4 |
 | acción en la barra de vista | `TabBarAction` | §15.5 |
 | aviso inline | `Notice` | §15.6 |
+| fila de lista | `ListRow` | §15.7 |
+| adjuntar archivo | `FileField` | §15.8 |
+| nota al pasar el puntero | `LiquidTooltip` | §15.9 |
 | etiqueta de estado | `Badge` | §16.1 |
 | campo de formulario | `PortalInput` | §29.1 |
 | desplegable | `LiquidSelect` | §14 |
@@ -1195,6 +1198,95 @@ de la pantalla.
 El del medio entre `AlertModal` (interrumpe) y los banners de página. Dice algo
 *acá*, junto a lo que se habla. `role="status"`, no `alert`: informar no es
 interrumpir.
+
+---
+
+### 15.7 `ListRow` — fila de lista
+
+```jsx
+<ListRow icon={Building2} title="La Popular" subtitle="Chalatenango"
+    trailing={<Badge tone="success">Abierta</Badge>} onClick={abrir} />
+```
+
+Tres densidades (`sm`/`md`/`lg`), sacadas de los tres grupos que ya existían en
+el código, no de una escala inventada. Se dibuja como `<button>` si recibe
+`onClick`, como `<a>` si recibe `href`, y como `<div>` si no: una fila que no
+hace nada no debería ser enfocable. La ranura `leading` acepta ícono, letra o
+imagen.
+
+**`selected` no es `active`.** `active` es *dónde estoy* (la fila del menú de la
+ruta actual); `selected` es *qué elegí*. Se veían igual cuando la única señal
+era el borde.
+
+#### Tarjeta seleccionable = `ListRow` + `Checkbox`
+
+No hay un `SelectableCard`, y es a propósito (decisión 3b, 2026-07-27). Las 9
+"tarjetas seleccionables" del portal eran esta composición:
+
+```jsx
+<ListRow density="lg" selected={elegido === op.id} onClick={() => elegir(op.id)}
+    icon={op.icon} title={op.label} subtitle={op.hint}
+    trailing={<Checkbox checked={elegido === op.id} />} />
+```
+
+La casilla es lo que resuelve la ambigüedad — sin ella, "seleccionada" y
+"activa" se dibujan igual y no significan lo mismo.
+
+---
+
+### 15.8 `FileField` — adjuntar un archivo
+
+```jsx
+<FileField label="Constancia (PDF/IMG)" accept=".pdf,image/*" maxSizeMB={10}
+    file={archivo} url={guardado} onChange={setArchivo} />
+```
+
+Un adjunto es una **fila**, no una caja punteada (decisión 2c, 2026-07-27). En
+estos formularios el archivo casi siempre ya está y lo que más se hace es verlo
+o reemplazarlo; una zona de arrastre de 120px optimiza el caso menos frecuente y
+en un formulario con seis adjuntos deja una pared de cajas.
+
+Se arrastra igual. La fila se ilumina **solo cuando lo que viene son archivos** —
+se leen los tipos del `dataTransfer`, que el navegador sí expone durante el
+arrastre — y se queda quieta si es texto o un link.
+
+| prop | para qué |
+|---|---|
+| `emptyState` | `neutral` (opcional) · `pending` (falta y debería estar) · `missing` (falta y es error) |
+| `busy` + `busyLabel` | el archivo se sube al elegirlo y eso tarda |
+| `maxSizeMB` | límite real; **el texto de ayuda se deriva de acá**, no se escribe aparte |
+| `name` | nombre del archivo ya guardado en el servidor |
+
+Nunca un `<input type="file">` suelto. Las dos excepciones vivas son selectores
+de **foto** (avatar de empleado, foto de producto que abre el recortador): ahí
+el disparador es la imagen misma y el resultado va a otro flujo.
+
+---
+
+### 15.9 `LiquidTooltip` — nota al pasar el puntero
+
+```jsx
+<LiquidTooltip content="Se sincronizó hace 3 minutos" side="top">
+    <span>⟳ Sync</span>
+</LiquidTooltip>
+```
+
+**El tooltip es oscuro en los cuatro temas** (decisión 1a, 2026-07-27). No es
+una superficie de la pantalla, es una nota flotando encima, y esa distancia
+visual es lo que deja leerla de un vistazo.
+
+Lo que sí cambia por tema es la forma y el material, igual que en `Button`:
+redondeado y con blur en Liquid Glass, rectangular y opaco en Solid. Eso vive en
+`--tooltip-*` y `[data-surface="tooltip"]`, **no en props** — un radio fijo acá
+sería el mismo error que los 54 botones con `rounded-full`. En los dos temas
+oscuros el fondo se levanta un escalón: dos oscuros iguales no se separan.
+
+El texto secundario *dentro* del tooltip usa `text-content-tooltip-2`, no
+`text-content-3`. Los tokens normales siguen el tema; el tooltip no. Escribir
+`text-content-3` sobre él daba gris oscuro sobre fondo oscuro en tema claro —
+bug real, estaba en varios de los 30 tooltips escritos a mano.
+
+Se muestra también con el foco del teclado, no solo con el puntero.
 
 ---
 

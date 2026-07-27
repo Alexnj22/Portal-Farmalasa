@@ -1,14 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import Button from '../../components/common/Button';
-import { UploadCloud, Users, ShieldCheck, FileText, AlertCircle } from 'lucide-react';
+import { Users, ShieldCheck, FileText, AlertCircle } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
-import AlertModal from '../common/AlertModal';
+import FileField from '../common/FileField';
 
 const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
     const legalData = formData?.settings?.legal || {};
-    const [fileAlert, setFileAlert] = useState('');
 
     const possibleReferents = useMemo(() => {
         return employees.filter(emp => (emp.role || '').toUpperCase().includes('REFERENTE'));
@@ -99,51 +98,21 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     </div>
                 </div>
 
-                {/* UPLOAD FILE ESTILO LIQUID GLASS */}
-                <div>
-                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
-                        Autorización de la SRS (PDF/IMG)
-                    </label>
-                    <div className={`relative group border-2 border-dashed rounded-3xl p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-divider hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
-                        <input 
-                            type="file"
-                            accept="application/pdf,image/jpeg,image/png,image/webp"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base"
-                            onChange={(e) => {
-                                const f = e.target.files?.[0] || null;
-                                if (f) {
-                                    const ALLOWED = ['application/pdf','image/jpeg','image/png','image/webp'];
-                                    if (!ALLOWED.includes(f.type)) { setFileAlert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
-                                    if (f.size > 10 * 1024 * 1024) { setFileAlert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
-                                }
-                                updateLegalField('farmacovigilanciaAuthFile', f);
-                            }}
-                        />
-                        
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-surface-card text-chart-3-text border border-chart-3/30' : 'bg-surface-card text-content-3 border border-divider group-hover:text-chart-3-text group-hover:border-chart-3/30'}`}>
-                             {legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                            <p className={`text-body-sm font-black tracking-tight truncate ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'text-chart-3-text' : 'text-content-2'}`}>
-                                {legalData.farmacovigilanciaAuthFile ? legalData.farmacovigilanciaAuthFile.name : legalData.farmacovigilanciaAuthUrl ? "Autorización guardada" : "Toca para subir documento"}
-                            </p>
-                            <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
-                                {legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'Reemplazar archivo' : 'PDF, JPG o PNG (Máx 5MB)'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                {/* Migrado al canónico `FileField` (2c, 2026-07-27). Nota: el
+                    texto decía "Máx 5MB" y el código rechazaba a los 10 MB —
+                    ahora el límite es una sola prop y el aviso se deriva de
+                    ella, así que no pueden volver a desincronizarse. */}
+                <FileField
+                    label="Autorización de la SRS (PDF/IMG)"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    maxSizeMB={10}
+                    file={legalData.farmacovigilanciaAuthFile}
+                    url={legalData.farmacovigilanciaAuthUrl}
+                    onChange={f => updateLegalField('farmacovigilanciaAuthFile', f)}
+                />
 
             </div>
 
-            <AlertModal
-                isOpen={!!fileAlert}
-                onClose={() => setFileAlert('')}
-                type="error"
-                title="Archivo Inválido"
-                message={fileAlert}
-            />
         </div>
     );
 };

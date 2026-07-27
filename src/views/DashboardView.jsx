@@ -1297,12 +1297,12 @@ const DashboardView = ({ openModal }) => {
                   if (!chartData?.length) return <EmptyState compact icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
-                      <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
-                        <p className="font-black text-micro uppercase tracking-widest text-content-2 mb-1 border-b border-border-card pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
+                      <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2.5 py-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center">
+                        <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2 mb-1 border-b border-white/15 pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>
                             <p className="text-label font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / hora punta (P75)</p>
-                            <p className="text-caption text-content-3 mt-0.5">{item.dailyAvg} Tx / promedio del día</p>
+                            <p className="text-caption text-content-tooltip-2 mt-0.5">{item.dailyAvg} Tx / promedio del día</p>
                           </>
                         ):(
                           <p className="text-label font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / promedio</p>
@@ -2148,11 +2148,11 @@ const DashboardView = ({ openModal }) => {
       {/* Sales bar tooltip */}
       {salesBarTip && createPortal(
         <div style={{position:'fixed',top:salesBarTip.y-8,left:salesBarTip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
-          className="bg-slate-900 text-white rounded-xl shadow-xl px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col items-center gap-0.5 min-w-[70px]">
-          <span className="text-micro text-content-3 font-semibold">{salesBarTip.label}</span>
+          data-surface="tooltip" className="px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col items-center gap-0.5 min-w-[70px]">
+          <span className="text-micro text-content-tooltip-2 font-semibold">{salesBarTip.label}</span>
           {salesBarTip.amount&&<span className="text-caption text-success font-black">{salesBarTip.amount}</span>}
-          {salesBarTip.txCount>0&&<span className="text-micro text-content-3 font-semibold">{salesBarTip.txCount} tx</span>}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-900"/>
+          {salesBarTip.txCount>0&&<span className="text-micro text-content-tooltip-2 font-semibold">{salesBarTip.txCount} tx</span>}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 -mt-1 rotate-45" style={{ background: 'var(--tooltip-bg)' }}/>
         </div>,
         document.body
       )}
@@ -2160,7 +2160,7 @@ const DashboardView = ({ openModal }) => {
       {/* Calendar tooltip */}
       {calTooltip && createPortal(
         <div style={{position:'fixed',top:calTooltip.y-10,left:calTooltip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
-          className="bg-slate-900 text-white rounded-xl shadow-xl overflow-hidden max-w-[220px] min-w-[140px] animate-in fade-in zoom-in-95 duration-150">
+          data-surface="tooltip" className="overflow-hidden max-w-[220px] min-w-[140px] animate-in fade-in zoom-in-95 duration-150">
           {calTooltip.holidays?.length>0&&(
             <div className="px-3 py-2 border-b border-white/10">
               {calTooltip.holidays.map((h,i)=>(

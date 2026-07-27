@@ -139,7 +139,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 </div>
 
                 {/* Píldora de Estado */}
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border ${status.color} transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-20`}>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${status.color} transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-20`}>
                     <StatusIcon size={12} strokeWidth={2.5} /> {status.label}
                 </div>
             </div>
@@ -152,7 +152,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="flex flex-col gap-1.5 mt-2">
                     {effectiveIssueDate && (
                         <p className="text-[9px] font-bold text-content-3 flex items-center gap-1">
-                            <span className="text-content-2 uppercase tracking-widest text-[8px]">Emisión:</span> {formatDate(effectiveIssueDate)}
+                            <span className="text-content-2 uppercase tracking-widest text-[9px]">Emisión:</span> {formatDate(effectiveIssueDate)}
                         </p>
                     )}
                     {effectiveExpDate && (
@@ -376,7 +376,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <FolderOpen size={14} className={progress === 100 ? 'text-success' : 'text-brand-text'} />
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center w-20">
-                                <span className="text-[7px] font-black uppercase tracking-widest text-content-3 leading-none">Subidos</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-content-3 leading-none">Subidos</span>
                                 <span className={`text-[9px] font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand-text'}`}>{progress}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">

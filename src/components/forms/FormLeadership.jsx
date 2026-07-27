@@ -119,7 +119,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     {isSelected && <CheckCircle2 size={18} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                 </div>
                                 {isCurrentJefe && (
-                                    <div className="bg-warning/10 backdrop-blur-sm text-warning-text text-[8px] font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
+                                    <div className="bg-warning/10 backdrop-blur-sm text-warning-text text-[9px] font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
                                         Titular Actual
                                     </div>
                                 )}
@@ -162,14 +162,14 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm shrink-0"><CalendarDays size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col">
-                                        <span className="text-[8px] font-black text-content-2 uppercase tracking-widest leading-none">Antigüedad</span>
+                                        <span className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none">Antigüedad</span>
                                         <span className="text-[11px] font-bold text-content-2 mt-0.5">{getTenure(selectedEmp.hireDate || selectedEmp.hire_date)}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm shrink-0"><Phone size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col overflow-hidden">
-                                        <span className="text-[8px] font-black text-content-2 uppercase tracking-widest leading-none">Contacto</span>
+                                        <span className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none">Contacto</span>
                                         <span className="text-[11px] font-bold text-content-2 mt-0.5 truncate">{selectedEmp.phone || 'N/A'}</span>
                                     </div>
                                 </div>

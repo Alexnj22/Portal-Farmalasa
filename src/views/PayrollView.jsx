@@ -313,7 +313,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 <div className="w-px h-5 bg-divider mx-1" />
 
                                 <div className="text-right">
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-content-2">Total a pagar</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Total a pagar</p>
                                     <p className="text-[15px] font-black text-success-text">{fmt(branchNet)}</p>
                                 </div>
                             </div>
@@ -332,7 +332,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                                 <div>
                                                     <p className="font-black text-content text-[11px] leading-tight">{emp.name || '—'}</p>
                                                     {emp.role && <p className="text-[9px] text-content-3 font-medium leading-tight">{emp.role}</p>}
-                                                    {edited && <span className="text-[8px] font-black text-warning bg-warning/10 px-1.5 py-0.5 rounded-full border border-warning/30 inline-block mt-0.5">editado</span>}
+                                                    {edited && <span className="text-[9px] font-black text-warning bg-warning/10 px-1.5 py-0.5 rounded-full border border-warning/30 inline-block mt-0.5">editado</span>}
                                                 </div>
                                             </div>
                                         </DataCell>
@@ -568,7 +568,7 @@ const PayrollView = ({ openModal }) => {
                                                 <p className={`text-[11px] font-black leading-tight ${active?'text-brand-text':'text-content'}`}>{p.name}</p>
                                                 <div className="flex items-center justify-between mt-1.5">
                                                     <p className="text-[9px] text-content-3">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
-                                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
+                                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
                                                 </div>
                                             </button>
                                         );
@@ -650,7 +650,7 @@ const PayrollView = ({ openModal }) => {
                                                 { label:'Total a Pagar',  value:totals.net,      color:'text-success-text' },
                                             ].map(t => (
                                                 <div key={t.label} className="text-center bg-surface-card rounded-2xl py-3 px-2 border border-border-card">
-                                                    <p className="text-[8px] text-content-2 uppercase tracking-widest font-black">{t.label}</p>
+                                                    <p className="text-[9px] text-content-2 uppercase tracking-widest font-black">{t.label}</p>
                                                     <p className={`text-[16px] font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
                                                 </div>
                                             ))}

@@ -290,7 +290,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
                                 <p className="text-[15px] font-black text-content-2 leading-tight">{value}</p>
-                                <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
+                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
                             </div>
                         ))}
                     </div>
@@ -410,12 +410,12 @@ const EmployeeProfileView = ({ openModal }) => {
                                             : d.shift ? 'bg-surface-card border border-border-card'
                                                       : 'bg-surface-card-hover/80 border border-divider'
                                         }`}>
-                                            <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.short}</p>
+                                            <p className={`text-[9px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.short}</p>
                                             <p className={`text-[15px] font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.date?.getDate()}</p>
                                             {evCfg ? (
                                                 <>
                                                     <evCfg.Icon size={10} className={evCfg.text} strokeWidth={2} />
-                                                    <p className={`text-[8px] font-black mt-1 text-center leading-tight ${evCfg.text}`}>{evCfg.label}</p>
+                                                    <p className={`text-[9px] font-black mt-1 text-center leading-tight ${evCfg.text}`}>{evCfg.label}</p>
                                                 </>
                                             ) : d.shift ? (
                                                 <>
@@ -423,12 +423,12 @@ const EmployeeProfileView = ({ openModal }) => {
                                                     <p className={`text-[9px] font-black mt-1 text-center leading-tight ${isToday ? 'text-white' : 'text-content-2'}`}>
                                                         {formatTime12h(d.shift.start).replace(' AM','a').replace(' PM','p').replace(' am','a').replace(' pm','p')}
                                                     </p>
-                                                    <p className={`text-[8px] font-medium text-center leading-tight ${isToday ? 'text-white/50' : 'text-content-3'}`}>
+                                                    <p className={`text-[9px] font-medium text-center leading-tight ${isToday ? 'text-white/50' : 'text-content-3'}`}>
                                                         {formatTime12h(d.shift.end).replace(' AM','a').replace(' PM','p').replace(' am','a').replace(' pm','p')}
                                                     </p>
                                                 </>
                                             ) : (
-                                                <p className="text-[8px] font-bold text-content-3 mt-1">Libre</p>
+                                                <p className="text-[9px] font-bold text-content-3 mt-1">Libre</p>
                                             )}
                                         </div>
                                     );

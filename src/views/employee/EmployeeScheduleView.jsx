@@ -272,7 +272,7 @@ const EmployeeScheduleView = () => {
                                 <div className={`w-12 h-12 rounded-[1rem] flex flex-col items-center justify-center flex-shrink-0 ${
                                     d.isToday ? 'bg-brand text-white' : 'bg-surface-card-hover text-content-2'
                                 }`}>
-                                    <span className="text-[8px] font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
                                     <span className="text-[16px] font-black leading-tight">{d.date.getDate()}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">

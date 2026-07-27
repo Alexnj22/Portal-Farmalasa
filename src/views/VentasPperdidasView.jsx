@@ -192,7 +192,7 @@ export default function VentasPperdidasView() {
                                         {/* Quantity bubble */}
                                         <div className="shrink-0 w-10 h-10 rounded-xl bg-surface-card-hover border border-divider flex flex-col items-center justify-center">
                                             <span className="text-[14px] font-black text-content leading-none tabular-nums">{r.cantidad}</span>
-                                            <span className="text-[8px] font-bold text-content-3 leading-none mt-0.5">uds</span>
+                                            <span className="text-[9px] font-bold text-content-3 leading-none mt-0.5">uds</span>
                                         </div>
 
                                         <div className="flex-1 min-w-0">
@@ -234,7 +234,7 @@ export default function VentasPperdidasView() {
                                                             <img src={reporterPic} alt={reporter} className="w-3.5 h-3.5 rounded-full object-cover border border-divider shrink-0" />
                                                         ) : (
                                                             <span className="w-3.5 h-3.5 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
-                                                                <span className="text-[6px] font-black text-content-3 leading-none">{reporter[0]}</span>
+                                                                <span className="text-[9px] font-black text-content-3 leading-none">{reporter[0]}</span>
                                                             </span>
                                                         )}
                                                         {reporter}

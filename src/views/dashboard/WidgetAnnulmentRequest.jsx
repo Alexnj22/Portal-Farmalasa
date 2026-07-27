@@ -66,7 +66,7 @@ function DocBadge({ tipo }) {
   if (!tipo) return null;
   const isCCF = tipo === 'CCF';
   return (
-    <span className={`shrink-0 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md ${
+    <span className={`shrink-0 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${
       isCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'
     }`}>{tipo}</span>
   );
@@ -74,7 +74,7 @@ function DocBadge({ tipo }) {
 function PayBadge({ tipo }) {
   if (!tipo) return null;
   return (
-    <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success-text uppercase">
+    <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success-text uppercase">
       {tipo}
     </span>
   );
@@ -186,14 +186,14 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
                 { label: 'ID Venta',      value: `#${inv.id}`, mono: true },
               ].map(({ label, value, mono }, i) => (
                 <div key={i} className={`px-3 py-1.5 ${i > 0 ? 'border-t border-divider' : ''}`}>
-                  <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">{label}</p>
+                  <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">{label}</p>
                   <p className={`text-[11px] font-bold text-content-2 ${mono ? 'font-mono' : ''}`}>{value}</p>
                 </div>
               ))}
             </div>
             <div>
               <div className="px-3 py-1.5 border-b border-divider">
-                <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">Vendedor</p>
+                <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">Vendedor</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <VendorAvatar employee={vendor} size={5} />
                   <p className="text-[11px] font-bold text-content-2 truncate">
@@ -202,11 +202,11 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
                 </div>
               </div>
               <div className="px-3 py-1.5 border-b border-divider">
-                <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">Fecha</p>
+                <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">Fecha</p>
                 <p className="text-[12px] font-black text-content">{fmtDate(inv.fecha)}</p>
               </div>
               <div className="px-3 py-1.5">
-                <p className="text-[8px] font-black text-content-2 uppercase tracking-wider">Total</p>
+                <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">Total</p>
                 <p className="text-[13px] font-black text-content">{fmtCurrency(inv.total)}</p>
               </div>
             </div>
@@ -977,7 +977,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                 <p className={`text-[11px] font-black ${ok ? 'text-content-2' : 'text-content-3'}`}>
                   {fmtCurrency(inv.total)}
                 </p>
-                <p className="text-[8px] text-content-3">{fmtDate(inv.fecha)}</p>
+                <p className="text-[9px] text-content-3">{fmtDate(inv.fecha)}</p>
               </div>
 
               <div className="flex items-center gap-1 shrink-0">

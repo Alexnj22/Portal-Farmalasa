@@ -68,7 +68,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
     return (
         <div className="rounded-2xl border border-border-card p-2 flex flex-col gap-1" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[8px] font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
                     <motion.button
                         whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
@@ -126,7 +126,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                                     }}
                                     disabled={count === 0}>
                                     <span className="text-[11px] font-black text-content-2 tabular-nums leading-none">{count || '—'}</span>
-                                    {count > 0 && <span className="text-[8px] font-semibold text-content-3 block">{abc}{xyz}</span>}
+                                    {count > 0 && <span className="text-[9px] font-semibold text-content-3 block">{abc}{xyz}</span>}
                                 </motion.button>
                             );
                         })}
@@ -139,7 +139,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                 {XYZ_KEYS.map((xyz, i) => {
                     const descs = ['Estable', 'Mod.', 'Errática'];
                     return (
-                        <span key={xyz} className="flex items-center gap-0.5 text-[8px]">
+                        <span key={xyz} className="flex items-center gap-0.5 text-[9px]">
                             <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-brand-text' : 'text-content-3'}`}>{xyz}</span>
                             <span className="text-content-3">{descs[i]}</span>
                         </span>

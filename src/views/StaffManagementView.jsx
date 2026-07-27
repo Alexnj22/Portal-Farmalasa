@@ -312,7 +312,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             {birthdayInfo?.isToday && (
               <div className="absolute -top-2 left-0 right-4 h-4 pointer-events-none opacity-70 overflow-visible">
                 <span className="absolute top-0 left-1 text-[10px] animate-bounce">🎉</span>
-                <span className="absolute top-1 left-9 text-[8px] animate-bounce [animation-delay:150ms]">✨</span>
+                <span className="absolute top-1 left-9 text-[9px] animate-bounce [animation-delay:150ms]">✨</span>
                 <span className="absolute top-0 right-2 text-[10px] animate-bounce [animation-delay:300ms]">🎊</span>
               </div>
             )}
@@ -326,7 +326,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {birthdayInfo && (
                 <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.tooltip}>
                   <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-chart-6-text scale-125' : 'text-chart-6'} shrink-0`} />
-                  <span className={`text-[8px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6 px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
+                  <span className={`text-[9px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6 px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
                      {birthdayInfo.label}
                   </span>
                 </div>
@@ -334,13 +334,13 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {anniversaryInfo && (
                 <div className="flex items-center gap-0.5" title={`Aniversario laboral: Cumple ${anniversaryInfo.years} años el día ${anniversaryInfo.day} de este mes`}>
                   <Medal size={12} strokeWidth={2.5} className="text-warning shrink-0" />
-                  <span className="text-[8px] font-black text-warning-text bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
+                  <span className="text-[9px] font-black text-warning-text bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
                 </div>
               )}
               {expiryInfo && (
                 <div className="flex items-center gap-0.5" title={expiryInfo.tooltip}>
                   <ShieldAlert size={12} strokeWidth={2.5} className={`${expiryInfo.isExpired ? 'text-danger' : 'text-warning'} shrink-0`} />
-                  <span className={`text-[8px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-danger-text bg-danger/10' : 'text-warning-text bg-warning/10'}`}>{expiryInfo.label}</span>
+                  <span className={`text-[9px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-danger-text bg-danger/10' : 'text-warning-text bg-warning/10'}`}>{expiryInfo.label}</span>
                 </div>
               )}
             </div>
@@ -376,7 +376,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {rolesArray.map((roleObj, idx) => {
             const theme = getRoleTheme(roleObj.original);
             return (
-              <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-[6px] text-[8px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${theme.bg} ${theme.text} ${theme.border}`}>
+              <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-[6px] text-[9px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${theme.bg} ${theme.text} ${theme.border}`}>
                 {roleObj.display}
               </span>
             );
@@ -455,7 +455,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <p className="font-black text-content text-[12px] md:text-[13px] truncate tracking-tight" title={fullName}>{fullName}</p>
-              <span className="text-[8px] font-black uppercase tracking-widest text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
             </div>
             <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest truncate mt-0.5">
               {p.institucion_educativa} · {fmtShortDate(p.fecha_inicio)}→{fmtShortDate(p.fecha_fin)}
@@ -472,7 +472,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       </DataCell>
 
       <DataCell className="max-w-[200px]">
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[8px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[9px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
           <GraduationCap size={10} strokeWidth={2.5} /> Horas Sociales
         </span>
       </DataCell>

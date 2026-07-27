@@ -75,7 +75,7 @@ const ScheduleChart = ({
                 ) : currentChartData.length === 0 ? (
                     <div className="absolute inset-0 flex items-center justify-center gap-2 text-content-3 z-10">
                         <BarChart2 size={18} strokeWidth={1.5} />
-                        <span className="text-[8px] font-black uppercase tracking-widest">Sin historial</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest">Sin historial</span>
                     </div>
                 ) : (
                     currentChartData.map((item, i) => (
@@ -99,7 +99,7 @@ const ScheduleChart = ({
                             <div
                                 className={`relative w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-10 overflow-hidden ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
                                 style={{ height: item.height, backgroundColor: item.color }}>
-                                <span className="absolute bottom-0.5 inset-x-0 text-center text-[7px] font-black text-white/90 leading-none pointer-events-none">
+                                <span className="absolute bottom-0.5 inset-x-0 text-center text-[9px] font-black text-white/90 leading-none pointer-events-none">
                                     {item.label}
                                 </span>
                             </div>

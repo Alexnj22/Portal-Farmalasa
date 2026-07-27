@@ -243,24 +243,24 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="col-span-1">
-                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Presentación</label>
+                    <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">Presentación</label>
                     <LiquidSelect value={item.presentacionId} onChange={v => updateItem(item._id, 'presentacionId', v)}
                         options={presOptions} placeholder={presOptions.length === 0 ? 'Sin precios' : 'Seleccionar...'}
                         icon={Tag} compact clearable={false} />
                 </div>
                 <div className="col-span-1">
-                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Tipo Precio</label>
+                    <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">Tipo Precio</label>
                     <LiquidSelect value={item.priceType} onChange={v => updateItem(item._id, 'priceType', v)}
                         options={priceOptions} placeholder="Precio..." icon={Percent} compact clearable={false} />
                 </div>
                 <div>
-                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Cantidad</label>
+                    <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">Cantidad</label>
                     <input type="number" min="0" step="0.001" value={item.cantidad}
                         onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
                         className="w-full bg-surface-card border border-border-card rounded-2xl px-3 py-2.5 text-[16px] font-bold text-content text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
                 </div>
                 <div>
-                    <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
+                    <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-content-3">$</span>
                         <input type="number" min="0" step="0.01" value={item.precioUnitario}

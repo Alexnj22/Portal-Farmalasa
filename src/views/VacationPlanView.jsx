@@ -247,7 +247,7 @@ const GanttChart = ({ plans, year }) => {
                                                 >
                                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-50 pointer-events-none">
                                                         <div className="bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
-                                                            <span className="block font-black text-[8px] uppercase tracking-widest text-content-2 mb-0.5">{meta.label}</span>
+                                                            <span className="block font-black text-[9px] uppercase tracking-widest text-content-2 mb-0.5">{meta.label}</span>
                                                             <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
                                                             <span className="ml-2 text-content-3">· {p.days}d</span>
                                                         </div>
@@ -1014,12 +1014,12 @@ const VacationPlanView = () => {
                                                                     </div>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
-                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
+                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
                                                                             <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
-                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[7px] mb-0.5">Fecha original</span>
+                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[9px] mb-0.5">Fecha original</span>
                                                                                 <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
-                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[7px] mt-1 mb-0.5">Fecha actual</span>
+                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[9px] mt-1 mb-0.5">Fecha actual</span>
                                                                                 <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)} · {p.days}d</span>
                                                                             </span>
                                                                         </span>

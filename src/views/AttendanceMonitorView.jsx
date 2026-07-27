@@ -564,7 +564,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <div
                 key={`${p.timestamp}-${idx}`}
                 className={[
-                  "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[8px] font-bold uppercase tracking-wider",
+                  "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider",
                   isLatest
                     ? "bg-surface-card border-chart-1/30 text-chart-1-text shadow-sm"
                     : "bg-surface-card border-black/5 text-content-3",

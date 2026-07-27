@@ -97,7 +97,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                     {...sp}
                     className={btn.cls}>
                     {btn.icon}
-                    <span className="text-[7px] font-bold leading-none">{btn.label}</span>
+                    <span className="text-[9px] font-bold leading-none">{btn.label}</span>
                 </motion.button>
             ))}
 
@@ -109,7 +109,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                         {...sp}
                         className={`${B} text-content-3 hover:text-content-2 hover:bg-surface-card-hover`}>
                         <MoreHorizontal size={13}/>
-                        <span className="text-[7px] font-bold leading-none">Más</span>
+                        <span className="text-[9px] font-bold leading-none">Más</span>
                     </motion.button>
                 </div>
             )}

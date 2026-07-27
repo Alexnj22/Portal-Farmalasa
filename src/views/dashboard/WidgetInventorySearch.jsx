@@ -224,13 +224,13 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
       {/* Header row: nombre + estatus + reportar */}
       <div className="flex items-start gap-1.5">
         <p className="text-[11px] font-black text-content leading-tight flex-1">{nombre || '—'}</p>
-        <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-full ${
+        <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-full ${
           activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
         }`}>
           {activo ? 'ACTIVO' : 'INACTIVO'}
         </span>
         {rState === 'done' ? (
-          <span className="shrink-0 flex items-center gap-1 text-[8px] font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
+          <span className="shrink-0 flex items-center gap-1 text-[9px] font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
             <CheckCircle2 size={8} strokeWidth={2.5} />OK
           </span>
         ) : formOpen ? (
@@ -244,7 +244,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
             <button
               onClick={submit}
               disabled={rState === 'saving'}
-              className="px-1.5 py-0.5 rounded-full bg-danger hover:bg-danger/80 text-white text-[8px] font-black transition-colors disabled:opacity-50"
+              className="px-1.5 py-0.5 rounded-full bg-danger hover:bg-danger/80 text-white text-[9px] font-black transition-colors disabled:opacity-50"
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>
@@ -255,7 +255,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
         ) : (
           <button
             onClick={() => setFormOpen(true)}
-            className="shrink-0 flex items-center gap-0.5 text-[8px] font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full transition-colors"
+            className="shrink-0 flex items-center gap-0.5 text-[9px] font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full transition-colors"
           >
             <PackageMinus size={8} strokeWidth={2.5} />
             Reportar
@@ -688,7 +688,7 @@ export default function WidgetInventorySearch() {
                         <div className="mt-1 space-y-0.5">
                           {prod.lots.map((r, li) => (
                             <div key={li} className="flex items-center gap-1.5">
-                              <span className="text-[8px] font-mono text-content-3 truncate">{r.lote || '—'}</span>
+                              <span className="text-[9px] font-mono text-content-3 truncate">{r.lote || '—'}</span>
                               <ExpiryBadge date={r.fecha_vencimiento} />
                               <span className="text-[9px] font-black text-danger-text tabular-nums ml-auto">{r.cantidad}</span>
                             </div>

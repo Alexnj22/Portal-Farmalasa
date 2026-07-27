@@ -46,7 +46,7 @@ function NetCell({ b }) {
                 }`}>{b.stk.toLocaleString()}</span>
             </div>
             {pedir !== null && (
-                <span className="text-[8px] font-semibold text-danger tabular-nums">P:{pedir.toLocaleString()}</span>
+                <span className="text-[9px] font-semibold text-danger tabular-nums">P:{pedir.toLocaleString()}</span>
             )}
         </div>
     );

@@ -680,7 +680,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                             </div>
                             <div className="flex items-start gap-2 shrink-0">
                               <div className="text-right">
-                                <p className="text-[8px] text-content-2 uppercase tracking-wider">acumulado</p>
+                                <p className="text-[9px] text-content-2 uppercase tracking-wider">acumulado</p>
                                 <p className={`text-[15px] font-black ${timeCls} leading-tight`}>{fmtMin(cumul)}</p>
                               </div>
                               <button
@@ -754,7 +754,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-bold text-content-2">Bodega — Vuelta en base</p>
                           <div className="text-right">
-                            <p className="text-[8px] text-content-2 uppercase tracking-wider">total estimado</p>
+                            <p className="text-[9px] text-content-2 uppercase tracking-wider">total estimado</p>
                             <p className="text-[15px] font-black text-content leading-tight">{fmtMin(totalTime)}</p>
                           </div>
                         </div>
@@ -771,17 +771,17 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="flex-1 bg-chart-3/10 rounded-xl px-3 py-2 border border-chart-3/30 text-center">
                     <p className="text-[9px] text-chart-3-text font-semibold uppercase tracking-wider">Distancia</p>
                     <p className="text-[15px] font-black text-chart-3-text">{fmtDist(totalDist)}</p>
-                    <p className="text-[8px] text-chart-3-text">ida + vuelta a bodega</p>
+                    <p className="text-[9px] text-chart-3-text">ida + vuelta a bodega</p>
                   </div>
                   <div className="flex-1 bg-warning/10 rounded-xl px-3 py-2 border border-warning/30 text-center">
                     <p className="text-[9px] text-warning font-semibold uppercase tracking-wider">Tiempo total</p>
                     <p className="text-[15px] font-black text-warning-text">{fmtMin(totalTime)}</p>
-                    <p className="text-[8px] text-warning-text/60">conducir + descargas</p>
+                    <p className="text-[9px] text-warning-text/60">conducir + descargas</p>
                   </div>
                   <div className="flex-1 bg-surface-card-hover rounded-xl px-3 py-2 border border-divider text-center">
                     <p className="text-[9px] text-content-2 font-semibold uppercase tracking-wider">Solo conducir</p>
                     <p className="text-[15px] font-black text-content-2">{fmtMin(totalDriveMin)}</p>
-                    <p className="text-[8px] text-content-3">sin descargas</p>
+                    <p className="text-[9px] text-content-3">sin descargas</p>
                   </div>
                 </div>
               )}

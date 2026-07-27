@@ -358,8 +358,8 @@ const BranchCard = memo(({
                             <alertStatus.icon size={14} strokeWidth={2.5} />
                         </div>
                         <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-border-card z-50">
-                            <p className="text-[8px] text-content-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-card pb-1.5 flex items-center justify-between">
-                                Problemas Detectados <span className="bg-danger/20 text-danger px-1.5 py-0.5 rounded text-[7px]">{alertStatus.list.length}</span>
+                            <p className="text-[9px] text-content-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-card pb-1.5 flex items-center justify-between">
+                                Problemas Detectados <span className="bg-danger/20 text-danger px-1.5 py-0.5 rounded text-[9px]">{alertStatus.list.length}</span>
                             </p>
                             <div className="space-y-2.5">
                                 {alertStatus.list.map((al, idx) => (
@@ -394,7 +394,7 @@ const BranchCard = memo(({
 
                             <div className="flex items-center gap-2 mt-1">
                                 {branch.type && branch.type !== 'FARMACIA' && (
-                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-surface-card-hover text-content-3 border-divider'}`}>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-surface-card-hover text-content-3 border-divider'}`}>
                                         {BRANCH_TYPE_META[branch.type]?.label}
                                     </span>
                                 )}
@@ -426,14 +426,14 @@ const BranchCard = memo(({
                         <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-brand-text"><Phone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Fijo</p>
+                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Fijo</p>
                                 <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.phone || "—"}</p>
                             </div>
                         </button>
                         <button onClick={(e) => handlePhoneAction(e, branch.cell, 'Celular')} className={`group/cell flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full pr-8 ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-brand-text"><Smartphone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Celular</p>
+                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Celular</p>
                                 <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
                             </div>
                             {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 transition-all hover:bg-success hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}

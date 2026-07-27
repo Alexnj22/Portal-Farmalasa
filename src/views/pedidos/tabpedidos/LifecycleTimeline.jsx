@@ -27,7 +27,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     return (
         <div className="group/pb relative">
             <motion.span
-                className={`inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
+                className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
                     isActive ? 'bg-warning text-white' : 'bg-white text-warning border border-warning/40'
                 }`}
                 animate={isActive ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
@@ -39,11 +39,11 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-[200] hidden group-hover/pb:block pointer-events-none">
                     <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
                         <div className="text-[9px] font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
-                        <div className="text-[8px] text-content-3">
+                        <div className="text-[9px] text-content-3">
                             Pausó: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span>
                             {empName(pause.pausado_por) && <span className="text-content-3"> · {empName(pause.pausado_por)}</span>}
                         </div>
-                        <div className="text-[8px] text-content-3">
+                        <div className="text-[9px] text-content-3">
                             Reanudó:{' '}
                             {pause.reanudado_at
                                 ? <>

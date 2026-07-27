@@ -354,9 +354,9 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
                       ) : null; })()}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {isAutoPunch(p)    && <span className="text-[8px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full">Auto</span>}
-                      {isPendingPunch(p) && <span className="text-[8px] font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
-                      {isEditedPunch(p)  && <span className="text-[8px] font-black bg-success/10 text-success border border-success/30 px-1.5 py-0.5 rounded-full">Editado</span>}
+                      {isAutoPunch(p)    && <span className="text-[9px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full">Auto</span>}
+                      {isPendingPunch(p) && <span className="text-[9px] font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
+                      {isEditedPunch(p)  && <span className="text-[9px] font-black bg-success/10 text-success border border-success/30 px-1.5 py-0.5 rounded-full">Editado</span>}
                     </div>
                   </div>
                 ))}
@@ -496,7 +496,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
       <div className="flex items-start gap-3">
         {/* Date pill */}
         <div className={`w-11 h-11 rounded-[1rem] flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-brand text-white' : isOff ? 'bg-surface-card-hover text-content-3' : 'bg-surface-card-hover text-content-2'}`}>
-          <span className="text-[8px] font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
+          <span className="text-[9px] font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
           <span className="text-[16px] font-black leading-tight">{dayD.getUTCDate()}</span>
         </div>
 
@@ -504,7 +504,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
             <span className="text-[12px] font-black text-content">{DAY_NAMES_FULL[dow]}</span>
-            {isToday && <span className="text-[8px] font-black uppercase tracking-widest bg-brand text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
+            {isToday && <span className="text-[9px] font-black uppercase tracking-widest bg-brand text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
             {isOff && (
               isNoSchedule
                 ? <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-dashed border-divider px-2 py-0.5 rounded-full">Sin turno</span>
@@ -572,7 +572,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-black text-content">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
                     {lateMin > 0 && <span className="text-[9px] font-black text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">+{lateMin} min</span>}
-                    {isEditedPunch(entryPunch) && <span className="text-[8px] font-black text-success">✎</span>}
+                    {isEditedPunch(entryPunch) && <span className="text-[9px] font-black text-success">✎</span>}
                   </div>
                 ) : (
                   <p className="text-[11px] font-black text-content-3">—</p>
@@ -588,9 +588,9 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 {exitPunch ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-black text-content">{fmtTimeCSTStr(exitPunch.timestamp)}</p>
-                    {isAutoPunch(exitPunch)  && <span className="text-[8px] font-black text-chart-3-text">Auto</span>}
-                    {isPendingPunch(exitPunch) && <span className="text-[8px] font-black text-warning">Pend.</span>}
-                    {isEditedPunch(exitPunch) && <span className="text-[8px] font-black text-success">✎</span>}
+                    {isAutoPunch(exitPunch)  && <span className="text-[9px] font-black text-chart-3-text">Auto</span>}
+                    {isPendingPunch(exitPunch) && <span className="text-[9px] font-black text-warning">Pend.</span>}
+                    {isEditedPunch(exitPunch) && <span className="text-[9px] font-black text-success">✎</span>}
                   </div>
                 ) : (
                   <p className="text-[11px] font-black text-content-3">—</p>
@@ -755,7 +755,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               : <span className="text-[16px]">{emp.name?.charAt(0) || '?'}</span>}
           </div>
           {alertColor ? (
-            <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-[8px] font-black shadow-sm`}>
+            <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-[9px] font-black shadow-sm`}>
               {alerts.total}
             </div>
           ) : (
@@ -772,22 +772,22 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {alerts.inconsistencies > 0 && (
-                <span className="flex items-center gap-0.5 text-[8px] font-black bg-danger/10 text-danger border border-danger/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-[9px] font-black bg-danger/10 text-danger border border-danger/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <AlertTriangle size={7} strokeWidth={3} /> {alerts.inconsistencies} faltante{alerts.inconsistencies > 1 ? 's' : ''}
                 </span>
               )}
               {alerts.autoPunched > 0 && (
-                <span className="flex items-center gap-0.5 text-[8px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-[9px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <Bot size={7} strokeWidth={2.5} /> {alerts.autoPunched} auto
                 </span>
               )}
               {alerts.pendingReview > 0 && (
-                <span className="flex items-center gap-0.5 text-[8px] font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-[9px] font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <ShieldAlert size={7} strokeWidth={2.5} /> {alerts.pendingReview} pend.
                 </span>
               )}
               {hasCrossBranch && (
-                <span className="flex items-center gap-0.5 text-[8px] font-black bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-[9px] font-black bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo
                 </span>
               )}
@@ -802,7 +802,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               <span className="text-[15px] font-black text-content tabular-nums leading-none">
                 {totalReg.toFixed(1)}<span className="text-[10px] font-bold text-content-3 ml-0.5">h</span>
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-content-2 mt-0.5">regular</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-content-2 mt-0.5">regular</span>
             </div>
           )}
           {totalOT > 0 && (
@@ -810,7 +810,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               <span className="text-[15px] font-black text-warning tabular-nums leading-none">
                 {totalOT.toFixed(1)}<span className="text-[10px] font-bold text-warning ml-0.5">h</span>
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-warning mt-0.5">extra</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-warning mt-0.5">extra</span>
             </div>
           )}
           {totalLate > 0 && (
@@ -818,13 +818,13 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               <span className="text-[15px] font-black text-chart-4-text tabular-nums leading-none">
                 {totalLate}<span className="text-[10px] font-bold text-chart-4-text/70 ml-0.5">m</span>
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-chart-4-text mt-0.5">tardanza</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-chart-4-text mt-0.5">tardanza</span>
             </div>
           )}
           {totalAbs > 0 && (
             <div className="flex flex-col items-end min-w-[2rem]">
               <span className="text-[15px] font-black text-danger tabular-nums leading-none">{totalAbs}</span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-danger mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-danger mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
             </div>
           )}
           {(totalNocturnal + totalNoctOT) > 0 && (
@@ -833,14 +833,14 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 🌙 {(totalNocturnal + totalNoctOT).toFixed(1)}<span className="text-[9px] font-bold text-chart-3-text/70 ml-0.5">h</span>
                 <NocturnalLegalInfo />
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-chart-3-text mt-0.5">noct.</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text mt-0.5">noct.</span>
             </div>
           )}
           {!allApproved && onApproveAll && (
             <button
               type="button"
               onClick={e => { e.stopPropagation(); onApproveAll(); }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
             >
               <ShieldCheck size={9} strokeWidth={2.5} /> Aprobar todo
             </button>
@@ -849,14 +849,14 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           {allApproved ? (
             <div className="flex flex-col items-center min-w-[2.5rem]">
               <ShieldCheck size={16} className="text-success" strokeWidth={2} />
-              <span className="text-[7px] font-black uppercase tracking-widest text-success mt-0.5">OK</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-success mt-0.5">OK</span>
             </div>
           ) : (
             <div className="flex flex-col items-end min-w-[2.5rem]">
               <span className="text-[13px] font-black text-content-3 tabular-nums leading-none">
                 {empTimesheets.filter(t => t.status === 'APPROVED').length}/{empTimesheets.length}
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-content-2 mt-0.5">aprob.</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-content-2 mt-0.5">aprob.</span>
             </div>
           )}
         </div>
@@ -878,7 +878,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 {isMonday && idx > 0 && (
                   <div className="flex items-center gap-2 pt-1">
                     <div className="h-px flex-1 bg-gradient-to-r from-divider to-transparent" />
-                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-content-3">nueva semana</span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-content-3">nueva semana</span>
                     <div className="h-px w-8 bg-divider" />
                   </div>
                 )}
@@ -1247,7 +1247,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
         <button type="button" onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
           className="flex flex-col items-center px-2 py-1 min-w-[110px] rounded-2xl hover:bg-black/[0.04] transition-all">
           <span className={`text-[12px] font-black leading-none whitespace-nowrap ${pillLabelText}`}>{quincenaLabel}</span>
-          <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentQuincena)}`}>
+          <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentQuincena)}`}>
             {isCurrentQuincena ? 'Actual' : '← Ir a hoy'}
           </span>
         </button>

@@ -564,7 +564,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </span>
                     )}
                     {!isExpanded && badge > 0 && (
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger text-white text-[8px] font-black rounded-full flex items-center justify-center z-20">
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center z-20">
                             {badge > 9 ? '9+' : badge}
                         </span>
                     )}
@@ -951,7 +951,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
-                                    <span className="text-[8px] font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
+                                    <span className="text-[9px] font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
                                 </div>
                             )}
                         </div>
@@ -999,7 +999,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
                                     <h1 className="text-[14px] font-black leading-none tracking-tight text-slate-800">Portal</h1>
-                                    <p className="text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">

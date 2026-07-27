@@ -175,7 +175,7 @@ const HolidaysPanel = ({
                                             <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
                                                 {/* Date badge */}
                                                 <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-chart-1/10 border border-chart-1/30'}`}>
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-chart-1-text'}`}>{dayName}</span>
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-chart-1-text'}`}>{dayName}</span>
                                                     <span className={`text-[17px] font-black leading-tight ${isNat ? 'text-warning-text' : 'text-chart-1-text'}`}>{dayNum}</span>
                                                 </div>
                                                 {/* Info */}
@@ -738,7 +738,7 @@ const SchedulesView = ({ openModal, setView }) => {
                     </button>
                 </div>
                 <div className="flex flex-col justify-center items-center px-4 py-2 whitespace-nowrap">
-                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-warning' : 'text-content-3'}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-warning' : 'text-content-3'}`}>
                         {!isDefaultWeek ? 'Semana filtrada' : 'Semana actual'}
                     </span>
                     <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-warning' : 'text-content'}`}>

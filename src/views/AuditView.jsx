@@ -83,7 +83,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                         </span>
                         {/* 🚨 MEJORA: Muestra la sucursal debajo del nombre si existe */}
                         {log.branch_name && (
-                            <span className="text-[8px] md:text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
+                            <span className="text-[9px] md:text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
                                 {log.branch_name}
                             </span>
                         )}
@@ -91,7 +91,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 </div>
             </DataCell>
             <DataCell>
-                <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-surface-card backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
+                <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-[9px] md:text-[9px] font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-surface-card backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
                     {severityInfo.icon} <span className="hidden sm:inline">{log.action?.replace(/_/g, ' ') || 'ACCIÓN'}</span>
                 </span>
             </DataCell>

@@ -88,7 +88,7 @@ const BranchTabLegal = ({
                         <div className="relative focus-within:z-50">
                             <label className="text-[10px] font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Regente Asignado
-                                {availableRegents.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-[8px] border border-warning/30">Sin personal</span>}
+                                {availableRegents.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-[9px] border border-warning/30">Sin personal</span>}
                             </label>
                             <div className={`rounded-[1rem] h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect
@@ -134,7 +134,7 @@ const BranchTabLegal = ({
                         <div className="relative focus-within:z-50">
                             <label className="text-[10px] font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Referente Asignado
-                                {availablePharmacovigilance.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-[8px] border border-warning/30">Sin personal</span>}
+                                {availablePharmacovigilance.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-[9px] border border-warning/30">Sin personal</span>}
                             </label>
                             <div className={`rounded-[1rem] h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect

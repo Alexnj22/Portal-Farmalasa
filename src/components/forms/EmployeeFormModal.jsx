@@ -235,7 +235,7 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
     <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
         <label className="text-[10px] font-black uppercase tracking-widest text-content-2 ml-1 mb-1.5 flex items-center justify-between">
             <span>{label}</span>
-            <span className="text-[8px] font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-md flex items-center gap-1">
+            <span className="text-[9px] font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-md flex items-center gap-1">
                 <Lock size={8} strokeWidth={3} /> Acción RRHH
             </span>
         </label>

@@ -353,7 +353,7 @@ const RolesView = ({ openModal }) => {
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
-                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-divider shadow-sm z-10`}>
+                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-divider shadow-sm z-10`}>
                         Staff
                     </div>
                 )}
@@ -389,7 +389,7 @@ const RolesView = ({ openModal }) => {
                 )}
 
                 {isExporting && (
-                    <span className="text-[8px] font-bold text-content-2 uppercase tracking-widest bg-surface-card px-2 py-1 rounded-md">
+                    <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest bg-surface-card px-2 py-1 rounded-md">
                         {roleEmps.length} Empleados
                     </span>
                 )}
@@ -726,7 +726,7 @@ const RolesView = ({ openModal }) => {
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
                                             {role.max_limit < 99 && (
-                                                <div className={`absolute -top-3 right-4 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                                                <div className={`absolute -top-3 right-4 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
                                                     {isGlobal ? <Globe size={10} strokeWidth={2.5}/> : <Building2 size={10} strokeWidth={2.5}/>}
                                                     <span>{isGlobal ? 'GLOBAL' : 'LOCAL'} MAX: {role.max_limit}</span>
                                                 </div>
@@ -744,12 +744,12 @@ const RolesView = ({ openModal }) => {
                                                                 {role.name}
                                                             </h4>
                                                             {isRoot && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-[8px] font-black uppercase tracking-widest bg-brand/10 text-brand-text flex-shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-[9px] font-black uppercase tracking-widest bg-brand/10 text-brand-text flex-shrink-0">
                                                                     Raíz
                                                                 </span>
                                                             )}
                                                             {isExternal && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-divider text-[8px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md border border-divider text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">
                                                                     Staff
                                                                 </span>
                                                             )}
@@ -757,13 +757,13 @@ const RolesView = ({ openModal }) => {
 
                                                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                                             {!isRoot && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-surface-card backdrop-blur-sm text-content-3 px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`}>
+                                                                <div className="inline-flex items-center gap-1.5 bg-surface-card backdrop-blur-sm text-content-3 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`}>
                                                                     <CornerDownRight size={10} className="shrink-0 mt-[1px]" /> Rep: {getSuperiorName(role.parent_role_id)}
                                                                 </div>
                                                             )}
 
                                                             {hasDualReporting && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
+                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
                                                                     <GitMerge size={10} className="shrink-0 mt-[1px]" /> Mat: {getSuperiorName(role.secondary_parent_role_id)}
                                                                 </div>
                                                             )}

@@ -78,8 +78,8 @@ function vencimientoStatus(fechaVencimiento) {
 }
 function VencimientoBadge({ status }) {
     if (!status) return null;
-    if (status === 'VENCIDO') return <span className="text-[8px] font-black uppercase text-danger-text bg-danger/10 border border-danger/40 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
-    return <span className="text-[8px] font-black uppercase text-warning-text bg-warning/10 border border-warning/40 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
+    if (status === 'VENCIDO') return <span className="text-[9px] font-black uppercase text-danger-text bg-danger/10 border border-danger/40 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
+    return <span className="text-[9px] font-black uppercase text-warning-text bg-warning/10 border border-warning/40 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
 }
 
 // Indicador "en vivo" — animate-pulse de Tailwind usa un único keyframe
@@ -88,7 +88,7 @@ function VencimientoBadge({ status }) {
 function LiveBadge() {
     return (
         <span
-            className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wide text-success-text bg-success/10 border border-success/40 px-1.5 py-0.5 rounded-full animate-pulse shrink-0"
+            className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wide text-success-text bg-success/10 border border-success/40 px-1.5 py-0.5 rounded-full animate-pulse shrink-0"
             title="En vivo — se actualiza hasta que se cuente"
         >
             <Radio size={9} strokeWidth={3} /> Vivo
@@ -215,7 +215,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                 <div className="flex flex-col items-center gap-0.5">
                     {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-success" /> : <span className="text-content-3 text-[9px]">Pendiente</span>)}
                     {contadoPorNombre && (
-                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[8px] font-semibold text-content-3 hover:text-chart-9-text transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
+                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[9px] font-semibold text-content-3 hover:text-chart-9-text transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
                             <History size={9} /> {contadoPorNombre}
                         </button>
                     )}
@@ -235,7 +235,7 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                             <p className="font-bold text-content text-[12px] truncate">{product.product_nombre || `Producto ${product.erp_product_id}`}</p>
-                            {product.es_antibiotico && <span className="text-[7px] font-black uppercase text-danger-text bg-danger/10 border border-danger/30 px-1 py-0.5 rounded shrink-0">Bajo Receta</span>}
+                            {product.es_antibiotico && <span className="text-[9px] font-black uppercase text-danger-text bg-danger/10 border border-danger/30 px-1 py-0.5 rounded shrink-0">Bajo Receta</span>}
                         </div>
                     </div>
                 </div>
@@ -612,19 +612,19 @@ export default function ConteoDetailView() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
                                 <div className="bg-surface-card-hover rounded-xl px-3 py-2 text-center">
                                     <p className="text-[16px] font-black text-content-2 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-content-2 font-bold">Contados</p>
+                                    <p className="text-[9px] uppercase tracking-widest text-content-2 font-bold">Contados</p>
                                 </div>
                                 <div className="bg-warning/10 rounded-xl px-3 py-2 text-center">
                                     <p className="text-[16px] font-black text-warning-text tabular-nums">{conteo.total_diferencias ?? 0}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-warning font-bold">Diferencias</p>
+                                    <p className="text-[9px] uppercase tracking-widest text-warning font-bold">Diferencias</p>
                                 </div>
                                 <div className="bg-danger/10 rounded-xl px-3 py-2 text-center">
                                     <p className="text-[14px] font-black text-danger tabular-nums">{fmtMoney(conteo.valor_faltante)}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-danger font-bold">Faltante</p>
+                                    <p className="text-[9px] uppercase tracking-widest text-danger font-bold">Faltante</p>
                                 </div>
                                 <div className="bg-chart-1/10 rounded-xl px-3 py-2 text-center">
                                     <p className="text-[14px] font-black text-chart-1-text tabular-nums">{fmtMoney(conteo.valor_sobrante)}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-chart-1-text font-bold">Sobrante</p>
+                                    <p className="text-[9px] uppercase tracking-widest text-chart-1-text font-bold">Sobrante</p>
                                 </div>
                             </div>
                         )}

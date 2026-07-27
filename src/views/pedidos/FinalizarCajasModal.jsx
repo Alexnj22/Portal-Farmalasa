@@ -242,11 +242,11 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 ? 'bg-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
                                                 : 'bg-warning text-white'
                                         }`}>
-                                            <span className="text-[7px] font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
+                                            <span className="text-[9px] font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
                                             <span className="text-[15px] font-black tabular-nums leading-tight">{idx + 1}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[8px] font-semibold text-content-2 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
+                                            <p className="text-[9px] font-semibold text-content-2 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
                                             <p className="text-[11px] font-semibold text-content-2 truncate leading-tight">{pg.firstItem}</p>
                                             <p className="text-[9px] text-content-3 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
                                         </div>

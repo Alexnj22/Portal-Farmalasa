@@ -1046,7 +1046,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     <div className={`w-2.5 h-2.5 rounded-full ${dia.active ? 'bg-success shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-content-3'}`}></div>
                                                                     <span className={`text-[12px] font-black uppercase tracking-widest ${dia.active ? 'text-content-2' : 'text-content-2'}`}>{dia.day}</span>
                                                                     {isToday && (
-                                                                        <span className="ml-2 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-brand text-white shadow-sm animate-pulse">Hoy</span>
+                                                                        <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-brand text-white shadow-sm animate-pulse">Hoy</span>
                                                                     )}
                                                                 </div>
                                                                 

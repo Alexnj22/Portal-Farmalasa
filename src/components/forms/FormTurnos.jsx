@@ -216,12 +216,12 @@ const FormTurnos = ({ branches }) => {
 
                     <div className="bg-surface-card-hover rounded-xl p-3 flex items-center gap-4 border border-divider">
                         <div className="flex-1">
-                            <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Entrada</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">Entrada</label>
                             <p className="text-[12px] md:text-[13px] font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
                         </div>
                         <div className="w-px h-8 bg-divider"></div>
                         <div className="flex-1">
-                            <label className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1 block">Salida</label>
+                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">Salida</label>
                             <p className="text-[12px] md:text-[13px] font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.end_time || shift.end)}</p>
                         </div>
                     </div>

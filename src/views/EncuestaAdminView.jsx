@@ -143,7 +143,7 @@ function SegmentControl({ options, value, onChange, compact = false }) {
         <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] ${compact ? 'p-1' : 'p-1.5'}`}>
             {options.map(opt => (
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
-                    className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-[8px]' : 'h-8 text-[9px] md:text-[10px]'} ${
+                    className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-[9px]' : 'h-8 text-[9px] md:text-[10px]'} ${
                         value === opt.id
                             ? 'bg-white text-brand-text border-white shadow-sm scale-[1.02]'
                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5 hover:shadow-sm'
@@ -837,7 +837,7 @@ export default function EncuestaAdminView() {
                                                         return (
                                                             <div key={p.id}
                                                                 className={`flex items-start gap-3 px-4 py-3 ${qi < gqs.length - 1 ? 'border-b border-border-card' : ''}`}>
-                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[8px] font-black text-content-3 mt-0.5">
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3 mt-0.5">
                                                                     {p.numero}
                                                                 </span>
                                                                 <p className="flex-1 text-[11px] text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
@@ -890,7 +890,7 @@ export default function EncuestaAdminView() {
                                                         return (
                                                             <div key={p.id}
                                                                 className={`flex items-start gap-3 px-4 py-3 ${qi < bqs.length - 1 ? 'border-b border-border-card' : ''}`}>
-                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[8px] font-black text-content-3 mt-0.5">
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3 mt-0.5">
                                                                     {p.numero}
                                                                 </span>
                                                                 <p className="flex-1 text-[11px] text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
@@ -1161,7 +1161,7 @@ export default function EncuestaAdminView() {
                                                                             <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-content-2">Empleado</th>
                                                                             <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2">Rol</th>
                                                                             {bloques.map(b => (
-                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-[8px] font-black uppercase tracking-wider text-content-2 cursor-help">B{b.numero}</th>
+                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2 cursor-help">B{b.numero}</th>
                                                                             ))}
                                                                             <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2">Global</th>
                                                                             <th className="py-2.5 w-20 pr-3" />
@@ -1247,7 +1247,7 @@ export default function EncuestaAdminView() {
                                                                                                         return (
                                                                                                             <div className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
                                                                                                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-border-card bg-surface-card-hover/40">
-                                                                                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 bg-content-3">G</div>
+                                                                                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-black text-white shrink-0 bg-content-3">G</div>
                                                                                                                     <span className="text-[11px] font-black text-content-2">Datos Generales</span>
                                                                                                                 </div>
                                                                                                                 <div className="divide-y divide-white/40">
@@ -1258,7 +1258,7 @@ export default function EncuestaAdminView() {
                                                                                                                             : ans;
                                                                                                                         return (
                                                                                                                             <div key={p.id} className="flex items-center gap-3 px-4 py-2">
-                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[7px] font-black text-content-3">{p.numero}</span>
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3">{p.numero}</span>
                                                                                                                                 <p className="flex-1 text-[11px] text-content-2 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {ans
                                                                                                                                     ? <span className="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2">{optLabel || ans}</span>
@@ -1279,7 +1279,7 @@ export default function EncuestaAdminView() {
                                                                                                             <div key={bloque.id} className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
                                                                                                                 <div className={`flex items-center justify-between px-4 py-2 border-b border-border-card ${barCls} bg-opacity-10`}>
                                                                                                                     <div className="flex items-center gap-2">
-                                                                                                                        <div className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 ${barCls}`}>
+                                                                                                                        <div className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-black text-white shrink-0 ${barCls}`}>
                                                                                                                             B{bloque.numero}
                                                                                                                         </div>
                                                                                                                         <span className="text-[11px] font-black text-content-2">{bloque.nombre}</span>
@@ -1293,7 +1293,7 @@ export default function EncuestaAdminView() {
                                                                                                                         const ans = row.responses?.[p.indice];
                                                                                                                         return (
                                                                                                                             <div key={p.id} className="flex items-start gap-3 px-4 py-2">
-                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[7px] font-black text-content-3 mt-0.5">{p.numero}</span>
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3 mt-0.5">{p.numero}</span>
                                                                                                                                 <p className="flex-1 text-[11px] text-content-2 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {p.tipo === 'numerica' ? (
                                                                                                                                     <div className="shrink-0 flex items-center gap-0.5 flex-wrap justify-end">

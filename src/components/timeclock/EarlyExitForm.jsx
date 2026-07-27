@@ -58,14 +58,14 @@ function EarlyExitForm({
             </div>
             <div className="text-left flex-1 overflow-hidden">
               <h3 className="text-white font-semibold text-sm sm:text-base leading-tight truncate">{employee.name}</h3>
-              <p className="text-white/40 text-[8px] sm:text-[9px] uppercase tracking-widest mt-0.5 truncate">
+              <p className="text-white/40 text-[9px] sm:text-[9px] uppercase tracking-widest mt-0.5 truncate">
                 Perfil a autorizar
               </p>
             </div>
           </div>
 
 <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-  <label className="text-white/50 text-[8px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
+  <label className="text-white/50 text-[9px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
     Motivo autorizado
   </label>
   {/* Este formulario solo se monta dentro de TimeClockView, que fuerza
@@ -93,7 +93,7 @@ function EarlyExitForm({
 </div>
 
           <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-            <label className="text-white/50 text-[8px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
+            <label className="text-white/50 text-[9px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
               Justificación (Opcional)
             </label>
             <textarea

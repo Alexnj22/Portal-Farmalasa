@@ -999,17 +999,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-[13px] font-medium text-content truncate leading-tight">{row.product_name || '—'}</span>
-                                                    {row.has_manual && <span className="shrink-0 text-[8px] font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-full">MANUAL</span>}
-                                                    {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-full">BORRADOR</span>}
-                                                    {hasDraft && isBodega && <span className="shrink-0 text-[8px] font-black text-warning bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
-                                                    {dispatchRisk && <span className="shrink-0 text-[8px] font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así">RIESGO REGLA</span>}
+                                                    {row.has_manual && <span className="shrink-0 text-[9px] font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-full">MANUAL</span>}
+                                                    {hasDraft && !isBodega && <span className="shrink-0 text-[9px] font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {hasDraft && isBodega && <span className="shrink-0 text-[9px] font-black text-warning bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
+                                                    {dispatchRisk && <span className="shrink-0 text-[9px] font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así">RIESGO REGLA</span>}
                                                     {isBodega && (
                                                         (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||
                                                         (!hasDraft && Number(row.pub_min ?? 0) === 0 && Number(row.pub_max ?? 0) === 0 && row.has_manual)
-                                                    ) && <span className="shrink-0 text-[8px] font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="Retirado de MIN·MAX en todas las salas">SIN SALAS</span>}
+                                                    ) && <span className="shrink-0 text-[9px] font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="Retirado de MIN·MAX en todas las salas">SIN SALAS</span>}
                                                     {limitedData && (
                                                         <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
-                                                            className="shrink-0 text-[8px] font-black text-chart-7-text bg-chart-7/10 border border-chart-7/20 px-1.5 py-0.5 rounded-full cursor-help">
+                                                            className="shrink-0 text-[9px] font-black text-chart-7-text bg-chart-7/10 border border-chart-7/20 px-1.5 py-0.5 rounded-full cursor-help">
                                                             {row.draft_data_days}d DATOS
                                                         </span>
                                                     )}
@@ -1091,7 +1091,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         normXyz(row.draft_demand_variability) !== normXyz(row.demand_variability)
                                                     ) && (
                                                         <div className="flex items-center gap-0.5">
-                                                            <span className="text-[8px] text-content-3">→</span>
+                                                            <span className="text-[9px] text-content-3">→</span>
                                                             <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
                                                         </div>
                                                     )}
@@ -1151,7 +1151,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover border-border-card'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-warning-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
-                                                    {(dead || noHistory) && <div className="text-[8px] text-chart-7-text font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
+                                                    {(dead || noHistory) && <div className="text-[9px] text-chart-7-text font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                                 </div>
                                             );
 
@@ -1229,11 +1229,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         {box(maxN > 0 ? maxN.toLocaleString() : '—', stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
                                                     </div>
                                                     {row.has_manual && (row.pub_min > 0 || row.pub_max > 0 || (row.draft_min ?? 0) > 0 || (row.draft_max ?? 0) > 0) && (
-                                                        <div className="text-[8px] font-semibold text-chart-3-text tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString()}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString()}</div>
+                                                        <div className="text-[9px] font-semibold text-chart-3-text tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString()}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString()}</div>
                                                     )}
                                                     <span
                                                         title="Hover para ver sucursales pendientes"
-                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-warning-text bg-warning/10 border border-warning/30 cursor-help select-none"
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-warning-text bg-warning/10 border border-warning/30 cursor-help select-none"
                                                         onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                         onMouseLeave={closeBodegaTooltip}
                                                     >
@@ -1259,7 +1259,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         {sep}
                                                         {box(maxN > 0 ? maxN.toLocaleString() : '—', 'text-warning-text bg-warning/10', 'border-dashed border-warning/40', openMaxEdit)}
                                                     </div>
-                                                    <div className="text-[8px] text-warning-text font-semibold">⚠ Confirmar</div>
+                                                    <div className="text-[9px] text-warning-text font-semibold">⚠ Confirmar</div>
                                                 </div>
                                             );
 
@@ -1274,7 +1274,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const pendingBadge = isBodega && row.has_pending_branches ? (
                                                 <span
                                                     title="Hover para ver sucursales pendientes"
-                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-warning-text bg-warning/10 border border-warning/30 cursor-help select-none"
+                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-warning-text bg-warning/10 border border-warning/30 cursor-help select-none"
                                                     onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                     onMouseLeave={closeBodegaTooltip}
                                                 >
@@ -1290,7 +1290,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         {sep}
                                                         {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
                                                     </div>
-                                                    <div className="text-[8px] font-semibold text-chart-3-text tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
+                                                    <div className="text-[9px] font-semibold text-chart-3-text tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
                                                     {pendingBadge}
                                                 </div>
                                             );
@@ -1565,7 +1565,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 <span className="text-[9px] text-content-3 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${meta.badge}`}>{meta.label}</span>
+                                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${meta.badge}`}>{meta.label}</span>
                                                 <span className="text-[11px] text-content-2 tabular-nums">
                                                     <span className="text-[9px] text-content-3 font-bold mr-0.5">MIN</span>
                                                     {d.old_min !== d.new_min && <span className="text-content-3">{fmt(d.old_min)} → </span>}

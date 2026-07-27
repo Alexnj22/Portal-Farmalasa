@@ -82,7 +82,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                             <div className="absolute inset-0 bg-success blur-xl opacity-40 animate-pulse"></div>
                         </div>
                         <p className="text-[10px] font-black tracking-widest uppercase text-success">Cobertura Óptima</p>
-                        <p className="text-[8px] text-content-3 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
+                        <p className="text-[9px] text-content-3 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
                     </div>
                 ) : (
                     groupedAlerts.map((group) => {

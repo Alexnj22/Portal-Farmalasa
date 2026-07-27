@@ -170,7 +170,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             : 'border-border-card bg-surface-card'
                                     } ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
-                                        <span className="text-[8px] font-black text-content-3 truncate leading-tight">
+                                        <span className="text-[9px] font-black text-content-3 truncate leading-tight">
                                             {erpId === 6 ? 'Bodega' : ERP_NAMES[erpId].replace('Salud ', 'S.')}
                                         </span>
                                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
@@ -194,8 +194,8 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             )}
                                             {hasDraft && (
                                                 <div className="flex flex-col items-start gap-0.5 mt-0.5">
-                                                    <span className="text-[7px] font-black uppercase tracking-wide text-warning leading-none">Borrador</span>
-                                                    <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-warning/40 bg-warning/10">
+                                                    <span className="text-[9px] font-black uppercase tracking-wide text-warning leading-none">Borrador</span>
+                                                    <div className="flex items-center gap-0.5 text-[9px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-warning/40 bg-warning/10">
                                                         <span className="text-warning font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
                                                         <span className="text-warning">·</span>
                                                         <span className="text-warning font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
@@ -371,7 +371,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className="text-content-3 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
                                                         <span className="text-content-3 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
                                                         {p.lote && p.lote !== 'GENERICO' && (
-                                                            <span className="shrink-0 text-[8px] font-mono text-content-3 bg-surface-card px-1 rounded">{p.lote}</span>
+                                                            <span className="shrink-0 text-[9px] font-mono text-content-3 bg-surface-card px-1 rounded">{p.lote}</span>
                                                         )}
                                                     </div>
                                                 ))}
@@ -391,7 +391,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className="text-[9px] text-content-3 shrink-0 w-14 tabular-nums">
                                                             {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
-                                                        <span className="text-[8px] font-bold text-content-3 shrink-0 bg-surface-card-hover/80 rounded px-1">
+                                                        <span className="text-[9px] font-bold text-content-3 shrink-0 bg-surface-card-hover/80 rounded px-1">
                                                             {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                         </span>
                                                         <span className="font-bold text-success-text tabular-nums shrink-0">
@@ -424,14 +424,14 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                     const dMax = hasDraft ? Number(bd.draft_max ?? 0) : null;
                                                     return (
                                                         <div key={erpId} className="flex items-center gap-1.5 text-[10px]">
-                                                            <span className="text-content-3 shrink-0 w-9 text-[8px] truncate">
+                                                            <span className="text-content-3 shrink-0 w-9 text-[9px] truncate">
                                                                 {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                             </span>
                                                             <span className="text-chart-4-text font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
                                                             <span className="text-content-3">·</span>
                                                             <span className="text-chart-1-text font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                                             {hasDraft && (
-                                                                <span className="inline-flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wide text-warning bg-warning/10 border border-warning/40 border-dashed rounded px-1 py-px whitespace-nowrap">
+                                                                <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wide text-warning bg-warning/10 border border-warning/40 border-dashed rounded px-1 py-px whitespace-nowrap">
                                                                     Borrador {dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
                                                                 </span>
                                                             )}
@@ -471,7 +471,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className="text-content-3 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
                                                         <span className="text-content-3 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
                                                         {p.lote && p.lote !== 'GENERICO' && (
-                                                            <span className="shrink-0 text-[8px] font-mono text-content-3 bg-surface-card px-1 rounded">{p.lote}</span>
+                                                            <span className="shrink-0 text-[9px] font-mono text-content-3 bg-surface-card px-1 rounded">{p.lote}</span>
                                                         )}
                                                     </div>
                                                 ))}
@@ -530,7 +530,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className={`text-[15px] font-black tabular-nums leading-none ${color}`}>
                                                             {depleted ? '0 ✗' : projected.toLocaleString()}
                                                         </span>
-                                                        <span className="text-[8px] text-content-3">und</span>
+                                                        <span className="text-[9px] text-content-3">und</span>
                                                     </div>
                                                 );
                                             })}

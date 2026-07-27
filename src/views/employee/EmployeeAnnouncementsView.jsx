@@ -101,11 +101,11 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2 pt-1">
                                     <div className="bg-surface-card border border-border-card rounded-xl p-2">
-                                        <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Tu turno</p>
+                                        <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">Tu turno</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                     </div>
                                     <div className="bg-chart-5/10 border border-chart-5/20 rounded-xl p-2">
-                                        <p className="text-[8px] font-black text-chart-5-text uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                                        <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                     </div>
                                 </div>
@@ -483,11 +483,11 @@ const UnreadStack = memo(({ list, onRead }) => {
                                         {(meta.myShift || meta.targetShift) && (
                                             <div className="grid grid-cols-2 gap-2 pt-0.5">
                                                 <div className="bg-surface-card border border-border-card rounded-xl p-2.5">
-                                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
+                                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>
                                                 <div className="bg-chart-5/10 border border-chart-5/20 rounded-xl p-2.5">
-                                                    <p className="text-[8px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                                                    <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                                     <p className="text-[12px] font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                                 </div>
                                             </div>

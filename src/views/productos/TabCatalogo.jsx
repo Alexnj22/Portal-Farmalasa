@@ -570,14 +570,14 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                                 <span className={`text-[11px] font-black ${'text-content-2'}`}>{loc.branch_name}</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
                                     loc.branch_type === 'BODEGA'
                                         ? 'bg-warning/10 text-warning-text'
                                         : 'bg-chart-1/10 text-chart-1-text'
                                 }`}>{loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}</span>
-                                {hasSala && !hasBodega && <span className={`text-[8px] ${'text-chart-1-text'}`}>Sala</span>}
-                                {hasBodega && !hasSala && <span className={`text-[8px] ${'text-warning'}`}>Bodega int.</span>}
-                                {hasSala && hasBodega && <span className={`text-[8px] ${'text-success'}`}>Sala + Bodega</span>}
+                                {hasSala && !hasBodega && <span className={`text-[9px] ${'text-chart-1-text'}`}>Sala</span>}
+                                {hasBodega && !hasSala && <span className={`text-[9px] ${'text-warning'}`}>Bodega int.</span>}
+                                {hasSala && hasBodega && <span className={`text-[9px] ${'text-success'}`}>Sala + Bodega</span>}
                             </div>
                             {!isMainBodega && (
                                 <div className={`flex rounded-lg p-0.5 gap-0.5 ${'bg-surface-card-hover'}`}>
@@ -1188,7 +1188,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                             : <>
                                                 <Camera size={24} className={`transition-colors ${xk.photoUploadIcon}`} />
                                                 <span className={`text-[10px] font-semibold transition-colors ${xk.photoUploadLabel}`}>Subir foto</span>
-                                                <span className={`text-[8px] ${xk.photoSubText}`}>JPG, PNG o WebP</span>
+                                                <span className={`text-[9px] ${xk.photoSubText}`}>JPG, PNG o WebP</span>
                                             </>}
                                     </div>
                                 )}
@@ -1261,7 +1261,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                                                 <span className={`text-[9px] line-through whitespace-nowrap ${xk.pricingOldValue}`}>
                                                                                     {fmtP(ch.anterior)}
                                                                                 </span>
-                                                                                <span className={`text-[8px] ${'text-content-3'}`}>
+                                                                                <span className={`text-[9px] ${'text-content-3'}`}>
                                                                                     {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
                                                                                 </span>
                                                                             </div>

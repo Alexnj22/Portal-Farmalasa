@@ -175,11 +175,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                        <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
+                                        <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.myShift || '—'}</p>
                                     </div>
                                     <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl p-2.5">
-                                        <p className="text-[8px] font-black text-chart-3-text uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
+                                        <p className="text-[9px] font-black text-chart-3-text uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
                                         <p className="text-[11px] font-black text-content-2">{meta.targetShift || '—'}</p>
                                     </div>
                                 </div>
@@ -303,11 +303,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
+                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
                                     <p className="text-[12px] font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
                                 </div>
                                 <div className="bg-chart-7/10 border border-chart-7/30 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-chart-7-text uppercase tracking-widest mb-0.5">Cambiar a</p>
+                                    <p className="text-[9px] font-black text-chart-7-text uppercase tracking-widest mb-0.5">Cambiar a</p>
                                     <p className="text-[12px] font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                                 </div>
                             </div>
@@ -326,7 +326,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-0.5">Vendedor actual</p>
+                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">Vendedor actual</p>
                                     {meta.current_vendor_photo && (
                                         <img src={meta.current_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
@@ -334,7 +334,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     {meta.current_vendor_code && <p className="text-[9px] text-content-3 font-mono">#{meta.current_vendor_code}</p>}
                                 </div>
                                 <div className="bg-chart-8/10 border border-chart-8/30 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-chart-8-text uppercase tracking-widest mb-0.5">Asignar a</p>
+                                    <p className="text-[9px] font-black text-chart-8-text uppercase tracking-widest mb-0.5">Asignar a</p>
                                     {meta.new_vendor_photo && (
                                         <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
@@ -357,14 +357,14 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mb-1">Cliente actual</p>
+                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Cliente actual</p>
                                     <div className="w-6 h-6 rounded-full bg-surface-card-hover flex items-center justify-center mb-1">
                                         <span className="text-content-3 font-black text-[10px] leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
                                     </div>
                                     <p className="text-[11px] font-black text-content-2 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
                                 </div>
                                 <div className="bg-chart-9/10 border border-chart-9/30 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-chart-9-text uppercase tracking-widest mb-1">Cambiar a</p>
+                                    <p className="text-[9px] font-black text-chart-9-text uppercase tracking-widest mb-1">Cambiar a</p>
                                     <div className="w-6 h-6 rounded-full bg-chart-9/10 flex items-center justify-center mb-1">
                                         <span className="text-chart-9-text font-black text-[10px] leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
                                     </div>
@@ -625,7 +625,7 @@ const RequestsView = () => {
                 <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 z-50 pointer-events-none">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-60" />
                     <span className="relative inline-flex rounded-full h-4 w-4 bg-danger border-2 border-surface-card items-center justify-center">
-                        <span className="text-[8px] font-black text-white leading-none">{pendingCount > 9 ? '9+' : pendingCount}</span>
+                        <span className="text-[9px] font-black text-white leading-none">{pendingCount > 9 ? '9+' : pendingCount}</span>
                     </span>
                 </span>
             )}

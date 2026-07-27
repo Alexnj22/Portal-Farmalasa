@@ -511,15 +511,15 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                         <div>
-                                                                            <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
+                                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
                                                                             <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
                                                                         </div>
                                                                         {r.cliente && <div>
-                                                                            <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
+                                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
                                                                             <p className="text-[11px] font-semibold text-content-2 truncate">{r.cliente}</p>
                                                                         </div>}
                                                                         <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
-                                                                            <p className="text-[8px] font-bold uppercase tracking-widest text-content-2">Total</p>
+                                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-content-2">Total</p>
                                                                             <p className={`text-[13px] font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                         </div>
                                                                     </div>
@@ -992,15 +992,15 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3">
                                                                         <div className="space-y-2">
                                                                             <div>
-                                                                                <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
+                                                                                <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
                                                                                 <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
                                                                             </div>
                                                                             {r.cliente && <div>
-                                                                                <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
+                                                                                <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
                                                                                 <p className="text-[11px] font-semibold text-content-2 truncate">{r.cliente}</p>
                                                                             </div>}
                                                                             <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
-                                                                                <p className="text-[8px] font-bold uppercase tracking-widest text-content-2">Total</p>
+                                                                                <p className="text-[9px] font-bold uppercase tracking-widest text-content-2">Total</p>
                                                                                 <p className={`text-[13px] font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                             </div>
                                                                         </div>
@@ -1324,15 +1324,15 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     <div>
-                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
+                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
                                                                         <p className="font-mono text-[11px] font-black text-content">{pad7(g.gap_from)} → {pad7(g.gap_to)}</p>
                                                                     </div>
                                                                     <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
-                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-content-2">Faltantes</p>
+                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2">Faltantes</p>
                                                                         <p className="text-[13px] font-black text-chart-4-text">{g.gap_count}</p>
                                                                     </div>
                                                                     {g.siguiente_correlativo && <div>
-                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Siguiente</p>
+                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Siguiente</p>
                                                                         <p className="font-mono text-[11px] font-semibold text-content-2">{g.siguiente_correlativo}</p>
                                                                     </div>}
                                                                 </div>
@@ -1414,9 +1414,9 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 </button>
                                                                 <div className="flex items-center gap-1 px-2 py-1.5 border-r border-divider bg-danger/10">
                                                                     {(n.campos_nulos || []).slice(0, 2).map(c => (
-                                                                        <span key={c} className="text-[8px] font-black text-danger uppercase">{c}</span>
+                                                                        <span key={c} className="text-[9px] font-black text-danger uppercase">{c}</span>
                                                                     ))}
-                                                                    {(n.campos_nulos || []).length > 2 && <span className="text-[8px] font-black text-danger">+{n.campos_nulos.length - 2}</span>}
+                                                                    {(n.campos_nulos || []).length > 2 && <span className="text-[9px] font-black text-danger">+{n.campos_nulos.length - 2}</span>}
                                                                 </div>
                                                                 <button onClick={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
                                                                     className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success hover:text-white'}`}>
@@ -1426,15 +1426,15 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     {n.correlativo && <div>
-                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
+                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
                                                                         <p className="font-mono text-[12px] font-black text-content">{n.correlativo}</p>
                                                                     </div>}
                                                                     {n.fecha && <div>
-                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Fecha</p>
+                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Fecha</p>
                                                                         <p className="text-[11px] font-semibold text-content-2">{n.fecha}</p>
                                                                     </div>}
                                                                     <div className="pt-1 border-t border-black/[0.05]">
-                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-content-2 mb-1">Campos nulos</p>
+                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-1">Campos nulos</p>
                                                                         <div className="flex flex-wrap gap-1">
                                                                             {(n.campos_nulos || []).map(c => (
                                                                                 <span key={c} className="text-[9px] font-bold bg-danger/10 text-danger-text px-1.5 py-0.5 rounded">{c}</span>

@@ -562,7 +562,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     </div>
                                     <div className="text-left">
                                         <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
-                                        <p className="text-[8px] font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
+                                        <p className="text-[9px] font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
                                 <div className="w-7 h-7 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-200">

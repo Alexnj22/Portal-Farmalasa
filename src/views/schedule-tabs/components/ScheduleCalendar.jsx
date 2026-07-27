@@ -329,7 +329,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             {rolesArray.map((roleObj, idx) => {
                                 const theme = getRoleTheme(roleObj.original);
                                 return (
-                                    <div key={idx} className={`w-fit px-1.5 py-0.5 rounded-[6px] border text-[7px] 2xl:text-[7.5px] font-black uppercase tracking-widest transition-colors whitespace-nowrap shrink-0 ${theme.bg} ${theme.text} ${theme.border}`}>
+                                    <div key={idx} className={`w-fit px-1.5 py-0.5 rounded-[6px] border text-[9px] 2xl:text-[7.5px] font-black uppercase tracking-widest transition-colors whitespace-nowrap shrink-0 ${theme.bg} ${theme.text} ${theme.border}`}>
                                         {roleObj.display}
                                     </div>
                                 );
@@ -347,19 +347,19 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                 <div className="flex items-center gap-1 flex-wrap justify-end">
                                     {/* Validar Días Libres */}
                                     {!isDaysOffPerfect && (
-                                        <span className={`text-[7px] 2xl:text-[7.5px] px-1.5 py-0.5 rounded font-black shadow-sm shrink-0 ${daysOffCount === 0 ? 'bg-danger/10 text-danger animate-pulse' : 'bg-warning/10 text-warning'}`}>
+                                        <span className={`text-[9px] 2xl:text-[7.5px] px-1.5 py-0.5 rounded font-black shadow-sm shrink-0 ${daysOffCount === 0 ? 'bg-danger/10 text-danger animate-pulse' : 'bg-warning/10 text-warning'}`}>
                                             {daysOffCount === 0 ? '⚠️ SIN DESCANSO' : `${daysOffCount} LIBRES`}
                                         </span>
                                     )}
                                     {/* Validar Horas */}
                                     {!isHoursPerfect && (
-                                        <span className={`text-[7px] 2xl:text-[7.5px] px-1.5 py-0.5 rounded font-black shadow-sm shrink-0 ${isHoursOver ? 'bg-danger/10 text-danger animate-pulse' : 'bg-warning/10 text-warning'}`}>
+                                        <span className={`text-[9px] 2xl:text-[7.5px] px-1.5 py-0.5 rounded font-black shadow-sm shrink-0 ${isHoursOver ? 'bg-danger/10 text-danger animate-pulse' : 'bg-warning/10 text-warning'}`}>
                                             {isHoursOver ? `+${Number((hours - 44).toFixed(1))}h` : `${Number((hours - 44).toFixed(1))}h`}
                                         </span>
                                     )}
                                     {/* Todo Perfecto */}
                                     {isHoursPerfect && isDaysOffPerfect && (
-                                        <span className="text-[7px] 2xl:text-[7.5px] bg-success/10 text-success px-1.5 py-0.5 rounded font-black shadow-sm flex items-center gap-0.5 shrink-0">
+                                        <span className="text-[9px] 2xl:text-[7.5px] bg-success/10 text-success px-1.5 py-0.5 rounded font-black shadow-sm flex items-center gap-0.5 shrink-0">
                                             ✓ ÓPTIMO
                                         </span>
                                     )}
@@ -430,13 +430,13 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                 {apoyoBranch ? (
                                     <div className="w-full flex-1 flex flex-col items-center justify-center gap-1">
                                         <Building2 size={11} className="text-chart-3-text" strokeWidth={2} />
-                                        <span className="text-[7px] font-black uppercase tracking-widest text-chart-3-text">Apoyo</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text">Apoyo</span>
                                         <span className="text-[6.5px] font-bold text-chart-3-text text-center leading-tight truncate px-1">{apoyoBranch}</span>
                                     </div>
                                 ) : conf ? (
                                     <div className={`w-full flex-1 flex flex-col items-center justify-center ${conf.text}`}>
                                         <conf.icon className="w-4 h-4 2xl:w-[18px] 2xl:h-[18px] mb-1" strokeWidth={2.5} />
-                                        <span className="text-[7.5px] 2xl:text-[8px] font-black uppercase text-center leading-tight truncate px-1">{conf.label}</span>
+                                        <span className="text-[7.5px] 2xl:text-[9px] font-black uppercase text-center leading-tight truncate px-1">{conf.label}</span>
                                         {hasShift && (
                                             <span className="text-[6.5px] font-bold mt-1 opacity-60 truncate px-1 text-center leading-tight">
                                                 {shift?.name || 'Manual'} · {netShiftDurationHrs}h
@@ -446,12 +446,12 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                 ) : hasShift ? (
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
-                                            <span className="text-[7.5px] 2xl:text-[8px] font-black uppercase text-content bg-surface-card-hover border border-divider px-1 py-[1px] rounded truncate max-w-[70%]">
+                                            <span className="text-[7.5px] 2xl:text-[9px] font-black uppercase text-content bg-surface-card-hover border border-divider px-1 py-[1px] rounded truncate max-w-[70%]">
                                                 {shift?.name || 'Manual'}
                                             </span>
                                             <div className={`flex items-center gap-0.5 px-1 py-[1px] rounded border shadow-sm ${isDailyOvertime ? 'bg-danger/10 border-danger/30 text-danger' : 'bg-surface-card-hover border-divider text-content-3'}`}>
                                                 {isDailyOvertime && <Flame size={7} className="animate-pulse" />}
-                                                <span className="text-[7px] 2xl:text-[7.5px] font-black tracking-tight">{netShiftDurationHrs}h</span>
+                                                <span className="text-[9px] 2xl:text-[7.5px] font-black tracking-tight">{netShiftDurationHrs}h</span>
                                             </div>
                                         </div>
 
@@ -477,7 +477,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                     </div>
                                 ) : (
                                     <div className="w-full flex-1 flex flex-col items-center justify-center text-content-3">
-                                        <span className="text-[8px] font-black uppercase tracking-widest">Descanso</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Descanso</span>
                                     </div>
                                 )}
                             </div>
@@ -526,7 +526,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                             <span className="text-[9px] font-bold text-chart-3-text truncate">{homeBranch?.name || 'Otra sucursal'}</span>
                         </div>
                         <div className="mt-0.5 px-1.5 py-[2px] bg-chart-3/10 border border-chart-3/30 rounded-full w-fit">
-                            <span className="text-[7px] font-black uppercase tracking-widest text-chart-3-text">APOYO</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text">APOYO</span>
                         </div>
                     </div>
                     <button onClick={onRemove} className="w-7 h-7 rounded-full bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
@@ -578,12 +578,12 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                                 ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-divider'}`}>
                                                 {shift?.name || 'Manual'}
                                             </span>
-                                            <span className={`text-[7px] font-black px-1 py-[1px] rounded border
+                                            <span className={`text-[9px] font-black px-1 py-[1px] rounded border
                                                 ${isCoverageDay ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' : 'text-content-3 bg-surface-card-hover border-divider'}`}>
                                                 {netHrs}h
                                             </span>
                                         </div>
-                                        <div className={`text-[8px] font-bold font-mono tracking-tight mt-auto ${isCoverageDay ? 'text-chart-3-text' : 'text-content-3'}`}>
+                                        <div className={`text-[9px] font-bold font-mono tracking-tight mt-auto ${isCoverageDay ? 'text-chart-3-text' : 'text-content-3'}`}>
                                             {fmt12h(startStr)} - {fmt12h(endStr)}
                                         </div>
                                     </div>
@@ -591,7 +591,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     <div className="w-full flex-1 flex items-center justify-center">
                                         {isCoverageDay
                                             ? <span className="text-[7.5px] font-black uppercase text-chart-3-text">Libre</span>
-                                            : <span className="text-[8px] font-black text-content-3">—</span>
+                                            : <span className="text-[9px] font-black text-content-3">—</span>
                                         }
                                     </div>
                                 )}
@@ -751,7 +751,7 @@ const ScheduleCalendar = memo(({
                                                     {coverageData?.criticalGaps?.length > 0 && (
                                                         <>
                                                             {coverageData.criticalGaps.map((gap, i) => (
-                                                                <span key={i} className="text-[6.5px] 2xl:text-[7px] font-black uppercase text-white bg-danger border border-danger px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
+                                                                <span key={i} className="text-[6.5px] 2xl:text-[9px] font-black uppercase text-white bg-danger border border-danger px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
                                                                     {gap.time}
                                                                 </span>
                                                             ))}

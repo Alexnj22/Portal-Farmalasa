@@ -199,7 +199,7 @@ const hasInjections = legal.injections === true;
                                     </div>
                                     <div className="flex flex-col flex-1">
                                         <h4 className="text-[10px] font-bold text-content-3 leading-tight whitespace-normal">{slot.roleName}</h4>
-                                        <p className="text-[8px] font-black text-danger uppercase tracking-widest mt-0.5">Sin Asignar</p>
+                                        <p className="text-[9px] font-black text-danger uppercase tracking-widest mt-0.5">Sin Asignar</p>
                                     </div>
                                 </div>
                             );
@@ -212,7 +212,7 @@ const hasInjections = legal.injections === true;
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-[11px] font-bold text-content-2 leading-tight group-hover:text-brand-text transition-colors whitespace-normal truncate">{emp.name}</h4>
-                                    <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
+                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
                                 </div>
                             </div>
                         );

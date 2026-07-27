@@ -265,7 +265,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             return (
                                 <tr key={idx} className="border-b border-divider break-inside-avoid">
                                     <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-ES')}</td>
-                                    <td className="py-2.5 px-2 text-[8px] uppercase tracking-widest">{getActionLabel(item)}</td>
+                                    <td className="py-2.5 px-2 text-[9px] uppercase tracking-widest">{getActionLabel(item)}</td>
                                     <td className="py-2.5 px-2 font-bold text-content">{itemTitle}</td>
                                     <td className="py-2.5 px-2 font-bold text-content-2">{item.isDoc ? 'DOCUMENTO' : (item.user_name || 'SISTEMA')}</td>
                                 </tr>
@@ -591,7 +591,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                                             <div className="relative z-10">
                                                                                                 <div className="mb-3">
-                                                                                                    <span className={`px-2.5 py-1 rounded-[6px] text-[8px] font-black uppercase tracking-widest border shadow-[var(--shadow-elevation-sm)] ${theme.bg} ${theme.text} ${theme.border}`}>
+                                                                                                    <span className={`px-2.5 py-1 rounded-[6px] text-[9px] font-black uppercase tracking-widest border shadow-[var(--shadow-elevation-sm)] ${theme.bg} ${theme.text} ${theme.border}`}>
                                                                                                         {actionLabel}
                                                                                                     </span>
                                                                                                 </div>
@@ -624,7 +624,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                     </div>
 
                                                                                                     {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand-text bg-surface-card backdrop-blur-md border border-border-card hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 shrink-0">
+                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-brand-text bg-surface-card backdrop-blur-md border border-border-card hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 shrink-0">
                                                                                                             <Eye size={12} strokeWidth={2.5} /> Ver Doc
                                                                                                         </button>
                                                                                                     ) : null}

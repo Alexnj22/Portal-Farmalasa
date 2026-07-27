@@ -73,7 +73,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <p className="text-[14px] font-black text-content-2 leading-tight group-hover:text-danger transition-colors text-center">{missingText}</p>
                 <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
                 <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger group-hover:text-white transition-all">
-                    <Edit3 size={10} strokeWidth={2.5} /> <span className="text-[7px] font-black uppercase tracking-widest">Asignar</span>
+                    <Edit3 size={10} strokeWidth={2.5} /> <span className="text-[9px] font-black uppercase tracking-widest">Asignar</span>
                 </div>
             </div>
         );
@@ -105,7 +105,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <p className="text-[14px] font-black text-content leading-tight group-hover:text-brand-text transition-colors truncate px-2">{employee.name}</p>
                 <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-surface-card border border-white rounded-full shadow-sm">
                     <div className={`w-1.5 h-1.5 rounded-full ${theme.badge}`}></div>
-                    <p className={`text-[8px] font-black uppercase tracking-widest ${theme.text} truncate max-w-[120px]`}>{roleLabel || employee.role}</p>
+                    <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text} truncate max-w-[120px]`}>{roleLabel || employee.role}</p>
                 </div>
             </div>
 
@@ -113,7 +113,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <div className="mx-2 mb-3 mt-1 p-2 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-1.5 backdrop-blur-sm shadow-inner">
                     <FileX size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
                     <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-danger uppercase tracking-widest leading-tight">Faltan Archivos</span>
+                        <span className="text-[9px] font-black text-danger uppercase tracking-widest leading-tight">Faltan Archivos</span>
                         <span className="text-[9px] font-bold text-danger leading-tight">{missingDocs.join(', ')}</span>
                     </div>
                 </div>
@@ -124,7 +124,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     <div className="flex items-center gap-2 overflow-hidden">
                         <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Phone size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col">
-                            <span className="text-[7px] font-black text-content-2 uppercase tracking-widest leading-none">Teléfono</span>
+                            <span className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none">Teléfono</span>
                             <span className="text-[10px] font-bold text-content-2 truncate">{employee.phone || 'N/A'}</span>
                         </div>
                     </div>
@@ -457,7 +457,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             <Calculator size={14} className="text-warning shrink-0" />
                             <div className="flex flex-col gap-1 w-28">
                                 <div className="flex justify-between items-center w-full">
-                                    <span className="text-[7px] font-black uppercase tracking-widest text-warning leading-none">Déficit Staff</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-warning leading-none">Déficit Staff</span>
                                     <span className="text-[9px] font-black leading-none text-danger">-{minStaff - coverageStaffCount}</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-warning/20 rounded-full overflow-hidden">
@@ -509,7 +509,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <ShieldAlert size={14} className={complianceScore === 100 ? 'text-success' : 'text-content-3'} />
                         <div className="flex flex-col gap-1 w-24">
                             <div className="flex justify-between items-center w-full">
-                                <span className="text-[7px] font-black uppercase tracking-widest text-content-3 leading-none">Salud Legal</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-content-3 leading-none">Salud Legal</span>
                                 <span className={`text-[9px] font-black leading-none ${textTheme}`}>{complianceScore}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
@@ -759,7 +759,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>
                                             <p className="text-[12px] font-black text-warning-text">Plaza Sugerida</p>
-                                            <p className="text-[8px] font-bold text-warning uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
+                                            <p className="text-[9px] font-bold text-warning uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
                                         </div>
                                     ))}
                                 </div>

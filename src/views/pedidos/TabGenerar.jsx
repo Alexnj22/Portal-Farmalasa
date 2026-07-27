@@ -454,11 +454,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     <>
                                         <div className="flex items-center gap-1.5 mt-0.5 relative z-10">
                                             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text">
-                                                <span className="text-[8px]">✓</span>
+                                                <span className="text-[9px]">✓</span>
                                                 {(stat.con_bodega_productos ?? 0)}
                                             </span>
                                             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">
-                                                <span className="text-[8px]">✗</span>
+                                                <span className="text-[9px]">✗</span>
                                                 {(stat.sin_bodega_productos ?? 0)}
                                             </span>
                                         </div>
@@ -564,7 +564,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         <span className="text-danger font-semibold">{s.reponer}</span>
                                         {s.ventas_6m > 0 && (
                                             <span className="text-content-3 flex items-center gap-0.5">
-                                                ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
+                                                ↻<span className="text-[9px] font-semibold">{Math.round(s.ventas_6m)}</span>
                                             </span>
                                         )}
                                     </span>

@@ -698,8 +698,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     <p className={`text-[12px] font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
                                     {r.hora && <p className="text-[10px] text-content-3">{r.hora?.slice(0, 5)}</p>}
                                     {isCancelled
-                                        ? <span className="text-[8px] font-black uppercase tracking-widest text-danger">ANULADA</span>
-                                        : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
+                                        ? <span className="text-[9px] font-black uppercase tracking-widest text-danger">ANULADA</span>
+                                        : r.recibido_mh === null && <span className="text-[9px] font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-content-3 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
@@ -732,10 +732,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
                                         <div className="flex gap-1 flex-wrap mt-0.5">
                                             {(r.has_puntos || filterPuntos) && (
-                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-warning-text">Puntos</span>
+                                                <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-warning-text">Puntos</span>
                                             )}
                                             {abInvoicesSet.has(r.id) && (
-                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>
+                                                <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>
                                             )}
                                         </div>
                                     )}
@@ -841,7 +841,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             <div className={`text-[11px] font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>}
+                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>}
                                                                                     {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
                                                                                     {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text font-mono">L:{it.lote}</span>}
                                                                                     {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}
@@ -852,7 +852,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                         <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-content-3">{fmt(it.precio_unitario)}</td>
                                                                         <td className="py-1 text-right whitespace-nowrap">
                                                                             {tier ? (
-                                                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
+                                                                                <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
                                                                                     {tier.label}
                                                                                     {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
                                                                                 </span>
@@ -2087,7 +2087,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const isUp = change !== null && change >= 0;
                                                                                     return (
                                                                                         <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full group/bar cursor-default">
-                                                                                            <div className="text-[8px] font-black h-3.5 flex items-center">
+                                                                                            <div className="text-[9px] font-black h-3.5 flex items-center">
                                                                                                 {change !== null
                                                                                                     ? <span className={isUp ? 'text-success' : 'text-danger'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
                                                                                                     : <span />}
@@ -2099,7 +2099,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                 />
                                                                                             </div>
                                                                                             <span className="text-[9px] text-content-3 capitalize leading-none mt-1">{monthLabel}</span>
-                                                                                            <span className="text-[8px] font-black text-content-2 leading-none">{fmt(m.neto)}</span>
+                                                                                            <span className="text-[9px] font-black text-content-2 leading-none">{fmt(m.neto)}</span>
                                                                                         </div>
                                                                                     );
                                                                                 })}

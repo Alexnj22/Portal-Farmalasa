@@ -1314,7 +1314,7 @@ export default function EncuestaView() {
                                                                                         ];
                                                                                         return (
                                                                                             <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-divider last:border-0">
-                                                                                                <span className="shrink-0 w-5 h-5 rounded bg-surface-card-hover flex items-center justify-center text-[8px] font-black text-content-3 mt-0.5">{p.id}</span>
+                                                                                                <span className="shrink-0 w-5 h-5 rounded bg-surface-card-hover flex items-center justify-center text-[9px] font-black text-content-3 mt-0.5">{p.id}</span>
                                                                                                 <div className="flex-1 min-w-0 space-y-1">
                                                                                                     <p className="text-[10px] text-content-3 leading-snug">{p.texto}</p>
                                                                                                     {p.tipo === 'numerica' ? (

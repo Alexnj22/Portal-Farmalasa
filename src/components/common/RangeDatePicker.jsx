@@ -163,9 +163,19 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
 // nuevo, así que desmontaba y remontaba el input en cada tecla y el foco se
 // perdía al primer caracter. Medido: tras escribir "15/07/2026", activeElement
 // era BODY. Eso es lo que se sentía como "lento y no renderiza bien".
+const aTexto = (v) => (v ? v.split('-').reverse().join('/') : '');
+
 const TeclaFecha = ({ valor, onSet, etiqueta }) => {
-    const [txt, setTxt] = useState(valor ? valor.split('-').reverse().join('/') : '');
-    useEffect(() => { setTxt(valor ? valor.split('-').reverse().join('/') : ''); }, [valor]);
+    const [txt, setTxt] = useState(() => aTexto(valor));
+    // Sincronizar el prop con el estado DURANTE el render, no en un efecto: un
+    // useEffect acá dispara un segundo render por cada cambio del calendario
+    // (react-hooks/set-state-in-effect lo marca, y con razón — es justo el tipo
+    // de render en cascada que hace sentir lento a un control).
+    const [valorPrevio, setValorPrevio] = useState(valor);
+    if (valor !== valorPrevio) {
+        setValorPrevio(valor);
+        setTxt(aTexto(valor));
+    }
 
     const commit = (raw) => {
         const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);

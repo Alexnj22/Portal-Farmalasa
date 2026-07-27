@@ -403,22 +403,62 @@ Cada vista migrada: `npm run build` + `eslint` en verde, la barra abierta y
 cerrada verificada en vivo, y 0 paradas de foco invisibles en su ruta. Al
 terminar, `gate:design` en verde y una pasada por las 25 rutas.
 
+
+## D3.11 — Selectores de fecha (auditoría 2026-07-27)
+
+### Corregido
+- **`TeclaFecha` estaba definido DENTRO de `RangeDatePicker`.** React trata cada
+  render como un tipo de componente nuevo → desmontaba y remontaba el input en
+  cada tecla → **el foco se perdía al primer caracter**. Medido: tras escribir
+  `15/07/2026`, `activeElement` era `BODY`. Eso era lo que se sentía como
+  "lento y no renderiza bien". Ahora está afuera y sincroniza el prop durante el
+  render, no en un `useEffect` (que además disparaba un render en cascada por
+  cada cambio del calendario).
+
+### Abierto — móvil
+- **La barra se sale de la pantalla.** En `/auditview` a 390px quedan
+  **10 controles fuera del viewport**: el segundo campo de fecha y el botón de
+  buscar son inalcanzables. Lo causé al mover todo a `trailingActions` sin
+  estrategia móvil.
+- **El panel de rango no cabe de alto**: 557px en una ventana útil de 664px.
+  Con el teclado abierto, no entra.
+
+### Decisión pendiente — nativo en móvil
+Propuesta híbrida **por trabajo, no por plataforma**:
+
+| caso | escritorio | móvil |
+|---|---|---|
+| una fecha en formulario | calendario propio | **rueda nativa** |
+| una fecha en filtro | calendario + atajos | hoja propia |
+| rango | un mes + atajos | **hoja a pantalla completa** |
+| barra de vista | todo en línea | **un botón "Filtros"** |
+
+Razonamiento: la rueda nativa aparece *encima* de la app, como el teclado —
+nadie le reclama al teclado que no combine con el tema, porque se lee como capa
+del sistema. Gana en familiaridad y accesibilidad gratis. **Pero para un rango
+se cae**: el sistema no tiene el concepto, serían dos ruedas separadas, sin ver
+los extremos juntos, sin atajos, sin feriados.
+
 ## Observaciones sin confirmar (2026-07-27)
 
 No son hallazgos: son cosas que vi una vez y **no pude reproducir**. Se anotan
 para no perderlas, marcadas como lo que son.
 
-- **Solape en el filtro de fechas de Historia de Sucursal.** En una captura a
+- ~~Solape en el filtro de fechas de Historia de Sucursal~~ → **RESUELTO
+  (v2.69.0)**: las cajas eran de 90px cuando el componente declara
+  `min-w-[140px]` propio. La causa de fondo era el texto de 16px en negrita en
+  una toolbar; se resolvió con el modo `compact`, no con más ancho. Texto
+  original del hallazgo: En una captura a
   1600px los dos `DD/MM/AAAA` del rango se pisaban. Al volver a medirlo la
   barra no llega a renderizar: en este entorno de preview el historial falla
   con `fetchAllRows error: TypeError: Failed to fetch`, así que no hay campos
   que medir. Queda pendiente verificarlo contra un entorno donde esos datos
   carguen.
-- **`ALGO SALIÓ MAL` en `/branches/2` a 1280px.** Ocurrió una vez; en el
-  reintento a 1600/1440/1280/1100px no volvió a pasar. Fue posterior al mismo
-  `Failed to fetch`, así que lo más probable es que sea el ErrorBoundary
-  atrapando la consecuencia de una red caída, no un bug de layout. No se
-  descarta del todo.
+- ~~`ALGO SALIÓ MAL` en `/branches/2`~~ → **RESUELTO y explicado (v2.69.0)**.
+  No era la red: `BranchesView` llamaba a `BranchCardSkeleton`, un componente
+  que no existe ni definido ni importado. Reventaba con `ReferenceError` cada
+  vez que la carga duraba lo suficiente para pintar esa rama. La red lenta solo
+  era lo que mantenía viva la rama.
 
 ## Verificado por código, no en vivo
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import {
   Search, Loader2, AlertTriangle, CheckCircle2, Clock,
   Eye, ArrowLeft, AlertCircle, Ban, CreditCard, UserCog,
@@ -219,7 +220,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
             Productos ({items.length})
           </p>
           {loading ? (
-            <div className="flex justify-center py-3"><Loader2 size={15} className="animate-spin text-content-3" /></div>
+            <div className="flex justify-center py-3"><SkeletonText lines={4} className="w-full max-w-md" /></div>
           ) : items.length === 0 ? (
             <p className="text-label text-content-3 text-center py-2">Sin detalle</p>
           ) : (
@@ -933,7 +934,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-content-3" /></div>}
+        {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
 
         {!loading && filtered.length === 0 && (
           <div className="py-8 text-center text-body-sm text-content-3 font-medium">

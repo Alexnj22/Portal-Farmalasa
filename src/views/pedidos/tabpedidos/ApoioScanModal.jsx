@@ -1,6 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — carné scanner modal for
 // registering apoyo (support staff) on a pedido, keydown-based scan capture.
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { SkeletonText } from '../../../components/common/StateViews';
 import { motion } from 'framer-motion';
 import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, CheckCheck } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
@@ -137,9 +138,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 />
                                 <ScanLine size={28} className="text-chart-1-text" />
                                 {loading && (
-                                    <div className="absolute inset-0 rounded-2xl bg-surface-card flex items-center justify-center">
-                                        <Loader2 size={18} className="animate-spin text-chart-1-text" />
-                                    </div>
+                                    <div className="absolute inset-0 rounded-2xl bg-surface-card flex items-center justify-center"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                                 )}
                             </div>
 

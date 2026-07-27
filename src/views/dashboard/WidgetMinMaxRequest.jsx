@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import SearchInput from '../../components/common/SearchInput';
@@ -299,7 +300,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-content-3" /></div>}
+        {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
 
         {!loading && search.trim().length >= 2 && results.length === 0 && (
           <div className="py-8 text-center text-body-sm text-content-3 font-medium">Sin resultados para "{search}"</div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { Truck, MapPin, CheckCircle2, Clock, AlertTriangle, Home, Play, Plus, Loader2, ChevronDown, ChevronUp, Navigation, Map } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -325,9 +326,7 @@ export default function TabRutas({ searchTerm = '' }) {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 size={24} className="animate-spin text-chart-3-text" />
-        </div>
+        <div className="flex items-center justify-center py-16"><SkeletonText lines={4} className="w-full max-w-md" /></div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div className="w-16 h-16 rounded-2xl bg-surface-card-hover border border-divider flex items-center justify-center">

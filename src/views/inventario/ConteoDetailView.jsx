@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, ChevronRight, Search, Printer, CheckCircle2, ShieldCheck, Loader2,
@@ -285,7 +286,7 @@ function ItemHistoryModal({ item, onClose }) {
             </div>
             <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-base">
                 {history === null ? (
-                    <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-content-3" /></div>
+                    <div className="flex items-center justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                 ) : history.length === 0 ? (
                     <p className="text-body-sm text-content-3 text-center py-8">Sin registros todavía.</p>
                 ) : (

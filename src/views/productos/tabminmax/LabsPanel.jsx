@@ -1,5 +1,6 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState, useEffect, useRef } from 'react';
+import { SkeletonText } from '../../../components/common/StateViews';
 import { motion } from 'framer-motion';
 import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
@@ -141,9 +142,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                 {/* List */}
                 <div className="px-3 pb-2 flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: '54vh' }}>
                     {loading ? (
-                        <div className="flex items-center justify-center py-10">
-                            <Loader2 size={18} className="animate-spin text-content-3" />
-                        </div>
+                        <div className="flex items-center justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                     ) : visible.length === 0 ? (
                         <div className="flex flex-col items-center py-8 gap-2 text-content-3">
                             <FlaskConical size={22} />

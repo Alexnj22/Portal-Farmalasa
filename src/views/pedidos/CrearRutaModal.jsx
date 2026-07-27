@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { signPhotosDeep } from '../../utils/storageFiles';
@@ -470,9 +471,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
 
       <PedidoModal.Body className="px-5 py-4 space-y-4">
         {loadingData ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 size={24} className="animate-spin text-chart-3-text" />
-          </div>
+          <div className="flex items-center justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
         ) : step === 1 ? (
           <>
             {/* Conductor (auto = usuario actual) */}

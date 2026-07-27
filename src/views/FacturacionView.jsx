@@ -10,7 +10,7 @@ import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { EmptyState } from '../components/common/StateViews';
+import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import { useSearchToggle } from '../hooks/useSearchToggle';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -1206,7 +1206,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         setSolvingNull(null); setNullComment(''); setNullSaving(false);
     };
 
-    if (loading) return <div className="flex justify-center py-24"><Loader2 size={24} className="animate-spin text-content-3" /></div>;
+    if (loading) return <div className="flex justify-center py-24"><SkeletonText lines={4} className="w-full max-w-md" /></div>;
 
     const pad7 = n => String(n).padStart(7, '0');
 

@@ -2,6 +2,7 @@
 // tables inside an expanded pedido card (Enviados/Agotamiento/Sin stock/
 // Revisar regla) plus the inline MIN/MAX editor for "Revisar regla" rows.
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { SkeletonText } from '../../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronRight, Search, X, Loader2, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { smartFilter } from '../../../utils/searchUtils';
@@ -370,7 +371,7 @@ export default function ItemSections({ allItems, loading }) {
         setErrorMap(prev => ({ ...prev, [rowId]: null }));
     }, [origMap]);
 
-    if (loading) return <div className="flex justify-center py-5 border-t border-divider"><Loader2 size={16} className="animate-spin text-content-3" /></div>;
+    if (loading) return <div className="flex justify-center py-5 border-t border-divider"><SkeletonText lines={4} className="w-full max-w-md" /></div>;
 
     const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
     const agotamiento = allItems.filter(i => i.agotamiento);

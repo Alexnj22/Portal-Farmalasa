@@ -1,4 +1,5 @@
 import React from 'react';
+import { SkeletonText } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -1536,9 +1537,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {/* List */}
                         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
                             {historyLoading && (
-                                <div className="flex justify-center py-10">
-                                    <Loader2 size={22} className="animate-spin text-content-3" />
-                                </div>
+                                <div className="flex justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                             )}
                             {!historyLoading && historyLogs.length === 0 && (
                                 <div className="flex flex-col items-center gap-2 py-10">

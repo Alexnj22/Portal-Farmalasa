@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { SkeletonText } from '../components/common/StateViews';
 import { useSearchParams } from 'react-router-dom';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
@@ -1188,7 +1189,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                     <td colSpan={7}
                                         className={`px-4 py-3 ${expandBg}`}>
                                         {loadingExpand ? (
-                                            <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-content-3" /></div>
+                                            <div className="flex justify-center py-4"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                                         ) : (
                                             <div>
                                                 <p className="text-caption font-black uppercase tracking-widest mb-2 text-content-2">Ventas diarias</p>

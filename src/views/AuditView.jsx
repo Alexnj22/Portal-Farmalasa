@@ -381,8 +381,8 @@ const filtersContent = (
                         <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
                             <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
                             <div className="flex gap-2">
-                                <Button variant="secondary" shape="pill" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
-                                <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} disabled={currentPage === totalPages || totalPages === 0} iconOnly onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
+                                <Button variant="secondary" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                                <Button variant="secondary" size="sm" icon={ChevronRight} disabled={currentPage === totalPages || totalPages === 0} iconOnly onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
                             </div>
                         </div>
                     </div>

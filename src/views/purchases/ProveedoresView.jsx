@@ -180,7 +180,7 @@ export default function ProveedoresView({ openModal }) {
                                     options={categoriaFilterOptions} placeholder="Categoría" icon={Tag} compact bare />
                             </div>
                             {categoriaId && (
-                                <Button variant="destructive" shape="pill" icon={X} title="Quitar categoría" iconOnly onClick={() => setCategoriaId('')} />
+                                <Button variant="destructive" icon={X} title="Quitar categoría" iconOnly onClick={() => setCategoriaId('')} />
                             )}
                         </div>
 
@@ -192,7 +192,7 @@ export default function ProveedoresView({ openModal }) {
                                     options={claseOptions} placeholder="Clase" icon={Layers} compact bare />
                             </div>
                             {claseFilter && (
-                                <Button variant="destructive" shape="pill" icon={X} title="Quitar clase" iconOnly onClick={() => setClaseFilter('')} />
+                                <Button variant="destructive" icon={X} title="Quitar clase" iconOnly onClick={() => setClaseFilter('')} />
                             )}
                         </div>
 

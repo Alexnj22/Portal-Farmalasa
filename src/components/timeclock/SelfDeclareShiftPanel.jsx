@@ -64,7 +64,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                 </form>
 
                 <div className="mt-3">
-                    <Button variant="secondary" shape="pill" icon={SkipForward} onClick={() => onSubmit(null, null)}>No sé mi horario — Solo registrar entrada</Button>
+                    <Button variant="secondary" icon={SkipForward} onClick={() => onSubmit(null, null)}>No sé mi horario — Solo registrar entrada</Button>
                 </div>
             </div>
         </div>

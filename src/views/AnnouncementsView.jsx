@@ -62,11 +62,11 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
                 <Edit3 size={14} strokeWidth={2.5} />
               </button>
             )}
-            <Button variant="secondary" shape="pill" icon={Archive} title="Archivar aviso" iconOnly onClick={() => onArchive(ann.id)} />
+            <Button variant="secondary" icon={Archive} title="Archivar aviso" iconOnly onClick={() => onArchive(ann.id)} />
           </>
         )}
         {canEdit && ann.readIds.length === 0 && (
-          <Button variant="destructive" shape="pill" icon={Trash2} title="Eliminar aviso" iconOnly onClick={() => onDelete(ann)} />
+          <Button variant="destructive" icon={Trash2} title="Eliminar aviso" iconOnly onClick={() => onDelete(ann)} />
         )}
       </div>
 

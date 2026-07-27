@@ -736,7 +736,7 @@ const SchedulesView = ({ openModal, setView }) => {
             {/* Week navigator — hover-reveal arrows */}
             <div className="group/week flex items-center overflow-visible cursor-default relative z-base">
                 <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 focus-within:opacity-100 group-hover/week:ml-1 transition-all duration-500">
-                    <Button variant="secondary" shape="pill" size="xs" icon={ChevronLeft} iconOnly onClick={() => changeWeek(-7)} />
+                    <Button variant="secondary" size="xs" icon={ChevronLeft} iconOnly onClick={() => changeWeek(-7)} />
                 </div>
                 <div className="flex flex-col justify-center items-center px-4 py-2 whitespace-nowrap">
                     <span className={`text-micro font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-warning' : 'text-content-3'}`}>
@@ -747,7 +747,7 @@ const SchedulesView = ({ openModal, setView }) => {
                     </span>
                 </div>
                 <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 focus-within:opacity-100 group-hover/week:mr-1 transition-all duration-500">
-                    <Button variant="secondary" shape="pill" size="xs" icon={ArrowRight} iconOnly onClick={() => changeWeek(7)} />
+                    <Button variant="secondary" size="xs" icon={ArrowRight} iconOnly onClick={() => changeWeek(7)} />
                 </div>
             </div>
 

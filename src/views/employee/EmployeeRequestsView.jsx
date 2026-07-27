@@ -220,7 +220,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                     </p>
                 </div>
                 {req.status === 'PENDING' && (
-                    <Button variant="destructive" shape="pill" icon={X} onClick={() => onCancel(req.id)}>Cancelar</Button>
+                    <Button variant="destructive" icon={X} onClick={() => onCancel(req.id)}>Cancelar</Button>
                 )}
             </div>
 
@@ -997,7 +997,7 @@ const EmployeeRequestsView = () => {
                                 }
                             </div>
                             {disabilityFile && (
-                                <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={e => { e.preventDefault(); setDisabilityFile(null); }} />
+                                <Button variant="destructive" icon={X} iconOnly onClick={e => { e.preventDefault(); setDisabilityFile(null); }} />
                             )}
                             <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
                                 onChange={e => setDisabilityFile(e.target.files?.[0] || null)} />

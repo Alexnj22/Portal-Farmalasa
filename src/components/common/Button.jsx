@@ -31,10 +31,23 @@ const HAS_SWEEP = new Set(['primary', 'destructive']);
 // "caja" y "píldora"; los seis valores distintos son ruido, no intención) y
 // `tone` para los coloreados, que son categorías —éxito, aviso, un color de
 // gráfico— y no jerarquía.
-const SHAPE_CLASSES = {
-    box:  'rounded-btn',
-    pill: 'rounded-full',
-};
+// `shape` FUE UN ERROR y se retira (revisado 2026-07-27 a partir de una
+// pregunta del usuario: "¿no deberían ser más unificados? ¿o una versión
+// redonda para liquid glass y otra rectangular para solid?").
+//
+// Eso es EXACTAMENTE lo que el sistema ya hacía, y yo no lo había visto:
+//
+//     --btn-radius   liquid glass → 9999px (píldora)
+//                    solid        → 0.5rem (8px, rectangular)
+//
+// O sea que `rounded-btn` ya rinde píldora en vidrio y rectángulo en sólido:
+// la forma la decide el TEMA, no cada botón. Al agregar `` estaba
+// clavando `rounded-full` en 114 botones, que en el tema sólido se quedaban
+// redondos peleando contra su propio lenguaje de forma.
+//
+// La forma no es un eje del componente. Los seis radios distintos que había en
+// el código no eran seis decisiones: eran seis formas de ignorar el token.
+const SHAPE_CLASSES = { box: 'rounded-btn', pill: 'rounded-btn' };
 
 // Literales, NO plantilla: Tailwind escanea texto (ver la nota de Badge/Switch).
 const TONE_CLASSES = {

@@ -35,7 +35,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                             <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
                         </div>
                         {filterSuc !== '' && (
-                            <Button variant="destructive" shape="pill" icon={X} title="Quitar sucursal" iconOnly onClick={() => setFilterSuc('')} />
+                            <Button variant="destructive" icon={X} title="Quitar sucursal" iconOnly onClick={() => setFilterSuc('')} />
                         )}
                     </div>
                     <div className="h-5 w-px bg-divider shrink-0" />
@@ -48,7 +48,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                     <PeriodPicker value={filterDate} onChange={setFilterDate} />
                 </div>
                 {dateDirty && (
-                    <Button variant="destructive" shape="pill" icon={X} title="Quitar fecha" iconOnly onClick={() => setFilterDate(defaultDate)} />
+                    <Button variant="destructive" icon={X} title="Quitar fecha" iconOnly onClick={() => setFilterDate(defaultDate)} />
                 )}
             </div>
 

@@ -33,7 +33,7 @@ const ScheduleChart = ({
                 <div className="flex items-center gap-1 shrink-0">
                     <div className="flex items-center bg-surface-card p-0.5 rounded-full border border-border-card shadow-[var(--shadow-shine)] h-6">
                         {typeof chartView === 'number' && (
-                            <Button variant="secondary" shape="pill" icon={ChevronLeft} onClick={() => setChartView('DAYS')}>Días</Button>
+                            <Button variant="secondary" icon={ChevronLeft} onClick={() => setChartView('DAYS')}>Días</Button>
                         )}
                         <button onClick={() => setChartView('HOURS')}
                             className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-surface-tab-active text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
@@ -45,7 +45,7 @@ const ScheduleChart = ({
                         </button>
                     </div>
                     <div className="opacity-0 group-hover/chart:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-                        <Button tone="chart-1" shape="pill" size="xs" icon={Maximize2} title="Expandir Análisis" iconOnly onClick={() => openModal && openModal('viewWfmAnalytics')} />
+                        <Button tone="chart-1" size="xs" icon={Maximize2} title="Expandir Análisis" iconOnly onClick={() => openModal && openModal('viewWfmAnalytics')} />
                     </div>
                 </div>
             </div>

@@ -325,12 +325,12 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {canEdit && (
                         <div inert={!isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
-                                <Button variant="secondary" shape="pill" size="sm" icon={Edit3} onClick={() => openModal && openModal('editBranch', liveBranch)}>General</Button>
-                                <Button variant="secondary" shape="pill" size="sm" icon={CalendarClock} onClick={() => openModal && openModal('editBranchHorarios', liveBranch)}>Horarios</Button>
-                                <Button variant="secondary" shape="pill" size="sm" icon={Building2} onClick={() => openModal && openModal('editBranchInmueble', liveBranch)}>Local</Button>
-                                {hasServices && <Button variant="secondary" shape="pill" size="sm" icon={Zap} onClick={() => openModal && openModal('editBranchServicios', liveBranch)}>Serv.</Button>}
-                                {hasLegal && <Button variant="secondary" shape="pill" size="sm" icon={Scale} onClick={() => openModal && openModal('editBranchLegal', liveBranch)}>Legal</Button>}
-                                {hasKiosk && <Button variant="secondary" shape="pill" size="sm" icon={Monitor} onClick={() => openModal && openModal('manageKiosks', liveBranch)}>Kioscos</Button>}
+                                <Button variant="secondary" size="sm" icon={Edit3} onClick={() => openModal && openModal('editBranch', liveBranch)}>General</Button>
+                                <Button variant="secondary" size="sm" icon={CalendarClock} onClick={() => openModal && openModal('editBranchHorarios', liveBranch)}>Horarios</Button>
+                                <Button variant="secondary" size="sm" icon={Building2} onClick={() => openModal && openModal('editBranchInmueble', liveBranch)}>Local</Button>
+                                {hasServices && <Button variant="secondary" size="sm" icon={Zap} onClick={() => openModal && openModal('editBranchServicios', liveBranch)}>Serv.</Button>}
+                                {hasLegal && <Button variant="secondary" size="sm" icon={Scale} onClick={() => openModal && openModal('editBranchLegal', liveBranch)}>Legal</Button>}
+                                {hasKiosk && <Button variant="secondary" size="sm" icon={Monitor} onClick={() => openModal && openModal('manageKiosks', liveBranch)}>Kioscos</Button>}
                             </div>
                         </div>
                         )}

@@ -830,7 +830,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
             </div>
           )}
           {!allApproved && onApproveAll && (
-            <Button tone="success" shape="pill" icon={ShieldCheck} onClick={e => { e.stopPropagation(); onApproveAll(); }}>Aprobar todo</Button>
+            <Button tone="success" icon={ShieldCheck} onClick={e => { e.stopPropagation(); onApproveAll(); }}>Aprobar todo</Button>
           )}
           <div className="w-px h-8 bg-divider mx-0.5" />
           {allApproved ? (
@@ -1276,7 +1276,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
             <span className="flex items-center gap-1.5 text-caption font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full">
               <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
             </span>
-            <Button shape="pill" onClick={() => navigate('/payroll')}>Ver planilla →</Button>
+            <Button onClick={() => navigate('/payroll')}>Ver planilla →</Button>
           </div>
         ) : quincenaTS.length > 0 ? (
           <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}

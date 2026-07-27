@@ -50,13 +50,13 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             {/* 🚨 HOVER ACTIONS NORMALES */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 z-base translate-y-2 group-hover:translate-y-0">
                 {doc.url && !isMissing && (
-                    <Button variant="secondary" shape="pill" size="sm" icon={Eye} title="Ver PDF" iconOnly onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })} />
+                    <Button variant="secondary" size="sm" icon={Eye} title="Ver PDF" iconOnly onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })} />
                 )}
 
-                <Button variant="secondary" shape="pill" size="sm" icon={Edit3} title="Editar/Actualizar Datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
+                <Button variant="secondary" size="sm" icon={Edit3} title="Editar/Actualizar Datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
 
                 {doc.isCustom && !doc.url && (
-                    <Button variant="destructive" shape="pill" size="sm" icon={Trash2} title="Eliminar Espacio" iconOnly onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }} />
+                    <Button variant="destructive" size="sm" icon={Trash2} title="Eliminar Espacio" iconOnly onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }} />
                 )}
             </div>
 
@@ -378,7 +378,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <Layers size={14} strokeWidth={2.5} /> {showAllDocs ? 'Ocultar' : 'Ver Todos'}
                         </button>
 
-                        <Button variant="secondary" shape="pill" icon={Plus} onClick={() => openModal('addCustomDocument', liveBranch)}>Nuevo</Button>
+                        <Button variant="secondary" icon={Plus} onClick={() => openModal('addCustomDocument', liveBranch)}>Nuevo</Button>
 
                         <div className="w-px h-6 bg-content-3/60 mx-1"></div>
 

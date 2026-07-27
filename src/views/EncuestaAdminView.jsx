@@ -995,7 +995,7 @@ export default function EncuestaAdminView() {
                                         {/* Action buttons */}
                                         <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
                                             {isExpanded && (
-                                                <Button variant="secondary" shape="pill" size="sm" icon={ChevronUp} onClick={e => { e.stopPropagation(); toggleExpand(s); }}>Colapsar</Button>
+                                                <Button variant="secondary" size="sm" icon={ChevronUp} onClick={e => { e.stopPropagation(); toggleExpand(s); }}>Colapsar</Button>
                                             )}
                                             {canManage && (
                                             <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
@@ -1050,7 +1050,7 @@ export default function EncuestaAdminView() {
                                                     </div>
                                                 )}
                                                 {s.tipo === 'clima' && (
-                                                    <Button tone="chart-3" shape="pill" size="xs" icon={TrendingUp} onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}>Ver análisis</Button>
+                                                    <Button tone="chart-3" size="xs" icon={TrendingUp} onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}>Ver análisis</Button>
                                                 )}
                                                 {!isExpanded && (
                                                     <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
@@ -1186,13 +1186,13 @@ export default function EncuestaAdminView() {
                                                                                         <td className="py-2.5 pr-4">
                                                                                             {confirmDelete === row.id ? (
                                                                                                 <div className="flex items-center gap-1 justify-center">
-                                                                                                    <Button variant="destructive" shape="pill" size="xs" icon={Check} iconOnly onClick={() => handleDeleteResponse(row)} />
-                                                                                                    <Button variant="secondary" shape="pill" size="xs" icon={X} iconOnly onClick={() => setConfirmDelete(null)} />
+                                                                                                    <Button variant="destructive" size="xs" icon={Check} iconOnly onClick={() => handleDeleteResponse(row)} />
+                                                                                                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={() => setConfirmDelete(null)} />
                                                                                                 </div>
                                                                                             ) : canManage ? (
                                                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity justify-center">
-                                                                                                    <Button tone="warning" shape="pill" icon={Edit3} iconOnly onClick={() => openResponseForm(row)} />
-                                                                                                    <Button variant="destructive" shape="pill" icon={Trash2} iconOnly onClick={() => setConfirmDelete(row.id)} />
+                                                                                                    <Button tone="warning" icon={Edit3} iconOnly onClick={() => openResponseForm(row)} />
+                                                                                                    <Button variant="destructive" icon={Trash2} iconOnly onClick={() => setConfirmDelete(row.id)} />
                                                                                                 </div>
                                                                                             ) : null}
                                                                                         </td>

@@ -55,7 +55,7 @@ const AccessDeniedView = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '280ms' }}>
-                <Button variant="secondary" shape="pill" icon={ArrowLeft} onClick={() => navigate(-1)}>Volver</Button>
+                <Button variant="secondary" icon={ArrowLeft} onClick={() => navigate(-1)}>Volver</Button>
 
                 <button
                     onClick={handleWhatsApp}

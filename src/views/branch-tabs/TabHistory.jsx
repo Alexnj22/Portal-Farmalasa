@@ -362,7 +362,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             </div>
 
                             {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
-                                <Button variant="destructive" shape="pill" size="sm" icon={X} iconOnly onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} />
+                                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} />
                             )}
                         </>
                     }
@@ -426,7 +426,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 </div>
                             )}
 
-                            <Button variant="secondary" shape="pill" icon={ArrowLeft} onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}>Regresar a línea de tiempo</Button>
+                            <Button variant="secondary" icon={ArrowLeft} onClick={() => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 300); }}>Regresar a línea de tiempo</Button>
                         </div>
                     </div>
                 </div>
@@ -603,7 +603,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                     </div>
 
                                                                                                     {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <Button variant="secondary" shape="pill" icon={Eye} onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)}>Ver Doc</Button>
+                                                                                                        <Button variant="secondary" icon={Eye} onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)}>Ver Doc</Button>
                                                                                                     ) : null}
                                                                                                 </div>
                                                                                             </div>
@@ -628,7 +628,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                     {!showAllHistory && syntheticHistory.length > filteredHistory.length && !dateFilter.start && !dateFilter.end && searchQuery === '' && typeFilter === 'ALL' && (
                         <div className="pt-8 text-center animate-in fade-in duration-500 relative z-base">
-                            <Button variant="secondary" shape="pill" onClick={() => setShowAllHistory(true)}>Cargar historial completo</Button>
+                            <Button variant="secondary" onClick={() => setShowAllHistory(true)}>Cargar historial completo</Button>
                         </div>
                     )}
                 </div>

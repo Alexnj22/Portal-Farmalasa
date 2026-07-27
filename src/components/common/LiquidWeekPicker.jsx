@@ -112,11 +112,11 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
 
                 {/* ── Header mes ── */}
                 <div className="flex items-center justify-between mb-3 px-1">
-                    <Button variant="secondary" shape="pill" icon={ChevronLeft} iconOnly onClick={() => setViewDate(new Date(year, month - 1, 1))} />
+                    <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={() => setViewDate(new Date(year, month - 1, 1))} />
                     <span className="text-body-sm font-black text-content-2 uppercase tracking-widest">
                         {MONTHS_SHORT[month]} {year}
                     </span>
-                    <Button variant="secondary" shape="pill" icon={ChevronRight} iconOnly onClick={() => setViewDate(new Date(year, month + 1, 1))} />
+                    <Button variant="secondary" icon={ChevronRight} iconOnly onClick={() => setViewDate(new Date(year, month + 1, 1))} />
                 </div>
 
                 {/* ── Cabeceras días ── */}

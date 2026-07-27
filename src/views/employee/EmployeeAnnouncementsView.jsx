@@ -712,7 +712,7 @@ const EmployeeAnnouncementsView = () => {
                 {searchQuery && (
                     <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchQuery('')} />
                 )}
-                <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} iconOnly onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} />
+                <Button variant="secondary" size="sm" icon={ChevronRight} iconOnly onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} />
             </div>
             {/* Tab mode */}
             <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0' : 'max-w-[700px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>

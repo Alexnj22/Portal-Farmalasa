@@ -170,7 +170,7 @@ function Pagination({ page, total, onChange }) {
     for (let p = start; p <= end; p++) pages.push(p);
     return (
         <div className="flex items-center justify-center gap-1.5 px-5 py-3 border-t border-divider">
-            <Button variant="secondary" shape="pill" size="sm" icon={ChevronLeft} disabled={page === 1} iconOnly onClick={() => onChange(page - 1)} />
+            <Button variant="secondary" size="sm" icon={ChevronLeft} disabled={page === 1} iconOnly onClick={() => onChange(page - 1)} />
             {pages.map(p => (
                 <button key={p} onClick={() => onChange(p)}
                     className={`w-8 h-8 rounded-full text-body-sm font-bold transition-all ${
@@ -181,7 +181,7 @@ function Pagination({ page, total, onChange }) {
                     {p}
                 </button>
             ))}
-            <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} disabled={page === total} iconOnly onClick={() => onChange(page + 1)} />
+            <Button variant="secondary" size="sm" icon={ChevronRight} disabled={page === total} iconOnly onClick={() => onChange(page + 1)} />
         </div>
     );
 }
@@ -527,7 +527,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
-                                                                    <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
+                                                                    <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1011,7 +1011,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
-                                                                    <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
+                                                                    <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1329,7 +1329,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
-                                                                <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
+                                                                <Button variant="destructive" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1432,7 +1432,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
-                                                                <Button variant="destructive" shape="pill" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
+                                                                <Button variant="destructive" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1820,7 +1820,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
                                                                         {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                     </button>
-                                                                    <Button variant="destructive" shape="pill" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
+                                                                    <Button variant="destructive" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -1922,7 +1922,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                                 className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
                                                                                 {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                             </button>
-                                                                            <Button variant="destructive" shape="pill" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
+                                                                            <Button variant="destructive" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                                         </div>
                                                                     </div>
                                                                 </td>

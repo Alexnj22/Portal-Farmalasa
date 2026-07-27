@@ -621,7 +621,7 @@ export default function EncuestaView() {
             icon={BarChart2}
             title={
                 <div className="flex items-center gap-3">
-                    <Button variant="secondary" shape="pill" size="sm" icon={ArrowLeft} title="Volver a Gestión de Encuesta" iconOnly onClick={() => navigate('/encuesta-admin')} />
+                    <Button variant="secondary" size="sm" icon={ArrowLeft} title="Volver a Gestión de Encuesta" iconOnly onClick={() => navigate('/encuesta-admin')} />
                     <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima Organizacional'}</span>
                 </div>
             }

@@ -266,7 +266,7 @@ const EmployeeProfileView = ({ openModal }) => {
                 <span className="hidden sm:inline">Editar</span>
             </button>
             {/* Password button */}
-            <Button tone="warning" shape="pill" icon={KeyRound} title="Cambiar contraseña" iconOnly onClick={() => openModal('changeOwnPassword', {})} />
+            <Button tone="warning" icon={KeyRound} title="Cambiar contraseña" iconOnly onClick={() => openModal('changeOwnPassword', {})} />
         </div>
     );
 
@@ -473,7 +473,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                         <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} />
                                     </div>
                                     {(filterFrom || filterTo || filterType) && (
-                                        <Button variant="secondary" shape="pill" size="sm" icon={X} title="Limpiar filtros" iconOnly onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }} />
+                                        <Button variant="secondary" size="sm" icon={X} title="Limpiar filtros" iconOnly onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }} />
                                     )}
                                 </div>
                                 {/* Type pills */}

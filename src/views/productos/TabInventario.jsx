@@ -352,7 +352,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     />
                                 </div>
                                 {selectedErp !== null && (
-                                    <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={() => setSelectedErp(null)} />
+                                    <Button variant="destructive" icon={X} iconOnly onClick={() => setSelectedErp(null)} />
                                 )}
                             </div>
 
@@ -371,7 +371,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                         />
                                     </div>
                                     {filterLab !== null && (
-                                        <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={() => setFilterLab(null)} />
+                                        <Button variant="destructive" icon={X} iconOnly onClick={() => setFilterLab(null)} />
                                     )}
                                 </div>
                             </>}
@@ -391,14 +391,14 @@ export default function TabInventario({ searchTerm = '' }) {
                                         />
                                     </div>
                                     {filterCat !== null && (
-                                        <Button variant="destructive" shape="pill" icon={X} iconOnly onClick={() => setFilterCat(null)} />
+                                        <Button variant="destructive" icon={X} iconOnly onClick={() => setFilterCat(null)} />
                                     )}
                                 </div>
                             </>}
 
                             {anyFilter && <>
                                 <div className="h-5 w-px bg-divider shrink-0" />
-                                <Button variant="destructive" shape="pill" size="xs" icon={X} iconOnly onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }} />
+                                <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }} />
                             </>}
                         </div>
                     );
@@ -411,7 +411,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar inventario</p>
                     <p className="text-label text-danger mb-4">{loadError}</p>
-                    <Button variant="destructive" shape="pill" onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}>Reintentar</Button>
+                    <Button variant="destructive" onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}>Reintentar</Button>
                 </div>
             ) : (
                 <DataTable

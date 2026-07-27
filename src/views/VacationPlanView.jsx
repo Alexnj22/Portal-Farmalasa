@@ -663,7 +663,7 @@ const VacationPlanView = () => {
                         <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchTerm('')} />
                     )}
                 </div>
-                <Button variant="secondary" shape="pill" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
+                <Button variant="secondary" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
             </div>
 
             {/* Normal mode */}
@@ -671,9 +671,9 @@ const VacationPlanView = () => {
 
                 {/* Year selector */}
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-2)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <Button variant="secondary" shape="pill" icon={ChevronLeft} iconOnly onClick={() => setYear(y => y - 1)} />
+                    <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={() => setYear(y => y - 1)} />
                     <span className="text-body-sm font-black text-content-2 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <Button variant="secondary" shape="pill" icon={ChevronRight} disabled={year >= currentYear + 1} iconOnly onClick={() => setYear(y => y + 1)} />
+                    <Button variant="secondary" icon={ChevronRight} disabled={year >= currentYear + 1} iconOnly onClick={() => setYear(y => y + 1)} />
                 </div>
 
                 <div className="w-px h-6 bg-divider mx-1 shrink-0" />

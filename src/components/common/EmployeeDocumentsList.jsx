@@ -38,7 +38,7 @@ const DocumentRow = ({ doc }) => {
                     <span className={`text-micro font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badge.className}`}>{badge.label}</span>
                 )}
                 {hasFile ? (
-                    <Button shape="pill" size="sm" icon={Eye} title="Ver documento" iconOnly onClick={() => openStoredFile(doc.url)} />
+                    <Button size="sm" icon={Eye} title="Ver documento" iconOnly onClick={() => openStoredFile(doc.url)} />
                 ) : (
                     <Badge variant="warning" size="sm" className="whitespace-nowrap">Pendiente</Badge>
                 )}

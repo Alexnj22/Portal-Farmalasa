@@ -168,7 +168,7 @@ function FilterControls({
                         options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
                 </div>
                 {filterBranch && (
-                    <Button variant="destructive" shape="pill" icon={X} title="Quitar sucursal" iconOnly onClick={() => setFilterBranch('')} />
+                    <Button variant="destructive" icon={X} title="Quitar sucursal" iconOnly onClick={() => setFilterBranch('')} />
                 )}
             </div>}
 
@@ -182,7 +182,7 @@ function FilterControls({
                         options={labOptions} placeholder="Laboratorio" icon={FlaskConical} compact bare />
                 </div>
                 {filterLab && (
-                    <Button variant="destructive" shape="pill" icon={X} title="Quitar laboratorio" iconOnly onClick={() => setFilterLab('')} />
+                    <Button variant="destructive" icon={X} title="Quitar laboratorio" iconOnly onClick={() => setFilterLab('')} />
                 )}
             </div>
             </>}
@@ -195,7 +195,7 @@ function FilterControls({
                     <PeriodPicker value={monthRange} onChange={handlePeriodChange} />
                 </div>
                 {dateDirty && (
-                    <Button variant="destructive" shape="pill" icon={X} title="Quitar fecha" iconOnly onClick={() => setMonthRange(defaultRange)} />
+                    <Button variant="destructive" icon={X} title="Quitar fecha" iconOnly onClick={() => setMonthRange(defaultRange)} />
                 )}
             </div>
 
@@ -2147,7 +2147,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
-                                                                                    <Button variant="destructive" shape="pill" onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}>✕ limpiar</Button>
+                                                                                    <Button variant="destructive" onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}>✕ limpiar</Button>
                                                                                 )}
                                                                             </div>
                                                                         );

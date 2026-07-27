@@ -855,7 +855,7 @@ const ScheduleCalendar = memo(({
                                                     placeholder="Buscar empleado de otra sucursal..."
                                                     className="flex-1"
                                                 />
-                                                <Button variant="secondary" shape="pill" size="sm" icon={XIcon} iconOnly onClick={() => { setShowCoverageSearch(false); setCoverageSearchTerm(''); }} />
+                                                <Button variant="secondary" size="sm" icon={XIcon} iconOnly onClick={() => { setShowCoverageSearch(false); setCoverageSearchTerm(''); }} />
                                             </div>
                                             {coverageSearchResults.length > 0 ? (
                                                 <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">

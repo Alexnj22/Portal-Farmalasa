@@ -202,15 +202,15 @@ const FormTurnos = ({ branches }) => {
                                 <Loader2 size={16} className="animate-spin text-content-3" />
                             ) : isBeingDeleted ? (
                                 <>
-                                    <Button variant="secondary" shape="pill" size="xs" icon={X} iconOnly onClick={() => setConfirmingArchiveId(null)} />
-                                    <Button variant="destructive" shape="pill" size="xs" icon={Check} iconOnly onClick={() => handleArchiveShift(shift)} />
+                                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={() => setConfirmingArchiveId(null)} />
+                                    <Button variant="destructive" size="xs" icon={Check} iconOnly onClick={() => handleArchiveShift(shift)} />
                                 </>
                             ) : isArchived ? (
-                                <Button tone="success" shape="pill" size="sm" icon={Plus} title="Restaurar Turno" iconOnly onClick={() => handleRestoreShift(shift)} />
+                                <Button tone="success" size="sm" icon={Plus} title="Restaurar Turno" iconOnly onClick={() => handleRestoreShift(shift)} />
                             ) : (
                                 <>
-                                    <Button shape="pill" size="sm" icon={Pencil} title="Editar Turno" iconOnly onClick={() => startEditing(shift)} />
-                                    <Button variant="destructive" shape="pill" size="sm" icon={Package} title="Archivar Turno" iconOnly onClick={() => setConfirmingArchiveId(shift.id)} />
+                                    <Button size="sm" icon={Pencil} title="Editar Turno" iconOnly onClick={() => startEditing(shift)} />
+                                    <Button variant="destructive" size="sm" icon={Package} title="Archivar Turno" iconOnly onClick={() => setConfirmingArchiveId(shift.id)} />
                                 </>
                             )}
                         </div>

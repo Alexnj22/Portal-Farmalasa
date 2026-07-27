@@ -980,7 +980,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                <Button shape="pill" size="xs" icon={Eye} title="Ver detalle" iconOnly onClick={() => { setFocused(inv); setView('detail'); }} />
+                <Button size="xs" icon={Eye} title="Ver detalle" iconOnly onClick={() => { setFocused(inv); setView('detail'); }} />
                 <button onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
                   className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
                     ok ? 'bg-warning/10 hover:bg-warning-solid hover:text-white text-warning'

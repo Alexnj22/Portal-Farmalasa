@@ -126,15 +126,15 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100 focus-within:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
-                        <Button variant="secondary" shape="pill" icon={Copy} title="Duplicar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} />
+                        <Button variant="secondary" icon={Copy} title="Duplicar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} />
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[var(--shadow-elevation-sm)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40' : 'bg-surface-card text-warning border-white hover:bg-surface-card-hover hover:text-warning'}`} title="Editar">
                             <Edit3 size={12} strokeWidth={2.5} />
                         </button>
-                        <Button variant="secondary" shape="pill" icon={Archive} title="Archivar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} />
+                        <Button variant="secondary" icon={Archive} title="Archivar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} />
                     </>
                 )}
                 {isArchived && !confirmAction && (
-                    <Button variant="secondary" shape="pill" icon={RotateCcw} title="Reactivar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} />
+                    <Button variant="secondary" icon={RotateCcw} title="Reactivar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} />
                 )}
             </div>
 

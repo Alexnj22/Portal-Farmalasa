@@ -1523,7 +1523,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <p className="text-body font-black text-content truncate leading-tight">{historyRow.product_name}</p>
                                 <p className="text-caption text-content-3 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
                             </div>
-                            <Button variant="secondary" shape="pill" size="sm" icon={X} iconOnly onClick={() => setHistoryRow(null)} />
+                            <Button variant="secondary" size="sm" icon={X} iconOnly onClick={() => setHistoryRow(null)} />
                         </div>
 
                         {/* List */}

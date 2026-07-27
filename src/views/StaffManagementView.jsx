@@ -397,10 +397,10 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       <DataCell align="right" className="w-[180px]">
         <div className="flex items-center justify-end gap-1.5">
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
-            <Button tone="success" shape="pill" size="sm" icon={RefreshCw} title="Recontratar" iconOnly onClick={() => onRehireEmployee(emp)} />
+            <Button tone="success" size="sm" icon={RefreshCw} title="Recontratar" iconOnly onClick={() => onRehireEmployee(emp)} />
           )}
-          <Button tone="warning" shape="pill" size="sm" icon={Edit3} disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'} title="Edición rápida" iconOnly onClick={() => onEditEmployee(emp)} />
-          <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} title="Ver perfil completo" iconOnly onClick={() => onOpenEmployee(emp)} />
+          <Button tone="warning" size="sm" icon={Edit3} disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'} title="Edición rápida" iconOnly onClick={() => onEditEmployee(emp)} />
+          <Button variant="secondary" size="sm" icon={ChevronRight} title="Ver perfil completo" iconOnly onClick={() => onOpenEmployee(emp)} />
         </div>
       </DataCell>
     </DataRow>
@@ -470,8 +470,8 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 
       <DataCell align="right" className="w-[180px]">
         <div className="flex items-center justify-end gap-1.5">
-          <Button tone="warning" shape="pill" size="sm" icon={Edit3} disabled={!canEdit} title="Editar practicante" iconOnly onClick={() => onEdit(p)} />
-          <Button variant="destructive" shape="pill" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar practicante" iconOnly onClick={() => onDelete(p)} />
+          <Button tone="warning" size="sm" icon={Edit3} disabled={!canEdit} title="Editar practicante" iconOnly onClick={() => onEdit(p)} />
+          <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar practicante" iconOnly onClick={() => onDelete(p)} />
         </div>
       </DataCell>
     </DataRow>

@@ -339,7 +339,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
               options={sucOptions} placeholder="Todas las sucursales" icon={Building2} compact bare />
           </div>
           {sucFilter !== 'all' && (
-            <Button variant="destructive" shape="pill" icon={X} title="Quitar sucursal" iconOnly onClick={() => setSucFilter('all')} />
+            <Button variant="destructive" icon={X} title="Quitar sucursal" iconOnly onClick={() => setSucFilter('all')} />
           )}
           {tab === 'pending' && pendingInView > 0 && (
             <>

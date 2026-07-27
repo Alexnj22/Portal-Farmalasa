@@ -248,7 +248,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
             <Button variant="ghost" icon={X} iconOnly onClick={() => setFormOpen(false)} />
           </div>
         ) : (
-          <Button variant="destructive" shape="pill" icon={PackageMinus} onClick={() => setFormOpen(true)}>Reportar</Button>
+          <Button variant="destructive" icon={PackageMinus} onClick={() => setFormOpen(true)}>Reportar</Button>
         )}
       </div>
       {principio && (
@@ -497,7 +497,7 @@ export default function WidgetInventorySearch() {
     return (
       <div className="flex flex-col gap-2.5 h-full">
         <div className="flex items-center gap-2.5 shrink-0">
-          <Button variant="secondary" shape="pill" size="xs" icon={ArrowLeft} iconOnly onClick={() => setDrillProduct(null)} />
+          <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={() => setDrillProduct(null)} />
 
           {drillProduct.fotoUrl ? (
             <button

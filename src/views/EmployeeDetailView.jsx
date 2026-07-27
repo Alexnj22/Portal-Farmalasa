@@ -765,11 +765,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-3xl p-4 shadow-sm overflow-visible">
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
-                                                <Button tone="chart-1" shape="pill" size="xs" icon={ChevronLeft} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }} />
+                                                <Button tone="chart-1" size="xs" icon={ChevronLeft} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }} />
                                                 <span className="text-body font-black text-content-2 capitalize">
                                                     {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
                                                 </span>
-                                                <Button tone="chart-1" shape="pill" size="xs" icon={ChevronRight} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }} />
+                                                <Button tone="chart-1" size="xs" icon={ChevronRight} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }} />
                                             </div>
                                             {/* Encabezados días */}
                                             <div className="grid grid-cols-7 mb-1">
@@ -1053,7 +1053,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
                                                 <ClipboardList size={18} className="text-brand-text"/> Solicitudes del Empleado
                                             </h3>
-                                            <Button shape="pill" icon={Plus} onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}>Nueva Solicitud</Button>
+                                            <Button icon={Plus} onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}>Nueva Solicitud</Button>
                                         </div>
 
                                         {isLoadingEmpReqs ? (

@@ -121,7 +121,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {/* ── Header ─────────────────────────────────── */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-border-card">
                 {screen === 2 && (
-                    <Button variant="secondary" shape="pill" size="xs" icon={ChevronLeft} disabled={submitting} iconOnly onClick={() => setScreen(1)} />
+                    <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={submitting} iconOnly onClick={() => setScreen(1)} />
                 )}
                 <div className="flex-1 min-w-0">
                     <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">Pedido #{pedidoNumero}</p>

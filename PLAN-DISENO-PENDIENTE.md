@@ -133,6 +133,36 @@ solo funciona cuando el vacío ocupa la vista entera.
 
 ### D3.3 — `<button>` → `Button`
 
+#### La forma la decide el TEMA, no el botón (corregido 2026-07-27)
+
+A partir de una pregunta del usuario —"¿no deberían ser más unificados? ¿o una
+versión redonda para liquid glass y otra rectangular para solid?"— se revisó, y
+**eso es exactamente lo que el sistema ya hacía**:
+
+| | `--btn-radius` | medido en vivo |
+|---|---|---|
+| liquid glass | `9999px` | píldora |
+| sólido | `0.5rem` | 8px, rectangular |
+
+`rounded-btn` ya rinde píldora en vidrio y rectángulo en sólido. **El eje
+`shape` que agregué en v2.72.0 era un error**: clavaba `rounded-full` en 114
+botones que en el tema sólido se quedaban redondos, peleando contra su propio
+lenguaje de forma. Retirado.
+
+Los seis radios distintos que había en el código no eran seis decisiones: eran
+seis formas de ignorar el token.
+
+#### Los 270 con clase dinámica, clasificados
+
+| | | |
+|---|---|---|
+| **124** | 45% | **"uno de N seleccionado"** → control segmentado / tabs / chips. **Les falta un canónico propio, no son `Button`.** |
+| 91 | 33% | fragmento de estilo compartido (`focusRing`, hover) — **interpolan una constante, no un estado**: son migrables, el migrador los saltó por ver `${` |
+| 30 | 11% | otro |
+| 20 | 7% | viewport / tema |
+| 5 | 1% | estado del propio botón |
+
+
 **El conteo real es 939 en 140 archivos**, no 639/102. Y antes de migrar se
 midió qué formas existen — el canónico **no las cubría**:
 

@@ -1723,7 +1723,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         return (
                                             <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-danger/30 text-danger text-label font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
                                                 {cond}
-                                                <Button variant="destructive" shape="pill" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
+                                                <Button variant="destructive" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
                                             </span>
                                         );
                                     })}

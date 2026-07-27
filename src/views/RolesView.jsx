@@ -718,7 +718,7 @@ const RolesView = ({ openModal }) => {
                                                     >
                                                         <Edit3 size={14} strokeWidth={2.5} />
                                                     </button>
-                                                    <Button variant="destructive" shape="pill" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar cargo" iconOnly onClick={(e) => handleDeleteRoleRequest(e, role)} />
+                                                    <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar cargo" iconOnly onClick={(e) => handleDeleteRoleRequest(e, role)} />
                                                 </div>
                                             </div>
 

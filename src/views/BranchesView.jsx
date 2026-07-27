@@ -279,7 +279,7 @@ const BranchCard = memo(({
                             <p className="text-micro font-bold text-chart-3-text uppercase tracking-widest mt-0.5 opacity-80">{branch.name}</p>
                         </div>
                     </div>
-                    <Button variant="secondary" shape="pill" size="sm" icon={X} iconOnly onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} />
+                    <Button variant="secondary" size="sm" icon={X} iconOnly onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} />
                 </div>
 
                 {/* Contenido del Overlay */}
@@ -335,11 +335,11 @@ const BranchCard = memo(({
                         <div className="w-px h-4 bg-divider mx-0.5"></div>
                         </>
                     )}
-                    <Button shape="pill" size="sm" icon={Eye} title="Ver Perfil" iconOnly onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} />
-                    <Button tone="chart-3" shape="pill" size="sm" icon={Edit3} disabled={!canEdit} title="Ajustes Generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
+                    <Button size="sm" icon={Eye} title="Ver Perfil" iconOnly onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} />
+                    <Button tone="chart-3" size="sm" icon={Edit3} disabled={!canEdit} title="Ajustes Generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
 
                     {!deleteDisabled && (
-                        <Button variant="destructive" shape="pill" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar Sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} />
+                        <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar Sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} />
                     )}
                 </div>
                 {alertStatus.hasAlerts && (

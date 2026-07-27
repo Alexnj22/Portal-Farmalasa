@@ -82,7 +82,7 @@ export default function SrsBuscadorWidget({
                     autoComplete="off"
                 />
                 {query && (
-                    <Button variant="secondary" shape="pill" icon={X} iconOnly onClick={() => { setQuery(''); setResults(null); setTotal(0); }} />
+                    <Button variant="secondary" icon={X} iconOnly onClick={() => { setQuery(''); setResults(null); setTotal(0); }} />
                 )}
             </div>
 
@@ -119,7 +119,7 @@ export default function SrsBuscadorWidget({
                             {/* Pagination */}
                             {lastPage > 1 && (
                                 <div className="flex items-center justify-between pt-1">
-                                    <Button variant="ghost" shape="pill" icon={ChevronLeft} disabled={page <= 1} onClick={() => goPage(page - 1)}>Ant.</Button>
+                                    <Button variant="ghost" icon={ChevronLeft} disabled={page <= 1} onClick={() => goPage(page - 1)}>Ant.</Button>
                                     <span className="text-label text-content-3 font-medium">
                                         Pág. {page} / {lastPage}
                                     </span>

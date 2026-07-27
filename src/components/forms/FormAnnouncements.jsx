@@ -7,13 +7,13 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center gap-4 mt-5 animate-in fade-in duration-300">
-      <Button variant="secondary" shape="pill" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setPage(p => Math.max(1, p - 1))} />
+      <Button variant="secondary" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setPage(p => Math.max(1, p - 1))} />
       <div className="px-3 py-1 bg-surface-card border border-border-card rounded-full shadow-[var(--shadow-shine)]">
           <span className="text-caption font-black text-content-3 uppercase tracking-widest">
           Pág {currentPage} de {totalPages}
           </span>
       </div>
-      <Button variant="secondary" shape="pill" size="sm" icon={ChevronRight} disabled={currentPage === totalPages} iconOnly onClick={() => setPage(p => Math.min(totalPages, p + 1))} />
+      <Button variant="secondary" size="sm" icon={ChevronRight} disabled={currentPage === totalPages} iconOnly onClick={() => setPage(p => Math.min(totalPages, p + 1))} />
     </div>
   );
 };

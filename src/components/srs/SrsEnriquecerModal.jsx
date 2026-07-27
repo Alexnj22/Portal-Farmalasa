@@ -447,7 +447,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 ))}
                             </div>
 
-                            <Button variant="secondary" shape="pill" onClick={() => { cancelRef.current = true; }}>Detener</Button>
+                            <Button variant="secondary" onClick={() => { cancelRef.current = true; }}>Detener</Button>
                         </div>
                     )}
 
@@ -585,7 +585,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 {reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                                                 Aplicar
                                             </button>
-                                            <Button tone="chart-4" shape="pill" icon={Package} disabled={reviewApplying} onClick={() => handleReviewMarkSinPA(currentReview)}>Insumo/Equipo</Button>
+                                            <Button tone="chart-4" icon={Package} disabled={reviewApplying} onClick={() => handleReviewMarkSinPA(currentReview)}>Insumo/Equipo</Button>
                                             <Button variant="secondary" icon={SkipForward} disabled={reviewApplying} onClick={handleReviewSkip}>Saltar</Button>
                                         </div>
 
@@ -642,7 +642,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 spellCheck={false} autoComplete="off"
  className="w-[58px] shrink-0 px-2 py-1.5 border border-divider rounded-lg text-body-xl text-content-2 bg-surface-card placeholder:text-content-3 text-center"
                                                             />
-                                                            <Button variant="destructive" shape="pill" size="xs" icon={X} iconOnly onClick={() => setManualItems(prev =>
+                                                            <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => setManualItems(prev =>
                                                                 prev.length > 1
                                                                     ? prev.filter(p => p._key !== item._key)
                                                                     : [{ nombre: '', concentracion: '', _key: Date.now() }]
@@ -651,7 +651,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                     ))}
                                                     <Button variant="ghost" icon={Plus} onClick={() => setManualItems(prev => [...prev, { nombre: '', concentracion: '', _key: Date.now() }])}>Agregar principio</Button>
                                                 </div>
-                                                <Button shape="pill" disabled={!manualItems.some(p => p.nombre.trim())} onClick={() => {
+                                                <Button disabled={!manualItems.some(p => p.nombre.trim())} onClick={() => {
                                                         const principios = manualItems
                                                             .filter(p => p.nombre.trim())
                                                             .map((p, i) => ({ nombre: p.nombre.trim(), concentracion: p.concentracion.trim(), orden: i }));
@@ -693,9 +693,9 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         <span className="text-caption text-content-3 font-mono shrink-0">#{p.id}</span>
                                                         <span className="text-body-sm text-content-2 font-medium truncate flex-1">{p.nombre}</span>
                                                         {markedSinPA.has(p.id) ? (
-                                                            <Button tone="success" shape="pill" icon={Check} onClick={() => handleUnmarkSinPA(p.id)}>Insumo</Button>
+                                                            <Button tone="success" icon={Check} onClick={() => handleUnmarkSinPA(p.id)}>Insumo</Button>
                                                         ) : (
-                                                            <Button tone="chart-4" shape="pill" icon={Package} onClick={() => handleMarkSinPA(p.id)}>Insumo</Button>
+                                                            <Button tone="chart-4" icon={Package} onClick={() => handleMarkSinPA(p.id)}>Insumo</Button>
                                                         )}
                                                     </div>
                                                 ))}

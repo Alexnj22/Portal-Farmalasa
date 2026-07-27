@@ -374,9 +374,9 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     {selMode === 'month' && (
                         <div className="px-5 pb-5">
                             <div className="flex items-center justify-between mb-3">
-                                <Button variant="secondary" shape="pill" size="xs" icon={ChevronLeft} iconOnly onClick={() => setViewYear(y => y - 1)} />
+                                <Button variant="secondary" size="xs" icon={ChevronLeft} iconOnly onClick={() => setViewYear(y => y - 1)} />
                                 <span className="text-body-sm font-black text-content-2 tracking-wide">{viewYear}</span>
-                                <Button variant="secondary" shape="pill" size="xs" icon={ChevronRight} disabled={viewYear >= curY + 1} iconOnly onClick={() => setViewYear(y => y + 1)} />
+                                <Button variant="secondary" size="xs" icon={ChevronRight} disabled={viewYear >= curY + 1} iconOnly onClick={() => setViewYear(y => y + 1)} />
                             </div>
                             <div className="grid grid-cols-4 gap-1">
                                 {MONTHS_SH.map((label, mi) => {

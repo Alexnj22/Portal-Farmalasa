@@ -120,7 +120,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         /* TARJETA PADRE 2 (DINÁMICA) */
                         <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-modal relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
                             
-                            <Button variant="destructive" shape="pill" size="sm" icon={Trash2} iconOnly onClick={() => removeNurse(index)} />
+                            <Button variant="destructive" size="sm" icon={Trash2} iconOnly onClick={() => removeNurse(index)} />
                             
                             <div className="space-y-5">
                                 {/* SELECT DEL EMPLEADO */}

@@ -491,7 +491,7 @@ const PayrollView = ({ openModal }) => {
                         className="bg-transparent outline-none text-body-xl font-semibold text-content-2 placeholder-content-3 w-full" />
                     {searchTerm && <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchTerm('')} />}
                 </div>
-                <Button variant="secondary" shape="pill" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
+                <Button variant="secondary" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
             </div>
             {/* Normal mode */}
             <div inert={isSearchMode ? true : undefined} className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>

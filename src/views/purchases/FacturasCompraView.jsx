@@ -785,7 +785,7 @@ function TabDocumentos({
                             <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />
                         </div>
                         {dateDirty && (
-                            <Button variant="destructive" shape="pill" icon={X} title="Quitar fecha" iconOnly onClick={() => setDateRange(defaultDateRange())} />
+                            <Button variant="destructive" icon={X} title="Quitar fecha" iconOnly onClick={() => setDateRange(defaultDateRange())} />
                         )}
                     </div>
 
@@ -867,7 +867,7 @@ function TabDocumentos({
                                     tener que abrir el detalle primero (invalidacion_source viene de
                                     classify_purchase_dte_review vía review_queue.matched_document_id). */}
                                 {row.invalidado && row.invalidacion_source?.file_path && (
-                                    <Button variant="destructive" shape="pill" icon={Link2} title="Ver el PDF que justificó la anulación" onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}>Ver documento</Button>
+                                    <Button variant="destructive" icon={Link2} title="Ver el PDF que justificó la anulación" onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}>Ver documento</Button>
                                 )}
                                 {row.notas_credito?.length > 0 && (
                                     <button
@@ -881,7 +881,7 @@ function TabDocumentos({
                                 {/* Inverso del badge NC — desde la NC/ND se puede ver el CCF/Factura
                                     que corrige (a pedido del usuario, misma mecánica que el badge de arriba). */}
                                 {row.documento_relacionado && (
-                                    <Button tone="chart-1" shape="pill" icon={Link2} title="`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`" onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}>Ver original</Button>
+                                    <Button tone="chart-1" icon={Link2} title="`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`" onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}>Ver original</Button>
                                 )}
                                 {/* Confirmado desde Revisión sin que su JSON llegara nunca — ver
                                     TabRevision "Confirmar sin JSON" y resolve_purchase_dte_review. */}

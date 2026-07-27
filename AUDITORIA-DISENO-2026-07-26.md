@@ -307,6 +307,10 @@ consumible · reglas de motion con tokens · página 404 dedicada (§28 la marca
 
 Cada fase cierra con un criterio **verificable por script**, no por inspección.
 
+Secuencia: **D0 → D1 → D2 → D2.5 → D3 → D4**. D2.5 se agregó el 2026-07-26 al detectar
+que el plan cubría la fontanería de tokens y la adopción de componentes, pero nunca la
+consistencia visual entre elementos — ver su sección más abajo.
+
 ### Fase D0 — Tapar el hueco del gate *(medio día)*
 
 Sin esto, todo lo demás vuelve a driftar.
@@ -350,6 +354,53 @@ comparación es directa contra el baseline 52/166.
 
 **Cierre:** gate en 0 para typography y z-index; `rounded-[…]` reducido a las excepciones
 documentadas.
+
+---
+
+### Fase D2.5 — Inventario visual y canónico por familia *(3-4 días)*
+
+**Hueco del plan original, detectado 2026-07-26.** D3 dice "migrar `<button>` → `Button`,
+ampliando variantes si falta alguna real" — pero nadie sabe qué es "real". No se puede
+migrar 639 botones a un componente que ofrece 2 alturas cuando hay 9 en uso, sin decidir
+antes cuáles de esas 9 son legítimas. El plan cubría la *fontanería* de tokens y la
+*adopción* de componentes, pero nunca la pregunta que las une: **¿los elementos se ven
+iguales entre sí?**
+
+Medido sobre el código real:
+
+| Familia | Elementos | Radios distintos | Alturas | Paddings |
+|---|---|---|---|---|
+| **Botones** | 291 con `className` | **12** | **9** | **26** |
+| **Badges / pills** | 1,108 | **12** | **11** | **24** |
+| **Inputs crudos** | 59 | 6 | 3 | 8 |
+| Cards con `data-surface` | 9 | 3 | — | 3 |
+
+Los radios de botón más usados: `rounded-full` (102), `rounded-xl` (73), `rounded-lg`
+(27), `rounded-2xl` (21), más 8 valores sueltos. Las alturas van de `h-6` a `h-12` sin
+patrón. Los tamaños de texto, 7 distintos; los pesos, 4.
+
+Esto no es "algo de variación": **no existe un estándar de botón**. Y `Button.jsx`, el
+canónico, ofrece 2 tamaños (`h-[34px]`, `h-[42px]`) y 5 variantes — que no mapean contra
+las 9 alturas en uso. Migrar sin decidir primero produciría 639 botones cambiando de
+tamaño de forma arbitraria.
+
+**Entregable por familia**, en este orden:
+
+1. **Inventario** — agrupar los usos reales por forma visual y contar cada cluster.
+2. **Decisión** — qué clusters son variantes legítimas (con su razón de ser: jerarquía,
+   densidad, contexto) y cuáles son accidentes históricos que colapsan en otra.
+3. **Definición** — el canónico expone exactamente esas variantes, ni una más.
+4. **Documentación** — ficha por componente en `DESIGN.md` (variantes, estados,
+   cuándo usar cada una), que es lo que D4 necesita para no volver a quedar stale.
+
+**Familias a cubrir:** botones · badges y pills · inputs de texto · selects · date/time
+pickers · cards y paneles · KPI/stat cards · modales · tabs · filter pills · tablas ·
+avatares · tooltips · toasts · spinners · skeletons · empty states · tamaños de icono.
+
+**Cierre:** cada familia tiene su set canónico decidido y documentado, y el gate
+verifica lo verificable — p. ej. un radio de botón fuera del set aprobado es un
+hallazgo, igual que hoy lo es un `text-slate-500`. Solo entonces D3 puede migrar contra
+un objetivo que existe.
 
 ---
 
@@ -635,6 +686,13 @@ walk de ancestros lo atravesaba y medía su texto oscuro contra el fondo oscuro 
 página. Contra sus franjas reales mide **8.28:1 y 10.62:1** — de lo más legible del
 portal. El escáner ahora devuelve "indeterminado" al toparse con un `backgroundImage` en
 lugar de inventar un número.
+
+#### Hueco del plan detectado (2026-07-26) — **D2.5 agregada**
+
+A pedido del usuario se verificó si el plan garantizaba que los botones —y el resto de
+elementos— quedaran estándar en color, forma y estilo. **No lo garantizaba.** Se agregó
+la fase D2.5 con el inventario medido: 12 radios y 9 alturas distintas de botón, 12
+radios y 11 alturas de badge. Ver la sección de la fase para el detalle.
 
 #### Hallazgo nuevo — **N2 · texto blanco sobre los colores sólidos, pendiente de decisión**
 
